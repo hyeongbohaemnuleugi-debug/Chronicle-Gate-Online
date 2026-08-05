@@ -360,7 +360,7 @@ app.use((error, req, res, next) => {
 });
 
 initDatabase()
-  .then(() => app.listen(PORT, '0.0.0.0', () => console.log(`NEON POP CLICK server listening on ${PORT}`)))
+  .then(() => app.listen(PORT, '0.0.0.0', () => console.log(`제피르 만세 server listening on ${PORT}`)))
   .catch((error) => {
     console.error('데이터베이스 초기화 실패:', error);
     process.exit(1);

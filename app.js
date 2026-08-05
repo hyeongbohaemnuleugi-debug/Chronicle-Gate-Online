@@ -14,7 +14,7 @@
     adminMessage: $('adminMessage'), toast: $('toast')
   };
 
-  const state = { user: null, total: 0, session: 0, pending: 0, saving: false, authMode: 'login', clickTimes: [] };
+  const state = { user: null, total: 0, session: 0, pending: 0, saving: false, authMode: 'login', clickTimes: [], rankTimer: null };
   const fmt = (n) => new Intl.NumberFormat('ko-KR').format(Number(n || 0));
   const safeName = (v) => String(v || '플레이어').replace(/[<>]/g, '').slice(0, 14);
   const initial = (n) => safeName(n).trim().charAt(0).toUpperCase() || '?';
@@ -41,9 +41,18 @@
     el.adminBtn.classList.toggle('hidden', !state.user?.is_admin);
     el.playHint.textContent = state.user ? '클릭 기록이 서버에 자동 저장되고 전체 순위에 반영됩니다.' : '로그인하면 점수가 서버에 저장되고 전체 순위에 반영됩니다.';
   }
+  function imageUrl(slot) { return `/api/images/${slot}?v=${window.imageVersion || 1}`; }
+  function staticImageUrl(slot) { return `/assets/${slot}.png?v=${window.imageVersion || 1}`; }
+  function setImageWithFallback(image, slot) {
+    image.onerror = () => {
+      image.onerror = null;
+      image.src = staticImageUrl(slot);
+    };
+    image.src = imageUrl(slot);
+  }
   function setPressed(value) {
     el.clickStage.classList.toggle('pressed', value);
-    el.characterImage.src = `/api/images/${value ? 'pressed' : 'normal'}?v=${window.imageVersion || 1}`;
+    setImageWithFallback(el.characterImage, value ? 'pressed' : 'normal');
   }
   function addEffect(event) {
     const rect = el.clickStage.getBoundingClientRect();
@@ -58,7 +67,9 @@
     if (!state.user) { openModal(el.authModal); toast('먼저 로그인해 주세요.'); return; }
     state.pending += 1; state.session += 1; state.clickTimes.push(performance.now()); updateScoreUI(); addEffect(event); setPressed(true);
     clearTimeout(registerClick.releaseTimer); registerClick.releaseTimer = setTimeout(() => setPressed(false), 95);
-    if (state.pending >= 25) flushClicks();
+    clearTimeout(registerClick.flushTimer);
+    registerClick.flushTimer = setTimeout(flushClicks, 120);
+    if (state.pending >= 20) flushClicks();
   }
   async function flushClicks() {
     if (!state.user || state.saving || state.pending < 1) return;
@@ -68,6 +79,8 @@
       const data = await api('/api/clicks', { method: 'POST', body: JSON.stringify({ delta }) });
       state.total = data.clicks;
       setStatus('online', '서버 연결됨');
+      clearTimeout(state.rankTimer);
+      state.rankTimer = setTimeout(loadLeaderboard, 350);
     } catch (error) {
       state.pending += delta; setStatus('offline', '저장 재시도 중'); console.error(error);
     } finally {
@@ -122,21 +135,21 @@
     try {
       const data = await api('/api/admin/images', { method: 'POST', body: form });
       window.imageVersion = data.version; setPressed(false);
-      el.normalPreview.src = `/api/images/normal?v=${data.version}`; el.pressedPreview.src = `/api/images/pressed?v=${data.version}`;
+      setImageWithFallback(el.normalPreview, 'normal'); setImageWithFallback(el.pressedPreview, 'pressed');
       el.adminMessage.textContent = '모든 사용자에게 새 이미지가 적용되었습니다.'; toast('캐릭터 이미지가 변경되었습니다.');
     } catch (error) { el.adminMessage.textContent = error.message; }
     finally { el.saveImagesBtn.disabled = false; }
   }
   async function boot() {
     window.imageVersion = Date.now();
-    el.characterImage.src = `/api/images/normal?v=${window.imageVersion}`;
-    el.normalPreview.src = `/api/images/normal?v=${window.imageVersion}`;
-    el.pressedPreview.src = `/api/images/pressed?v=${window.imageVersion}`;
+    setImageWithFallback(el.characterImage, 'normal');
+    setImageWithFallback(el.normalPreview, 'normal');
+    setImageWithFallback(el.pressedPreview, 'pressed');
     try {
       const data = await api('/api/me'); state.user = data.user; state.total = Number(data.user.clicks || 0); setStatus('online', '서버 연결됨');
     } catch { setStatus('online', '서버 연결됨'); }
     updateScoreUI(); updateAuthUI(); loadLeaderboard();
-    setInterval(flushClicks, 1000); setInterval(loadLeaderboard, 15000);
+    setInterval(flushClicks, 500); setInterval(loadLeaderboard, 5000);
   }
 
   el.clickStage.addEventListener('pointerdown', registerClick);

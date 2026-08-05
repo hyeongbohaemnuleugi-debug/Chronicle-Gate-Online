@@ -59,7 +59,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false });
-const clickLimiter = rateLimit({ windowMs: 1000, limit: 20, standardHeaders: true, legacyHeaders: false });
+const clickLimiter = rateLimit({ windowMs: 1000, limit: 40, standardHeaders: true, legacyHeaders: false });
+
+const liveClients = new Set();
+function broadcastLive(type = 'leaderboard') {
+  const payload = `event: ${type}\ndata: ${JSON.stringify({ at: Date.now() })}\n\n`;
+  for (const client of liveClients) client.write(payload);
+}
 
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
@@ -125,6 +131,20 @@ async function initDatabase() {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+app.get('/api/events', (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  res.flushHeaders?.();
+  res.write(`event: connected\ndata: ${JSON.stringify({ ok: true })}\n\n`);
+  liveClients.add(res);
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), 20000);
+  req.on('close', () => { clearInterval(heartbeat); liveClients.delete(res); });
+});
+
 app.post('/api/auth/signup', authLimiter, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body.email);
@@ -145,6 +165,7 @@ app.post('/api/auth/signup', authLimiter, async (req, res, next) => {
     const user = result.rows[0];
     setAuthCookie(res, makeToken(user));
     res.status(201).json({ user });
+    broadcastLive('leaderboard');
   } catch (error) {
     if (error.code === '23505') return res.status(409).json({ error: '이미 가입된 이메일입니다.' });
     next(error);
@@ -194,6 +215,7 @@ app.post('/api/clicks', clickLimiter, authRequired, async (req, res, next) => {
       [delta, req.auth.sub]
     );
     res.json({ clicks: Number(result.rows[0].clicks) });
+    broadcastLive('leaderboard');
   } catch (error) {
     next(error);
   }
@@ -265,6 +287,7 @@ app.post(
       }
       await client.query('COMMIT');
       res.json({ ok: true, version: Date.now() });
+      broadcastLive('images');
     } catch (error) {
       await client.query('ROLLBACK');
       next(error);

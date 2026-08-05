@@ -14,7 +14,7 @@
     adminMessage: $('adminMessage'), toast: $('toast')
   };
 
-  const state = { user: null, total: 0, session: 0, pending: 0, saving: false, authMode: 'login', clickTimes: [], rankTimer: null };
+  const state = { user: null, total: 0, session: 0, pending: 0, saving: false, authMode: 'login', clickTimes: [], rankTimer: null, leaderboard: [], eventSource: null };
   const fmt = (n) => new Intl.NumberFormat('ko-KR').format(Number(n || 0));
   const safeName = (v) => String(v || '플레이어').replace(/[<>]/g, '').slice(0, 14);
   const initial = (n) => safeName(n).trim().charAt(0).toUpperCase() || '?';
@@ -65,7 +65,7 @@
   }
   function registerClick(event) {
     if (!state.user) { openModal(el.authModal); toast('먼저 로그인해 주세요.'); return; }
-    state.pending += 1; state.session += 1; state.clickTimes.push(performance.now()); updateScoreUI(); addEffect(event); setPressed(true);
+    state.pending += 1; state.session += 1; state.clickTimes.push(performance.now()); updateScoreUI(); renderLeaderboard(state.leaderboard, true); addEffect(event); setPressed(true);
     clearTimeout(registerClick.releaseTimer); registerClick.releaseTimer = setTimeout(() => setPressed(false), 95);
     clearTimeout(registerClick.flushTimer);
     registerClick.flushTimer = setTimeout(flushClicks, 120);
@@ -78,7 +78,8 @@
     try {
       const data = await api('/api/clicks', { method: 'POST', body: JSON.stringify({ delta }) });
       state.total = data.clicks;
-      setStatus('online', '서버 연결됨');
+      renderLeaderboard(state.leaderboard);
+      setStatus('online', '실시간 연결됨');
       clearTimeout(state.rankTimer);
       state.rankTimer = setTimeout(loadLeaderboard, 350);
     } catch (error) {
@@ -95,17 +96,45 @@
       return `<div class="podium-item ${classes[i]}">${place === 1 ? '<span class="crown">♛</span>' : `<span class="medal">${place}</span>`}<div class="avatar">${initial(name)}</div><strong>${name}</strong><small>${fmt(row?.clicks || 0)}</small></div>`;
     }).join('');
   }
+  function renderLeaderboard(sourceRows = [], optimistic = false) {
+    let rows = sourceRows.map((row) => ({ ...row, clicks: Number(row.clicks || 0) }));
+    if (state.user) {
+      const liveClicks = state.total + state.pending;
+      const index = rows.findIndex((row) => String(row.id) === String(state.user.id));
+      if (index >= 0) rows[index].clicks = Math.max(rows[index].clicks, liveClicks);
+      else rows.push({ id: state.user.id, nickname: state.user.nickname, clicks: liveClicks });
+      rows.sort((a, b) => b.clicks - a.clicks || Number(a.id) - Number(b.id));
+    }
+    renderPodium(rows);
+    el.rankList.innerHTML = rows.slice(3, 10).map((row, idx) => {
+      const name = safeName(row.nickname), me = String(state.user?.id) === String(row.id);
+      return `<li class="rank-row ${me ? 'me' : ''}"><div class="rank-player"><span class="rank-number">${idx + 4}</span><span class="mini-avatar">${initial(name)}</span><span class="rank-name">${name}${me ? ' (나)' : ''}</span></div><span class="rank-score">${fmt(row.clicks)}</span></li>`;
+    }).join('') || '<li class="rank-row"><span class="rank-name">아직 등록된 기록이 없습니다.</span></li>';
+    const myIndex = rows.findIndex((row) => String(row.id) === String(state.user?.id));
+    el.myRank.textContent = myIndex >= 0 ? `${myIndex + 1}위` : '-';
+  }
   async function loadLeaderboard() {
     try {
       const { rows } = await api('/api/leaderboard');
-      renderPodium(rows);
-      el.rankList.innerHTML = rows.slice(3).map((row, idx) => {
-        const name = safeName(row.nickname), me = String(state.user?.id) === String(row.id);
-        return `<li class="rank-row ${me ? 'me' : ''}"><div class="rank-player"><span class="rank-number">${idx + 4}</span><span class="mini-avatar">${initial(name)}</span><span class="rank-name">${name}${me ? ' (나)' : ''}</span></div><span class="rank-score">${fmt(row.clicks)}</span></li>`;
-      }).join('') || '<li class="rank-row"><span class="rank-name">아직 등록된 기록이 없습니다.</span></li>';
-      const index = rows.findIndex((row) => String(row.id) === String(state.user?.id));
-      el.myRank.textContent = index >= 0 ? `${index + 1}위` : '-';
+      state.leaderboard = rows;
+      renderLeaderboard(rows);
     } catch (error) { console.error(error); }
+  }
+  function connectLiveUpdates() {
+    if (!('EventSource' in window)) return;
+    state.eventSource?.close();
+    const source = new EventSource('/api/events');
+    state.eventSource = source;
+    source.addEventListener('connected', () => setStatus('online', '실시간 연결됨'));
+    source.addEventListener('leaderboard', () => {
+      clearTimeout(state.rankTimer);
+      state.rankTimer = setTimeout(loadLeaderboard, 80);
+    });
+    source.addEventListener('images', () => {
+      window.imageVersion = Date.now();
+      setPressed(false);
+    });
+    source.onerror = () => setStatus('offline', '재연결 중');
   }
   function setAuthMode(mode) {
     state.authMode = mode; const signup = mode === 'signup';
@@ -148,8 +177,8 @@
     try {
       const data = await api('/api/me'); state.user = data.user; state.total = Number(data.user.clicks || 0); setStatus('online', '서버 연결됨');
     } catch { setStatus('online', '서버 연결됨'); }
-    updateScoreUI(); updateAuthUI(); loadLeaderboard();
-    setInterval(flushClicks, 500); setInterval(loadLeaderboard, 5000);
+    updateScoreUI(); updateAuthUI(); loadLeaderboard(); connectLiveUpdates();
+    setInterval(flushClicks, 350); setInterval(loadLeaderboard, 15000);
   }
 
   el.clickStage.addEventListener('pointerdown', registerClick);

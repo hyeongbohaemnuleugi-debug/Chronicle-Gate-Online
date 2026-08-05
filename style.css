@@ -36,3 +36,175 @@ body{min-height:100dvh}
 }
 @media(max-width:980px){html,body{overflow:auto}.layout{height:auto;grid-template-columns:1fr;margin:12px auto 24px}.game-panel,.ranking-panel{height:auto;overflow:visible}.game-heading{display:flex}.click-stage{min-height:440px}.ranking-panel{max-height:none}.rank-list{max-height:360px}}
 @media(max-width:620px){.game-heading{display:block}.click-stage img{width:min(90%,430px);height:auto}}
+
+/* v3: 모든 데스크톱 UI를 정확히 한 화면에 맞춤 */
+@media (min-width: 981px) {
+  html, body {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden !important;
+  }
+
+  body {
+    display: grid;
+    grid-template-rows: 68px minmax(0, 1fr);
+  }
+
+  .topbar {
+    position: relative;
+    top: auto;
+    width: 100%;
+    height: 68px !important;
+    min-height: 68px;
+    padding: 0 clamp(18px, 3vw, 54px);
+  }
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+  }
+
+  .brand strong {
+    font-size: 18px;
+    letter-spacing: .03em;
+  }
+
+  .layout {
+    width: min(1660px, calc(100% - 24px));
+    height: auto !important;
+    min-height: 0;
+    margin: 10px auto 12px;
+    grid-template-columns: minmax(0, 1.78fr) minmax(330px, .72fr);
+    gap: 14px;
+    overflow: hidden;
+  }
+
+  .game-panel,
+  .ranking-panel {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    border-radius: 24px;
+  }
+
+  .game-panel {
+    padding: 14px 18px 12px;
+  }
+
+  .game-heading {
+    display: none !important;
+  }
+
+  .score-strip {
+    flex: 0 0 auto;
+    margin: 0 0 5px;
+  }
+
+  .score-strip div {
+    padding: 8px 14px;
+    min-height: 67px;
+  }
+
+  .score-strip strong {
+    font-size: 22px;
+    line-height: 1.15;
+  }
+
+  .click-stage {
+    flex: 1 1 auto;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
+  .click-stage img {
+    width: auto !important;
+    height: min(64vh, calc(100dvh - 190px)) !important;
+    max-width: min(72%, 660px) !important;
+    max-height: 100% !important;
+    object-fit: contain;
+  }
+
+  .pulse-ring {
+    width: min(57vh, 510px) !important;
+    max-width: 58vw;
+  }
+
+  .ring-b {
+    width: min(46vh, 410px) !important;
+  }
+
+  .tap-guide {
+    bottom: 5px;
+  }
+
+  .play-hint {
+    flex: 0 0 auto;
+    margin: 3px 0 0;
+    line-height: 1.3;
+  }
+
+  .ranking-panel {
+    position: static !important;
+    align-self: stretch;
+    padding: 16px 18px 12px;
+  }
+
+  .panel-head h2 {
+    font-size: 22px;
+  }
+
+  .podium {
+    flex: 0 0 165px;
+    height: 165px;
+    padding: 8px 0 7px;
+  }
+
+  .podium-item.first { height: 138px; }
+  .podium-item.second { height: 112px; }
+  .podium-item.third { height: 100px; }
+
+  .rank-list-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .rank-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+    overflow-y: auto;
+  }
+
+  .rank-row {
+    padding: 8px 7px;
+  }
+
+  .ranking-note {
+    flex: 0 0 auto;
+    margin-top: 6px;
+  }
+}
+
+/* 낮은 노트북 화면에서는 한 단계 더 압축 */
+@media (min-width: 981px) and (max-height: 760px) {
+  body { grid-template-rows: 58px minmax(0, 1fr); }
+  .topbar { height: 58px !important; min-height: 58px; }
+  .layout { margin: 7px auto 8px; }
+  .game-panel { padding: 9px 14px 8px; }
+  .score-strip div { min-height: 55px; padding: 6px 11px; }
+  .score-strip strong { font-size: 19px; }
+  .click-stage img { height: min(61vh, calc(100dvh - 160px)) !important; }
+  .podium { flex-basis: 135px; height: 135px; }
+  .podium-item.first { height: 112px; }
+  .podium-item.second { height: 92px; }
+  .podium-item.third { height: 82px; }
+  .avatar { width: 32px; height: 32px; }
+  .first .avatar { width: 41px; height: 41px; }
+  .ranking-panel { padding: 11px 15px 8px; }
+  .rank-row { padding: 6px; }
+}

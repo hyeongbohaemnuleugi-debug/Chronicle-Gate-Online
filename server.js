@@ -262,14 +262,91 @@ app.post(
   }
 );
 
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: isProduction ? '1h' : 0 }));
-app.use((_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+// -----------------------------------------------------------------------------
+// 정적 웹 파일 제공
+// GitHub 업로드 과정에서 파일이 public 폴더 또는 저장소 최상위에 놓인 경우를
+// 모두 지원하도록 실제 index.html이 있는 위치를 자동으로 찾습니다.
+// -----------------------------------------------------------------------------
+const fs = require('fs');
 
-app.use((error, _req, res, _next) => {
-  console.error(error);
-  if (error instanceof multer.MulterError) return res.status(400).json({ error: '이미지 파일이 너무 크거나 형식이 잘못되었습니다.' });
-  if (error.message?.includes('이미지만')) return res.status(400).json({ error: error.message });
-  res.status(500).json({ error: '서버에서 오류가 발생했습니다.' });
+const staticCandidates = [
+  path.join(__dirname, 'public'),
+  __dirname
+];
+
+const staticDir = staticCandidates.find((dir) =>
+  fs.existsSync(path.join(dir, 'index.html'))
+);
+
+if (!staticDir) {
+  console.error('index.html을 찾지 못했습니다. 다음 경로를 확인했습니다:', staticCandidates);
+} else {
+  console.log('정적 웹 파일 경로:', staticDir);
+  console.log('index.html 경로:', path.join(staticDir, 'index.html'));
+}
+
+// 브라우저가 자동 요청하는 favicon 때문에 500 오류가 발생하지 않도록 처리합니다.
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
+
+if (staticDir) {
+  app.use(express.static(staticDir, {
+    index: false,
+    maxAge: isProduction ? '1h' : 0
+  }));
+}
+
+function sendIndex(_req, res, next) {
+  if (!staticDir) {
+    return res.status(500).type('html').send(`
+      <!doctype html>
+      <html lang="ko">
+        <head><meta charset="utf-8"><title>파일 경로 오류</title></head>
+        <body style="font-family:sans-serif;padding:32px">
+          <h1>index.html을 찾지 못했습니다.</h1>
+          <p>GitHub 저장소에 <code>public/index.html</code>이 있는지 확인해 주세요.</p>
+        </body>
+      </html>
+    `);
+  }
+
+  res.sendFile(path.join(staticDir, 'index.html'), (error) => {
+    if (error) next(error);
+  });
+}
+
+// 메인 주소
+app.get('/', sendIndex);
+
+// 존재하지 않는 API는 JSON 404로 반환합니다.
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: '존재하지 않는 API 주소입니다.' });
+});
+
+// 게임 내부 주소로 직접 접속해도 index.html을 보여줍니다.
+app.use(sendIndex);
+
+// 오류 처리기는 반드시 모든 라우트보다 마지막에 둡니다.
+app.use((error, req, res, next) => {
+  console.error('서버 오류:', {
+    method: req.method,
+    path: req.originalUrl,
+    message: error.message,
+    code: error.code,
+    stack: error.stack
+  });
+
+  if (res.headersSent) return next(error);
+  if (error instanceof multer.MulterError) {
+    return res.status(400).json({ error: '이미지 파일이 너무 크거나 형식이 잘못되었습니다.' });
+  }
+  if (error.message?.includes('이미지만')) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  res.status(500).json({
+    error: '서버에서 오류가 발생했습니다.',
+    detail: isProduction ? undefined : error.message
+  });
 });
 
 initDatabase()

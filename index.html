@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#110812" />
+  <meta name="description" content="캐릭터를 눌러 점수를 올리고 실시간 순위를 겨루는 클릭 게임" />
+  <title>NEON POP CLICK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="메인 화면">
+      <span class="brand-mark">P</span>
+      <span><strong>NEON POP</strong><small>CLICK BATTLE</small></span>
+    </a>
+    <div class="top-actions">
+      <span id="cloudStatus" class="status-pill"><i></i><span>연결 확인 중</span></span>
+      <button id="adminBtn" class="ghost-btn hidden" type="button">캐릭터 관리</button>
+      <button id="authBtn" class="primary-btn" type="button">로그인</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="game-panel glass">
+      <div class="game-heading">
+        <div>
+          <p class="eyebrow">TAP AS FAST AS YOU CAN</p>
+          <h1>캐릭터를 눌러<br /><em>최고 기록</em>에 도전하세요</h1>
+        </div>
+        <div class="session-card">
+          <span>이번 접속</span>
+          <strong id="sessionClicks">0</strong>
+        </div>
+      </div>
+
+      <div class="score-strip">
+        <div><span>내 누적 점수</span><strong id="totalClicks">0</strong></div>
+        <div><span>초당 클릭</span><strong id="cpsValue">0.0</strong></div>
+        <div><span>현재 순위</span><strong id="myRank">-</strong></div>
+      </div>
+
+      <div id="clickStage" class="click-stage" tabindex="0" role="button" aria-label="캐릭터 클릭하기">
+        <div class="pulse-ring ring-a"></div>
+        <div class="pulse-ring ring-b"></div>
+        <img id="characterImage" src="assets/normal.png" alt="클릭 캐릭터" draggable="false" />
+        <div id="clickEffects" class="click-effects" aria-hidden="true"></div>
+        <div class="tap-guide"><span>CLICK</span><small>마우스 · 터치 · 스페이스바</small></div>
+      </div>
+
+      <p id="playHint" class="play-hint">로그인하면 점수가 서버에 저장되고 전체 순위에 반영됩니다.</p>
+    </section>
+
+    <aside class="ranking-panel glass">
+      <div class="panel-head">
+        <div><p class="eyebrow">LIVE RANKING</p><h2>클릭 순위표</h2></div>
+        <button id="refreshRankBtn" class="icon-btn" type="button" aria-label="순위 새로고침">↻</button>
+      </div>
+      <div class="podium" id="podium">
+        <div class="podium-item second"><span class="medal">2</span><div class="avatar">?</div><strong>-</strong><small>0</small></div>
+        <div class="podium-item first"><span class="crown">♛</span><div class="avatar">?</div><strong>-</strong><small>0</small></div>
+        <div class="podium-item third"><span class="medal">3</span><div class="avatar">?</div><strong>-</strong><small>0</small></div>
+      </div>
+      <div class="rank-list-wrap">
+        <div class="rank-labels"><span>순위 / 플레이어</span><span>누적 클릭</span></div>
+        <ol id="rankList" class="rank-list"></ol>
+      </div>
+      <div class="ranking-note">점수는 서버에 안전하게 저장됩니다.</div>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <div id="authModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="authModal"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="modal-close" type="button" data-close="authModal" aria-label="닫기">×</button>
+      <p class="eyebrow">PLAYER ACCOUNT</p>
+      <h2 id="authTitle">로그인</h2>
+      <p class="modal-copy">이메일과 비밀번호로 기록을 서버에 저장합니다.</p>
+      <div class="tab-switch">
+        <button id="loginTab" class="active" type="button">로그인</button>
+        <button id="signupTab" type="button">회원가입</button>
+      </div>
+      <form id="authForm">
+        <label id="nicknameField" class="field hidden"><span>닉네임</span><input id="nicknameInput" maxlength="14" autocomplete="nickname" placeholder="순위표에 표시할 이름" /></label>
+        <label class="field"><span>이메일</span><input id="emailInput" type="email" autocomplete="email" required placeholder="name@example.com" /></label>
+        <label class="field"><span>비밀번호</span><input id="passwordInput" type="password" minlength="6" autocomplete="current-password" required placeholder="6자 이상" /></label>
+        <button id="authSubmitBtn" class="primary-btn full" type="submit">로그인</button>
+      </form>
+      <p id="authMessage" class="form-message"></p>
+    </section>
+  </div>
+
+  <div id="adminModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="adminModal"></div>
+    <section class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <button class="modal-close" type="button" data-close="adminModal" aria-label="닫기">×</button>
+      <p class="eyebrow">ADMIN ONLY</p>
+      <h2 id="adminTitle">캐릭터 이미지 관리</h2>
+      <p class="modal-copy">기본 이미지와 눌렀을 때 이미지를 변경하면 모든 이용자에게 적용됩니다.</p>
+      <div class="upload-grid">
+        <label class="upload-box">
+          <span>기본 상태</span>
+          <img id="normalPreview" src="assets/normal.png" alt="기본 이미지 미리보기" />
+          <input id="normalFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+          <b>이미지 선택</b>
+        </label>
+        <label class="upload-box">
+          <span>누른 상태</span>
+          <img id="pressedPreview" src="assets/pressed.png" alt="누른 이미지 미리보기" />
+          <input id="pressedFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+          <b>이미지 선택</b>
+        </label>
+      </div>
+      <button id="saveImagesBtn" class="primary-btn full" type="button">전체 사용자에게 적용</button>
+      <p id="adminMessage" class="form-message"></p>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

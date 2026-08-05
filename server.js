@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -218,7 +219,18 @@ app.get('/api/images/:slot', async (req, res, next) => {
     const result = await pool.query('SELECT mime_type, image_data, updated_at FROM game_images WHERE slot = $1', [req.params.slot]);
     const image = result.rows[0];
     if (!image) {
-      return res.sendFile(path.join(__dirname, 'public', 'assets', `${req.params.slot}.png`));
+      const filename = `${req.params.slot}.png`;
+      const fallbackCandidates = [
+        path.join(__dirname, 'public', 'assets', filename),
+        path.join(__dirname, 'assets', filename)
+      ];
+      const fallbackImage = fallbackCandidates.find((candidate) => fs.existsSync(candidate));
+      if (!fallbackImage) {
+        console.error('기본 캐릭터 이미지를 찾지 못했습니다:', fallbackCandidates);
+        return res.status(404).json({ error: '캐릭터 이미지를 찾을 수 없습니다.' });
+      }
+      res.set('Cache-Control', 'no-cache');
+      return res.sendFile(fallbackImage);
     }
     res.set('Content-Type', image.mime_type);
     res.set('Cache-Control', 'no-cache');
@@ -267,8 +279,6 @@ app.post(
 // GitHub 업로드 과정에서 파일이 public 폴더 또는 저장소 최상위에 놓인 경우를
 // 모두 지원하도록 실제 index.html이 있는 위치를 자동으로 찾습니다.
 // -----------------------------------------------------------------------------
-const fs = require('fs');
-
 const staticCandidates = [
   path.join(__dirname, 'public'),
   __dirname

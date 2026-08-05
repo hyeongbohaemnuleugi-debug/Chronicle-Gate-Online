@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
@@ -50,7 +50,7 @@
       <div id="clickStage" class="click-stage" tabindex="0" role="button" aria-label="캐릭터 클릭하기">
         <div class="pulse-ring ring-a"></div>
         <div class="pulse-ring ring-b"></div>
-        <img id="characterImage" src="assets/normal.png" alt="클릭 캐릭터" draggable="false" />
+        <img id="characterImage" src="/assets/normal.png" alt="클릭 캐릭터" draggable="false" />
         <div id="clickEffects" class="click-effects" aria-hidden="true"></div>
         <div class="tap-guide"><span>CLICK</span><small>마우스 · 터치 · 스페이스바</small></div>
       </div>
@@ -109,13 +109,13 @@
       <div class="upload-grid">
         <label class="upload-box">
           <span>기본 상태</span>
-          <img id="normalPreview" src="assets/normal.png" alt="기본 이미지 미리보기" />
+          <img id="normalPreview" src="/assets/normal.png" alt="기본 이미지 미리보기" />
           <input id="normalFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
           <b>이미지 선택</b>
         </label>
         <label class="upload-box">
           <span>누른 상태</span>
-          <img id="pressedPreview" src="assets/pressed.png" alt="누른 이미지 미리보기" />
+          <img id="pressedPreview" src="/assets/pressed.png" alt="누른 이미지 미리보기" />
           <input id="pressedFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
           <b>이미지 선택</b>
         </label>
@@ -125,6 +125,6 @@
     </section>
   </div>
 
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

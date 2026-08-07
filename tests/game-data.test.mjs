@@ -25,12 +25,13 @@ for (const campaign of CAMPAIGNS) {
     assert.equal(campaign.acts.length, 5);
     for (const event of campaign.events) {
       assert.ok(event.act >= 1 && event.act <= 5);
-      assert.equal(event.choices.length, 3);
+      assert.ok(event.choices.length === 3 || event.choices.length === 4);
       for (const choice of event.choices) {
         assert.ok(STAT_NAMES.includes(choice.stat));
         assert.ok(choice.dc >= 10 && choice.dc <= 20);
         assert.ok(choice.successEffect?.type);
         assert.ok(choice.failureEffect?.type);
+        if (choice.requiredJob) assert.ok(campaign.jobs.some(job => job.name === choice.requiredJob));
       }
     }
   });

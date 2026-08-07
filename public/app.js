@@ -3,6 +3,23 @@ import { DiceTheater } from './dice3d.js';
 const socket = window.io({ timeout:10_000, reconnection:true, reconnectionAttempts:Infinity, reconnectionDelay:500, reconnectionDelayMax:5_000 });
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+
+const REQUIRED_IDS = [
+  'app','hudTop','connectionText','roomCodeTop','leaveRoomBtn','homeView','entryView','lobbyView','storyView','combatView','endingView',
+  'openCreate','openJoin','entryBack','entryTitle','nameInput','codeInput','entrySubmit','entryError','roomCodeLobby','copyCode',
+  'playerSlots','campaignCarousel','campaignDetail','characterSummary','rollClassBtn','rollStatsBtn','startGameBtn','lobbyStatus',
+  'partyRail','actLabel','eventTitle','deckCount','eventText','choiceArea','gmBar','drawEventBtn','releaseActionBtn','continueBtn',
+  'myJobMini','myStatsMini','threatValue','threatTrack','storyFill','storyValue','chatLog','chatForm','chatInput',
+  'monsterName','monsterAC','monsterHpFill','monsterHpText','combatParty','attackBtn','combatLog',
+  'endingEyebrow','endingIcon','endingTitle','endingText','endingStats','endingHomeBtn',
+  'toast','resolutionModal','resolutionEyebrow','resolutionTitle','resolutionText','resolutionClose','diceOverlay','diceCanvas','diceRoller','dicePurpose','diceFinal','diceSub'
+];
+const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
+if (missingIds.length) {
+  document.body.innerHTML = `<main style="padding:32px;background:#100;color:#fff;font-family:system-ui;min-height:100vh"><h1>Chronicle Gate UI load error</h1><p>HTML과 JavaScript 버전이 서로 맞지 않습니다.</p><pre>${missingIds.join('\n')}</pre><p>GitHub의 public 폴더를 v3.2 완성본으로 통째로 교체한 뒤 Render에서 Clear build cache & deploy를 실행하세요.</p></main>`;
+  throw new Error(`Missing required DOM ids: ${missingIds.join(', ')}`);
+}
+
 const dice = new DiceTheater($('#diceCanvas'));
 let campaigns=[];let state=null;let mode='create';let roomCode=localStorage.getItem('cg_room')||'';let playerToken=localStorage.getItem('cg_token')||'';let diceQueue=Promise.resolve();
 const app=$('#app');
@@ -66,3 +83,5 @@ function renderChat(){if(!state)return;const el=$('#chatLog');if(!el)return;el.i
 $('#chatForm').onsubmit=e=>{e.preventDefault();const input=$('#chatInput'),text=input.value.trim();if(!text)return;socket.emit('chat:send',{roomCode,playerToken,text},r=>{if(r?.ok)input.value='';else toast(r?.error||'메시지 전송 실패')})};
 
 makeParticles();renderCampaigns();
+
+fetch('/api/config', { cache: 'no-store' }).then(r=>r.ok?r.json():null).then(cfg=>{ if(cfg?.version){ const el=$('#versionLabel'); if(el) el.textContent=`ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v${cfg.version}`; } }).catch(()=>{});

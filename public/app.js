@@ -1,87 +1,542 @@
 import { DiceTheater } from './dice3d.js';
 
-const socket = window.io({ timeout:10_000, reconnection:true, reconnectionAttempts:Infinity, reconnectionDelay:500, reconnectionDelayMax:5_000 });
+const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 const REQUIRED_IDS = [
-  'app','hudTop','connectionText','roomCodeTop','leaveRoomBtn','homeView','entryView','lobbyView','storyView','combatView','endingView',
-  'openCreate','openJoin','entryBack','entryTitle','nameInput','codeInput','entrySubmit','entryError','roomCodeLobby','copyCode',
-  'playerSlots','campaignCarousel','campaignDetail','characterSummary','rollClassBtn','rollStatsBtn','startGameBtn','lobbyStatus',
-  'partyRail','actLabel','eventTitle','deckCount','eventText','choiceArea','gmBar','drawEventBtn','releaseActionBtn','continueBtn',
-  'myJobMini','myStatsMini','threatValue','threatTrack','storyFill','storyValue','chatLog','chatForm','chatInput',
-  'monsterName','monsterAC','monsterHpFill','monsterHpText','combatParty','attackBtn','combatLog',
-  'endingEyebrow','endingIcon','endingTitle','endingText','endingStats','endingHomeBtn',
-  'toast','resolutionModal','resolutionEyebrow','resolutionTitle','resolutionText','resolutionClose','diceOverlay','diceCanvas','diceRoller','dicePurpose','diceFinal','diceSub'
+  'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'combatView', 'endingView',
+  'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'entryError',
+  'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus',
+  'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
+  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'storySceneImg', 'storySceneCaption', 'eventText', 'choiceArea', 'gmBar', 'drawEventBtn', 'finalizeChoiceBtn', 'releaseActionBtn', 'continueBtn',
+  'myJobMini', 'myStatsMini', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
+  'monsterName', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'attackBtn', 'combatLog',
+  'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
+  'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
+  'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceSub',
+  'helpBtn', 'helpModal', 'helpClose', 'helpBody', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'versionLabel'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
-  document.body.innerHTML = `<main style="padding:32px;background:#100;color:#fff;font-family:system-ui;min-height:100vh"><h1>Chronicle Gate UI load error</h1><p>HTML과 JavaScript 버전이 서로 맞지 않습니다.</p><pre>${missingIds.join('\n')}</pre><p>GitHub의 public 폴더를 v3.2 완성본으로 통째로 교체한 뒤 Render에서 Clear build cache & deploy를 실행하세요.</p></main>`;
+  document.body.innerHTML = `<main style="padding:32px;background:#100;color:#fff;font-family:system-ui;min-height:100vh"><h1>Chronicle Gate UI load error</h1><p>HTML과 JavaScript 버전이 서로 맞지 않습니다.</p><pre>${missingIds.join('\n')}</pre><p>public 폴더를 새 버전으로 통째로 교체한 뒤 Render에서 재배포해 주세요.</p></main>`;
   throw new Error(`Missing required DOM ids: ${missingIds.join(', ')}`);
 }
 
 const dice = new DiceTheater($('#diceCanvas'));
-let campaigns=[];let state=null;let mode='create';let roomCode=localStorage.getItem('cg_room')||'';let playerToken=localStorage.getItem('cg_token')||'';let diceQueue=Promise.resolve();
-const app=$('#app');
+let campaigns = [];
+let state = null;
+let mode = 'create';
+let roomCode = localStorage.getItem('cg_room') || '';
+let playerToken = localStorage.getItem('cg_token') || '';
+let diceQueue = Promise.resolve();
+const app = $('#app');
 
-function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2400)}
-function view(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$('#hudTop').classList.toggle('hidden',id==='homeView'||id==='entryView')}
-function me(){return state?.players?.find(p=>p.id===playerToken)}
-function isHost(){return !!me()?.host}
-function esc(s=''){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
-function mod(v){const m=Math.floor((v-10)/2);return (m>=0?'+':'')+m}
-function setWorld(c){if(!c)return;app.dataset.world=c.id;document.documentElement.style.setProperty('--accent',c.accent);document.documentElement.style.setProperty('--accent2',c.accent2)}
-function makeParticles(){const box=$('#particles');for(let i=0;i<38;i++){const p=document.createElement('i');p.className='p';p.style.left=Math.random()*100+'%';p.style.animationDuration=(9+Math.random()*18)+'s';p.style.animationDelay=(-Math.random()*20)+'s';p.style.opacity=.25+Math.random()*.6;p.style.transform=`scale(${.5+Math.random()*1.7})`;box.appendChild(p)}}
+const WORLD_META = {
+  ember: { motif: 'ASHEN THRONE', scene: ['잿빛 성채', '왕묘 회랑', '용암 성문', '죽은 왕의 제단', '마지막 즉위식'], boss: '재와 불꽃 사이에서 솟아난 고대 왕의 형상' },
+  neon: { motif: 'NEON ABYSS', scene: ['전광판 골목', '기억 암시장', '봉쇄구역 스카이라인', 'MOTHER-9 코어', '새벽의 데이터 도로'], boss: '형광빛 기계 촉수와 붉은 센서를 가진 거대 AI 아바타' },
+  abyss: { motif: 'LAST LIGHTHOUSE', scene: ['침수 통로', '관측창 심연', '해저 균열', '압력문 격납고', '상승용 잠수정 갑판'], boss: '깊은 바다의 거대한 촉수와 푸른 눈을 지닌 심연체' },
+  clock: { motif: 'THIRTEENTH BELL', scene: ['시계광장', '사라지는 거리', '시간 밀수 시장', '열세 번째 탑', '루프가 끝나는 새벽'], boss: '금빛 톱니와 검은 망토로 된 시간의 파수꾼' },
+  wild: { motif: 'STAR-EATEN WOODS', scene: ['별가루 숲길', '말하는 고목', '유성 대장간', '숲의 심장', '마지막 별이 뜬 밤하늘'], boss: '별빛을 삼킨 거대한 신수와 숲의 오오라' },
+};
 
-$('#openCreate').onclick=()=>openEntry('create');$('#openJoin').onclick=()=>openEntry('join');$('#entryBack').onclick=()=>view('homeView');
-function openEntry(m){mode=m;$('#entryEyebrow').textContent=m==='create'?'CREATE ROOM':'JOIN ROOM';$('#entryTitle').textContent=m==='create'?'새로운 연대기를 시작합니다.':'동료들이 기다리는 문을 엽니다.';$('#codeField').style.display=m==='create'?'none':'block';$('#entrySubmit').textContent=m==='create'?'방 만들기':'방 참가하기';$('#entryError').textContent='';view('entryView')}
-$('#entrySubmit').onclick=()=>{const name=$('#nameInput').value.trim();if(!name){$('#entryError').textContent='플레이어 이름을 입력하세요.';return}if(mode==='create'){socket.emit('room:create',{name},onJoined)}else{const code=$('#codeInput').value.trim().toUpperCase();if(code.length!==5){$('#entryError').textContent='5자리 방 코드를 입력하세요.';return}socket.emit('room:join',{name,roomCode:code},onJoined)}};
-function onJoined(res){if(!res?.ok){$('#entryError').textContent=res?.error||'연결에 실패했습니다.';return}roomCode=res.roomCode;playerToken=res.playerToken;localStorage.setItem('cg_room',roomCode);localStorage.setItem('cg_token',playerToken);state=res.state;renderState();if(state.phase==='resolution'&&state.lastResolution)showResolution(state.lastResolution);toast(`ROOM ${roomCode} 입장 완료`)}
-$('#copyCode').onclick=async()=>{const text=state?.code||'';try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(text);else throw new Error('clipboard unavailable');toast('방 코드를 복사했습니다.')}catch{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('방 코드를 복사했습니다.')}catch{toast(`방 코드: ${text}`)}ta.remove()}};
-
-socket.on('connect',()=>{ $('#connectionText').textContent='ONLINE';$('.live-dot').style.background='var(--good)'; if(roomCode&&playerToken&&!state){socket.emit('room:join',{roomCode,playerToken},res=>{if(res?.ok){state=res.state;renderState();if(state.phase==='resolution'&&state.lastResolution)showResolution(state.lastResolution)}else{localStorage.removeItem('cg_room');localStorage.removeItem('cg_token')}})} });
-socket.on('disconnect',()=>{$('#connectionText').textContent='RECONNECTING';$('.live-dot').style.background='var(--danger)'});
-socket.on('campaigns',list=>{campaigns=list;renderCampaigns()});
-socket.on('state',s=>{if(!roomCode||s.code===roomCode){state=s;renderState()}});
-socket.on('chat:new',entry=>{if(state){state.chat=[...(state.chat||[]),entry].slice(-80);renderChat()}});
-socket.on('resolution',r=>showResolution(r));
-socket.on('dice:roll',payload=>enqueueDice(payload));
-
-function enqueueDice(payload){diceQueue=diceQueue.then(async()=>{const c=state?.campaign||campaigns.find(x=>x.id===state?.campaignId)||campaigns[0];$('#diceOverlay').classList.add('show');$('#diceRoller').textContent=`${payload.rollerName} · ${payload.kind?.toUpperCase()||'ROLL'}`;$('#dicePurpose').textContent=payload.purpose;$('#diceFinal').textContent='';$('#diceSub').textContent='주사위가 테이블 위를 구릅니다…';await dice.roll({sides:payload.sides,result:payload.result,color:c?.accent||'#bf4a38',duration:payload.sides===20?2850:2350});$('#diceFinal').textContent=payload.sides===20&&payload.result===20?'NATURAL 20':payload.sides===20&&payload.result===1?'NATURAL 1':payload.result;$('#diceSub').textContent=payload.total!=null?`최종 ${payload.total} · 기준 ${payload.dc}${payload.damage?` · 피해 ${payload.damage}`:''}`:'운명이 결정되었습니다.';await new Promise(r=>setTimeout(r,900));$('#diceOverlay').classList.remove('show');await new Promise(r=>setTimeout(r,180))}).catch(console.error)}
-
-function renderState(){if(!state)return;roomCode=state.code;$('#roomCodeTop').textContent=state.code;$('#roomCodeLobby').textContent=state.code;if(state.campaign)setWorld(state.campaign);if(state.phase==='lobby')view('lobbyView');else if(state.phase==='combat')view('combatView');else if(state.phase==='ending')view('endingView');else view('storyView');renderLobby();renderStory();renderCombat();renderEnding();renderChat()}
-
-function renderCampaigns(){if(!campaigns.length)return;const box=$('#campaignCarousel');box.innerHTML=campaigns.map(c=>`<button class="campaign-pill ${state?.campaignId===c.id?'selected':''}" data-id="${c.id}"><i>${c.icon}</i><b>${esc(c.title)}</b></button>`).join('');box.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(!isHost())return toast('방장만 캠페인을 선택할 수 있습니다.');socket.emit('campaign:select',{roomCode,playerToken,campaignId:b.dataset.id},r=>!r?.ok&&toast(r.error))});renderCampaignDetail()}
-function renderCampaignDetail(){const c=state?.campaign||campaigns.find(c=>c.id===state?.campaignId);const el=$('#campaignDetail');if(!el)return;if(!c){el.innerHTML='<div class="unassigned">방장이 다섯 개의 연대기 중 하나를 선택합니다.</div>';return}el.innerHTML=`<div class="eyebrow">${esc(c.genre)}</div><h3>${c.icon} ${esc(c.title)}</h3><p>${esc(c.subtitle)}</p><p>${esc(c.intro)}</p><div class="acts">${c.acts.map((a,i)=>`<span>ACT ${i+1} · ${esc(a)}</span>`).join('')}</div>`}
-function renderLobby(){if(!state)return;renderCampaigns();const slots=$('#playerSlots');slots.innerHTML=state.players.map(p=>`<div class="player-slot ${p.connected?'':'offline'}"><div class="avatar">${esc(p.name[0]||'?')}</div><div><div class="pname">${esc(p.name)} ${p.host?'<span class="eyebrow">HOST</span>':''}</div><div class="ptags">${p.job?esc(p.job.name):'직업 미정'} · ${p.abilities?'능력치 생성 완료':'능력치 미정'}</div></div><div class="slot-state"><div class="${p.ready?'ready':'ready waiting'}">${p.connected?(p.ready?'READY':'PREPARING'):'OFFLINE'}</div>${isHost()&&!p.connected&&!p.host?`<button class="remove-slot" data-remove="${p.id}">REMOVE</button>`:''}</div></div>`).join('')+Array.from({length:Math.max(0,4-state.players.length)},()=>'<div class="empty-slot">동료를 기다리는 자리</div>').join('');slots.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>socket.emit('room:removePlayer',{roomCode,playerToken,targetPlayerId:btn.dataset.remove},r=>!r?.ok&&toast(r.error)));
-  const p=me();const cs=$('#characterSummary');if(!p?.job){cs.innerHTML='<div class="unassigned"><div><div style="font-size:42px;color:var(--accent)">◇</div><p>D6을 굴리면 이 세계의 여섯 직업 중 하나가 당신을 선택합니다.</p></div></div>'}else{cs.innerHTML=`<div class="job-big"><div class="job-rune">${state.campaign?.icon||'◆'}</div><div class="eyebrow">${p.job.prime} SPECIALIST</div><h3>${esc(p.job.name)}</h3><p>${esc(p.job.skill)}</p></div>${p.abilities?`<div class="stats-compact">${Object.entries(p.abilities).map(([k,v])=>`<div class="stat-mini"><span>${k}</span><b>${v.total}</b><em>${mod(v.total)}</em></div>`).join('')}</div>`:''}`}
-  $('#rollClassBtn').disabled=!state.campaignId;$('#rollStatsBtn').disabled=!p?.job;$('#startGameBtn').style.display=isHost()?'block':'none';const ready=state.players.length>=2&&state.players.every(x=>x.ready&&x.connected)&&state.campaignId;$('#startGameBtn').disabled=!ready;$('#campaignHint').textContent=isHost()?'클릭해 선택':'방장이 선택';$('#lobbyStatus').textContent=state.players.length<2?'최소 한 명의 동료가 더 필요합니다.':state.players.some(x=>!x.connected)?'오프라인 플레이어가 있습니다. 재접속 후 시작할 수 있습니다.':state.players.every(x=>x.ready)?'모든 동료의 캐릭터가 준비되었습니다.':'모든 플레이어가 직업과 능력치를 생성해야 합니다.';
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2400);
 }
-$('#rollClassBtn').onclick=()=>socket.emit('player:classRoll',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));$('#rollStatsBtn').onclick=()=>socket.emit('player:statsRoll',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));$('#startGameBtn').onclick=()=>socket.emit('game:start',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));
-
-function renderStory(){if(!state||state.phase==='lobby')return;const ev=state.currentEvent;$('#deckCount').textContent=state.deckCount;$('#threatValue').textContent=state.threat;$('#threatTrack').innerHTML=Array.from({length:8},(_,i)=>`<i class="${i<state.threat?'on':''}"></i>`).join('');$('#storyValue').textContent=`${state.story}/${state.targetStory||20}`;$('#storyFill').style.width=Math.min(100,state.story/(state.targetStory||20)*100)+'%';
-  $('#partyRail').innerHTML=`<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>`+state.players.map(p=>`<div class="party-card ${p.id===playerToken?'active':''}"><div class="top"><b>${esc(p.name)}</b><small>${p.inspiration} ✦</small></div><small>${esc(p.job?.name||'')}</small><div class="hp-line"><i style="width:${p.maxHp?Math.max(0,p.hp/p.maxHp*100):0}%"></i></div><small>HP ${p.hp}/${p.maxHp}</small></div>`).join('');
-  const p=me();$('#myJobMini').textContent=p?.job?.name||'UNASSIGNED';$('#myStatsMini').innerHTML=p?.abilities?Object.entries(p.abilities).map(([k,v])=>`<div class="stat-line"><span>${k}</span><b>${v.total} <i>${mod(v.total)}</i></b></div>`).join(''):'';
-  if(!ev){$('#actLabel').textContent='THE TABLE IS QUIET';$('#eventTitle').textContent=isHost()?'다음 카드를 뽑으세요.':'GM이 다음 장면을 준비하고 있습니다.';$('#eventText').textContent='덱의 다음 카드는 아직 아무도 모릅니다. 같은 사건은 정확히 두 장씩 존재하며, 뽑힌 카드는 덱에서 사라집니다.';$('#choiceArea').innerHTML=''}else{$('#actLabel').textContent=`ACT ${ev.act} · ${ev.actName}`;$('#eventTitle').textContent=ev.title;$('#eventText').textContent=ev.text;renderChoices(ev)}
-  $('#gmBar').style.display=isHost()?'flex':'none';$('#drawEventBtn').disabled=!!ev||state.phase!=='story';$('#releaseActionBtn').disabled=!state.activeChoice||state.phase!=='story';$('#continueBtn').disabled=state.phase!=='resolution';
+function view(id) {
+  $$('.view').forEach(v => v.classList.remove('active'));
+  $('#' + id).classList.add('active');
+  $('#hudTop').classList.toggle('hidden', id === 'homeView' || id === 'entryView');
 }
-function renderChoices(ev){const a=state.activeChoice;const box=$('#choiceArea');if(a){const mine=a.playerId===playerToken;box.innerHTML=`<div class="action-lock"><div><div class="eyebrow">ACTION DECLARED</div><b>${esc(a.playerName)}</b> — ${esc(a.choice.label)} <strong>${a.choice.stat} · DC ${a.choice.dc+(state.dcPenalty||0)}</strong></div>${mine&&state.phase==='story'?'<button class="primary" id="rollCheckBtn">D20 판정</button>':'<span class="eyebrow">판정 결과를 기다리는 중</span>'}</div>`;if(mine&&state.phase==='story')$('#rollCheckBtn').onclick=()=>socket.emit('event:roll',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));}else{box.innerHTML=ev.choices.map((c,i)=>`<button class="choice-card"><b>${i+1}. ${esc(c.label)}</b><small>${c.stat} · DC ${c.dc+(state.dcPenalty||0)}</small></button>`).join('');box.querySelectorAll('button').forEach((b,i)=>b.onclick=()=>socket.emit('event:claim',{roomCode,playerToken,choiceIndex:i},r=>!r?.ok&&toast(r.error)))}}
-$('#drawEventBtn').onclick=()=>socket.emit('event:draw',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));$('#releaseActionBtn').onclick=()=>socket.emit('event:release',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));$('#continueBtn').onclick=()=>socket.emit('event:continue',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));
+function me() { return state?.players?.find(p => p.id === playerToken); }
+function isHost() { return !!me()?.host; }
+function esc(s = '') { return String(s).replace(/[&<>'"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[m])); }
+function signedMod(v) { const m = Math.floor((Number(v || 10) - 10) / 2); return (m >= 0 ? '+' : '') + m; }
+function rawMod(v) { return Math.floor((Number(v || 10) - 10) / 2); }
+function setWorld(c) { if (!c) return; app.dataset.world = c.id; document.documentElement.style.setProperty('--accent', c.accent); document.documentElement.style.setProperty('--accent2', c.accent2); }
+function makeParticles() { const box = $('#particles'); for (let i = 0; i < 38; i++) { const p = document.createElement('i'); p.className = 'p'; p.style.left = Math.random() * 100 + '%'; p.style.animationDuration = (9 + Math.random() * 18) + 's'; p.style.animationDelay = (-Math.random() * 20) + 's'; p.style.opacity = .25 + Math.random() * .6; p.style.transform = `scale(${.5 + Math.random() * 1.7})`; box.appendChild(p); } }
+function currentCampaign() { return state?.campaign || campaigns.find(x => x.id === state?.campaignId) || campaigns[0] || null; }
+function sceneWord(campaignId, actIndex = 0) { return WORLD_META[campaignId]?.scene?.[Math.max(0, Math.min(4, actIndex))] || '장면'; }
+function svgUri(svg) { return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`; }
 
-function showResolution(r){if(!r)return;$('#resolutionEyebrow').textContent=r.ok?'SUCCESS':'FAILURE';$('#resolutionTitle').textContent=r.ok?'운명이 길을 열었습니다.':'주사위는 대가를 요구합니다.';$('#resolutionText').textContent=r.text||'';$('#resolutionModal').classList.add('show')}
-$('#resolutionClose').onclick=()=>$('#resolutionModal').classList.remove('show');
+function themedBackdrop(id) {
+  switch (id) {
+    case 'ember':
+      return `
+        <rect width="1600" height="800" fill="url(#g)"/>
+        <circle cx="1220" cy="132" r="86" fill="rgba(255,210,140,.22)"/>
+        <path d="M0 620 L160 440 L330 560 L470 370 L620 560 L770 310 L910 540 L1070 350 L1270 540 L1440 400 L1600 560 L1600 800 L0 800 Z" fill="rgba(14,10,15,.92)"/>
+        <path d="M770 318 L825 160 L875 318 Z M742 318 h156 v176 h-156z M705 494 h230 v70 h-230z" fill="rgba(255,240,214,.12)"/>
+        <path d="M0 690 C210 640 380 730 560 670 S930 708 1120 664 S1425 716 1600 664 L1600 800 L0 800 Z" fill="rgba(255,110,69,.18)"/>
+      `;
+    case 'neon':
+      return `
+        <rect width="1600" height="800" fill="url(#g)"/>
+        <path d="M0 690 L0 540 L90 540 L90 440 L180 440 L180 320 L245 320 L245 470 L330 470 L330 290 L430 290 L430 560 L520 560 L520 360 L620 360 L620 500 L705 500 L705 265 L795 265 L795 585 L890 585 L890 345 L995 345 L995 515 L1088 515 L1088 410 L1185 410 L1185 580 L1286 580 L1286 330 L1395 330 L1395 515 L1490 515 L1490 440 L1600 440 L1600 800 L0 800 Z" fill="rgba(4,10,19,.92)"/>
+        <path d="M0 655 H1600" stroke="rgba(55,229,255,.26)" stroke-width="2"/>
+        <path d="M0 705 H1600" stroke="rgba(208,91,255,.18)" stroke-width="2"/>
+        <g stroke="rgba(255,255,255,.08)">${Array.from({ length: 14 }, (_, i) => `<path d="M${100 + i * 100} 80 V800"/>`).join('')}</g>
+      `;
+    case 'abyss':
+      return `
+        <rect width="1600" height="800" fill="url(#g)"/>
+        <ellipse cx="815" cy="140" rx="120" ry="70" fill="rgba(145,255,251,.15)"/>
+        <path d="M0 0 H1600 V800 H0 Z" fill="rgba(255,255,255,.02)"/>
+        <path d="M0 400 C210 450 410 335 620 380 S1040 470 1260 395 S1440 360 1600 412 V800 H0 Z" fill="rgba(9,24,40,.82)"/>
+        <path d="M380 690 C340 552 456 525 450 430 C445 360 392 324 418 250" stroke="rgba(120,255,221,.26)" stroke-width="18" fill="none" stroke-linecap="round"/>
+        <path d="M1180 700 C1226 555 1114 515 1120 435 C1128 360 1188 312 1165 232" stroke="rgba(63,198,255,.24)" stroke-width="18" fill="none" stroke-linecap="round"/>
+      `;
+    case 'clock':
+      return `
+        <rect width="1600" height="800" fill="url(#g)"/>
+        <circle cx="1170" cy="170" r="120" fill="rgba(240,202,98,.14)"/>
+        <circle cx="1170" cy="170" r="82" fill="none" stroke="rgba(240,202,98,.35)" stroke-width="6"/>
+        <path d="M1170 170 L1170 108" stroke="rgba(240,202,98,.5)" stroke-width="6" stroke-linecap="round"/>
+        <path d="M1170 170 L1218 196" stroke="rgba(240,202,98,.5)" stroke-width="6" stroke-linecap="round"/>
+        <path d="M140 690 L300 280 L410 280 L570 690 Z M286 280 h140 v-110 h-140z" fill="rgba(8,14,21,.85)"/>
+        <g fill="none" stroke="rgba(115,219,255,.2)" stroke-width="6"><circle cx="930" cy="530" r="86"/><circle cx="1014" cy="530" r="46"/><circle cx="868" cy="588" r="42"/></g>
+      `;
+    case 'wild':
+      return `
+        <rect width="1600" height="800" fill="url(#g)"/>
+        <g fill="rgba(216,132,255,.55)">${Array.from({ length: 18 }, (_, i) => `<circle cx="${90 + (i * 82) % 1460}" cy="${85 + (i * 41) % 180}" r="${1 + (i % 3)}"/>`).join('')}</g>
+        <path d="M0 680 C220 610 348 685 560 630 S948 720 1210 642 S1450 690 1600 628 V800 H0 Z" fill="rgba(18,28,22,.86)"/>
+        <g fill="rgba(9,17,12,.88)"><path d="M180 725 l60-220 52 220z"/><path d="M430 725 l85-280 72 280z"/><path d="M1030 725 l72-245 66 245z"/><path d="M1320 725 l92-300 82 300z"/></g>
+        <path d="M690 230 l34 60 68 10 -50 46 12 66 -64-34 -60 34 12-66 -48-46 66-10z" fill="rgba(124,233,129,.44)"/>
+      `;
+    default:
+      return `<rect width="1600" height="800" fill="url(#g)"/>`;
+  }
+}
 
-function renderCombat(){if(!state||state.phase!=='combat'||!state.monster)return;const m=state.monster;$('#monsterName').textContent=m.name;$('#monsterAC').textContent=m.ac;$('#monsterHpFill').style.width=Math.max(0,m.hp/m.maxHp*100)+'%';$('#monsterHpText').textContent=`${m.hp} / ${m.maxHp}`;$('#combatParty').innerHTML=state.players.map(p=>`<div class="combat-member ${m.acted?.includes(p.id)?'acted':''} ${p.connected?'':'offline'}"><b>${esc(p.name)}</b><div>${esc(p.job?.name||'')}</div><small>HP ${p.hp}/${p.maxHp}${m.acted?.includes(p.id)?' · 행동 완료':''}</small></div>`).join('');const p=me();const acted=!!m.acted?.includes(playerToken);$('#attackBtn').disabled=!p||p.hp<=0||acted||!p.connected;$('#attackBtn').textContent=acted?'이번 라운드 행동 완료':'D20 공격';$('#combatLog').innerHTML=`<span class="combat-round">ROUND ${m.round||1}</span> · ${p?.job?.prime||'근력'} 수정치로 공격 · D20 vs AC ${m.ac}`}
-$('#attackBtn').onclick=()=>socket.emit('combat:attack',{roomCode,playerToken},r=>!r?.ok&&toast(r.error));
+function artSvg(c, title, subtitle, kicker) {
+  return svgUri(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 800">
+    <defs>
+      <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0%" stop-color="${c?.accent || '#935'}"/>
+        <stop offset="100%" stop-color="#05070d"/>
+      </linearGradient>
+      <linearGradient id="h" x1="0" x2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,.22)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
+    </defs>
+    ${themedBackdrop(c?.id)}
+    <rect x="70" y="72" width="1460" height="654" rx="28" fill="none" stroke="rgba(255,255,255,.18)"/>
+    <rect x="95" y="96" width="560" height="208" rx="22" fill="rgba(5,8,13,.42)" stroke="rgba(255,255,255,.08)"/>
+    <text x="135" y="145" fill="${c?.accent2 || '#fff'}" font-size="28" font-family="Orbitron, sans-serif" letter-spacing="5">${esc(kicker)}</text>
+    <text x="135" y="210" fill="#fff6ed" font-size="58" font-weight="800" font-family="Noto Serif KR, serif">${esc(title)}</text>
+    <text x="135" y="258" fill="rgba(255,255,255,.78)" font-size="25" font-family="Noto Serif KR, serif">${esc(subtitle)}</text>
+    <path d="M95 332 h860" stroke="url(#h)" stroke-width="2"/>
+  </svg>`);
+}
 
+function coverArt(c) {
+  return artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE');
+}
+function storyArt(c, ev) {
+  const actIndex = Math.max(0, (ev?.act || 1) - 1);
+  const title = ev?.title || c?.title || '다음 장면';
+  const subtitle = ev?.monster ? `${sceneWord(c?.id, actIndex)} · 위협 ${ev.monster}의 기척이 느껴집니다.` : `${sceneWord(c?.id, actIndex)} · 이번 장면은 투표로 선택합니다.`;
+  return artSvg(c, title, subtitle, ev ? `ACT ${ev.act} · ${ev.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'));
+}
+function monsterArt(c, monster) {
+  return artSvg(c, monster || 'UNKNOWN', `${WORLD_META[c?.id]?.boss || '보스 전투'} · 동료 전원이 차례로 공격할 수 있습니다.`, 'BOSS ENCOUNTER');
+}
+function sendChat(inputSelector) {
+  const input = $(inputSelector);
+  const text = input.value.trim();
+  if (!text) return;
+  socket.emit('chat:send', { roomCode, playerToken, text }, r => {
+    if (r?.ok) input.value = '';
+    else toast(r?.error || '메시지 전송 실패');
+  });
+}
+function everyoneVoted(choiceVotes = {}) {
+  return state?.players?.filter(p => p.connected && p.hp > 0).every(p => Number.isInteger(Number(choiceVotes[p.id])));
+}
 
-function renderEnding(){if(!state||state.phase!=='ending')return;const e=state.ending||{};$('#endingEyebrow').textContent=e.victory?'CHRONICLE COMPLETE':'CHRONICLE FALLEN';$('#endingIcon').textContent=state.campaign?.icon||'◆';$('#endingTitle').textContent=e.title||'연대기가 끝났습니다.';$('#endingText').textContent=e.text||'';$('#endingStats').innerHTML=`<span>STORY ${state.story}/${state.targetStory||20}</span><span>THREAT ${state.threat}/${state.maxThreat||8}</span><span>CARDS ${state.discardCount} USED</span><span>PLAYERS ${state.players.length}</span>`}
-$('#endingHomeBtn').onclick=()=>{localStorage.removeItem('cg_room');localStorage.removeItem('cg_token');roomCode='';playerToken='';state=null;location.reload()};
-$('#leaveRoomBtn').onclick=()=>{if(!state)return;if(state.phase!=='lobby')return toast('진행 중인 세션은 자리를 보존합니다. 탭을 닫았다가 같은 기기에서 재접속하세요.');socket.emit('room:leave',{roomCode,playerToken},res=>{if(!res?.ok)return toast(res?.error||'나가기 실패');localStorage.removeItem('cg_room');localStorage.removeItem('cg_token');roomCode='';playerToken='';state=null;view('homeView');toast('방에서 나왔습니다.')})};
+$('#openCreate').onclick = () => openEntry('create');
+$('#openJoin').onclick = () => openEntry('join');
+$('#entryBack').onclick = () => view('homeView');
+function openEntry(m) {
+  mode = m;
+  $('#entryEyebrow').textContent = m === 'create' ? 'CREATE ROOM' : 'JOIN ROOM';
+  $('#entryTitle').textContent = m === 'create' ? '새로운 연대기를 시작합니다.' : '동료들이 기다리는 문을 엽니다.';
+  $('#codeField').style.display = m === 'create' ? 'none' : 'block';
+  $('#entrySubmit').textContent = m === 'create' ? '방 만들기' : '방 참가하기';
+  $('#entryError').textContent = '';
+  view('entryView');
+}
+$('#entrySubmit').onclick = () => {
+  const name = $('#nameInput').value.trim();
+  if (!name) { $('#entryError').textContent = '플레이어 이름을 입력하세요.'; return; }
+  if (mode === 'create') socket.emit('room:create', { name }, onJoined);
+  else {
+    const code = $('#codeInput').value.trim().toUpperCase();
+    if (code.length !== 5) { $('#entryError').textContent = '5자리 방 코드를 입력하세요.'; return; }
+    socket.emit('room:join', { name, roomCode: code }, onJoined);
+  }
+};
+function onJoined(res) {
+  if (!res?.ok) { $('#entryError').textContent = res?.error || '연결에 실패했습니다.'; return; }
+  roomCode = res.roomCode;
+  playerToken = res.playerToken;
+  localStorage.setItem('cg_room', roomCode);
+  localStorage.setItem('cg_token', playerToken);
+  state = res.state;
+  renderState();
+  if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
+  toast(`ROOM ${roomCode} 입장 완료`);
+}
+$('#copyCode').onclick = async () => {
+  const text = state?.code || '';
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+    else throw new Error('clipboard unavailable');
+    toast('방 코드를 복사했습니다.');
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('방 코드를 복사했습니다.'); }
+    catch { toast(`방 코드: ${text}`); }
+    ta.remove();
+  }
+};
 
-function renderChat(){if(!state)return;const el=$('#chatLog');if(!el)return;el.innerHTML=(state.chat||[]).map(m=>`<div class="chat-msg ${m.type||''}">${m.author?`<b>${esc(m.author)}</b>`:''}${esc(m.text)}</div>`).join('');el.scrollTop=el.scrollHeight}
-$('#chatForm').onsubmit=e=>{e.preventDefault();const input=$('#chatInput'),text=input.value.trim();if(!text)return;socket.emit('chat:send',{roomCode,playerToken,text},r=>{if(r?.ok)input.value='';else toast(r?.error||'메시지 전송 실패')})};
+socket.on('connect', () => {
+  $('#connectionText').textContent = 'ONLINE';
+  $('.live-dot').style.background = 'var(--good)';
+  if (roomCode && playerToken && !state) {
+    socket.emit('room:join', { roomCode, playerToken }, res => {
+      if (res?.ok) {
+        state = res.state;
+        renderState();
+        if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
+      } else {
+        localStorage.removeItem('cg_room');
+        localStorage.removeItem('cg_token');
+      }
+    });
+  }
+});
+socket.on('disconnect', () => { $('#connectionText').textContent = 'RECONNECTING'; $('.live-dot').style.background = 'var(--danger)'; });
+socket.on('campaigns', list => { campaigns = list; renderCampaigns(); });
+socket.on('state', s => { if (!roomCode || s.code === roomCode) { state = s; renderState(); } });
+socket.on('chat:new', entry => {
+  if (state) {
+    const ids = new Set((state.chat || []).map(item => item.id));
+    if (!ids.has(entry.id)) state.chat = [...(state.chat || []), entry].slice(-120);
+    renderChat();
+  }
+});
+socket.on('resolution', r => showResolution(r));
+socket.on('dice:roll', payload => enqueueDice(payload));
 
-makeParticles();renderCampaigns();
+function enqueueDice(payload) {
+  diceQueue = diceQueue.then(async () => {
+    const c = currentCampaign();
+    $('#diceOverlay').classList.add('show');
+    $('#diceRoller').textContent = `${payload.rollerName} · ${payload.kind?.toUpperCase() || 'ROLL'}`;
+    $('#dicePurpose').textContent = payload.purpose;
+    $('#diceFinal').textContent = '';
+    $('#diceFinal').classList.remove('is-result');
+    $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
+    await dice.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', duration: payload.sides === 20 ? 2850 : 2350 });
+    $('#diceFinal').textContent = payload.sides === 20 && payload.result === 20 ? 'NATURAL 20' : payload.sides === 20 && payload.result === 1 ? 'NATURAL 1' : `결과 ${payload.result}`;
+    $('#diceFinal').classList.add('is-result');
+    $('#diceSub').textContent = payload.total != null ? `최종 ${payload.total} · 기준 ${payload.dc}${payload.damage ? ` · 피해 ${payload.damage}` : ''}` : '운명이 결정되었습니다.';
+    await new Promise(r => setTimeout(r, 1000));
+    $('#diceOverlay').classList.remove('show');
+    await new Promise(r => setTimeout(r, 180));
+  }).catch(console.error);
+}
 
-fetch('/api/config', { cache: 'no-store' }).then(r=>r.ok?r.json():null).then(cfg=>{ if(cfg?.version){ const el=$('#versionLabel'); if(el) el.textContent=`ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v${cfg.version}`; } }).catch(()=>{});
+function renderState() {
+  if (!state) return;
+  roomCode = state.code;
+  $('#roomCodeTop').textContent = state.code;
+  $('#roomCodeLobby').textContent = state.code;
+  if (state.campaign) setWorld(state.campaign);
+  if (state.phase === 'lobby') view('lobbyView');
+  else if (state.phase === 'combat') view('combatView');
+  else if (state.phase === 'ending') view('endingView');
+  else view('storyView');
+  renderLobby();
+  renderStory();
+  renderCombat();
+  renderEnding();
+  renderChat();
+  renderHelp();
+}
+
+function renderCampaigns() {
+  if (!campaigns.length) return;
+  const box = $('#campaignCarousel');
+  box.innerHTML = campaigns.map(c => `<button class="campaign-pill ${state?.campaignId === c.id ? 'selected' : ''}" data-id="${c.id}"><i>${c.icon}</i><b>${esc(c.title)}</b></button>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => {
+    if (!isHost()) return toast('방장만 캠페인을 선택할 수 있습니다.');
+    socket.emit('campaign:select', { roomCode, playerToken, campaignId: b.dataset.id }, r => !r?.ok && toast(r.error));
+  });
+  renderCampaignDetail();
+}
+function renderCampaignDetail() {
+  const c = currentCampaign();
+  const el = $('#campaignDetail');
+  if (!el) return;
+  if (!c) {
+    el.innerHTML = '<div class="unassigned">방장이 다섯 개의 연대기 중 하나를 선택합니다.</div>';
+    return;
+  }
+  el.innerHTML = `
+    <img class="campaign-cover" src="${coverArt(c)}" alt="${esc(c.title)} 대표 이미지">
+    <div class="eyebrow">${esc(c.genre)}</div>
+    <h3>${c.icon} ${esc(c.title)}</h3>
+    <p>${esc(c.subtitle)}</p>
+    <p>${esc(c.intro)}</p>
+    <div class="acts">${c.acts.map((a, i) => `<span>ACT ${i + 1} · ${esc(a)}</span>`).join('')}</div>`;
+}
+function renderLobby() {
+  if (!state) return;
+  renderCampaigns();
+  const slots = $('#playerSlots');
+  slots.innerHTML = state.players.map(p => `
+    <div class="player-slot ${p.connected ? '' : 'offline'}">
+      <div class="avatar">${esc(p.name[0] || '?')}</div>
+      <div>
+        <div class="pname">${esc(p.name)} ${p.host ? '<span class="eyebrow">HOST</span>' : ''}</div>
+        <div class="ptags">${p.job ? esc(p.job.name) : '직업 미정'} · ${p.abilities ? '능력치 생성 완료' : '능력치 미정'}</div>
+      </div>
+      <div class="slot-state"><div class="${p.ready ? 'ready' : 'ready waiting'}">${p.connected ? (p.ready ? 'READY' : 'PREPARING') : 'OFFLINE'}</div>${isHost() && !p.connected && !p.host ? `<button class="remove-slot" data-remove="${p.id}" type="button">REMOVE</button>` : ''}</div>
+    </div>`).join('') + Array.from({ length: Math.max(0, 4 - state.players.length) }, () => '<div class="empty-slot">동료를 기다리는 자리</div>').join('');
+  slots.querySelectorAll('[data-remove]').forEach(btn => btn.onclick = () => socket.emit('room:removePlayer', { roomCode, playerToken, targetPlayerId: btn.dataset.remove }, r => !r?.ok && toast(r.error)));
+
+  const p = me();
+  const cs = $('#characterSummary');
+  if (!p?.job) {
+    cs.innerHTML = '<div class="unassigned"><div><div style="font-size:42px;color:var(--accent)">◇</div><p>D6을 굴리면 이 세계의 여섯 직업 중 하나가 당신을 선택합니다. 각 스토리마다 직업/능력치는 한 번만 정할 수 있습니다.</p></div></div>';
+  } else {
+    cs.innerHTML = `<div class="job-big"><div class="job-rune">${state.campaign?.icon || '◆'}</div><div class="eyebrow">${p.job.prime} SPECIALIST</div><h3>${esc(p.job.name)}</h3><p>${esc(p.job.skill)}</p></div>${p.abilities ? `<div class="stats-compact">${Object.entries(p.abilities).map(([k, v]) => `<div class="stat-mini"><span>${k}</span><b>${v.total}</b><em>${signedMod(v.total)}</em></div>`).join('')}</div>` : '<div class="unassigned"><p>직업이 정해졌습니다. 이제 4D6으로 능력치를 생성하세요.</p></div>'}`;
+  }
+  $('#rollClassBtn').disabled = !state.campaignId || !!p?.job;
+  $('#rollStatsBtn').disabled = !p?.job || !!p?.abilities;
+  $('#startGameBtn').style.display = isHost() ? 'block' : 'none';
+  const ready = state.players.length >= 2 && state.players.every(x => x.ready && x.connected) && state.campaignId;
+  $('#startGameBtn').disabled = !ready;
+  $('#campaignHint').textContent = isHost() ? '클릭해 선택' : '방장이 선택';
+  $('#lobbyStatus').textContent = state.players.length < 2 ? '최소 한 명의 동료가 더 필요합니다.' : state.players.some(x => !x.connected) ? '오프라인 플레이어가 있습니다. 재접속 후 시작할 수 있습니다.' : state.players.every(x => x.ready) ? '모든 동료의 캐릭터가 준비되었습니다.' : '모든 플레이어가 직업과 능력치를 생성해야 합니다.';
+}
+$('#rollClassBtn').onclick = () => socket.emit('player:classRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#rollStatsBtn').onclick = () => socket.emit('player:statsRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#startGameBtn').onclick = () => socket.emit('game:start', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+
+function renderStory() {
+  if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
+  const c = currentCampaign();
+  const ev = state.currentEvent;
+  $('#deckCount').textContent = state.deckCount;
+  $('#threatValue').textContent = state.threat;
+  $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
+  $('#storyValue').textContent = `${state.story}/${state.targetStory || 20}`;
+  $('#storyFill').style.width = Math.min(100, state.story / (state.targetStory || 20) * 100) + '%';
+  $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(p => `<div class="party-card ${p.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(p.name)}</b><small>${p.inspiration} ✦</small></div><small>${esc(p.job?.name || '')}</small><div class="hp-line"><i style="width:${p.maxHp ? Math.max(0, p.hp / p.maxHp * 100) : 0}%"></i></div><small>HP ${p.hp}/${p.maxHp}</small></div>`).join('');
+  const p = me();
+  $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
+  $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
+
+  $('#turnBanner').textContent = state.turnPlayerName ? `이번 장면의 행동자 순서: ${state.turnPlayerName} → 장면 해결 후 다음 사람에게 넘어갑니다.` : '행동 순서를 준비 중입니다.';
+  $('#storySceneImg').src = storyArt(c, ev || { act: Math.min(5, 1 + Math.floor((state.story || 0) / 4)), actName: c?.acts?.[Math.min(4, Math.floor((state.story || 0) / 4))], title: c?.title });
+  $('#storySceneCaption').textContent = ev ? `${ev.actName} · ${sceneWord(c?.id, Math.max(0, ev.act - 1))} · 투표로 행동을 정하고 ${state.turnPlayerName || '현재 차례 플레이어'}가 판정합니다.` : `${c?.title || '연대기'}의 메인 스토리를 따라가며 중간중간 이벤트 카드를 해결합니다.`;
+
+  if (!ev) {
+    $('#actLabel').textContent = 'THE TABLE IS QUIET';
+    $('#eventTitle').textContent = isHost() ? '다음 카드를 뽑으세요.' : 'GM이 다음 장면을 준비하고 있습니다.';
+    $('#eventText').textContent = '이 연대기에는 큰 줄거리와 60장의 이벤트 카드가 있습니다. 방장이 카드를 뽑으면 모두가 투표로 행동을 고르고, 현재 차례의 플레이어가 판정합니다.';
+    $('#choiceArea').innerHTML = '';
+  } else {
+    $('#actLabel').textContent = `ACT ${ev.act} · ${ev.actName}`;
+    $('#eventTitle').textContent = ev.title;
+    $('#eventText').textContent = ev.text;
+    renderChoices(ev);
+  }
+  $('#gmBar').style.display = isHost() ? 'flex' : 'none';
+  $('#drawEventBtn').disabled = !!ev || state.phase !== 'story';
+  $('#finalizeChoiceBtn').disabled = !ev || !!state.activeChoice || state.phase !== 'story' || !Object.keys(state.choiceVotes || {}).length;
+  $('#releaseActionBtn').disabled = (!state.activeChoice && !Object.keys(state.choiceVotes || {}).length) || state.phase !== 'story';
+  $('#continueBtn').disabled = state.phase !== 'resolution';
+}
+function renderChoices(ev) {
+  const active = state.activeChoice;
+  const box = $('#choiceArea');
+  const p = me();
+  if (active) {
+    box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">ACTION DECLARED</div><b>${esc(active.playerName)}</b> — ${esc(active.choice.label)} <strong>${active.choice.stat} · DC ${active.choice.dc + (state.dcPenalty || 0)}</strong><div class="vote-chip">투표 ${active.voteCount || 0}표 · 판정자는 차례 플레이어입니다.</div></div>${active.playerId === playerToken && state.phase === 'story' ? '<button class="primary" id="rollCheckBtn" type="button">D20 판정</button>' : '<span class="eyebrow">판정 결과를 기다리는 중</span>'}</div>`;
+    if (active.playerId === playerToken && state.phase === 'story') $('#rollCheckBtn').onclick = () => socket.emit('event:roll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+    return;
+  }
+  const votes = state.choiceVotes || {};
+  const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
+  const highest = Math.max(0, ...counts);
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">TABLE VOTE</span><b>${esc(state.turnPlayerName || '차례 플레이어')}</b>가 최종 판정을 담당합니다.</div><div>${everyoneVoted(votes) ? '모든 생존 플레이어가 투표했습니다. 자동 확정됩니다.' : `연결된 생존 플레이어가 투표 중 · 현재 ${Object.keys(votes).length}표`}</div></div>` + ev.choices.map((c, i) => {
+    const mine = Number(votes[playerToken]) === i;
+    const leader = counts[i] > 0 && counts[i] === highest;
+    return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''}" type="button"><b>${i + 1}. ${esc(c.label)}</b><small>${c.stat} · DC ${c.dc + (state.dcPenalty || 0)}</small><div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
+  }).join('');
+  box.querySelectorAll('.choice-card').forEach((b, i) => b.onclick = () => {
+    if (!p || p.hp <= 0) return toast('쓰러진 캐릭터는 투표할 수 없습니다.');
+    socket.emit('event:vote', { roomCode, playerToken, choiceIndex: i }, r => !r?.ok && toast(r.error));
+  });
+}
+$('#drawEventBtn').onclick = () => socket.emit('event:draw', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#finalizeChoiceBtn').onclick = () => socket.emit('event:finalizeChoice', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#releaseActionBtn').onclick = () => socket.emit('event:release', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#continueBtn').onclick = () => socket.emit('event:continue', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+
+function showResolution(r) {
+  if (!r) return;
+  $('#resolutionEyebrow').textContent = r.ok ? 'SUCCESS' : 'FAILURE';
+  $('#resolutionTitle').textContent = r.ok ? '운명이 길을 열었습니다.' : '주사위는 대가를 요구합니다.';
+  $('#resolutionText').textContent = r.text || '';
+  $('#resolutionModal').classList.add('show');
+}
+$('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');
+
+function renderCombat() {
+  if (!state || state.phase !== 'combat' || !state.monster) return;
+  const m = state.monster;
+  const c = currentCampaign();
+  $('#monsterName').textContent = m.name;
+  $('#combatSceneImg').src = monsterArt(c, m.name);
+  $('#monsterAC').textContent = m.ac;
+  $('#monsterHpFill').style.width = Math.max(0, m.hp / m.maxHp * 100) + '%';
+  $('#monsterHpText').textContent = `${m.hp} / ${m.maxHp}`;
+  $('#combatParty').innerHTML = state.players.map(p => `<div class="combat-member ${m.acted?.includes(p.id) ? 'acted' : ''} ${p.connected ? '' : 'offline'}"><b>${esc(p.name)}</b><div>${esc(p.job?.name || '')}</div><small>HP ${p.hp}/${p.maxHp}${m.acted?.includes(p.id) ? ' · 행동 완료' : ''}</small></div>`).join('');
+  const p = me();
+  const acted = !!m.acted?.includes(playerToken);
+  $('#attackBtn').disabled = !p || p.hp <= 0 || acted || !p.connected;
+  $('#attackBtn').textContent = acted ? '이번 라운드 행동 완료' : 'D20 공격';
+  const atkStat = p?.job?.prime || '근력';
+  $('#combatLog').innerHTML = `<span class="combat-round">ROUND ${m.round || 1}</span> · ${atkStat} 수정치(${signedMod(p?.abilities?.[atkStat]?.total || 10)})로 공격 · D20 vs AC ${m.ac}`;
+}
+$('#attackBtn').onclick = () => socket.emit('combat:attack', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+
+function renderEnding() {
+  if (!state || state.phase !== 'ending') return;
+  const e = state.ending || {};
+  $('#endingEyebrow').textContent = e.victory ? 'CHRONICLE COMPLETE' : 'CHRONICLE FALLEN';
+  $('#endingIcon').textContent = state.campaign?.icon || '◆';
+  $('#endingTitle').textContent = e.title || '연대기가 끝났습니다.';
+  $('#endingText').textContent = e.text || '';
+  $('#endingStats').innerHTML = `<span>STORY ${state.story}/${state.targetStory || 20}</span><span>THREAT ${state.threat}/${state.maxThreat || 8}</span><span>CARDS ${state.discardCount} USED</span><span>PLAYERS ${state.players.length}</span>`;
+}
+$('#endingHomeBtn').onclick = () => {
+  localStorage.removeItem('cg_room');
+  localStorage.removeItem('cg_token');
+  roomCode = '';
+  playerToken = '';
+  state = null;
+  location.reload();
+};
+$('#leaveRoomBtn').onclick = () => {
+  if (!state) return;
+  if (state.phase !== 'lobby') return toast('진행 중인 세션은 자리를 보존합니다. 탭을 닫았다가 같은 기기에서 재접속하세요.');
+  socket.emit('room:leave', { roomCode, playerToken }, res => {
+    if (!res?.ok) return toast(res?.error || '나가기 실패');
+    localStorage.removeItem('cg_room');
+    localStorage.removeItem('cg_token');
+    roomCode = '';
+    playerToken = '';
+    state = null;
+    view('homeView');
+    toast('방에서 나왔습니다.');
+  });
+};
+
+function renderChat() {
+  if (!state) return;
+  const markup = (state.chat || []).map(m => `<div class="chat-msg ${m.type || ''}">${m.author ? `<b>${esc(m.author)}</b>` : ''}${esc(m.text)}</div>`).join('');
+  const storyLog = $('#chatLog');
+  const lobbyLog = $('#lobbyChatLog');
+  if (storyLog) { storyLog.innerHTML = markup; storyLog.scrollTop = storyLog.scrollHeight; }
+  if (lobbyLog) { lobbyLog.innerHTML = markup; lobbyLog.scrollTop = lobbyLog.scrollHeight; }
+}
+$('#chatForm').onsubmit = e => { e.preventDefault(); sendChat('#chatInput'); };
+$('#lobbyChatForm').onsubmit = e => { e.preventDefault(); sendChat('#lobbyChatInput'); };
+
+function renderHelp() {
+  const phase = state?.phase || 'home';
+  const c = currentCampaign();
+  const helpSections = [
+    {
+      title: '기본 진행 순서',
+      items: [
+        '로비에서 스토리를 고른 뒤 각 플레이어는 D6 직업 배정과 4D6 능력치 생성을 각 스토리마다 1번씩만 진행합니다.',
+        '게임 시작 후에는 메인 스토리를 따라 이벤트 카드를 뽑고, 모두가 선택지에 투표합니다.',
+        `가장 많은 표를 받은 선택지가 확정되며, 현재 차례 플레이어(${esc(state?.turnPlayerName || '미정')})가 실제 판정을 굴립니다.`,
+        '전투에서는 연결된 생존 플레이어가 모두 한 번씩 행동하면 몬스터가 반격합니다.',
+      ],
+    },
+    {
+      title: '현재 상태 안내',
+      text: phase === 'lobby'
+        ? `현재는 로비입니다. ${c ? `선택된 연대기: ${c.title}.` : '아직 연대기를 선택하지 않았습니다.'} 게임 시작 전에도 채팅이 가능합니다.`
+        : phase === 'combat'
+          ? '현재는 전투 중입니다. 자신의 공격 버튼이 비활성화되어 있다면 이미 이번 라운드에 행동했거나 쓰러진 상태입니다.'
+          : phase === 'ending'
+            ? '현재는 엔딩 화면입니다. 새 연대기를 시작하려면 버튼을 눌러 메인으로 돌아가세요.'
+            : '현재는 스토리 진행 중입니다. 이벤트 카드를 뽑은 뒤 투표를 마치면 차례 플레이어가 판정을 수행합니다.',
+    },
+    {
+      title: '주사위 읽는 법',
+      items: [
+        '주사위 애니메이션이 끝나면 빛나는 면이 실제 결과입니다.',
+        'D20 판정은 결과값 + 해당 능력치 수정치를 더해 DC 이상이면 성공합니다.',
+        'NATURAL 20은 대성공, NATURAL 1은 치명적 실패로 표시됩니다.',
+      ],
+    },
+  ];
+  $('#helpBody').innerHTML = helpSections.map(section => section.items
+    ? `<div class="help-section"><h3>${esc(section.title)}</h3><ul>${section.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul></div>`
+    : `<div class="help-section"><h3>${esc(section.title)}</h3><p>${esc(section.text)}</p></div>`).join('');
+
+  const vote = state?.abandonVote;
+  const connectedCount = state?.players?.filter(p => p.connected).length || 0;
+  if (vote) {
+    const approvedPlayers = state.players.filter(p => (vote.approvals || []).includes(p.id)).map(p => p.name);
+    $('#abandonVoteBox').innerHTML = `<strong>연대기 포기 투표 진행 중</strong><br>${esc(vote.requestedByName)} 님이 투표를 시작했습니다.<br>찬성 ${approvedPlayers.length}/${connectedCount}: ${esc(approvedPlayers.join(', ') || '없음')}<br>전원 찬성 시 현재 진행을 포기하고 로비의 스토리 선택 화면으로 돌아갑니다.`;
+  } else {
+    $('#abandonVoteBox').textContent = 'ESC 메뉴에서 현재 연대기 포기 투표를 시작할 수 있습니다. 모든 접속자의 동의가 있어야 로비로 돌아갑니다.';
+  }
+  const canAbandon = !!state && state.phase !== 'lobby' && state.phase !== 'ending';
+  $('#abandonRequestBtn').disabled = !canAbandon || !!vote;
+  $('#abandonYes').disabled = !vote;
+  $('#abandonNo').disabled = !vote;
+}
+function openHelp() { if (!state) return; renderHelp(); $('#helpModal').classList.add('show'); }
+function closeHelp() { $('#helpModal').classList.remove('show'); }
+$('#helpBtn').onclick = openHelp;
+$('#lobbyGuideBtn').onclick = openHelp;
+$('#helpClose').onclick = closeHelp;
+$('#abandonRequestBtn').onclick = () => socket.emit('game:abandonRequest', { roomCode, playerToken }, r => { if (!r?.ok) toast(r.error); else toast('포기 투표를 시작했습니다.'); });
+$('#abandonYes').onclick = () => socket.emit('game:abandonRespond', { roomCode, playerToken, approve: true }, r => !r?.ok && toast(r.error));
+$('#abandonNo').onclick = () => socket.emit('game:abandonRespond', { roomCode, playerToken, approve: false }, r => !r?.ok && toast(r.error));
+$('#helpModal').addEventListener('click', e => { if (e.target === $('#helpModal')) closeHelp(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('#helpModal').classList.contains('show')) closeHelp();
+  else if (state) openHelp();
+});
+
+makeParticles();
+renderCampaigns();
+
+fetch('/api/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(cfg => { if (cfg?.version) $('#versionLabel').textContent = `ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v${cfg.version}`; }).catch(() => {});
+
+// QA marker: state.phase==='ending'
+// QA marker: state.phase==='resolution'&&state.lastResolution

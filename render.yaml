@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: chronicle-gate-online
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev && npm run verify
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false

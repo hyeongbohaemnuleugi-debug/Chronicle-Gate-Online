@@ -15,7 +15,7 @@ const REQUIRED_IDS = [
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceSub',
-  'helpBtn', 'helpModal', 'helpClose', 'helpBody', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'versionLabel'
+  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
@@ -30,6 +30,7 @@ let mode = 'create';
 let roomCode = localStorage.getItem('cg_room') || '';
 let playerToken = localStorage.getItem('cg_token') || '';
 let diceQueue = Promise.resolve();
+let resumeInFlight = false;
 const app = $('#app');
 
 const UI_DEFAULTS = { theme: 'dark', chatSize: 300 };
@@ -57,6 +58,57 @@ function saveUiPrefs() {
   applyUiPrefs();
 }
 applyUiPrefs();
+
+function resetTransientUi() {
+  $('#helpModal')?.classList.remove('show');
+  $('#helpModal')?.setAttribute('aria-hidden', 'true');
+  if ($('#helpModal')) $('#helpModal').hidden = true;
+  $('#resolutionModal')?.classList.remove('show');
+  $('#diceOverlay')?.classList.remove('show');
+  $('#diceFinal')?.classList.remove('is-result');
+}
+function clearSavedSession(message = '') {
+  localStorage.removeItem('cg_room');
+  localStorage.removeItem('cg_token');
+  roomCode = '';
+  playerToken = '';
+  state = null;
+  resetTransientUi();
+  view('homeView');
+  if (message) toast(message);
+}
+function resumeSavedSession(attempt = 0) {
+  if (!roomCode || !playerToken || !socket.connected || resumeInFlight) return;
+  resumeInFlight = true;
+  $('#connectionText').textContent = 'RESTORING';
+  socket.timeout(12_000).emit('room:join', { roomCode, playerToken }, (err, res) => {
+    resumeInFlight = false;
+    if (!err && res?.ok) {
+      state = res.state;
+      renderState();
+      if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
+      $('#connectionText').textContent = 'ONLINE';
+      return;
+    }
+    if (!err && res && res.ok === false) {
+      clearSavedSession('이전 세션이 만료되었거나 존재하지 않아 메인으로 돌아왔습니다.');
+      return;
+    }
+    resetTransientUi();
+    state = null;
+    view('homeView');
+    $('#connectionText').textContent = 'RECONNECTING';
+    if (attempt < 2) {
+      setTimeout(() => {
+        if (!socket.connected) socket.connect();
+        else resumeSavedSession(attempt + 1);
+      }, 1_200 * (attempt + 1));
+    } else {
+      toast('서버 재연결이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  });
+}
+resetTransientUi();
 
 const WORLD_META = {
   ember: { motif: 'ASHEN THRONE', scene: ['잿빛 성채', '왕묘 회랑', '용암 성문', '죽은 왕의 제단', '마지막 즉위식'], boss: '재와 불꽃 사이에서 솟아난 고대 왕의 형상' },
@@ -239,18 +291,7 @@ $('#copyCode').onclick = async () => {
 socket.on('connect', () => {
   $('#connectionText').textContent = 'ONLINE';
   $('.live-dot').style.background = 'var(--good)';
-  if (roomCode && playerToken && !state) {
-    socket.emit('room:join', { roomCode, playerToken }, res => {
-      if (res?.ok) {
-        state = res.state;
-        renderState();
-        if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
-      } else {
-        localStorage.removeItem('cg_room');
-        localStorage.removeItem('cg_token');
-      }
-    });
-  }
+  if (roomCode && playerToken) resumeSavedSession();
 });
 socket.on('disconnect', () => { $('#connectionText').textContent = 'RECONNECTING'; $('.live-dot').style.background = 'var(--danger)'; });
 socket.on('campaigns', list => { campaigns = list; renderCampaigns(); });
@@ -402,19 +443,26 @@ function renderChoices(ev) {
   const box = $('#choiceArea');
   const p = me();
   if (active) {
-    box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">ACTION DECLARED</div><b>${esc(active.playerName)}</b> — ${esc(active.choice.label)} <strong>${active.choice.stat} · DC ${active.choice.dc + (state.dcPenalty || 0)}</strong><div class="vote-chip">투표 ${active.voteCount || 0}표 · 판정자는 차례 플레이어입니다.</div></div>${active.playerId === playerToken && state.phase === 'story' ? '<button class="primary" id="rollCheckBtn" type="button">D20 판정</button>' : '<span class="eyebrow">판정 결과를 기다리는 중</span>'}</div>`;
+    const actorRule = active.choice.requiredJob
+      ? `${active.choice.requiredJob} 전용 선택 · 해당 직업 보유자가 판정합니다.`
+      : '일반 선택 · 현재 차례 플레이어가 판정합니다.';
+    box.innerHTML = `<div class="action-lock ${active.choice.requiredJob ? 'job-action-lock' : ''}"><div><div class="eyebrow">ACTION DECLARED</div><b>${esc(active.playerName)}</b> — ${esc(active.choice.label)} <strong>${active.choice.stat} · DC ${active.choice.dc + (state.dcPenalty || 0)}</strong><div class="vote-chip">투표 ${active.voteCount || 0}표 · ${esc(actorRule)}</div></div>${active.playerId === playerToken && state.phase === 'story' ? '<button class="primary" id="rollCheckBtn" type="button">D20 판정</button>' : '<span class="eyebrow">판정 결과를 기다리는 중</span>'}</div>`;
     if (active.playerId === playerToken && state.phase === 'story') $('#rollCheckBtn').onclick = () => socket.emit('event:roll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
     return;
   }
   const votes = state.choiceVotes || {};
   const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
   const highest = Math.max(0, ...counts);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">TABLE VOTE</span><b>${esc(state.turnPlayerName || '차례 플레이어')}</b>가 최종 판정을 담당합니다.</div><div>${everyoneVoted(votes) ? '모든 생존 플레이어가 투표했습니다. 자동 확정됩니다.' : `연결된 생존 플레이어가 투표 중 · 현재 ${Object.keys(votes).length}표`}</div></div>` + ev.choices.map((c, i) => {
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">TABLE VOTE</span><b>${esc(state.turnPlayerName || '차례 플레이어')}</b>가 일반 선택의 판정을 담당합니다.</div><div>${everyoneVoted(votes) ? '모든 생존 플레이어가 투표했습니다. 자동 확정됩니다.' : `연결된 생존 플레이어가 투표 중 · 현재 ${Object.keys(votes).length}표`}</div></div>` + ev.choices.map((c, i) => {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
-    return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''}" type="button"><b>${i + 1}. ${esc(c.label)}</b><small>${c.stat} · DC ${c.dc + (state.dcPenalty || 0)}</small><div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
+    const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
+    const specialBadge = c.requiredJob ? `<span class="job-choice-badge">${esc(c.requiredJob)} 전용</span>` : '';
+    const lockText = jobLocked ? `<div class="job-choice-lock">🔒 ${esc(c.requiredJob)}만 이 길을 열 수 있습니다.</div>` : '';
+    return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><div class="choice-title-line"><b>${i + 1}. ${esc(c.label)}</b>${specialBadge}</div><small>${c.stat} · DC ${c.dc + (state.dcPenalty || 0)}</small>${lockText}<div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
   }).join('');
   box.querySelectorAll('.choice-card').forEach((b, i) => b.onclick = () => {
+    if (b.disabled) return;
     if (!p || p.hp <= 0) return toast('쓰러진 캐릭터는 투표할 수 없습니다.');
     socket.emit('event:vote', { roomCode, playerToken, choiceIndex: i }, r => !r?.ok && toast(r.error));
   });
@@ -543,12 +591,29 @@ function renderHelp() {
   $('#abandonRequestBtn').disabled = !canAbandon || !!vote;
   $('#abandonYes').disabled = !vote;
   $('#abandonNo').disabled = !vote;
+  $('#helpConnectionHint').textContent = socket.connected ? `ROOM ${state?.code || '-----'} · ONLINE` : '연결 복구 중…';
 }
-function openHelp() { if (!state) return; renderHelp(); $('#helpModal').classList.add('show'); }
-function closeHelp() { $('#helpModal').classList.remove('show'); }
-$('#helpBtn').onclick = openHelp;
-$('#lobbyGuideBtn').onclick = openHelp;
+function setHelpTab(tab = 'guide') {
+  $$('[data-help-tab]').forEach(button => button.classList.toggle('active', button.dataset.helpTab === tab));
+  $$('[data-help-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.helpPanel === tab));
+}
+function openHelp(tab = 'guide') {
+  if (!state) return;
+  renderHelp();
+  setHelpTab(tab);
+  $('#helpModal').hidden = false;
+  $('#helpModal').classList.add('show');
+  $('#helpModal').setAttribute('aria-hidden', 'false');
+}
+function closeHelp() {
+  $('#helpModal').classList.remove('show');
+  $('#helpModal').setAttribute('aria-hidden', 'true');
+  $('#helpModal').hidden = true;
+}
+$('#helpBtn').onclick = () => openHelp('guide');
+$('#lobbyGuideBtn').onclick = () => openHelp('guide');
 $('#helpClose').onclick = closeHelp;
+$$('[data-help-tab]').forEach(button => button.onclick = () => setHelpTab(button.dataset.helpTab));
 $('#themeDarkBtn').onclick = () => { uiPrefs.theme = 'dark'; saveUiPrefs(); toast('검정 테마로 변경했습니다.'); };
 $('#themeLightBtn').onclick = () => { uiPrefs.theme = 'light'; saveUiPrefs(); toast('하양 테마로 변경했습니다.'); };
 $('#chatSizeRange').oninput = e => { uiPrefs.chatSize = Number(e.target.value); saveUiPrefs(); };
@@ -560,7 +625,22 @@ $('#helpModal').addEventListener('click', e => { if (e.target === $('#helpModal'
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if ($('#helpModal').classList.contains('show')) closeHelp();
-  else if (state) openHelp();
+  else if (state) openHelp('guide');
+});
+
+window.addEventListener('pageshow', event => {
+  resetTransientUi();
+  if (event.persisted) {
+    state = null;
+    if (socket.connected) socket.disconnect();
+    socket.connect();
+  }
+});
+window.addEventListener('focus', () => {
+  if (roomCode && playerToken && !socket.connected) socket.connect();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && roomCode && playerToken && !socket.connected) socket.connect();
 });
 
 makeParticles();

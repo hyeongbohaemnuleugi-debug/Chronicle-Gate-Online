@@ -23,13 +23,14 @@ for (const campaign of CAMPAIGNS) {
   for (const event of campaign.events) {
     assert(!globalEventIds.has(event.id), `전체 캠페인에서 이벤트 ID 중복: ${event.id}`);
     globalEventIds.add(event.id);
-    assert(event.choices.length === 3, `${event.id}: 선택지가 3개가 아닙니다.`);
+    assert(event.choices.length === 3 || event.choices.length === 4, `${event.id}: 선택지는 3개 또는 직업 전용 포함 4개여야 합니다.`);
     assert(event.act >= 1 && event.act <= 5, `${event.id}: act 범위 오류`);
     for (const choice of event.choices) {
       assert(STAT_NAMES.includes(choice.stat), `${event.id}: 알 수 없는 능력치 ${choice.stat}`);
       assert(Number.isInteger(choice.dc) && choice.dc >= 8 && choice.dc <= 22, `${event.id}: DC 범위 오류 ${choice.dc}`);
       assert(choice.success && choice.failure, `${event.id}: 성공/실패 문구 누락`);
       assert(choice.successEffect?.type && choice.failureEffect?.type, `${event.id}: 효과 정의 누락`);
+      if (choice.requiredJob) assert(campaign.jobs.some(job => job.name === choice.requiredJob), `${event.id}: 존재하지 않는 직업 전용 선택 ${choice.requiredJob}`);
     }
   }
   notes.push(`${campaign.title}: 이벤트 30종 / 실제 덱 60장(각 2장) / 직업 6종`);
@@ -58,6 +59,9 @@ assert(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(index), 'CSP와 충돌하는 inline
 assert(index.includes('id="endingView"') && index.includes('id="leaveRoomBtn"'), '필수 엔딩/방 나가기 UI 누락');
 assert(css.includes('@media(max-width:720px)'), '모바일 반응형 규칙 누락');
 assert(index.includes('endingView') && app.includes("state.phase==='ending'"), '엔딩 화면/라우팅 누락');
+assert(index.includes('id="helpModal"') && index.includes('hidden'), 'ESC 모달 초기 hidden 안전장치 누락');
+assert(app.includes('resetTransientUi') && app.includes('pageshow'), '페이지 복원 시 임시 UI 초기화 로직 누락');
+assert(server.includes('choice.requiredJob') && server.includes('player.job?.name !== choice.requiredJob'), '직업 전용 선택 서버 검증 누락');
 assert(server.includes('room.monster.acted'), '전투 라운드 중복 행동 방지 로직 누락');
 assert(server.includes('promoteHostIfNeeded'), '방장 연결 해제 시 승계 로직 누락');
 assert(server.includes('reconcileCombatRound'), '전투 중 연결 해제/재접속 라운드 복구 로직 누락');

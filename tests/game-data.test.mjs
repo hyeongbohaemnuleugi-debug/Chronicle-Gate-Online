@@ -16,7 +16,8 @@ for (const campaign of CAMPAIGNS) {
     assert.equal(campaign.storyBeats.length, 20);
     assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, 20);
     for (const beat of campaign.storyBeats) {
-      assert.ok(beat.situation?.length > 20);
+      assert.ok(beat.situation?.length >= 80);
+      assert.equal(Object.keys(beat.roleHooks || {}).length, 6);
       assert.ok(beat.objective?.length > 10);
       assert.ok(beat.why?.length > 10);
       assert.ok(beat.prompt?.length > 10);

@@ -21,9 +21,9 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.1.0-rc.1';
+const APP_VERSION = '4.2.0-rc.1';
 const MAX_PLAYERS = 4;
-const MIN_PLAYERS = 2;
+const MIN_PLAYERS = 1;
 const TARGET_STORY = 20;
 const MAX_THREAT = 8;
 const EVENT_EVERY_TURNS = 3;
@@ -82,6 +82,7 @@ app.get('/api/config', (_req, res) => res.json({
   maxThreat: MAX_THREAT,
   eventEveryTurns: EVENT_EVERY_TURNS,
   voteDurationMs: VOTE_DURATION_MS,
+  soloVoteDurationMs: 5000,
 }));
 
 const rand = sides => crypto.randomInt(1, sides + 1);
@@ -141,6 +142,8 @@ function normalizeLoadedRoom(room) {
   room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
   room.voteEndsAt ||= null;
   room.choiceVotes ||= {};
+  room.storyHistory ||= [];
+  room.lastStoryAction ||= null;
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
@@ -165,7 +168,10 @@ function normalizeLoadedRoom(room) {
       if (choice) room.activeChoice = { ...room.activeChoice, choice };
       else room.activeChoice = null;
     }
-    if (!room.activeChoice && room.phase === 'story' && !room.voteEndsAt) room.voteEndsAt = Date.now() + VOTE_DURATION_MS;
+    if (!room.activeChoice && room.phase === 'story' && !room.voteEndsAt) {
+      const connectedCount = (room.players || []).filter(player => player.connected).length;
+      room.voteEndsAt = Date.now() + (connectedCount <= 1 ? 5000 : VOTE_DURATION_MS);
+    }
   }
   room.schemaVersion = APP_VERSION;
   return room;
@@ -272,6 +278,7 @@ function publicRoom(room) {
     choiceVotes: room.choiceVotes || {},
     voteEndsAt: room.voteEndsAt || null,
     voteDurationMs: VOTE_DURATION_MS,
+  soloVoteDurationMs: 5000,
     mainTurnsSinceEvent: Number(room.mainTurnsSinceEvent || 0),
     turnSerial: Number(room.turnSerial || 0),
     nextCheckDcReduction: Number(room.nextCheckDcReduction || 0),
@@ -287,6 +294,7 @@ function publicRoom(room) {
     lastResolution: room.lastResolution || null,
     ending: room.ending || null,
     lastStoryAction: room.lastStoryAction || null,
+    storyHistory: (room.storyHistory || []).slice(-8),
     abandonVote: room.abandonVote || null,
     targetStory: TARGET_STORY,
     maxThreat: MAX_THREAT,
@@ -441,21 +449,16 @@ function interpretFreeAction(declaration, player, beat, room) {
 }
 
 function actionNarrative({ success, declaration, player, beat, interpretation, margin }) {
-  const place = beat?.visual || beat?.actName || '현재 장면';
+  const job = player.job?.name || '모험가';
+  const objective = beat?.objective || '현재 목표';
+  const reveal = beat?.reveal || '';
+  const role = beat?.roleHooks?.[player.job?.prime] || '';
   if (success) {
-    const variants = [
-      `${player.name}의 ${interpretation.mode} 접근이 먹혔다. “${declaration}” 행동으로 ${place}에서 다음 단서로 이어지는 틈을 만들어냈다.`,
-      `${player.name}은(는) 선언한 행동을 실제로 밀어붙였다. ${interpretation.stat} 판정에 성공해 장면의 위험을 통제하고 파티가 앞으로 나아갈 근거를 확보했다.`,
-      `행동의 의도가 장면과 맞아떨어졌다. ${player.name}의 선택은 ${beat?.objective || '현재 목표'}에 직접적인 진전을 만들었다.`
-    ];
-    return variants[Math.abs(margin) % variants.length];
+    if (margin >= 5) return `${job} ${player.name}의 선택이 장면의 흐름을 바꿨다. “${declaration}”라는 행동은 ${interpretation.stat}에 기반한 ${interpretation.mode} 접근으로 완벽하게 맞아떨어졌다. ${role} 그 결과 ${objective}에 직접 연결되는 우위를 얻었고, ${reveal ? `앞서 암시되던 진실 ― ${reveal} ― 을 뒷받침하는 결정적인 흔적까지 확보했다.` : '다음 장면에서 사용할 수 있는 확실한 단서를 확보했다.'}`;
+    return `${job} ${player.name}은(는) “${declaration}”을 실행했다. ${interpretation.mode} 방식이 효과를 내면서 위험을 크게 키우지 않고 ${objective} 쪽으로 이야기를 전진시켰다. 성공은 장면을 끝내는 정답이 아니라, 다음 플레이어가 이어받을 수 있는 새로운 위치와 단서를 만들어냈다.`;
   }
-  const variants = [
-    `${player.name}의 시도는 완전히 무의미하지 않았지만 예상보다 상황이 거칠었다. “${declaration}” 행동은 새로운 위험을 드러냈고 파티는 다른 방식으로 이어가야 한다.`,
-    `${interpretation.mode} 접근이 장면의 저항에 막혔다. 실패하면서도 ${beat?.why || '왜 이 장면이 중요한지'}를 더 분명히 알게 됐다.`,
-    `${player.name}은(는) 원하는 결과까지 밀어붙이지 못했다. 대신 무엇이 통하지 않는지 확인했고 다음 플레이어가 그 실패를 발판으로 삼을 수 있다.`
-  ];
-  return variants[Math.abs(margin) % variants.length];
+  if (margin <= -5) return `${job} ${player.name}의 “${declaration}”은(는) 시도 자체는 타당했지만 장면이 예상보다 거칠게 반응했다. ${interpretation.mode} 접근이 무너지면서 새로운 위험이 드러났고 세계의 압박이 커졌다. 하지만 실패 덕분에 무엇이 통하지 않는지, 그리고 ${beat?.stakes || '이 상황에서 무엇을 잃을 수 있는지'}가 분명해졌다. 다음 플레이어는 이 실패를 실제 정보로 이용할 수 있다.`;
+  return `${job} ${player.name}은(는) “${declaration}”을 시도했지만 원하는 결과까지 닿지는 못했다. 대신 장면의 저항과 숨은 규칙이 드러났다. 이야기는 멈추지 않는다. ${objective}를 향한 길은 그대로 열려 있지만, 다음 행동은 다른 각도에서 접근해야 한다.`;
 }
 
 function skillRemaining(room, player) {
@@ -749,7 +752,8 @@ function drawEventForRoom(room) {
   room.activeChoice = null;
   room.choiceVotes = {};
   room.lastResolution = null;
-  room.voteEndsAt = Date.now() + VOTE_DURATION_MS;
+  const voteDuration = connectedPlayers(room).length <= 1 ? 5000 : VOTE_DURATION_MS;
+  room.voteEndsAt = Date.now() + voteDuration;
   room.mainTurnsSinceEvent = 0;
   pushChat(room, { type: 'narration', author: 'GM', text: `이벤트 발생: ${room.currentEvent.title} — ${room.currentEvent.text}` });
   void appendSessionEvent(room.code, 'event_drawn', { eventId: room.currentEvent.id, title: room.currentEvent.title });
@@ -929,7 +933,7 @@ io.on('connection', socket => {
     const { room } = requireHost(socket, payload, ack);
     if (!room || !requirePhase(room, 'lobby', ack, '이미 세션이 시작되었습니다.')) return;
     const connected = room.players.filter(player => player.connected);
-    if (connected.length < MIN_PLAYERS) return ack?.({ ok: false, error: '접속 중인 플레이어가 최소 2명 필요합니다.' });
+    if (connected.length < MIN_PLAYERS) return ack?.({ ok: false, error: '접속 중인 플레이어가 최소 1명 필요합니다.' });
     if (room.players.some(player => !player.connected)) return ack?.({ ok: false, error: '오프라인 플레이어가 있습니다. 해당 플레이어가 재접속하거나 로비를 다시 만들어주세요.' });
     if (!room.campaignId) return ack?.({ ok: false, error: '캠페인을 선택하세요.' });
     if (room.players.some(player => !player.ready)) return ack?.({ ok: false, error: '모든 플레이어가 직업과 능력치를 완성해야 합니다.' });
@@ -948,6 +952,7 @@ io.on('connection', socket => {
     room.nextCheckDcReduction = 0;
     room.threatShield = 0;
     room.lastStoryAction = null;
+    room.storyHistory = [];
     for (const member of room.players) member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
     room.activeChoice = null;
     room.currentEvent = null;
@@ -998,6 +1003,9 @@ io.on('connection', socket => {
     pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${interpreted.mode} · ${interpreted.stat} ${roll}${baseMod>=0?'+':''}${baseMod}${interpreted.expertise?`+전문성${interpreted.expertise}`:''}${skillBonus?`+스킬${skillBonus}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
     pushChat(room, { type:'narration', author:'GM', text:narrative });
     room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration, stat:interpreted.stat, mode:interpreted.mode, roll, total, dc, success, narrative, beatId:completedBeat?.id || null };
+    room.storyHistory ||= [];
+    room.storyHistory.push({ ...room.lastStoryAction, chapter: completedBeat?.chapter || room.story + 1, act: completedBeat?.act || 1, title: completedBeat?.title || '메인 스토리' });
+    if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
 
     if (success) {
       if (margin >= 5) { player.inspiration = Math.min(3, player.inspiration + 1); room.threat = Math.max(0, room.threat - 1); }

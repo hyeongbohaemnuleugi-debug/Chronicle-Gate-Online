@@ -21,6 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
+const APP_VERSION = '3.4.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 2;
 const TARGET_STORY = 20;
@@ -36,6 +37,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('X-Chronicle-Version', APP_VERSION);
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
     "script-src 'self'",
@@ -50,15 +52,23 @@ app.use((req, res, next) => {
   ].join('; '));
   next();
 });
-app.use(express.static('public', { maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0 }));
+app.use(express.static('public', {
+  maxAge: 0,
+  etag: true,
+  setHeaders: (res, filePath) => {
+    if (/\.(?:html|js|css|svg)$/i.test(filePath)) res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  },
+}));
 app.use('/vendor', express.static('node_modules/three/build', { maxAge: '7d', immutable: true }));
 app.get('/health', (_req, res) => res.json({
   ok: true,
+  version: APP_VERSION,
   rooms: rooms.size,
   persistence: persistenceEnabled ? 'supabase' : 'memory',
   timestamp: new Date().toISOString(),
 }));
 app.get('/api/config', (_req, res) => res.json({
+  version: APP_VERSION,
   persistence: persistenceEnabled,
   maxPlayers: MAX_PLAYERS,
   minPlayers: MIN_PLAYERS,
@@ -103,6 +113,15 @@ function campaignPublic() {
   }));
 }
 
+function blankPlayerRuntime(player) {
+  player.ready = false;
+  player.job = null;
+  player.abilities = null;
+  player.hp = 0;
+  player.maxHp = 0;
+  player.inspiration = 0;
+}
+
 async function createRoom(hostName, socketId) {
   const roomCode = await reserveRoomCode();
   const player = {
@@ -117,8 +136,10 @@ async function createRoom(hostName, socketId) {
     phase: 'lobby',
     players: [player],
     deck: [], discard: [], currentEvent: null, activeChoice: null,
+    choiceVotes: {},
     threat: 0, story: 0, dcPenalty: 0, monster: null,
-    chat: [], lastResolution: null, ending: null, revision: 1,
+    chat: [], lastResolution: null, ending: null,
+    revision: 1, turnIndex: 0, abandonVote: null,
   };
   rooms.set(roomCode, room);
   return { room, player };
@@ -136,8 +157,48 @@ async function getOrLoadRoom(roomCode) {
   return promise;
 }
 
+function currentTurnPlayer(room) {
+  if (!room?.players?.length) return null;
+  room.turnIndex = Number.isInteger(room.turnIndex) ? room.turnIndex : 0;
+  const start = ((room.turnIndex % room.players.length) + room.players.length) % room.players.length;
+  for (let step = 0; step < room.players.length; step += 1) {
+    const index = (start + step) % room.players.length;
+    const candidate = room.players[index];
+    if (!candidate.connected) continue;
+    if (room.phase !== 'lobby' && candidate.maxHp > 0 && candidate.hp <= 0) continue;
+    room.turnIndex = index;
+    return candidate;
+  }
+  room.turnIndex = start;
+  return room.players[start] || room.players[0] || null;
+}
+
+function advanceTurn(room) {
+  if (!room?.players?.length) return null;
+  room.turnIndex = Number.isInteger(room.turnIndex) ? room.turnIndex : -1;
+  const start = room.turnIndex;
+  for (let step = 1; step <= room.players.length; step += 1) {
+    const index = (start + step + room.players.length) % room.players.length;
+    const candidate = room.players[index];
+    if (!candidate.connected) continue;
+    if (room.phase !== 'lobby' && candidate.maxHp > 0 && candidate.hp <= 0) continue;
+    room.turnIndex = index;
+    return candidate;
+  }
+  return currentTurnPlayer(room);
+}
+
+function connectedPlayers(room) {
+  return room.players.filter(player => player.connected);
+}
+
+function storyEligiblePlayers(room) {
+  return room.players.filter(player => player.connected && player.hp > 0);
+}
+
 function publicRoom(room) {
   const campaign = CAMPAIGNS.find(c => c.id === room.campaignId);
+  const turnPlayer = currentTurnPlayer(room);
   return {
     code: room.code,
     phase: room.phase,
@@ -157,16 +218,21 @@ function publicRoom(room) {
     discardCount: room.discard.length,
     currentEvent: room.currentEvent,
     activeChoice: room.activeChoice,
+    choiceVotes: room.choiceVotes || {},
+    turnIndex: room.turnIndex || 0,
+    turnPlayerId: turnPlayer?.id || null,
+    turnPlayerName: turnPlayer?.name || null,
     threat: room.threat,
     story: room.story,
     dcPenalty: room.dcPenalty,
     monster: room.monster,
     lastResolution: room.lastResolution || null,
     ending: room.ending || null,
+    abandonVote: room.abandonVote || null,
     targetStory: TARGET_STORY,
     maxThreat: MAX_THREAT,
     revision: room.revision,
-    chat: room.chat.slice(-80),
+    chat: room.chat.slice(-120),
   };
 }
 
@@ -179,7 +245,7 @@ function sync(room) {
 
 function pushChat(room, entry) {
   room.chat.push({ id: token(), ts: Date.now(), ...entry });
-  if (room.chat.length > 120) room.chat.splice(0, room.chat.length - 120);
+  if (room.chat.length > 180) room.chat.splice(0, room.chat.length - 180);
 }
 
 function emitRoll(room, roller, roll) {
@@ -254,6 +320,14 @@ function buildDeck(campaign) {
   return shuffle(deck);
 }
 
+function clearSceneState(room) {
+  room.currentEvent = null;
+  room.activeChoice = null;
+  room.choiceVotes = {};
+  room.lastResolution = null;
+  room.monster = null;
+}
+
 function applyChoiceEffect(room, player, effect = {}) {
   switch (effect.type) {
     case 'threatDown': room.threat = Math.max(0, room.threat - (effect.amount || 1)); break;
@@ -286,9 +360,7 @@ function evaluateEnding(room) {
         ? '모든 영웅이 쓰러졌습니다. 하지만 실패 역시 다음 세션의 전설이 됩니다.'
         : '세계의 위협이 한계를 넘어섰습니다. 여러분의 선택이 만든 비극적인 결말입니다.',
     };
-    room.currentEvent = null;
-    room.activeChoice = null;
-    room.monster = null;
+    clearSceneState(room);
     return true;
   }
   if (room.story >= TARGET_STORY) {
@@ -298,9 +370,7 @@ function evaluateEnding(room) {
       title: '당신들의 연대기가 완성되었다.',
       text: `총 ${room.story}개의 장면을 지나 결말에 도달했습니다. 남은 카드와 다른 선택지는 다음 플레이에서 새로운 이야기가 됩니다.`,
     };
-    room.currentEvent = null;
-    room.activeChoice = null;
-    room.monster = null;
+    clearSceneState(room);
     return true;
   }
   return false;
@@ -370,6 +440,66 @@ function reconcileCombatRound(room) {
   if (eligible.length && eligible.every(id => room.monster.acted.includes(id))) monsterTurn(room);
 }
 
+function finalizeChoiceSelection(room) {
+  if (!room.currentEvent || room.activeChoice) return false;
+  const eligible = storyEligiblePlayers(room);
+  if (!eligible.length) return false;
+  const counts = new Map();
+  for (const player of eligible) {
+    const voted = Number(room.choiceVotes?.[player.id]);
+    if (!Number.isInteger(voted) || !room.currentEvent.choices[voted]) continue;
+    counts.set(voted, (counts.get(voted) || 0) + 1);
+  }
+  if (!counts.size) return false;
+  const highest = Math.max(...counts.values());
+  const tied = [...counts.entries()].filter(([, count]) => count === highest).map(([index]) => index).sort((a, b) => a - b);
+  const actor = currentTurnPlayer(room) || eligible[0];
+  const actorVote = Number(room.choiceVotes?.[actor.id]);
+  const choiceIndex = tied.includes(actorVote) ? actorVote : tied[0];
+  const choice = room.currentEvent.choices[choiceIndex];
+  room.activeChoice = {
+    playerId: actor.id,
+    playerName: actor.name,
+    choiceIndex,
+    choice,
+    voteCount: highest,
+  };
+  pushChat(room, {
+    type: 'action',
+    author: 'TABLE',
+    text: `투표 결과 「${choice.label}」 선택 · 행동자 ${actor.name}`,
+  });
+  return true;
+}
+
+function resetToLobby(room, reasonText = '세션이 로비로 돌아갔습니다.') {
+  room.phase = 'lobby';
+  room.campaignId = null;
+  room.deck = [];
+  room.discard = [];
+  room.threat = 0;
+  room.story = 0;
+  room.dcPenalty = 0;
+  room.turnIndex = 0;
+  room.abandonVote = null;
+  room.ending = null;
+  clearSceneState(room);
+  for (const player of room.players) blankPlayerRuntime(player);
+  pushChat(room, { type: 'system', text: reasonText });
+}
+
+function allConnectedApproved(room) {
+  const approvals = new Set(room.abandonVote?.approvals || []);
+  return connectedPlayers(room).every(player => approvals.has(player.id));
+}
+
+function resolveAbandonVoteIfReady(room) {
+  if (!room.abandonVote) return false;
+  if (!allConnectedApproved(room)) return false;
+  resetToLobby(room, '참가자 전원의 동의로 현재 연대기를 포기하고 로비로 돌아왔습니다.');
+  return true;
+}
+
 io.on('connection', socket => {
   socket.emit('campaigns', campaignPublic());
 
@@ -404,6 +534,7 @@ io.on('connection', socket => {
       pushChat(room, { type: 'system', text: `${existing.name} 님이 다시 연결되었습니다.` });
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);
+      resolveAbandonVoteIfReady(room);
       sync(room);
       void appendSessionEvent(room.code, 'player_reconnected', { playerName: existing.name });
       return ack?.({ ok: true, roomCode: room.code, playerToken: existing.id, state: publicRoom(room) });
@@ -436,6 +567,7 @@ io.on('connection', socket => {
     }
     pushChat(room, { type: 'system', text: `${player.name} 님이 방을 나갔습니다.` });
     promoteHostIfNeeded(room);
+    currentTurnPlayer(room);
     sync(room);
     ack?.({ ok: true });
   });
@@ -449,6 +581,7 @@ io.on('connection', socket => {
     if (target.connected) return ack?.({ ok: false, error: '접속 중인 플레이어는 강제로 제거할 수 없습니다.' });
     room.players = room.players.filter(member => member.id !== target.id);
     pushChat(room, { type: 'system', text: `${target.name} 님의 오프라인 슬롯을 정리했습니다.` });
+    currentTurnPlayer(room);
     sync(room);
     ack?.({ ok: true });
   });
@@ -459,10 +592,10 @@ io.on('connection', socket => {
     const campaign = CAMPAIGNS.find(item => item.id === payload.campaignId);
     if (!campaign) return ack?.({ ok: false, error: '캠페인을 찾을 수 없습니다.' });
     room.campaignId = campaign.id;
-    for (const player of room.players) {
-      player.ready = false; player.job = null; player.abilities = null;
-      player.hp = 0; player.maxHp = 0; player.inspiration = 0;
-    }
+    room.turnIndex = 0;
+    room.abandonVote = null;
+    room.choiceVotes = {};
+    for (const player of room.players) blankPlayerRuntime(player);
     room.ending = null;
     pushChat(room, { type: 'system', text: `캠페인이 「${campaign.title}」로 선택되었습니다.` });
     sync(room);
@@ -474,6 +607,7 @@ io.on('connection', socket => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'lobby', ack, '캐릭터 생성은 로비에서만 가능합니다.')) return;
     if (!room.campaignId) return ack?.({ ok: false, error: '캠페인을 먼저 선택하세요.' });
+    if (player.job) return ack?.({ ok: false, error: '현재 캠페인에서는 이미 직업을 배정받았습니다.' });
     if (!rateLimit(socket, 'class', 800)) return ack?.({ ok: false, error: '주사위가 멈출 때까지 기다려주세요.' });
     const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
     const result = rand(6);
@@ -490,6 +624,7 @@ io.on('connection', socket => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'lobby', ack, '능력치 생성은 로비에서만 가능합니다.')) return;
     if (!player.job) return ack?.({ ok: false, error: '직업을 먼저 배정받으세요.' });
+    if (player.abilities) return ack?.({ ok: false, error: '현재 캠페인에서는 이미 능력치를 생성했습니다.' });
     if (!rateLimit(socket, 'stats', 1000)) return ack?.({ ok: false, error: '주사위가 멈출 때까지 기다려주세요.' });
     const abilities = {};
     for (const stat of STAT_NAMES) abilities[stat] = roll4d6();
@@ -515,11 +650,15 @@ io.on('connection', socket => {
     room.threat = 0;
     room.story = 0;
     room.dcPenalty = 0;
-    room.currentEvent = null;
+    room.choiceVotes = {};
     room.activeChoice = null;
+    room.currentEvent = null;
     room.monster = null;
     room.lastResolution = null;
     room.ending = null;
+    room.abandonVote = null;
+    room.turnIndex = 0;
+    currentTurnPlayer(room);
     pushChat(room, { type: 'narration', text: campaign.intro, author: 'GM' });
     sync(room);
     void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name) });
@@ -540,6 +679,7 @@ io.on('connection', socket => {
     const picked = candidates.length ? candidates[crypto.randomInt(0, candidates.length)] : { index: room.deck.length - 1 };
     room.currentEvent = room.deck.splice(picked.index, 1)[0];
     room.activeChoice = null;
+    room.choiceVotes = {};
     room.lastResolution = null;
     pushChat(room, { type: 'narration', author: 'GM', text: `${room.currentEvent.title} — ${room.currentEvent.text}` });
     sync(room);
@@ -547,17 +687,30 @@ io.on('connection', socket => {
     ack?.({ ok: true });
   });
 
-  socket.on('event:claim', (payload, ack) => {
+  socket.on('event:vote', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'story', ack, '현재 이벤트는 선택할 수 없는 상태입니다.')) return;
     if (!room.currentEvent) return ack?.({ ok: false, error: '진행 중인 이벤트가 없습니다.' });
-    if (room.activeChoice) return ack?.({ ok: false, error: '이미 다른 행동이 선언되었습니다.' });
-    if (player.hp <= 0) return ack?.({ ok: false, error: '쓰러진 캐릭터는 행동할 수 없습니다.' });
+    if (room.activeChoice) return ack?.({ ok: false, error: '이미 행동이 확정되었습니다.' });
+    if (player.hp <= 0) return ack?.({ ok: false, error: '쓰러진 캐릭터는 투표할 수 없습니다.' });
     const choiceIndex = Number(payload.choiceIndex);
     const choice = room.currentEvent.choices[choiceIndex];
     if (!choice) return ack?.({ ok: false, error: '선택지가 올바르지 않습니다.' });
-    room.activeChoice = { playerId: player.id, playerName: player.name, choiceIndex, choice };
-    pushChat(room, { type: 'action', author: player.name, text: choice.label });
+    room.choiceVotes ||= {};
+    room.choiceVotes[player.id] = choiceIndex;
+    const eligible = storyEligiblePlayers(room);
+    const everyoneVoted = eligible.length > 0 && eligible.every(member => Number.isInteger(Number(room.choiceVotes[member.id])));
+    if (everyoneVoted) finalizeChoiceSelection(room);
+    sync(room);
+    ack?.({ ok: true });
+  });
+
+  socket.on('event:finalizeChoice', (payload, ack) => {
+    const { room } = requireHost(socket, payload, ack);
+    if (!room || !requirePhase(room, 'story', ack, '지금은 선택을 확정할 수 없습니다.')) return;
+    if (!room.currentEvent) return ack?.({ ok: false, error: '진행 중인 이벤트가 없습니다.' });
+    if (room.activeChoice) return ack?.({ ok: false, error: '이미 선택이 확정되었습니다.' });
+    if (!finalizeChoiceSelection(room)) return ack?.({ ok: false, error: '먼저 한 개 이상의 투표가 필요합니다.' });
     sync(room);
     ack?.({ ok: true });
   });
@@ -567,6 +720,12 @@ io.on('connection', socket => {
     if (!room || !requirePhase(room, 'story', ack)) return;
     if (room.activeChoice && (player.host || room.activeChoice.playerId === player.id)) {
       room.activeChoice = null;
+      room.choiceVotes = {};
+      sync(room);
+      return ack?.({ ok: true });
+    }
+    if (!room.activeChoice && player.host) {
+      room.choiceVotes = {};
       sync(room);
       return ack?.({ ok: true });
     }
@@ -627,7 +786,9 @@ io.on('connection', socket => {
     room.story += 1;
     room.currentEvent = null;
     room.activeChoice = null;
+    room.choiceVotes = {};
     room.phase = 'story';
+    advanceTurn(room);
     if (evaluateEnding(room)) {
       sync(room);
       return ack?.({ ok: true });
@@ -701,6 +862,43 @@ io.on('connection', socket => {
     ack?.({ ok: true });
   });
 
+  socket.on('game:abandonRequest', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room) return;
+    if (room.phase === 'lobby') return ack?.({ ok: false, error: '이미 로비입니다.' });
+    room.abandonVote = {
+      requestedBy: player.id,
+      requestedByName: player.name,
+      approvals: [player.id],
+      requestedAt: Date.now(),
+    };
+    pushChat(room, { type: 'system', text: `${player.name} 님이 연대기 포기 투표를 시작했습니다. ESC 안내서에서 찬반을 선택하세요.` });
+    sync(room);
+    ack?.({ ok: true });
+  });
+
+  socket.on('game:abandonRespond', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room) return;
+    if (!room.abandonVote) return ack?.({ ok: false, error: '진행 중인 포기 투표가 없습니다.' });
+    const approve = payload?.approve !== false;
+    if (!approve) {
+      pushChat(room, { type: 'system', text: `${player.name} 님이 포기 투표를 거절했습니다. 현재 연대기를 계속 진행합니다.` });
+      room.abandonVote = null;
+      sync(room);
+      return ack?.({ ok: true });
+    }
+    const approvals = new Set(room.abandonVote.approvals || []);
+    approvals.add(player.id);
+    room.abandonVote.approvals = [...approvals];
+    if (resolveAbandonVoteIfReady(room)) {
+      sync(room);
+      return ack?.({ ok: true, reset: true });
+    }
+    sync(room);
+    return ack?.({ ok: true });
+  });
+
   socket.on('disconnect', () => {
     for (const room of rooms.values()) {
       const player = room.players.find(member => member.socketId === socket.id);
@@ -710,6 +908,7 @@ io.on('connection', socket => {
       pushChat(room, { type: 'system', text: `${player.name} 님의 연결이 끊겼습니다.` });
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);
+      resolveAbandonVoteIfReady(room);
       sync(room);
       break;
     }

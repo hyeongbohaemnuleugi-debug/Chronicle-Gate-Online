@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chronicle Gate - Online TRPG Prototype</title>
+<style>
+:root{--bg:#0f1020;--panel:#191b31;--panel2:#222541;--text:#f4f4fb;--muted:#aeb2cf;--line:#303454;--accent:#8c7cff;--ok:#65d6a8;--warn:#ffbf69;}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#23254b 0,#0f1020 45%);color:var(--text)}
+button,input,select{font:inherit} button{cursor:pointer}
+header{padding:28px 5vw 20px;display:flex;justify-content:space-between;gap:16px;align-items:center;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0f1020e8;backdrop-filter:blur(10px);z-index:5}
+.logo b{font-size:22px} .logo small{display:block;color:var(--muted);margin-top:3px}
+.pill{padding:7px 11px;border:1px solid var(--line);border-radius:99px;color:var(--muted);font-size:13px}
+main{padding:28px 5vw 60px;max-width:1500px;margin:auto}
+.hero{display:grid;grid-template-columns:1.4fr .8fr;gap:18px;margin-bottom:24px}
+.card{background:linear-gradient(180deg,#1c1e36,#17192d);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 18px 50px #0005}
+h1{font-size:clamp(30px,5vw,58px);line-height:1.03;margin:0 0 12px} h2{margin-top:0} p{color:#d6d8ea;line-height:1.65}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.btn{border:0;border-radius:12px;padding:11px 14px;background:var(--accent);color:white;font-weight:700} .btn.secondary{background:var(--panel2);border:1px solid var(--line)} .btn.good{background:#236b52}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px} .campaign{min-height:180px;position:relative;overflow:hidden}
+.campaign h3{margin:6px 0 8px;font-size:18px} .campaign .genre{color:var(--warn);font-size:12px;font-weight:800;letter-spacing:.03em} .campaign p{font-size:13px;color:var(--muted)}
+.campaign.active{outline:2px solid var(--accent)} .campaign button{position:absolute;bottom:14px;left:14px;right:14px}
+.workspace{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-top:18px} .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+.tab{background:#262947;border:1px solid var(--line);color:#d9dcf2;padding:8px 10px;border-radius:10px} .tab.active{background:var(--accent)}
+.item-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px} .item{border:1px solid var(--line);background:#20233d;border-radius:12px;padding:12px}
+.item strong{display:block;margin-bottom:6px} .meta{font-size:12px;color:var(--warn)} .tiny{font-size:12px;color:var(--muted);line-height:1.5}
+.room{display:grid;gap:10px} .field{display:flex;gap:8px} .field input{flex:1;background:#111326;color:white;border:1px solid var(--line);border-radius:10px;padding:11px}
+.players{display:grid;gap:8px} .player{display:flex;justify-content:space-between;align-items:center;background:#20233d;border:1px solid var(--line);padding:10px 12px;border-radius:10px}
+.dicebox{text-align:center;padding:16px;border:1px dashed #555b8d;border-radius:14px} .dice{font-size:52px;font-weight:900;margin:5px} .log{height:150px;overflow:auto;background:#101223;border-radius:10px;padding:10px;font-size:12px;color:#c9cce2}
+.badge{display:inline-block;padding:4px 7px;border-radius:7px;background:#2f3357;color:#cdd1f5;font-size:11px;margin-right:4px}
+footer{text-align:center;color:var(--muted);padding:20px}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}.hero,.workspace{grid-template-columns:1fr}}
+@media(max-width:620px){.grid,.item-list{grid-template-columns:1fr} header{position:static}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><b>🎲 Chronicle Gate</b><small>온라인 TRPG 플랫폼 프로토타입</small></div>
+  <span class="pill">5 Campaign Worlds · GM + Players</span>
+</header>
+<main>
+<section class="hero">
+  <div class="card">
+    <div class="genre">ONLINE TABLETOP ROLEPLAYING</div>
+    <h1>한 번의 접속으로,<br>다섯 개의 세계를.</h1>
+    <p>친구들과 방을 만들고, 시나리오를 고르고, 직업을 선택해 주사위를 굴리는 온라인 TRPG 허브입니다. 각 세계는 직업·몬스터·이벤트·카드가 완전히 다르게 설계되어 있습니다.</p>
+    <div class="controls">
+      <button class="btn" onclick="quickStart()">바로 모험 시작</button>
+      <button class="btn secondary" onclick="rollDice(20)">D20 테스트</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>플랫폼 핵심 기능</h2>
+    <p><span class="badge">방 생성</span><span class="badge">방 코드 입장</span><span class="badge">GM 진행</span><span class="badge">캐릭터 선택</span></p>
+    <p><span class="badge">D6/D20 주사위</span><span class="badge">이벤트 드로우</span><span class="badge">카드 드로우</span><span class="badge">몬스터 출현</span></p>
+    <p class="tiny">※ 이 버전은 한 브라우저에서 전체 게임 흐름을 체험하는 프런트엔드 프로토타입입니다. 실제 인터넷 멀티플레이는 서버/DB 연결 단계에서 추가할 수 있습니다.</p>
+  </div>
+</section>
+
+<h2>대형 시리즈 5종</h2>
+<section class="grid" id="campaignGrid"></section>
+
+<section class="workspace">
+  <div class="card">
+    <h2 id="selectedTitle">시리즈 데이터</h2>
+    <p id="selectedIntro"></p>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('jobs',this)">직업</button>
+      <button class="tab" onclick="showTab('monsters',this)">몬스터</button>
+      <button class="tab" onclick="showTab('events',this)">이벤트</button>
+      <button class="tab" onclick="showTab('cards',this)">카드</button>
+    </div>
+    <div class="item-list" id="contentList"></div>
+  </div>
+
+  <div class="card">
+    <h2>온라인 방 / GM 콘솔</h2>
+    <div class="room">
+      <div class="field"><input id="roomName" placeholder="방 이름" value="금요일 밤의 모험"><button class="btn" onclick="createRoom()">방 생성</button></div>
+      <div class="field"><input id="roomCode" placeholder="방 코드"><button class="btn secondary" onclick="joinRoom()">입장</button></div>
+      <div><b>현재 방:</b> <span id="roomState">아직 생성되지 않음</span></div>
+      <div class="players" id="players"></div>
+      <div class="dicebox">
+        <div>주사위</div><div class="dice" id="dice">—</div>
+        <button class="btn secondary" onclick="rollDice(6)">D6</button>
+        <button class="btn" onclick="rollDice(20)">D20</button>
+      </div>
+      <div class="controls">
+        <button class="btn secondary" onclick="drawEvent()">이벤트 발생</button>
+        <button class="btn secondary" onclick="drawCard()">카드 드로우</button>
+        <button class="btn secondary" onclick="spawnMonster()">몬스터 출현</button>
+      </div>
+      <div class="log" id="log">[SYSTEM] Chronicle Gate에 오신 것을 환영합니다.</div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>Chronicle Gate Prototype · Designed for expandable online TRPG campaigns</footer>
+
+<script>
+const campaigns = [{"id": "ember", "title": "잿빛 왕관의 연대기", "genre": "다크 판타지", "tagline": "죽은 왕의 왕관이 다시 불타오른다.", "intro": "왕이 죽은 지 300년. 봉인된 화산성의 잿빛 왕관이 깨어나며, 왕국의 귀족과 괴물들이 동시에 움직이기 시작한다. 플레이어들은 서로 다른 목적을 품은 채 왕관의 주인을 결정해야 한다.", "jobs": [{"name": "룬 기사", "hp": 14, "mp": 5, "skill": "룬 방패 — 피해 2 감소 후 반격 판정"}, {"name": "재의 마도사", "hp": 8, "mp": 13, "skill": "화염 기억 — 이미 본 주문을 한 번 복제"}, {"name": "성흔 추적자", "hp": 11, "mp": 7, "skill": "흔적 읽기 — 숨겨진 통로/거짓말 탐지 보너스"}, {"name": "왕묘 도굴꾼", "hp": 10, "mp": 8, "skill": "금단의 손 — 저주받은 유물 사용 시 첫 페널티 무시"}, {"name": "백은 사제", "hp": 12, "mp": 10, "skill": "정화 — 언데드 또는 저주 효과를 약화"}], "monsters": [{"name": "재해골 근위병", "threat": 2, "ability": "쓰러져도 1회 재조립"}, {"name": "용암 맹견", "threat": 3, "ability": "부상당한 대상에게 추가 피해"}, {"name": "왕관의 망령", "threat": 4, "ability": "플레이어의 야망을 환영으로 구현"}, {"name": "잿빛 키메라", "threat": 4, "ability": "매 라운드 공격 속성 변경"}, {"name": "불멸왕 아르켄", "threat": 5, "ability": "왕관 조각 수에 따라 보스 패턴 변화"}], "events": ["성벽 아래에서 왕가의 문장이 새겨진 시체가 발견된다.", "검은 눈이 내리기 시작하고, 노출된 장비에 저주가 스민다.", "귀족 사절단이 왕관 조각을 대가로 동맹을 제안한다.", "버려진 예배당에서 300년 전 왕의 마지막 고백이 재생된다.", "화산성의 문이 열리며 모든 진영의 위치가 공개된다.", "왕관의 선택: 파괴, 봉인, 계승 중 하나를 결정해야 한다."], "cards": [{"name": "잿불 단검", "type": "장비", "effect": "첫 공격 성공 시 대상 방어 -1"}, {"name": "불탄 왕실문서", "type": "단서", "effect": "귀족 NPC 한 명의 비밀 공개"}, {"name": "붉은 룬석", "type": "소모품", "effect": "주사위 하나를 다시 굴림"}, {"name": "왕관 조각", "type": "유물", "effect": "강력하지만 장면 종료 시 저주 판정"}, {"name": "백은 성수", "type": "소모품", "effect": "저주 1개 제거 또는 언데드 약화"}, {"name": "거짓 충성 맹세", "type": "전술", "effect": "협상 실패를 부분 성공으로 변경"}]}, {"id": "neon", "title": "네온 심연 2099", "genre": "사이버펑크 미스터리", "tagline": "도시는 모든 것을 기억한다. 당신만 빼고.", "intro": "초거대 도시 루멘-9에서 시민들의 기억이 불법 거래되고 있다. 어느 날 플레이어 전원의 과거 48시간이 통째로 삭제된다. 남은 것은 자신들이 남긴 정체불명의 암호 메시지 하나뿐이다.", "jobs": [{"name": "고스트 해커", "hp": 8, "mp": 14, "skill": "백도어 — 전자 장치 난이도 1단계 감소"}, {"name": "증강 집행자", "hp": 15, "mp": 4, "skill": "오버드라이브 — 한 라운드 행동 2회 후 과열"}, {"name": "기억 브로커", "hp": 9, "mp": 12, "skill": "기억 거래 — NPC의 감정/기억 조각 교환"}, {"name": "드론 조종사", "hp": 10, "mp": 10, "skill": "원격 시야 — 위험 지역을 드론으로 먼저 탐색"}, {"name": "스트리트 메딕", "hp": 12, "mp": 9, "skill": "나노 패치 — 전투 중 아군 즉시 회복"}], "monsters": [{"name": "감시 드론 군집", "threat": 2, "ability": "발견 시 지원군 호출"}, {"name": "크롬 하운드", "threat": 3, "ability": "전자 신호를 추적"}, {"name": "기억 포식 바이러스", "threat": 4, "ability": "실패 시 캐릭터 기술 하나 임시 봉인"}, {"name": "제로데이 암살자", "threat": 4, "ability": "처음 받는 공격을 자동 회피"}, {"name": "중앙AI 'MOTHER-9'", "threat": 5, "ability": "플레이어들의 이전 선택 데이터를 이용"}], "events": ["삭제된 48시간 동안 자신들이 한 사건의 용의자였다는 뉴스가 뜬다.", "도시 전체 광고판에 플레이어 중 한 명의 얼굴과 현상금이 표시된다.", "암시장 경매에 '자신의 기억'이 상품으로 등장한다.", "우호적이던 NPC가 사실 플레이어의 명령으로 기억을 지운 인물임이 드러난다.", "도시 구역 하나가 AI에 의해 완전히 봉쇄된다.", "최종 선택: 진실 공개, 기억 복원, 시스템 장악 중 하나를 선택한다."], "cards": [{"name": "ICE 브레이커", "type": "해킹", "effect": "보안 판정 자동 성공 1회"}, {"name": "불법 기억칩", "type": "단서", "effect": "잃어버린 과거 장면 하나 공개"}, {"name": "EMP 코인", "type": "소모품", "effect": "기계형 적 1라운드 정지"}, {"name": "가짜 신분증", "type": "전술", "effect": "추적도 2 감소"}, {"name": "나노 스티치", "type": "회복", "effect": "HP 4 회복"}, {"name": "블랙박스 키", "type": "유물", "effect": "AI 구역 잠금 해제, 대신 추적도 +1"}]}, {"id": "abyss", "title": "심해의 마지막 등대", "genre": "해양 호러", "tagline": "바다 아래에는 별보다 오래된 것이 잠들어 있다.", "intro": "태평양 심해 연구기지 '세이렌'이 17일째 연락 두절이다. 구조팀으로 내려간 플레이어들은 기지의 인원들이 사라진 대신, 외부에서 안으로 들어온 듯한 젖은 발자국을 발견한다.", "jobs": [{"name": "심해 잠수사", "hp": 14, "mp": 5, "skill": "압력 적응 — 환경 피해 첫 1회 무시"}, {"name": "해양 생물학자", "hp": 9, "mp": 11, "skill": "생체 분석 — 괴물의 약점 또는 행동 패턴 파악"}, {"name": "잠수정 기관사", "hp": 12, "mp": 8, "skill": "응급 수리 — 고장난 장치 즉석 복구"}, {"name": "소나 관측관", "hp": 10, "mp": 10, "skill": "반향 탐지 — 보이지 않는 존재의 위치 감지"}, {"name": "해군 구조요원", "hp": 15, "mp": 4, "skill": "구조 우선 — 아군 대신 피해를 받을 수 있음"}], "monsters": [{"name": "유리해파리 군락", "threat": 2, "ability": "빛을 따라 이동하며 전기 방출"}, {"name": "수몰된 승무원", "threat": 3, "ability": "익숙한 목소리로 유인"}, {"name": "심연의 촉수", "threat": 3, "ability": "통로를 봉쇄하고 이동 제한"}, {"name": "무명 포식자", "threat": 4, "ability": "소나에만 감지됨"}, {"name": "고대 생명체 '탈라스'", "threat": 5, "ability": "공포 수치에 따라 현실 왜곡"}], "events": ["기지의 산소 공급량이 예상보다 빠르게 감소한다.", "폐쇄된 관측창 밖에서 사람이 손을 흔든다.", "기록실에서 30년 전 동일한 사고 보고서가 발견된다.", "한 플레이어의 통신기에 미래의 자신이 보낸 구조 요청이 도착한다.", "해저 균열이 열리며 기지 전체가 기울기 시작한다.", "최종 선택: 탈출, 기지 폭파, 심연과 접촉 중 하나를 결정한다."], "cards": [{"name": "고압 절단기", "type": "장비", "effect": "봉쇄된 문/잔해 즉시 제거"}, {"name": "비상 산소통", "type": "소모품", "effect": "산소 위기 이벤트 1회 무효"}, {"name": "소나 비콘", "type": "도구", "effect": "은신형 적 공개"}, {"name": "검은 진주", "type": "유물", "effect": "공포 판정 +2, 대신 기묘한 환청 발생"}, {"name": "잠수정 마스터키", "type": "단서", "effect": "격납고 접근 가능"}, {"name": "신경 안정제", "type": "회복", "effect": "공포 3 감소"}]}, {"id": "clock", "title": "13번째 시계탑", "genre": "시간여행 판타지", "tagline": "자정이 열세 번 울리면, 어제는 다시 시작된다.", "intro": "유럽풍 도시 크로노벨에서 어느 날 시계탑이 13번 울린다. 이후 도시는 같은 하루를 반복하지만, 플레이어들만 기억을 유지한다. 문제는 반복될수록 도시의 일부가 존재 자체를 잃는다는 것이다.", "jobs": [{"name": "시간 감식관", "hp": 10, "mp": 12, "skill": "잔상 확인 — 이전 루프의 흔적을 한 장면 복원"}, {"name": "기계 시계공", "hp": 11, "mp": 9, "skill": "톱니 조율 — 시간 장치 작동/고장 조절"}, {"name": "역행 검사", "hp": 14, "mp": 6, "skill": "되감기 — 자신의 직전 행동 1회 취소하고 다시 시도"}, {"name": "예언 기록자", "hp": 8, "mp": 14, "skill": "미래 각주 — GM에게 다음 사건의 단서 질문"}, {"name": "시간 밀수꾼", "hp": 12, "mp": 8, "skill": "루프 보관함 — 아이템 하나를 다음 루프로 유지"}], "monsters": [{"name": "초침 사냥개", "threat": 2, "ability": "행동이 늦은 플레이어를 우선 공격"}, {"name": "무명 시민", "threat": 3, "ability": "기억을 훔쳐 자신의 정체로 사용"}, {"name": "역행 기사", "threat": 4, "ability": "받은 피해 일부를 이전 라운드로 되돌림"}, {"name": "시간 기생충", "threat": 4, "ability": "루프 횟수를 강제로 증가"}, {"name": "열세 번째 종지기", "threat": 5, "ability": "같은 전술을 두 번 쓰면 대응 패턴 생성"}], "events": ["한 NPC가 이번 루프에서만 플레이어를 기억한다.", "도시의 거리 하나가 지도에서 완전히 사라진다.", "정오에 시간이 10분 동안 거꾸로 흐른다.", "플레이어 중 한 명의 과거 버전이 나타나 다른 선택을 요구한다.", "13번째 시계탑의 위치가 매 루프마다 달라진다.", "최종 선택: 루프 파괴, 도시 희생, 시간의 주인 교체 중 하나를 결정한다."], "cards": [{"name": "멈춘 회중시계", "type": "유물", "effect": "한 라운드 동안 NPC 하나 정지"}, {"name": "되감기 표", "type": "소모품", "effect": "실패한 판정 1회 재시도"}, {"name": "내일의 신문", "type": "단서", "effect": "다음 이벤트 일부 공개"}, {"name": "황동 톱니", "type": "재료", "effect": "시계 장치 수리 난이도 감소"}, {"name": "시간 봉인병", "type": "도구", "effect": "아이템 하나를 다음 루프로 전달"}, {"name": "잊힌 이름표", "type": "단서", "effect": "삭제된 NPC 한 명을 임시 복원"}]}, {"id": "wild", "title": "별을 삼킨 숲", "genre": "신화 생존 판타지", "tagline": "밤하늘의 별이 사라질수록 숲은 더 밝아진다.", "intro": "매일 밤 별 하나가 사라지고, 다음 날 숲에는 그 별의 힘을 품은 괴물이 태어난다. 마지막 별이 사라지기 전, 플레이어들은 살아있는 숲의 중심에 도달해 별을 돌려놓아야 한다.", "jobs": [{"name": "별사냥꾼", "hp": 12, "mp": 9, "skill": "별궤적 — 희귀 몬스터 추적 시 보너스"}, {"name": "숲의 주술사", "hp": 9, "mp": 13, "skill": "수목 대화 — 식물형 존재에게 질문 가능"}, {"name": "야수 길잡이", "hp": 13, "mp": 7, "skill": "동물 교감 — 중립 야수를 일시적 동료로"}, {"name": "유성 대장장이", "hp": 14, "mp": 6, "skill": "별철 강화 — 카드 장비 하나를 장면 동안 강화"}, {"name": "꿈의 방랑자", "hp": 8, "mp": 14, "skill": "꿈길 — 현실의 장애물을 꿈 장면으로 우회"}], "monsters": [{"name": "성운 사슴", "threat": 2, "ability": "공격받으면 환영 분신 생성"}, {"name": "달빛 곰", "threat": 3, "ability": "어둠 속에서 피해 감소"}, {"name": "별가루 독사", "threat": 3, "ability": "중독된 대상의 주사위 최대치 제한"}, {"name": "뿌리 거인", "threat": 4, "ability": "지형 자체를 이동시킴"}, {"name": "별먹는 신수 '오르바'", "threat": 5, "ability": "남은 별 수에 따라 새로운 능력 획득"}], "events": ["하늘에서 별 하나가 떨어지며 새로운 지역이 열린다.", "숲이 플레이어들의 이름을 부르기 시작한다.", "서로 다른 길을 선택하면 숲의 계절이 갈라진다.", "별을 숭배하는 부족과 별을 파괴하려는 부족이 충돌한다.", "최후의 별이 흔들리며 모든 마법의 비용이 두 배가 된다.", "최종 선택: 별 복원, 숲과 융합, 새로운 별 창조 중 하나를 결정한다."], "cards": [{"name": "별철 활", "type": "장비", "effect": "비행/환영 적에게 추가 효과"}, {"name": "꿈씨앗", "type": "소모품", "effect": "안전한 짧은 휴식 공간 생성"}, {"name": "달의 이슬", "type": "회복", "effect": "HP 3 + MP 2 회복"}, {"name": "성도 조각", "type": "단서", "effect": "숨겨진 길 하나 공개"}, {"name": "야수의 맹세", "type": "전술", "effect": "야수형 몬스터를 1라운드 중립화"}, {"name": "작은 별핵", "type": "유물", "effect": "판정 +3, 사용 후 세계의 별 1개 감소 위험"}]}];
+let selected = campaigns[0];
+let currentTab = 'jobs';
+let room = null;
+let players = [];
+
+function log(msg){
+  const el=document.getElementById('log');
+  el.innerHTML += '<br>'+msg;
+  el.scrollTop=el.scrollHeight;
+}
+function renderCampaigns(){
+  const grid=document.getElementById('campaignGrid');
+  grid.innerHTML=campaigns.map(c=>`<article class="card campaign ${c.id===selected.id?'active':''}">
+    <div class="genre">${c.genre}</div><h3>${c.title}</h3><p>${c.tagline}</p>
+    <button class="btn secondary" onclick="selectCampaign('${c.id}')">이 세계 선택</button></article>`).join('');
+}
+function selectCampaign(id){
+  selected=campaigns.find(c=>c.id===id); renderCampaigns(); renderSelected(); log('[WORLD] '+selected.title+' 선택');
+}
+function renderSelected(){
+  document.getElementById('selectedTitle').textContent=selected.title;
+  document.getElementById('selectedIntro').textContent=selected.intro;
+  showTab(currentTab);
+}
+function showTab(tab,btn){
+  currentTab=tab;
+  if(btn){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');}
+  const list=document.getElementById('contentList');
+  let arr=selected[tab];
+  if(tab==='jobs') list.innerHTML=arr.map(x=>`<div class="item"><strong>${x.name}</strong><div class="meta">HP ${x.hp} · MP ${x.mp}</div><div class="tiny">${x.skill}</div><button class="btn secondary" style="margin-top:8px" onclick="pickJob('${x.name}')">캐릭터 선택</button></div>`).join('');
+  if(tab==='monsters') list.innerHTML=arr.map(x=>`<div class="item"><strong>${x.name}</strong><div class="meta">위협도 ${'★'.repeat(x.threat)}</div><div class="tiny">${x.ability}</div></div>`).join('');
+  if(tab==='events') list.innerHTML=arr.map((x,i)=>`<div class="item"><strong>EVENT ${String(i+1).padStart(2,'0')}</strong><div class="tiny">${x}</div></div>`).join('');
+  if(tab==='cards') list.innerHTML=arr.map(x=>`<div class="item"><strong>${x.name}</strong><div class="meta">${x.type}</div><div class="tiny">${x.effect}</div></div>`).join('');
+}
+function code(){return Math.random().toString(36).slice(2,6).toUpperCase()}
+function createRoom(){
+  room={name:document.getElementById('roomName').value||'새 모험',code:code()};
+  document.getElementById('roomState').textContent=`${room.name} / ${room.code}`;
+  document.getElementById('roomCode').value=room.code;
+  players=[{name:'GM',job:'게임 마스터'}]; renderPlayers(); log('[ROOM] '+room.code+' 방 생성');
+}
+function joinRoom(){
+  const c=document.getElementById('roomCode').value.trim().toUpperCase();
+  if(!c) return alert('방 코드를 입력하세요.');
+  if(!room) room={name:'원격 모험방',code:c};
+  players.push({name:'Player '+players.length,job:'직업 미선택'}); renderPlayers(); log('[JOIN] 플레이어가 '+c+' 방에 참가');
+}
+function renderPlayers(){
+  document.getElementById('players').innerHTML=players.map((p,i)=>`<div class="player"><span><b>${p.name}</b><br><span class="tiny">${p.job}</span></span><span>${i===0?'👑':'🎭'}</span></div>`).join('');
+}
+function pickJob(job){
+  if(!room) createRoom();
+  let p=players.find(x=>x.name!=='GM' && x.job==='직업 미선택');
+  if(!p){p={name:'Player '+players.length,job};players.push(p)} else p.job=job;
+  renderPlayers(); log('[CHARACTER] '+p.name+' → '+job);
+}
+function rollDice(sides){
+  const n=Math.floor(Math.random()*sides)+1;
+  document.getElementById('dice').textContent=n;
+  log(`[DICE] D${sides} → ${n}`);
+}
+function drawEvent(){
+  const x=selected.events[Math.floor(Math.random()*selected.events.length)];
+  log('[EVENT] '+x);
+}
+function drawCard(){
+  const x=selected.cards[Math.floor(Math.random()*selected.cards.length)];
+  log(`[CARD] ${x.name} — ${x.effect}`);
+}
+function spawnMonster(){
+  const x=selected.monsters[Math.floor(Math.random()*selected.monsters.length)];
+  log(`[MONSTER] ${x.name} 등장! 위협도 ${x.threat} / ${x.ability}`);
+}
+function quickStart(){
+  createRoom(); selectCampaign(campaigns[Math.floor(Math.random()*campaigns.length)].id); joinRoom();
+  log('[START] 모험 준비 완료. 직업을 선택하고 이벤트를 발생시켜 보세요.');
+}
+renderCampaigns(); renderSelected();
+</script>
+</body>
+</html>

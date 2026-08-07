@@ -41,7 +41,7 @@
         </div>
       </div>
       <div class="home-vignette"></div>
-      <div class="version" id="versionLabel">ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v3.4.0</div>
+      <div class="version" id="versionLabel">ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v4.0 RC</div>
     </section>
 
     <section class="view" id="entryView">
@@ -86,7 +86,7 @@
             </div>
           </section>
         </div>
-        <div class="lobby-footer"><span id="lobbyStatus">모든 동료가 준비되면 모험을 시작할 수 있습니다.</span><button class="primary huge" id="startGameBtn" type="button">SESSION START</button></div>
+        <div class="lobby-footer"><span id="lobbyStatus">모든 동료가 준비되면 모험을 시작할 수 있습니다.</span><div class="lobby-footer-actions"><button class="ghost huge" id="lobbyHomeBtn" type="button">처음 화면으로 나가기</button><button class="primary huge" id="startGameBtn" type="button">SESSION START</button></div></div>
       </div>
     </section>
 
@@ -100,15 +100,27 @@
               <h2 id="eventTitle">GM이 다음 장면을 준비하고 있습니다.</h2>
               <div class="turn-banner" id="turnBanner">이번 장면의 행동 순서는 곧 결정됩니다.</div>
             </div>
-            <div class="deck-meter"><span>EVENT DECK</span><b id="deckCount">60</b></div>
+            <div class="deck-meter"><span>EVENT DECK</span><b id="deckCount">30</b><small id="eventCadence">3턴마다 자동</small></div>
           </div>
           <figure class="scene-art ornate-subtle">
             <img id="storySceneImg" alt="스토리 장면 이미지">
             <figcaption id="storySceneCaption">장면 분위기에 맞는 이미지가 이곳에 표시됩니다.</figcaption>
           </figure>
-          <div class="narration" id="eventText">방장은 이벤트 카드를 한 장 뽑아 이야기를 시작하세요.</div>
+          <div class="story-clarity" id="storyClarity">
+            <div class="clarity-card"><span>지금 무슨 상황?</span><p id="storySituation">현재 장면을 준비하고 있습니다.</p></div>
+            <div class="clarity-card objective"><span>지금 해야 할 일</span><p id="storyObjective">현재 목표를 확인 중입니다.</p></div>
+            <div class="clarity-card"><span>왜 중요한가?</span><p id="storyWhy">이 선택이 이후 이야기와 위험도에 영향을 줍니다.</p></div>
+          </div>
+          <div class="narration" id="eventText">현재 차례의 플레이어가 메인 스토리를 진행하세요. 3턴마다 이벤트가 자동으로 발생합니다.</div>
+          <div class="player-prompt" id="storyPrompt"></div>
+          <div class="story-action-box" id="storyActionBox">
+            <label for="storyActionInput">이번 차례 행동 선언</label>
+            <div class="story-action-row"><input id="storyActionInput" maxlength="140" placeholder="예: 부서진 제단 뒤를 조사해 숨겨진 통로가 있는지 확인한다."><span id="storyActionCount">0/140</span></div>
+            <small>현재 차례 플레이어만 입력할 수 있습니다. 선언은 파티 로그에 기록됩니다.</small>
+          </div>
+          <div id="voteTimer" class="vote-timer hidden"></div>
           <div id="choiceArea" class="choice-area"></div>
-          <div class="gm-bar" id="gmBar"><button class="primary" id="drawEventBtn" type="button">이벤트 카드 뽑기</button><button class="ghost" id="finalizeChoiceBtn" type="button">투표 조기 확정</button><button class="ghost" id="releaseActionBtn" type="button">투표/행동 초기화</button><button class="ghost" id="continueBtn" type="button">결과 확정 / 다음 장면</button></div>
+          <div class="gm-bar" id="gmBar"><button class="primary" id="advanceStoryBtn" type="button">메인 스토리 진행</button><button class="ghost" id="continueBtn" type="button">이벤트 결과 닫기 / 계속</button></div>
         </section>
         <aside class="right-rail">
           <section class="ornate stat-card"><div class="panel-title"><span>YOU</span><small id="myJobMini">UNASSIGNED</small></div><div id="myStatsMini"></div></section>
@@ -120,7 +132,12 @@
 
     <section class="view" id="combatView">
       <div class="combat-shell">
-        <div class="combat-title"><div class="eyebrow">ENCOUNTER</div><h1 id="monsterName">UNKNOWN</h1><p>도망칠 시간은 끝났다. 주사위를 들어라.</p></div>
+        <div class="combat-title"><div class="eyebrow">ENCOUNTER</div><h1 id="monsterName">UNKNOWN</h1><p>턴 표시를 따라 행동하세요. 모든 플레이어가 행동하면 BOSS TURN이 시작됩니다.</p></div>
+        <div class="combat-turn-panel ornate" id="combatTurnPanel">
+          <div class="combat-turn-head"><span id="combatTurnPhase">PLAYER TURN</span><b id="combatRoundLabel">ROUND 1</b></div>
+          <div class="combat-timeline" id="combatTimeline"></div>
+          <div class="boss-turn-warning" id="bossTurnWarning">모든 플레이어 행동 완료 후 보스가 공격합니다.</div>
+        </div>
         <figure class="combat-visual ornate-subtle"><img id="combatSceneImg" alt="전투 보스 이미지"></figure>
         <div class="monster-card ornate"><div class="monster-sigil">☠</div><div><span>ARMOR CLASS <b id="monsterAC">—</b></span><div class="monster-hp"><i id="monsterHpFill"></i></div><strong id="monsterHpText">— / —</strong></div></div>
         <div id="combatParty" class="combat-party"></div>

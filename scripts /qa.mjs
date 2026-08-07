@@ -20,6 +20,7 @@ for (const campaign of CAMPAIGNS) {
   assert(new Set(campaign.events.map(e => e.title)).size === 30, `${campaign.title}: 이벤트 제목이 중복됩니다.`);
   assert(new Set(campaign.events.map(e => e.id)).size === 30, `${campaign.title}: 이벤트 ID가 중복됩니다.`);
   assert(campaign.acts.length === 5, `${campaign.title}: 5막이어야 합니다.`);
+  assert(campaign.storyBeats?.length === 20, `${campaign.title}: 메인 스토리 장면이 20개여야 합니다.`);
   for (const event of campaign.events) {
     assert(!globalEventIds.has(event.id), `전체 캠페인에서 이벤트 ID 중복: ${event.id}`);
     globalEventIds.add(event.id);
@@ -33,7 +34,7 @@ for (const campaign of CAMPAIGNS) {
       if (choice.requiredJob) assert(campaign.jobs.some(job => job.name === choice.requiredJob), `${event.id}: 존재하지 않는 직업 전용 선택 ${choice.requiredJob}`);
     }
   }
-  notes.push(`${campaign.title}: 이벤트 30종 / 실제 덱 60장(각 2장) / 직업 6종`);
+  notes.push(`${campaign.title}: 메인 스토리 20장면 / 이벤트 30종·30장 / 직업 6종`);
 }
 
 const index = read('public/index.html');
@@ -54,6 +55,16 @@ for (const id of new Set(referencedIds)) assert(idSet.has(id) || dynamicIds.has(
 
 assert((css.match(/{/g) || []).length === (css.match(/}/g) || []).length, 'CSS 중괄호 수가 맞지 않습니다.');
 assert(index.includes('viewport-fit=cover'), '모바일 safe-area 대응 viewport 설정 누락');
+assert(index.includes('id="storyActionInput"') && app.includes("socket.emit('story:advance'"), '메인 스토리 행동 선언 UI 누락');
+assert(server.includes("const declaration = sanitize(payload?.declaration, 180)"), '서버 행동 선언 검증 누락');
+
+assert(server.includes("socket.on('player:skillUse'"), '직업 스킬 서버 핸들러 누락');
+assert(app.includes("socket.emit('player:skillUse'"), '직업 스킬 UI 이벤트 누락');
+assert(index.includes('id="jobSkillBtn"') && index.includes('id="combatSkillBtn"'), '직업 스킬 버튼 누락');
+assert(server.includes('interpretFreeAction') && server.includes('actionNarrative'), '자유 행동 판정 엔진 누락');
+
+assert(server.includes("release: 'release-candidate'"), 'health release marker 누락');
+
 assert(!/\son[a-z]+\s*=/.test(index), 'CSP와 충돌하는 inline event handler(onclick 등)가 남아 있습니다.');
 assert(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(index), 'CSP와 충돌하는 inline script가 남아 있습니다.');
 assert(index.includes('id="endingView"') && index.includes('id="leaveRoomBtn"'), '필수 엔딩/방 나가기 UI 누락');
@@ -62,6 +73,15 @@ assert(index.includes('endingView') && app.includes("state.phase==='ending'"), '
 assert(index.includes('id="helpModal"') && index.includes('hidden'), 'ESC 모달 초기 hidden 안전장치 누락');
 assert(app.includes('resetTransientUi') && app.includes('pageshow'), '페이지 복원 시 임시 UI 초기화 로직 누락');
 assert(server.includes('choice.requiredJob') && server.includes('player.job?.name !== choice.requiredJob'), '직업 전용 선택 서버 검증 누락');
+
+assert(server.includes('EVENT_EVERY_TURNS = 3'), '이벤트 주기가 3 메인 턴으로 고정되어 있지 않습니다.');
+assert(server.includes('VOTE_DURATION_MS = 20_000'), '이벤트 투표 시간이 20초로 설정되어 있지 않습니다.');
+assert(server.includes("socket.on('story:advance'"), '메인 스토리 턴 진행 이벤트가 없습니다.');
+assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공개 로직이 없습니다.');
+assert(server.includes("event:finalizeChoice") && server.includes('20초 제한시간 종료 후 서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
+assert(!index.includes('id="finalizeChoiceBtn"'), '호스트 투표 조기 확정 버튼이 남아 있습니다.');
+assert(index.includes('id="voteTimer"') && index.includes('id="advanceStoryBtn"'), '메인 스토리 진행/투표 타이머 UI가 없습니다.');
+assert(css.includes('object-fit:contain!important'), '스토리 이미지 잘림 방지 contain 규칙이 없습니다.');
 assert(server.includes('room.monster.acted'), '전투 라운드 중복 행동 방지 로직 누락');
 assert(server.includes('promoteHostIfNeeded'), '방장 연결 해제 시 승계 로직 누락');
 assert(server.includes('reconcileCombatRound'), '전투 중 연결 해제/재접속 라운드 복구 로직 누락');

@@ -1,0 +1,22 @@
+{
+  "name": "chronicle-gate-online",
+  "version": "3.1.0",
+  "private": true,
+  "type": "module",
+  "description": "2-4 player server-authoritative cinematic TRPG for Render + Supabase",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node scripts/qa.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "verify": "npm run check && npm test"
+  },
+  "dependencies": {
+    "express": "5.2.1",
+    "socket.io": "4.8.3",
+    "three": "0.185.1"
+  },
+  "engines": {
+    "node": ">=20 <23"
+  }
+}

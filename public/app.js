@@ -15,7 +15,7 @@ const REQUIRED_IDS = [
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceSub',
-  'helpBtn', 'helpModal', 'helpClose', 'helpBody', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'versionLabel'
+  'helpBtn', 'helpModal', 'helpClose', 'helpBody', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'versionLabel'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
@@ -31,6 +31,32 @@ let roomCode = localStorage.getItem('cg_room') || '';
 let playerToken = localStorage.getItem('cg_token') || '';
 let diceQueue = Promise.resolve();
 const app = $('#app');
+
+const UI_DEFAULTS = { theme: 'dark', chatSize: 300 };
+function loadUiPrefs() {
+  const theme = localStorage.getItem('cg_theme') === 'light' ? 'light' : 'dark';
+  const rawSize = Number(localStorage.getItem('cg_chat_size') || UI_DEFAULTS.chatSize);
+  const chatSize = Math.max(300, Math.min(520, Number.isFinite(rawSize) ? rawSize : UI_DEFAULTS.chatSize));
+  return { theme, chatSize };
+}
+let uiPrefs = loadUiPrefs();
+function applyUiPrefs() {
+  document.documentElement.dataset.theme = uiPrefs.theme;
+  document.documentElement.style.setProperty('--chat-width', `${uiPrefs.chatSize}px`);
+  document.documentElement.style.setProperty('--lobby-chat-height', `${Math.round(220 + (uiPrefs.chatSize - 300) * .9)}px`);
+  const range = $('#chatSizeRange');
+  if (range) range.value = String(uiPrefs.chatSize);
+  const value = $('#chatSizeValue');
+  if (value) value.textContent = uiPrefs.chatSize === 300 ? '기본' : `${uiPrefs.chatSize}px`;
+  $('#themeDarkBtn')?.classList.toggle('selected-setting', uiPrefs.theme === 'dark');
+  $('#themeLightBtn')?.classList.toggle('selected-setting', uiPrefs.theme === 'light');
+}
+function saveUiPrefs() {
+  localStorage.setItem('cg_theme', uiPrefs.theme);
+  localStorage.setItem('cg_chat_size', String(uiPrefs.chatSize));
+  applyUiPrefs();
+}
+applyUiPrefs();
 
 const WORLD_META = {
   ember: { motif: 'ASHEN THRONE', scene: ['잿빛 성채', '왕묘 회랑', '용암 성문', '죽은 왕의 제단', '마지막 즉위식'], boss: '재와 불꽃 사이에서 솟아난 고대 왕의 형상' },
@@ -523,6 +549,10 @@ function closeHelp() { $('#helpModal').classList.remove('show'); }
 $('#helpBtn').onclick = openHelp;
 $('#lobbyGuideBtn').onclick = openHelp;
 $('#helpClose').onclick = closeHelp;
+$('#themeDarkBtn').onclick = () => { uiPrefs.theme = 'dark'; saveUiPrefs(); toast('검정 테마로 변경했습니다.'); };
+$('#themeLightBtn').onclick = () => { uiPrefs.theme = 'light'; saveUiPrefs(); toast('하양 테마로 변경했습니다.'); };
+$('#chatSizeRange').oninput = e => { uiPrefs.chatSize = Number(e.target.value); saveUiPrefs(); };
+$('#uiResetBtn').onclick = () => { uiPrefs = { ...UI_DEFAULTS }; saveUiPrefs(); toast('화면 설정을 기본값으로 되돌렸습니다.'); };
 $('#abandonRequestBtn').onclick = () => socket.emit('game:abandonRequest', { roomCode, playerToken }, r => { if (!r?.ok) toast(r.error); else toast('포기 투표를 시작했습니다.'); });
 $('#abandonYes').onclick = () => socket.emit('game:abandonRespond', { roomCode, playerToken, approve: true }, r => !r?.ok && toast(r.error));
 $('#abandonNo').onclick = () => socket.emit('game:abandonRespond', { roomCode, playerToken, approve: false }, r => !r?.ok && toast(r.error));

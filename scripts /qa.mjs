@@ -58,6 +58,16 @@ assert(index.includes('viewport-fit=cover'), '모바일 safe-area 대응 viewpor
 assert(index.includes('id="storyActionInput"') && app.includes("socket.emit('story:advance'"), '메인 스토리 행동 선언 UI 누락');
 assert(server.includes("const declaration = sanitize(payload?.declaration, 180)"), '서버 행동 선언 검증 누락');
 
+
+assert(server.includes('const MIN_PLAYERS = 1'), 'SOLO 1인 시작 설정이 누락되었습니다.');
+assert(server.includes('soloVoteDurationMs: 5000'), 'SOLO 빠른 이벤트 선택 설정이 누락되었습니다.');
+for (const campaign of CAMPAIGNS) {
+  for (const beat of campaign.storyBeats) {
+    assert(beat.text?.length >= 80, `${campaign.title} ${beat.id}: 소설형 본문이 너무 짧습니다.`);
+    assert(Object.keys(beat.roleHooks || {}).length === 6, `${campaign.title} ${beat.id}: 직업 능력치별 상황 훅 6종 누락`);
+  }
+}
+
 assert(server.includes("socket.on('player:skillUse'"), '직업 스킬 서버 핸들러 누락');
 assert(app.includes("socket.emit('player:skillUse'"), '직업 스킬 UI 이벤트 누락');
 assert(index.includes('id="jobSkillBtn"') && index.includes('id="combatSkillBtn"'), '직업 스킬 버튼 누락');

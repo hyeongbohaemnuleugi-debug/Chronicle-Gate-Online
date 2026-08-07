@@ -41,7 +41,7 @@
         </div>
       </div>
       <div class="home-vignette"></div>
-      <div class="version" id="versionLabel">ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v3.3.0</div>
+      <div class="version" id="versionLabel">ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v3.4.0</div>
     </section>
 
     <section class="view" id="entryView">
@@ -157,6 +157,21 @@
         <button class="ghost" id="helpClose" type="button">닫기</button>
       </div>
       <div id="helpBody" class="help-body"></div>
+      <section class="ui-settings help-section">
+        <h3>화면 설정</h3>
+        <div class="setting-row">
+          <div><b>화면 테마</b><small>이 설정은 본인 화면에만 적용됩니다.</small></div>
+          <div class="segmented">
+            <button class="ghost" id="themeDarkBtn" type="button">검정</button>
+            <button class="ghost" id="themeLightBtn" type="button">하양</button>
+          </div>
+        </div>
+        <div class="setting-row setting-slider">
+          <div><b>채팅창 크기</b><small>스토리 화면의 오른쪽 채팅 영역과 로비 채팅 높이를 조절합니다.</small></div>
+          <div class="range-wrap"><input id="chatSizeRange" type="range" min="300" max="520" step="20" value="300"><b id="chatSizeValue">기본</b></div>
+        </div>
+        <button class="ghost full" id="uiResetBtn" type="button">화면 설정 기본값으로 되돌리기</button>
+      </section>
       <div class="abandon-box" id="abandonVoteBox"></div>
       <div class="help-actions">
         <button class="ghost" id="abandonRequestBtn" type="button">현재 연대기 포기 투표 시작</button>

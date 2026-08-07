@@ -23,7 +23,13 @@ if (missingIds.length) {
   throw new Error(`Missing required DOM ids: ${missingIds.join(', ')}`);
 }
 
-const dice = new DiceTheater($('#diceCanvas'));
+let dice = null;
+function getDiceTheater() {
+  if (dice) return dice;
+  try { dice = new DiceTheater($('#diceCanvas')); }
+  catch (error) { console.error('[dice] 3D renderer unavailable:', error); dice = null; }
+  return dice;
+}
 let campaigns = [];
 let state = null;
 let mode = 'create';
@@ -315,7 +321,13 @@ function enqueueDice(payload) {
     $('#diceFinal').textContent = '';
     $('#diceFinal').classList.remove('is-result');
     $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
-    await dice.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', duration: payload.sides === 20 ? 2850 : 2350 });
+    const theater = getDiceTheater();
+    if (theater) {
+      await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', duration: payload.sides === 20 ? 2850 : 2350 });
+    } else {
+      $('#diceSub').textContent = '3D 렌더러를 사용할 수 없어 결과를 바로 표시합니다.';
+      await new Promise(r => setTimeout(r, 450));
+    }
     $('#diceFinal').textContent = payload.sides === 20 && payload.result === 20 ? 'NATURAL 20' : payload.sides === 20 && payload.result === 1 ? 'NATURAL 1' : `결과 ${payload.result}`;
     $('#diceFinal').classList.add('is-result');
     $('#diceSub').textContent = payload.total != null ? `최종 ${payload.total} · 기준 ${payload.dc}${payload.damage ? ` · 피해 ${payload.damage}` : ''}` : '운명이 결정되었습니다.';
@@ -650,3 +662,5 @@ fetch('/api/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).th
 
 // QA marker: state.phase==='ending'
 // QA marker: state.phase==='resolution'&&state.lastResolution
+
+// v3.5.1: home overlay click-through + resilient 3D dice initialization

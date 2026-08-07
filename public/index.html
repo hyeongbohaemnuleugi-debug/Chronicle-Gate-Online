@@ -1,50 +1,58 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#08090f" />
-  <title>Chronicle Gate Online v3.2</title>
-  <meta name="description" content="2~4명이 함께 플레이하는 실시간 온라인 TRPG Chronicle Gate" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Chronicle Gate Online</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Noto+Serif+KR:wght@400;600;700;900&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;800&family=Noto+Serif+KR:wght@400;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<div id="app" data-world="ember">
-  <div class="world-bg"><div class="bg-haze"></div><div class="bg-silhouette"></div><div id="particles"></div></div>
+<div id="app">
+  <div class="world-bg"></div>
+  <div class="bg-haze"></div>
+  <div class="bg-silhouette"></div>
+  <div id="particles"></div>
+
   <header class="hud-top hidden" id="hudTop">
-    <div class="brand-small">CHRONICLE <i>GATE</i></div>
-    <div class="room-chip"><span class="live-dot"></span><span id="connectionText">ONLINE</span> · ROOM <b id="roomCodeTop">-----</b><button class="room-leave" id="leaveRoomBtn" type="button">LEAVE</button></div>
+    <div class="brand-small">CHRONICLE <i>GATE</i> ONLINE</div>
+    <div class="hud-actions">
+      <button class="ghost mini" id="helpBtn" type="button">ESC GUIDE</button>
+      <div class="room-chip"><span class="live-dot"></span><span id="connectionText">ONLINE</span> · ROOM <b id="roomCodeTop">-----</b><button id="leaveRoomBtn" class="room-leave" type="button">EXIT</button></div>
+    </div>
   </header>
 
-  <main>
+  <main id="views">
     <section class="view active" id="homeView">
-      <div class="home-vignette"></div>
       <div class="home-content">
-        <div class="crest">◆</div>
-        <div class="eyebrow">CINEMATIC ONLINE TABLETOP RPG</div>
+        <div class="crest">✦</div>
+        <div class="eyebrow">ONLINE CO-OP TRPG</div>
         <h1>CHRONICLE<br><span>GATE</span></h1>
-        <p>두 명에서 네 명. 하나의 방. 하나의 주사위 결과.<br>선택과 실패까지 모두가 같은 순간을 목격한다.</p>
+        <p>
+          2~4명이 함께 즐기는 온라인 협동 스토리 RPG입니다.<br>
+          방을 만들고, 연대기를 고르고, 각 세계에 맞는 직업과 능력치를 굴린 뒤<br>
+          카드 이벤트와 전투를 넘어 하나의 결말을 완성하세요.
+        </p>
         <div class="home-actions">
-          <button class="primary huge" id="openCreate">새 연대기 열기</button>
-          <button class="ghost huge" id="openJoin">방 코드로 참가</button>
+          <button class="primary huge" id="openCreate" type="button">방 만들기</button>
+          <button class="ghost huge" id="openJoin" type="button">방 참가하기</button>
         </div>
       </div>
-      <div class="version" id="versionLabel">ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v3.2</div>
+      <div class="home-vignette"></div>
+      <div class="version" id="versionLabel">ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v3.3.0</div>
     </section>
 
     <section class="view" id="entryView">
+      <button class="back" id="entryBack" type="button">←</button>
       <div class="center-card ornate">
-        <button class="back" id="entryBack">←</button>
         <div class="eyebrow" id="entryEyebrow">CREATE ROOM</div>
         <h2 id="entryTitle">새로운 연대기를 시작합니다.</h2>
-        <label class="field"><span>플레이어 이름</span><input id="nameInput" maxlength="18" autocomplete="nickname" placeholder="이름을 입력하세요"></label>
-        <label class="field" id="codeField"><span>방 코드</span><input id="codeInput" maxlength="5" autocomplete="off" placeholder="ABCDE"></label>
-        <button class="primary full" id="entrySubmit">방 만들기</button>
-        <p class="error" id="entryError"></p>
+        <label class="field"><span>플레이어 이름</span><input id="nameInput" maxlength="18" placeholder="예: 재의 기사 아린"></label>
+        <label class="field" id="codeField"><span>방 코드</span><input id="codeInput" maxlength="5" placeholder="ABCDE"></label>
+        <button class="primary full" id="entrySubmit" type="button">방 만들기</button>
+        <div class="error" id="entryError"></div>
       </div>
     </section>
 
@@ -52,9 +60,9 @@
       <div class="lobby-shell">
         <div class="lobby-header">
           <div><div class="eyebrow">SESSION LOBBY</div><h2>연대기의 동료들</h2></div>
-          <div class="code-display"><span>ROOM CODE</span><b id="roomCodeLobby">-----</b><button class="mini" id="copyCode">COPY</button></div>
+          <div class="code-display"><span>ROOM CODE</span><b id="roomCodeLobby">-----</b><button class="mini" id="copyCode" type="button">COPY</button></div>
         </div>
-        <div class="lobby-grid">
+        <div class="lobby-grid lobby-grid-extended">
           <section class="ornate panel players-panel">
             <div class="panel-title"><span>PLAYERS</span><small>2~4명</small></div>
             <div id="playerSlots" class="player-slots"></div>
@@ -65,12 +73,20 @@
             <div id="campaignDetail" class="campaign-detail"></div>
           </section>
           <section class="ornate panel character-panel">
-            <div class="panel-title"><span>YOUR CHARACTER</span><small>주사위로 생성</small></div>
+            <div class="panel-title"><span>YOUR CHARACTER</span><small>스토리별 1회 생성</small></div>
             <div class="character-summary" id="characterSummary"></div>
-            <div class="char-actions"><button class="primary" id="rollClassBtn">D6 직업 배정</button><button class="ghost" id="rollStatsBtn">4D6 능력치 생성</button></div>
+            <div class="char-actions"><button class="primary" id="rollClassBtn" type="button">D6 직업 배정</button><button class="ghost" id="rollStatsBtn" type="button">4D6 능력치 생성</button></div>
+          </section>
+          <section class="ornate panel lobby-chat-panel">
+            <div class="panel-title"><span>TABLE CHAT</span><small>게임 시작 전에도 대화 가능</small></div>
+            <div id="lobbyChatLog" class="chat-log chat-log-lobby"></div>
+            <form id="lobbyChatForm"><input id="lobbyChatInput" maxlength="240" placeholder="연대기를 고르기 전에 대화를 나눠보세요…"><button type="submit">↗</button></form>
+            <div class="lobby-guide-row">
+              <button class="ghost full" id="lobbyGuideBtn" type="button">가이드 열기 (ESC)</button>
+            </div>
           </section>
         </div>
-        <div class="lobby-footer"><span id="lobbyStatus">모든 동료가 준비되면 모험을 시작할 수 있습니다.</span><button class="primary huge" id="startGameBtn">SESSION START</button></div>
+        <div class="lobby-footer"><span id="lobbyStatus">모든 동료가 준비되면 모험을 시작할 수 있습니다.</span><button class="primary huge" id="startGameBtn" type="button">SESSION START</button></div>
       </div>
     </section>
 
@@ -79,17 +95,25 @@
         <aside class="party-rail ornate" id="partyRail"></aside>
         <section class="story-stage ornate">
           <div class="stage-top">
-            <div><div class="eyebrow" id="actLabel">ACT I</div><h2 id="eventTitle">GM이 다음 장면을 준비하고 있습니다.</h2></div>
+            <div>
+              <div class="eyebrow" id="actLabel">ACT I</div>
+              <h2 id="eventTitle">GM이 다음 장면을 준비하고 있습니다.</h2>
+              <div class="turn-banner" id="turnBanner">이번 장면의 행동 순서는 곧 결정됩니다.</div>
+            </div>
             <div class="deck-meter"><span>EVENT DECK</span><b id="deckCount">60</b></div>
           </div>
+          <figure class="scene-art ornate-subtle">
+            <img id="storySceneImg" alt="스토리 장면 이미지">
+            <figcaption id="storySceneCaption">장면 분위기에 맞는 이미지가 이곳에 표시됩니다.</figcaption>
+          </figure>
           <div class="narration" id="eventText">방장은 이벤트 카드를 한 장 뽑아 이야기를 시작하세요.</div>
           <div id="choiceArea" class="choice-area"></div>
-          <div class="gm-bar" id="gmBar"><button class="primary" id="drawEventBtn">이벤트 카드 뽑기</button><button class="ghost" id="releaseActionBtn">행동 선언 해제</button><button class="ghost" id="continueBtn">결과 확정 / 다음 장면</button></div>
+          <div class="gm-bar" id="gmBar"><button class="primary" id="drawEventBtn" type="button">이벤트 카드 뽑기</button><button class="ghost" id="finalizeChoiceBtn" type="button">투표 조기 확정</button><button class="ghost" id="releaseActionBtn" type="button">투표/행동 초기화</button><button class="ghost" id="continueBtn" type="button">결과 확정 / 다음 장면</button></div>
         </section>
         <aside class="right-rail">
           <section class="ornate stat-card"><div class="panel-title"><span>YOU</span><small id="myJobMini">UNASSIGNED</small></div><div id="myStatsMini"></div></section>
           <section class="ornate threat-card"><div class="threat-head"><span>WORLD THREAT</span><b id="threatValue">0</b></div><div class="threat-track" id="threatTrack"></div><div class="story-progress"><span>STORY</span><div class="bar"><i id="storyFill"></i></div><b id="storyValue">0</b></div></section>
-          <section class="ornate chat-card"><div id="chatLog" class="chat-log"></div><form id="chatForm"><input id="chatInput" maxlength="240" placeholder="동료에게 말하기…"><button>↗</button></form></section>
+          <section class="ornate chat-card"><div id="chatLog" class="chat-log"></div><form id="chatForm"><input id="chatInput" maxlength="240" placeholder="동료에게 말하기…"><button type="submit">↗</button></form></section>
         </aside>
       </div>
     </section>
@@ -97,9 +121,10 @@
     <section class="view" id="combatView">
       <div class="combat-shell">
         <div class="combat-title"><div class="eyebrow">ENCOUNTER</div><h1 id="monsterName">UNKNOWN</h1><p>도망칠 시간은 끝났다. 주사위를 들어라.</p></div>
+        <figure class="combat-visual ornate-subtle"><img id="combatSceneImg" alt="전투 보스 이미지"></figure>
         <div class="monster-card ornate"><div class="monster-sigil">☠</div><div><span>ARMOR CLASS <b id="monsterAC">—</b></span><div class="monster-hp"><i id="monsterHpFill"></i></div><strong id="monsterHpText">— / —</strong></div></div>
         <div id="combatParty" class="combat-party"></div>
-        <button class="primary huge combat-attack" id="attackBtn">D20 공격</button>
+        <button class="primary huge combat-attack" id="attackBtn" type="button">D20 공격</button>
         <div class="combat-log" id="combatLog"></div>
       </div>
     </section>
@@ -119,8 +144,27 @@
   </main>
 
   <div class="toast" id="toast"></div>
-  <div class="resolution-modal" id="resolutionModal"><div class="resolution-card ornate"><div class="eyebrow" id="resolutionEyebrow">RESULT</div><h2 id="resolutionTitle"></h2><p id="resolutionText"></p><button class="primary" id="resolutionClose">확인</button></div></div>
+  <div class="resolution-modal" id="resolutionModal"><div class="resolution-card ornate"><div class="eyebrow" id="resolutionEyebrow">RESULT</div><h2 id="resolutionTitle"></h2><p id="resolutionText"></p><button class="primary" id="resolutionClose" type="button">확인</button></div></div>
   <div class="dice-overlay" id="diceOverlay"><canvas id="diceCanvas"></canvas><div class="dice-ui"><div class="eyebrow" id="diceRoller">THE DIE IS CAST</div><h2 id="dicePurpose">D20 CHECK</h2><div class="dice-final" id="diceFinal"></div><div class="dice-sub" id="diceSub">서버가 결과를 확정했습니다.</div></div></div>
+
+  <div class="help-modal" id="helpModal">
+    <div class="help-card ornate">
+      <div class="help-head">
+        <div>
+          <div class="eyebrow">ESC GUIDE</div>
+          <h2>연대기 안내서</h2>
+        </div>
+        <button class="ghost" id="helpClose" type="button">닫기</button>
+      </div>
+      <div id="helpBody" class="help-body"></div>
+      <div class="abandon-box" id="abandonVoteBox"></div>
+      <div class="help-actions">
+        <button class="ghost" id="abandonRequestBtn" type="button">현재 연대기 포기 투표 시작</button>
+        <button class="primary" id="abandonYes" type="button">포기 찬성</button>
+        <button class="ghost" id="abandonNo" type="button">포기 반대</button>
+      </div>
+    </div>
+  </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script type="module" src="/app.js"></script>

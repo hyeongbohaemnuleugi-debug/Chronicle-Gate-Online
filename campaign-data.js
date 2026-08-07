@@ -118,6 +118,22 @@ function buildEvents(c) {
         failureEffect: failure[(i+j+1) % failure.length].effect
       };
     });
+    // 약 1/3의 사건에는 해당 세계의 특정 직업만 열 수 있는 네 번째 길이 존재한다.
+    // 같은 사건이라도 파티 직업 조합에 따라 다른 선택지가 열려 재플레이 가치가 생긴다.
+    if (i % 3 === 1 || i % 7 === 0) {
+      const job = c.jobs[(i + act) % c.jobs.length];
+      choices.push({
+        label: `${job[0]}의 전문 기술로 상황을 뒤집는다`,
+        stat: job[1],
+        dc: Math.max(10, 10 + (act - 1) * 2 + (i % 2)),
+        requiredJob: job[0],
+        special: true,
+        success: `${job[0]}만이 알아볼 수 있는 틈을 파고든다. 위협을 낮추고 파티가 결정적인 우위를 얻는다.`,
+        successEffect: {type:'threatDown', amount:1},
+        failure: `${job[0]}의 전문 지식조차 완벽하지 않았다. 시도는 흔적을 남기고 다음 장면의 난이도가 상승한다.`,
+        failureEffect: {type:'dcUp', amount:1}
+      });
+    }
     const tone = [
       `작은 이상처럼 보였던 징후가 '${title}'이라는 이름으로 모습을 드러낸다. 주변의 모든 소리가 한순간 멎고, 파티는 지금 선택이 이후의 길을 바꿀 것임을 직감한다.`,
       `GM이 장면을 묘사하는 순간 분위기가 뒤집힌다. ${title}. 이것은 우연이 아니라 지금까지의 선택이 만들어 낸 결과처럼 보인다.`,

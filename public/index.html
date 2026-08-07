@@ -147,37 +147,69 @@
   <div class="resolution-modal" id="resolutionModal"><div class="resolution-card ornate"><div class="eyebrow" id="resolutionEyebrow">RESULT</div><h2 id="resolutionTitle"></h2><p id="resolutionText"></p><button class="primary" id="resolutionClose" type="button">확인</button></div></div>
   <div class="dice-overlay" id="diceOverlay"><canvas id="diceCanvas"></canvas><div class="dice-ui"><div class="eyebrow" id="diceRoller">THE DIE IS CAST</div><h2 id="dicePurpose">D20 CHECK</h2><div class="dice-final" id="diceFinal"></div><div class="dice-sub" id="diceSub">서버가 결과를 확정했습니다.</div></div></div>
 
-  <div class="help-modal" id="helpModal">
-    <div class="help-card ornate">
-      <div class="help-head">
-        <div>
-          <div class="eyebrow">ESC GUIDE</div>
-          <h2>연대기 안내서</h2>
-        </div>
-        <button class="ghost" id="helpClose" type="button">닫기</button>
-      </div>
-      <div id="helpBody" class="help-body"></div>
-      <section class="ui-settings help-section">
-        <h3>화면 설정</h3>
-        <div class="setting-row">
-          <div><b>화면 테마</b><small>이 설정은 본인 화면에만 적용됩니다.</small></div>
-          <div class="segmented">
-            <button class="ghost" id="themeDarkBtn" type="button">검정</button>
-            <button class="ghost" id="themeLightBtn" type="button">하양</button>
+  <div class="help-modal" id="helpModal" aria-hidden="true" hidden>
+    <div class="help-card help-card-v35 ornate" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="help-head help-head-v35">
+        <div class="help-title-wrap">
+          <div class="help-mark">✦</div>
+          <div>
+            <div class="eyebrow">ESC · CHRONICLE MENU</div>
+            <h2 id="helpTitle">연대기 안내서</h2>
+            <p>플레이 방법, 개인 화면 설정, 세션 관리를 한곳에서 확인합니다.</p>
           </div>
         </div>
-        <div class="setting-row setting-slider">
-          <div><b>채팅창 크기</b><small>스토리 화면의 오른쪽 채팅 영역과 로비 채팅 높이를 조절합니다.</small></div>
-          <div class="range-wrap"><input id="chatSizeRange" type="range" min="300" max="520" step="20" value="300"><b id="chatSizeValue">기본</b></div>
-        </div>
-        <button class="ghost full" id="uiResetBtn" type="button">화면 설정 기본값으로 되돌리기</button>
-      </section>
-      <div class="abandon-box" id="abandonVoteBox"></div>
-      <div class="help-actions">
-        <button class="ghost" id="abandonRequestBtn" type="button">현재 연대기 포기 투표 시작</button>
-        <button class="primary" id="abandonYes" type="button">포기 찬성</button>
-        <button class="ghost" id="abandonNo" type="button">포기 반대</button>
+        <button class="help-close-btn" id="helpClose" type="button" aria-label="안내서 닫기">×</button>
       </div>
+
+      <div class="help-tabs" role="tablist" aria-label="ESC 메뉴">
+        <button class="help-tab active" id="helpTabGuide" type="button" data-help-tab="guide">게임 안내</button>
+        <button class="help-tab" id="helpTabSettings" type="button" data-help-tab="settings">화면 설정</button>
+        <button class="help-tab" id="helpTabSession" type="button" data-help-tab="session">세션 관리</button>
+      </div>
+
+      <div class="help-content-v35">
+        <section class="help-panel active" id="helpPanelGuide" data-help-panel="guide">
+          <div id="helpBody" class="help-body"></div>
+        </section>
+
+        <section class="help-panel" id="helpPanelSettings" data-help-panel="settings">
+          <div class="settings-hero">
+            <div><div class="eyebrow">PERSONAL DISPLAY</div><h3>내 화면만 편하게 조절하기</h3></div>
+            <span>다른 참가자에게 영향 없음</span>
+          </div>
+          <div class="settings-grid">
+            <div class="setting-card">
+              <div class="setting-icon">◐</div>
+              <div class="setting-copy"><b>화면 테마</b><small>기본은 검정입니다. 밝은 환경에서는 하양 테마를 사용할 수 있습니다.</small></div>
+              <div class="segmented">
+                <button class="ghost" id="themeDarkBtn" type="button">검정</button>
+                <button class="ghost" id="themeLightBtn" type="button">하양</button>
+              </div>
+            </div>
+            <div class="setting-card setting-card-wide">
+              <div class="setting-icon">↔</div>
+              <div class="setting-copy"><b>채팅창 크기</b><small>스토리 우측 채팅 영역과 로비 채팅 높이를 내 화면에서만 조절합니다.</small></div>
+              <div class="range-wrap"><input id="chatSizeRange" type="range" min="300" max="520" step="20" value="300"><b id="chatSizeValue">기본</b></div>
+            </div>
+          </div>
+          <button class="ghost full settings-reset" id="uiResetBtn" type="button">화면 설정 기본값으로 되돌리기</button>
+        </section>
+
+        <section class="help-panel" id="helpPanelSession" data-help-panel="session">
+          <div class="session-warning">
+            <div class="setting-icon">⚑</div>
+            <div><b>현재 연대기 관리</b><p>모험 진행 중 포기하려면 참가자 전원의 찬성이 필요합니다. 한 명이라도 반대하면 현재 스토리는 계속됩니다.</p></div>
+          </div>
+          <div class="abandon-box" id="abandonVoteBox"></div>
+          <div class="help-actions help-actions-v35">
+            <button class="ghost" id="abandonRequestBtn" type="button">포기 투표 시작</button>
+            <button class="primary" id="abandonYes" type="button">포기 찬성</button>
+            <button class="ghost" id="abandonNo" type="button">포기 반대</button>
+          </div>
+        </section>
+      </div>
+
+      <div class="help-footer-v35"><span>ESC를 다시 누르면 닫힙니다.</span><span id="helpConnectionHint">세션 연결 상태를 확인 중…</span></div>
     </div>
   </div>
 </div>

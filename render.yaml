@@ -14,3 +14,5 @@ services:
         sync: false
       - key: SUPABASE_SECRET_KEY
         sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false

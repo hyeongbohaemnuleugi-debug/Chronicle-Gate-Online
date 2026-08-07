@@ -116,9 +116,17 @@ export async function loadRoomSnapshot(roomCode) {
     room.deck ||= [];
     room.discard ||= [];
     room.lastResolution ||= null;
+    room.storyHistory ||= [];
+    room.lastStoryAction ||= null;
     room.ending ||= null;
     room.activeChoice ||= null;
     room.currentEvent ||= null;
+    room.choiceVotes ||= {};
+    room.voteEndsAt ||= null;
+    room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0);
+    room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
+    room.turnIndex = Number.isInteger(room.turnIndex) ? room.turnIndex : 0;
+    room.abandonVote ||= null;
     room.monster ||= null;
     room.threat = Number(room.threat || 0);
     room.story = Number(room.story || 0);

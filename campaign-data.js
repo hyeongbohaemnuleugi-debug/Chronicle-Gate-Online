@@ -83,69 +83,266 @@ const campaigns = [
   }
 ];
 
-const choiceTemplates = [
-  ["정면으로 돌파한다","근력"], ["그림자 사이로 접근한다","민첩"], ["원인을 분석한다","지능"],
-  ["기척과 거짓을 읽는다","지혜"], ["상대를 설득한다","매력"], ["고통을 버티며 밀고 간다","체력"]
-];
-const success = [
-  { text:"숨겨진 단서를 붙잡는다. 영감 토큰 1개를 얻는다.", effect:{type:"inspiration",amount:1} },
-  { text:"위험을 역이용한다. 세계 위협도가 1 감소한다.", effect:{type:"threatDown",amount:1} },
-  { text:"상대의 빈틈을 읽는다. 영감 토큰 1개를 얻는다.", effect:{type:"inspiration",amount:1} },
-  { text:"완벽하게 돌파한다. 파티 전체 HP가 1 회복된다.", effect:{type:"partyHeal",amount:1} },
-  { text:"진실의 일부가 열린다. 누적된 판정 난이도 페널티가 초기화된다.", effect:{type:"dcReset"} }
-];
-const failure = [
-  { text:"상황이 악화된다. 행동한 플레이어 HP가 1 감소한다.", effect:{type:"damage",amount:1} },
-  { text:"위험이 커진다. 세계 위협도가 1 증가한다.", effect:{type:"threatUp",amount:1} },
-  { text:"시간을 잃는다. 다음 이벤트 판정 DC가 1 증가한다.", effect:{type:"dcUp",amount:1} },
-  { text:"불리한 위치에 몰린다. 행동한 플레이어 HP가 1 감소한다.", effect:{type:"damage",amount:1} },
-  { text:"대가가 따른다. 파티가 가진 영감 토큰 1개를 잃는다.", effect:{type:"loseInspiration",amount:1} }
+const eventStyles = {
+  ember: {
+    actions:[
+      ["왕가 문양과 봉인선을 비교해 진짜 흔적을 찾는다","지능"],
+      ["재와 핏자국의 방향을 읽어 숨어 있는 길을 추적한다","지혜"],
+      ["무너지는 잔해를 밀어내고 가장 위험한 지점을 돌파한다","근력"],
+      ["기사들의 사각으로 파고들어 조용히 통과한다","민첩"],
+      ["죽은 자의 예법을 지켜 경계심을 누그러뜨린다","매력"],
+      ["열기와 재를 견디며 끝까지 버틴다","체력"]
+    ],
+    visuals:["왕가의 봉인석","재가 날리는 성벽","붉은 촛불의 예배당","검은 갑옷의 회랑","용암빛 왕좌","눈 덮인 묘지"]
+  },
+  neon: {
+    actions:[
+      ["현장의 로그를 역추적해 조작된 기록을 분리한다","지능"],
+      ["드론 사각과 광고판 타이밍을 맞춰 침투한다","민첩"],
+      ["상대의 기억값과 욕망을 거래 조건으로 끌어낸다","매력"],
+      ["주변의 추적 패턴을 읽고 가장 안전한 탈출선을 고른다","지혜"],
+      ["증강 장비의 출력을 올려 봉쇄선을 강제로 연다","근력"],
+      ["신경 과부하를 버티며 오염된 접속을 유지한다","체력"]
+    ],
+    visuals:["비 내리는 네온 골목","홀로그램 경매장","봉쇄된 고가도로","기억 서버 코어","감시 드론 군집","붉은 경보의 데이터센터"]
+  },
+  abyss: {
+    actions:[
+      ["압력계와 산소 로그를 대조해 안전한 구간을 계산한다","지능"],
+      ["소나 반향에서 사람과 괴물의 움직임을 구분한다","지혜"],
+      ["침수 배관 사이를 몸을 낮춰 빠르게 통과한다","민첩"],
+      ["고장난 격벽을 수동으로 밀어 올려 통로를 확보한다","근력"],
+      ["공포에 질린 동료와 생존자에게 침착하게 지시한다","매력"],
+      ["산소 부족과 수압을 견디며 작업을 계속한다","체력"]
+    ],
+    visuals:["푸른 비상등의 복도","거대한 관측창","잠긴 압력문","해저 균열","파손된 잠수정","검은 심해"]
+  },
+  clock: {
+    actions:[
+      ["반복된 시간의 차이를 기록해 진짜 순서를 복원한다","지능"],
+      ["사라지는 사람들의 기억 잔상을 따라 다음 변화를 예측한다","지혜"],
+      ["멈추기 직전의 톱니 사이를 재빨리 통과한다","민첩"],
+      ["역행하는 장치를 붙잡고 강제로 회전을 멈춘다","근력"],
+      ["서로 다른 시간대의 증언을 엮어 상대를 설득한다","매력"],
+      ["루프가 몸을 찢는 감각을 견디며 자리를 지킨다","체력"]
+    ],
+    visuals:["멈춘 시계광장","금빛 톱니탑","사라지는 골목","거울 속 미래","열세 번째 종","새벽 직전의 도시"]
+  },
+  wild: {
+    actions:[
+      ["별가루와 짐승의 흔적을 비교해 숲의 의도를 읽는다","지혜"],
+      ["빛나는 뿌리 사이를 빠르게 건너 위험을 피한다","민첩"],
+      ["별의 힘이 흐르는 구조를 분석해 약한 고리를 찾는다","지능"],
+      ["거대한 뿌리와 돌무더기를 밀어 길을 연다","근력"],
+      ["숲의 정령과 부족에게 진심을 보여 길을 빌린다","매력"],
+      ["별빛 독기와 밤의 추위를 견디며 전진한다","체력"]
+    ],
+    visuals:["별가루 숲길","말하는 고목","유성 대장간","빛나는 호수","거대한 뿌리","별이 사라진 밤하늘"]
+  }
+};
+
+const resultEffects = [
+  {success:{type:"inspiration",amount:1}, failure:{type:"damage",amount:1}},
+  {success:{type:"threatDown",amount:1}, failure:{type:"threatUp",amount:1}},
+  {success:{type:"dcReset"}, failure:{type:"dcUp",amount:1}},
+  {success:{type:"partyHeal",amount:1}, failure:{type:"loseInspiration",amount:1}}
 ];
 
+
+const actGuides = {
+  ember: [
+    {goal:"왕가 문장이 나타난 이유를 확인하고 화산성으로 들어갈 단서를 얻는다", place:"검은 눈이 내리는 변경 마을과 폐예배당", reveal:"300년 전 죽은 왕의 봉인이 누군가에 의해 다시 열리고 있다", stakes:"봉인이 완전히 풀리면 죽은 기사단이 왕국 전역으로 퍼진다"},
+    {goal:"죽은 왕의 행렬이 향하는 길을 따라 왕관 조각의 위치를 찾는다", place:"왕묘로 이어지는 설원과 지하 회랑", reveal:"왕관은 세 조각으로 나뉘었고 각 조각이 서로 다른 계승자를 부르고 있다", stakes:"조각을 먼저 차지한 세력이 정통성을 주장하며 내전을 일으킨다"},
+    {goal:"재의 성채에 진입해 봉인을 유지하는 핵심 장치를 확보한다", place:"용암 수로와 붉은 성문 내부", reveal:"성채의 봉인은 왕을 가두기 위한 것이 아니라 왕관 자체를 가두기 위한 것이었다", stakes:"장치가 파괴되면 왕관의 의지가 살아 있는 사람을 조종하기 시작한다"},
+    {goal:"왕관을 노리는 귀족과 망령 중 누가 진짜 배후인지 밝혀낸다", place:"불타는 연회장과 왕좌 회랑", reveal:"배후는 특정 귀족이 아니라 왕관이 만든 욕망의 연결망이다", stakes:"파티가 서로를 의심하면 왕관이 가장 약한 틈을 이용한다"},
+    {goal:"마지막 즉위식에서 왕관을 파괴할지, 봉인할지, 새로운 주인을 정할지 결정한다", place:"타오르는 왕좌와 즉위식 제단", reveal:"왕관은 왕국을 지키는 힘이지만 반드시 한 사람의 욕망을 대가로 먹는다", stakes:"최종 선택에 따라 왕국의 질서와 파티의 운명이 함께 결정된다"},
+  ],
+  neon: [
+    {goal:"사라진 48시간 동안 자신들이 무엇을 했는지 첫 기록을 복구한다", place:"루멘-9의 도주 골목과 버려진 안전가옥", reveal:"현상수배 영상은 조작됐지만 파티가 실제로 MOTHER-9 코어에 침입한 기록은 진짜다", stakes:"도시 보안망이 파티의 생체 정보를 확정하면 모든 구역이 봉쇄된다"},
+    {goal:"기억 암시장에서 삭제된 기억의 원본과 거래자를 찾는다", place:"불법 기억 경매장과 감정 거래소", reveal:"파티의 기억은 타인이 훔친 게 아니라 과거의 자신들이 스스로 지웠다", stakes:"원본 기억을 잘못 복구하면 조작된 인격이 현재 인격을 덮어쓴다"},
+    {goal:"봉쇄구역 7에 숨겨진 실험 기록을 확보한다", place:"정전된 고가도로와 격리 데이터센터", reveal:"MOTHER-9는 시민을 통제하는 AI가 아니라 도시 전체의 기억 손실을 막기 위한 백업 시스템이었다", stakes:"백업 시스템이 멈추면 수백만 명의 기억이 동시에 손상된다"},
+    {goal:"MOTHER-9가 왜 파티를 제거하려 하는지 직접 확인한다", place:"도시 중앙 서버와 합성인간 생산구역", reveal:"파티 안의 누군가가 MOTHER-9를 파괴하는 미래를 이미 한 번 실행했다", stakes:"누가 원본이고 누가 백업 인격인지에 따라 서로의 신뢰가 무너질 수 있다"},
+    {goal:"도시의 기억을 복원할지, 초기화할지, 개인에게 돌려줄지 결정한다", place:"루멘-9 최상층 코어와 새벽 스카이라인", reveal:"테러 용의자라는 표시는 시민을 지키기 위해 과거의 파티가 스스로 남긴 경고였다", stakes:"마지막 선택은 도시의 자유와 안정 중 무엇을 우선할지 결정한다"},
+  ],
+  abyss: [
+    {goal:"세이렌 기지에서 승무원이 사라진 원인과 생존자를 찾는다", place:"푸른 비상등의 연구기지와 식당", reveal:"젖은 발자국은 바깥에서 들어온 것이 아니라 기지 안에서 압력문 쪽으로 걸어간 흔적이다", stakes:"산소와 전력이 계속 줄어들어 조사 시간이 제한된다"},
+    {goal:"발자국의 주인과 통신이 끊긴 17일의 기록을 추적한다", place:"의무실과 잠수정 격납고", reveal:"일부 승무원은 심해의 목소리를 듣고 스스로 기지 밖으로 나갔다", stakes:"파티도 같은 신호를 듣기 시작하면 판단력이 흔들린다"},
+    {goal:"해저 균열과 기지의 이상 생물 반응이 연결되는 방식을 알아낸다", place:"관측창과 균열 연구실", reveal:"균열 아래의 생명체 탈라스는 공격하는 것이 아니라 구조 신호를 보내고 있다", stakes:"신호를 오해해 공격하면 기지 전체가 심해 생물의 방어 반응에 휘말린다"},
+    {goal:"심연의 목소리가 요구하는 것과 세이렌 연구진의 은폐를 밝혀낸다", place:"봉인 연구실과 심해 통신실", reveal:"연구진이 탈라스의 생체 신호를 에너지원으로 이용하며 사고를 일으켰다", stakes:"폭파하면 진실은 사라지고, 방치하면 균열이 더 커진다"},
+    {goal:"탈라스를 구할지, 기지를 폭파할지, 연구 데이터를 가지고 탈출할지 결정한다", place:"마지막 잠수정과 수면으로 향하는 상승 구간", reveal:"구조 대상은 인간만이 아니며 탈라스 역시 갇힌 생명체다", stakes:"산소가 바닥나기 전에 최종 결정을 내려야 한다"},
+  ],
+  clock: [
+    {goal:"열세 번째 종소리와 하루가 반복되는 정확한 조건을 기록한다", place:"자정의 시계광장과 반복되는 아침", reveal:"루프는 도시 전체가 아니라 특정 시계탑을 중심으로만 완벽히 반복된다", stakes:"루프가 반복될수록 한 명씩 시민의 존재가 지워진다"},
+    {goal:"사라지는 거리와 사람들에게 공통된 규칙을 찾아낸다", place:"지도에서 지워지는 상점가와 학교", reveal:"미래에서 중요한 선택을 할 사람부터 먼저 지워지고 있다", stakes:"파티 중 한 명의 이름도 도시 기록에서 흐려지기 시작한다"},
+    {goal:"시간을 거래하는 밀수꾼들이 루프에서 무엇을 빼내는지 추적한다", place:"7분을 사고파는 지하 시장", reveal:"밀수된 시간은 열세 번째 시계탑을 작동시키는 연료로 쓰인다", stakes:"탑을 멈추려면 시민들이 잃어버린 시간을 돌려줘야 한다"},
+    {goal:"열세 번째 탑에 올라 종지기의 정체와 루프의 목적을 확인한다", place:"역행하는 계단과 거울 회랑", reveal:"종지기는 도시를 멸망시키는 하루를 막기 위해 시간을 반복하고 있다", stakes:"루프를 끊으면 원래 예정된 재앙이 다시 시작된다"},
+    {goal:"완벽하지 않은 내일을 받아들일지 영원한 반복을 유지할지 결정한다", place:"마지막 종과 새벽 0시 01분", reveal:"재앙을 완전히 없앨 방법은 없지만 누군가의 희생 없이 피해를 줄일 방법은 있다", stakes:"도시가 내일로 나아갈 수 있는지는 파티의 선택에 달렸다"},
+  ],
+  wild: [
+    {goal:"첫 번째로 떨어진 별의 흔적을 따라 숲의 변화 원인을 찾는다", place:"별가루 숲길과 낙성 분지", reveal:"별이 사라지는 것이 아니라 숲의 심장이 하늘의 별빛을 끌어당기고 있다", stakes:"별이 줄어들수록 밤의 길과 계절이 불안정해진다"},
+    {goal:"말하는 숲의 규칙을 배우고 안전하게 중심부로 가는 길을 찾는다", place:"움직이는 고목과 사계절의 갈림길", reveal:"숲은 사람의 소원을 듣고 가장 강한 소원 쪽으로 길을 바꾼다", stakes:"파티의 목표가 갈리면 숲이 서로 다른 길로 일행을 나눈다"},
+    {goal:"별을 숭배하는 부족과 별을 태우는 부족의 전쟁을 중재하거나 돌파한다", place:"두 부족의 경계와 유성 대장간", reveal:"두 부족 모두 숲을 살리려 하지만 방법과 대가가 다르다", stakes:"한쪽만 돕는 순간 다른 부족이 마지막 길을 막는다"},
+    {goal:"숲의 심장이 왜 별빛을 먹는지 알아내고 오르바의 정체를 밝힌다", place:"거꾸로 자라는 나무와 심장 공동", reveal:"오르바는 숲을 파괴하는 신수가 아니라 과도한 별빛을 대신 먹어온 수호자다", stakes:"오르바가 쓰러지면 숲의 심장이 직접 별을 삼키기 시작한다"},
+    {goal:"마지막 별을 지킬지 숲에 넘길지 새로운 별자리를 만들지 결정한다", place:"숲의 심장과 별이 하나 남은 밤", reveal:"숲과 하늘을 모두 살리려면 파티가 가진 소원 하나를 포기해야 한다", stakes:"최종 선택으로 새로운 숲과 하늘의 규칙이 만들어진다"},
+  ],
+};
+
+const storyTone = {
+  ember:["재 속에서 왕가의 흔적을 확인한다","죽은 왕의 길을 따라 성채 깊숙이 들어간다","왕관을 노리는 세력들의 진의를 밝힌다","최후의 즉위식을 향해 전진한다"],
+  neon:["사라진 48시간의 흔적을 복원한다","기억 암시장을 통해 자신의 과거를 추적한다","봉쇄구역의 거짓 기록을 깨뜨린다","MOTHER-9와 진짜 정체를 향해 접근한다"],
+  abyss:["세이렌 기지의 침묵 원인을 조사한다","젖은 흔적을 따라 실종된 승무원을 찾는다","해저 균열과 기지의 이상 현상을 연결한다","마지막 상승을 위해 생존 장비를 확보한다"],
+  clock:["첫 루프에서 달라진 점을 기록한다","사라지는 거리와 사람의 규칙을 찾는다","시간 밀수꾼의 거래를 추적한다","열세 번째 탑에서 루프의 원인을 끊는다"],
+  wild:["첫 낙성의 흔적을 따라 숲으로 들어간다","말하는 숲이 바꾸는 길의 규칙을 배운다","별의 부족들과 숲의 심장을 둘러싼 갈등을 통과한다","마지막 별이 사라지기 전에 심장에 도달한다"]
+};
+
+function contextualActions(c, title){
+  const rules=[
+    [/시체|죽은|익사체|망령|유령/, [["흔적과 상처를 조사해 무엇이 죽음을 거슬렀는지 밝힌다","지혜"],["남은 물질과 마력을 분석해 재생 원리를 끊는다","지능"],["움직이기 전에 관절과 장비를 묶어 제압한다","민첩"]]],
+    [/문장|암호|로그|기록|신문|편지|데이터|백업|유언|코드/, [["기록의 시간표식과 문맥을 대조해 위조된 부분을 찾는다","지능"],["기록을 남긴 사람의 의도와 숨은 경고를 읽는다","지혜"],["원본이 사라지기 전에 안전한 사본을 확보한다","민첩"]]],
+    [/문|성문|압력문|봉쇄|잠긴|닫히|균열/, [["잠금 구조와 약한 지점을 분석해 안전한 개방 순서를 찾는다","지능"],["장치가 완전히 닫히기 전에 틈으로 빠르게 파고든다","민첩"],["기계와 돌문이 버티는 힘을 정면으로 이겨내며 연다","근력"]]],
+    [/발자국|추적|흔적|사라진|실종/, [["흔적의 간격과 방향을 읽어 이동 경로를 복원한다","지혜"],["앞질러 이동해 다음 흔적이 나타날 지점을 선점한다","민첩"],["누군가 일부러 남긴 가짜 흔적을 논리적으로 걸러낸다","지능"]]],
+    [/식탁|연회|시장|상인|경매|투표|결투|부족|전쟁/, [["상대가 원하는 대가를 짚어 협상 주도권을 가져온다","매력"],["표정과 말의 모순을 읽어 숨은 편을 가려낸다","지혜"],["혼란이 커지기 전에 핵심 증거나 물건을 확보한다","민첩"]]],
+    [/검|갑옷|왕관 조각|진주|별핵|뿔|알/, [["물건에 남은 힘의 흐름과 제작 흔적을 분석한다","지능"],["저주나 함정이 작동하기 전에 안전하게 분리해 낸다","민첩"],["위험을 감수하고 직접 들어 올려 반응을 확인한다","근력"]]],
+    [/드론|감시카메라|광고판|AI|MOTHER|로그인|백도어|삭제 버튼/, [["감시망의 인증 흐름을 해킹해 잠시 눈을 멀게 한다","지능"],["카메라와 센서가 교차하지 않는 순간에 이동한다","민첩"],["가짜 신호를 흘려 감시 시스템이 다른 목표를 쫓게 만든다","매력"]]],
+    [/산소|잠수정|수심|해저|소나|케이블|부력|관측창/, [["압력·산소·전력 수치를 계산해 가장 안전한 절차를 정한다","지능"],["소나와 진동을 읽어 보이지 않는 위험의 위치를 잡는다","지혜"],["장비가 완전히 고장나기 전에 직접 붙잡고 응급 조치한다","근력"]]],
+    [/시간|시계|자정|오후|역행|루프|미래|과거|내일|어제/, [["이전 루프와 현재의 차이를 표로 맞춰 원인을 좁힌다","지능"],["시간이 뒤틀리기 직전 나타나는 반복 패턴을 감지한다","지혜"],["멈춘 순간의 틈을 이용해 사건의 중심으로 뛰어든다","민첩"]]],
+    [/별|숲|나무|뿌리|꽃밭|호수|꿈|성운|유성/, [["별빛과 식물의 반응을 읽어 숲이 원하는 방향을 찾는다","지혜"],["마력의 흐름을 분석해 위험한 별빛과 안전한 빛을 구분한다","지능"],["변하는 뿌리와 지형 사이를 재빨리 건너 길을 선점한다","민첩"]]],
+    [/곰|사슴|올빼미|키메라|하운드|맹견|포식자|신수|촉수|승무원/, [["움직임과 습성을 관찰해 공격 직전의 신호를 읽는다","지혜"],["주의를 다른 곳으로 유도해 파티가 지나갈 틈을 만든다","매력"],["정면에서 버티며 동료가 움직일 시간을 번다","체력"]]],
+  ];
+  for(const [pattern,actions] of rules) if(pattern.test(title)) return actions;
+  const fallback=eventStyles[c.id].actions;
+  return [fallback[0],fallback[2],fallback[4]];
+}
+
+function buildStoryBeats(c){
+  const beats=[];
+  const phases=["상황 파악","단서 확보","위기 돌파","막의 결단"];
+  const guides=actGuides[c.id];
+  for(let act=0;act<5;act++){
+    const guide=guides[act];
+    for(let step=0;step<4;step++){
+      const index=act*4+step;
+      const title=`${c.acts[act]} · ${phases[step]}`;
+      const situation = step===0
+        ? `${guide.place}에 도착했다. 이번 막에서 해야 할 일은 “${guide.goal}”이다.`
+        : step===1
+          ? `조사를 이어가던 중 중요한 사실이 드러난다. ${guide.reveal}.`
+          : step===2
+            ? `진실에 가까워질수록 상황이 악화된다. ${guide.stakes}. 지금 해결하지 않으면 다음 장면이 더 위험해진다.`
+            : `이 막의 마지막 갈림길이다. 지금까지 확인한 단서 “${guide.reveal}”을 바탕으로 다음 지역으로 넘어갈 결정을 내려야 한다.`;
+      const objective = step===0 ? guide.goal : step===1 ? `새로 확인한 사실을 검증하고 다음 위치를 특정한다` : step===2 ? `눈앞의 위기를 해결하면서 핵심 단서를 잃지 않는다` : `다음 막으로 넘어가기 전에 파티의 방향을 하나로 정한다`;
+      const why = step===0 ? guide.stakes : step===1 ? `이 단서가 맞다면 이번 사건의 원인을 처음으로 설명할 수 있다.` : step===2 ? `실패하면 위협이 커지고 이후 판정이 더 어려워질 수 있다.` : `이 선택이 다음 막의 분위기와 파티가 믿는 진실을 결정한다.`;
+      const prompt = step===0 ? `현재 차례 플레이어는 “어떻게 첫 조사를 시작할지” 한 문장으로 선언하세요.` : step===1 ? `현재 차례 플레이어는 가장 믿을 만한 단서 하나를 골라 왜 믿는지 설명하세요.` : step===2 ? `현재 차례 플레이어는 위험을 감수할 방법 또는 우회할 방법을 하나 제안하세요.` : `현재 차례 플레이어는 다음 막으로 가져갈 결론을 한 문장으로 정리하세요.`;
+      beats.push({
+        id:`${c.id.toUpperCase()}-STORY-${String(index+1).padStart(2,"0")}`,
+        act:act+1,
+        actName:c.acts[act],
+        title,
+        text:situation,
+        situation,
+        objective,
+        why,
+        prompt,
+        reveal:guide.reveal,
+        stakes:guide.stakes,
+        visual:`${eventStyles[c.id].visuals[(act+step)%eventStyles[c.id].visuals.length]} · ${c.acts[act]}`
+      });
+    }
+  }
+  return beats;
+}
+
 function buildEvents(c) {
+  const style=eventStyles[c.id];
   return c.titles.map((title, i) => {
     const act = Math.floor(i / 6) + 1;
     const monster = (i % 6 === 5 || i === 28) ? c.monsters[Math.min(c.monsters.length - 1, Math.floor(i/5))] : null;
-    const choices = [0,1,2].map(j => {
-      const [label, stat] = choiceTemplates[(i + j*2) % choiceTemplates.length];
+    const situationActions=contextualActions(c,title);
+    const choices=[0,1,2].map(j=>{
+      const action=situationActions[j];
+      const effect=resultEffects[(i+j)%resultEffects.length];
+      const sceneVerb=["현장을 직접 확인하며","위험의 근원을 우회하며","단서를 역으로 이용해"][j];
       return {
-        label,
-        stat,
-        dc: 10 + (act - 1) * 2 + ((i+j) % 3),
-        success: success[(i+j) % success.length].text,
-        successEffect: success[(i+j) % success.length].effect,
-        failure: failure[(i+j+1) % failure.length].text,
-        failureEffect: failure[(i+j+1) % failure.length].effect
+        label:`${title} — ${sceneVerb} ${action[0]}`,
+        stat:action[1],
+        dc:10+(act-1)*2+((i+j)%3),
+        success:`「${title}」의 핵심을 정확히 짚었다. 선택한 접근이 장면을 유리하게 바꾸고 다음 단서가 선명해진다.`,
+        successEffect:effect.success,
+        failure:`「${title}」의 상황이 예상보다 복잡했다. 시도는 흔적을 남기고 파티가 즉시 대가를 감수해야 한다.`,
+        failureEffect:effect.failure
       };
     });
-    // 약 1/3의 사건에는 해당 세계의 특정 직업만 열 수 있는 네 번째 길이 존재한다.
-    // 같은 사건이라도 파티 직업 조합에 따라 다른 선택지가 열려 재플레이 가치가 생긴다.
     if (i % 3 === 1 || i % 7 === 0) {
       const job = c.jobs[(i + act) % c.jobs.length];
       choices.push({
-        label: `${job[0]}의 전문 기술로 상황을 뒤집는다`,
-        stat: job[1],
-        dc: Math.max(10, 10 + (act - 1) * 2 + (i % 2)),
-        requiredJob: job[0],
-        special: true,
-        success: `${job[0]}만이 알아볼 수 있는 틈을 파고든다. 위협을 낮추고 파티가 결정적인 우위를 얻는다.`,
-        successEffect: {type:'threatDown', amount:1},
-        failure: `${job[0]}의 전문 지식조차 완벽하지 않았다. 시도는 흔적을 남기고 다음 장면의 난이도가 상승한다.`,
-        failureEffect: {type:'dcUp', amount:1}
+        label:`${title} — ${job[0]}만 알아볼 수 있는 전문적인 해결책을 실행한다`,
+        stat:job[1],
+        dc:Math.max(10,9+(act-1)*2+(i%3)),
+        requiredJob:job[0],
+        special:true,
+        success:`${job[0]}의 전문성이 「${title}」에 숨은 결정적 틈을 찾아낸다. 일반적인 방법으로는 열리지 않던 길이 열린다.`,
+        successEffect:{type:"threatDown",amount:1},
+        failure:`${job[0]}의 판단은 옳았지만 상황이 한발 더 빨랐다. 전문적인 시도였던 만큼 실패의 흔적도 크게 남는다.`,
+        failureEffect:{type:"dcUp",amount:1}
       });
     }
-    const tone = [
-      `작은 이상처럼 보였던 징후가 '${title}'이라는 이름으로 모습을 드러낸다. 주변의 모든 소리가 한순간 멎고, 파티는 지금 선택이 이후의 길을 바꿀 것임을 직감한다.`,
-      `GM이 장면을 묘사하는 순간 분위기가 뒤집힌다. ${title}. 이것은 우연이 아니라 지금까지의 선택이 만들어 낸 결과처럼 보인다.`,
-      `앞으로 나아가던 일행의 발이 멈춘다. ${title}. 정답은 없고, 어느 선택이든 반드시 대가가 따른다.`
-    ][i % 3];
-    return { id:`${c.id.toUpperCase()}-${String(i+1).padStart(2,"0")}`, act, actName:c.acts[act-1], title, text:tone, choices, monster };
+    const visual=style.visuals[i%style.visuals.length];
+    const guide=actGuides[c.id][act-1];
+    const incident=`${visual}에서 「${title}」 사건이 갑자기 발생했다.`;
+    const immediate=monster ? `${monster}까지 모습을 드러내면서 파티의 이동 경로가 막혔다.` : `원래 계획대로 움직이려면 이 문제를 먼저 해결해야 한다.`;
+    const relevance=`이번 막의 목표는 “${guide.goal}”. 이 사건을 어떻게 처리하느냐에 따라 그 목표에 도달하는 속도와 위험도가 달라진다.`;
+    const tone=`${incident} ${immediate} ${relevance}`;
+    return {
+      id:`${c.id.toUpperCase()}-${String(i+1).padStart(2,"0")}`,
+      act, actName:c.acts[act-1], title, text:tone, situation:`${incident} ${immediate}`,
+      objective:`20초 안에 파티가 가장 설득력 있다고 생각하는 대응에 투표한다.`,
+      why:relevance, stakes:monster?`투표 결과 뒤에는 ${monster}와의 전투가 이어질 수 있다.`:`실패하면 위협도나 다음 판정 난이도가 올라갈 수 있다.`,
+      choices, monster, visual, seed:i+1
+    };
   });
 }
 
+const JOB_SKILL_DEFS = {
+  "룬 기사": {name:"룬 방벽", cooldown:3, kind:"guard", amount:4, text:"다음에 받을 피해를 최대 4까지 막는다."},
+  "재의 마도사": {name:"불씨 기억", cooldown:3, kind:"focus", amount:4, text:"다음 스토리/이벤트 판정에 +4를 얻는다."},
+  "성흔 추적자": {name:"핏자국 읽기", cooldown:2, kind:"insight", amount:1, text:"현재 장면의 단서를 포착해 위협도를 1 낮추고 영감 1을 얻는다."},
+  "왕묘 도굴꾼": {name:"금단의 손", cooldown:2, kind:"dcDown", amount:2, text:"다음 스토리/이벤트 판정의 DC를 2 낮춘다."},
+  "백은 사제": {name:"정화 성가", cooldown:3, kind:"heal", amount:4, text:"HP가 가장 낮은 동료를 1D4+2 회복한다."},
+  "검은 숲 사냥꾼": {name:"추격 본능", cooldown:2, kind:"attackBoost", amount:2, text:"다음 전투 공격에 명중 +2, 피해 +2를 얻는다."},
+
+  "고스트 해커": {name:"백도어", cooldown:3, kind:"focus", amount:4, text:"다음 스토리/이벤트 판정에 +4를 얻는다."},
+  "증강 집행자": {name:"오버드라이브", cooldown:3, kind:"attackBoost", amount:3, text:"다음 전투 공격에 명중 +3, 피해 +3을 얻는다."},
+  "기억 브로커": {name:"감정 거래", cooldown:2, kind:"dcDown", amount:2, text:"다음 스토리/이벤트 판정의 DC를 2 낮춘다."},
+  "드론 조종사": {name:"원격 시야", cooldown:2, kind:"insight", amount:1, text:"위험을 먼저 파악해 위협도를 1 낮추고 영감 1을 얻는다."},
+  "스트리트 메딕": {name:"나노 패치", cooldown:3, kind:"heal", amount:5, text:"HP가 가장 낮은 동료를 1D4+3 회복한다."},
+  "데이터 사냥꾼": {name:"추적 차단", cooldown:3, kind:"threatShield", amount:1, text:"다음 위협도 증가 1회를 무효화한다."},
+
+  "심해 잠수사": {name:"압력 적응", cooldown:3, kind:"guard", amount:4, text:"다음에 받을 피해를 최대 4까지 막는다."},
+  "해양 생물학자": {name:"생체 분석", cooldown:3, kind:"expose", amount:2, text:"전투 중 보스 AC를 2 낮추고, 비전투에서는 다음 판정 +2를 얻는다."},
+  "잠수정 기관사": {name:"응급 수리", cooldown:2, kind:"dcDown", amount:2, text:"다음 스토리/이벤트 판정의 DC를 2 낮춘다."},
+  "소나 관측관": {name:"반향 탐지", cooldown:2, kind:"insight", amount:1, text:"숨은 위험을 읽어 위협도를 1 낮추고 영감 1을 얻는다."},
+  "해군 구조요원": {name:"구조 우선", cooldown:3, kind:"guard", amount:5, text:"다음에 받을 피해를 최대 5까지 막는다."},
+  "심해 의무관": {name:"안정화", cooldown:3, kind:"heal", amount:4, text:"HP가 가장 낮은 동료를 1D4+2 회복한다."},
+
+  "시간 감식관": {name:"잔상 복원", cooldown:2, kind:"insight", amount:1, text:"시간 잔상을 읽어 위협도를 1 낮추고 영감 1을 얻는다."},
+  "기계 시계공": {name:"톱니 조율", cooldown:2, kind:"dcDown", amount:2, text:"다음 스토리/이벤트 판정의 DC를 2 낮춘다."},
+  "역행 검사": {name:"되감기", cooldown:3, kind:"attackBoost", amount:3, text:"다음 전투 공격에 명중 +3, 피해 +3을 얻는다."},
+  "예언 기록자": {name:"미래 각주", cooldown:3, kind:"focus", amount:4, text:"다음 스토리/이벤트 판정에 +4를 얻는다."},
+  "시간 밀수꾼": {name:"보관함", cooldown:2, kind:"inspiration", amount:2, text:"영감 토큰을 2개 얻는다."},
+  "종소리 파수꾼": {name:"루프 저항", cooldown:3, kind:"threatShield", amount:1, text:"다음 위협도 증가 1회를 무효화한다."},
+
+  "별사냥꾼": {name:"별궤적", cooldown:2, kind:"attackBoost", amount:2, text:"다음 전투 공격에 명중 +2, 피해 +2를 얻는다."},
+  "숲의 주술사": {name:"수목 대화", cooldown:2, kind:"insight", amount:1, text:"숲의 단서를 읽어 위협도를 1 낮추고 영감 1을 얻는다."},
+  "야수 길잡이": {name:"야수 교감", cooldown:4, kind:"pacify", amount:1, text:"전투 중 다음 보스 공격을 1회 무효화한다."},
+  "유성 대장장이": {name:"별철 강화", cooldown:3, kind:"attackBoost", amount:3, text:"다음 전투 공격에 명중 +2, 피해 +3을 얻는다."},
+  "꿈의 방랑자": {name:"꿈길", cooldown:3, kind:"focus", amount:4, text:"다음 스토리/이벤트 판정에 +4를 얻는다."},
+  "별빛 치유사": {name:"별의 숨", cooldown:3, kind:"healParty", amount:2, text:"파티 전체 HP를 2 회복한다."}
+};
+
 export const CAMPAIGNS = campaigns.map(c => ({
   ...c,
-  jobs: c.jobs.map((j, i) => ({roll:i+1,name:j[0],prime:j[1],skill:j[2],baseHp:10 + (i%3)*2})),
+  jobs: c.jobs.map((j, i) => ({roll:i+1,name:j[0],prime:j[1],skill:j[2],skillDef:JOB_SKILL_DEFS[j[0]],baseHp:10 + (i%3)*2})),
+  storyBeats: buildStoryBeats(c),
   events: buildEvents(c)
 }));
 

@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '3.4.0';
+const APP_VERSION = '3.5.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 2;
 const TARGET_STORY = 20;
@@ -447,16 +447,24 @@ function finalizeChoiceSelection(room) {
   const counts = new Map();
   for (const player of eligible) {
     const voted = Number(room.choiceVotes?.[player.id]);
-    if (!Number.isInteger(voted) || !room.currentEvent.choices[voted]) continue;
+    const choice = room.currentEvent.choices[voted];
+    if (!Number.isInteger(voted) || !choice) continue;
+    if (choice.requiredJob && player.job?.name !== choice.requiredJob) continue;
     counts.set(voted, (counts.get(voted) || 0) + 1);
   }
   if (!counts.size) return false;
   const highest = Math.max(...counts.values());
   const tied = [...counts.entries()].filter(([, count]) => count === highest).map(([index]) => index).sort((a, b) => a - b);
-  const actor = currentTurnPlayer(room) || eligible[0];
-  const actorVote = Number(room.choiceVotes?.[actor.id]);
+  const turnActor = currentTurnPlayer(room) || eligible[0];
+  const actorVote = Number(room.choiceVotes?.[turnActor.id]);
   const choiceIndex = tied.includes(actorVote) ? actorVote : tied[0];
   const choice = room.currentEvent.choices[choiceIndex];
+  let actor = turnActor;
+  if (choice.requiredJob) {
+    actor = eligible.find(player => player.job?.name === choice.requiredJob && Number(room.choiceVotes?.[player.id]) === choiceIndex)
+      || eligible.find(player => player.job?.name === choice.requiredJob);
+    if (!actor) return false;
+  }
   room.activeChoice = {
     playerId: actor.id,
     playerName: actor.name,
@@ -467,7 +475,9 @@ function finalizeChoiceSelection(room) {
   pushChat(room, {
     type: 'action',
     author: 'TABLE',
-    text: `투표 결과 「${choice.label}」 선택 · 행동자 ${actor.name}`,
+    text: choice.requiredJob
+      ? `직업 전용 선택 「${choice.label}」 확정 · ${choice.requiredJob} ${actor.name}이(가) 행동합니다.`
+      : `투표 결과 「${choice.label}」 선택 · 행동자 ${actor.name}`,
   });
   return true;
 }
@@ -696,6 +706,9 @@ io.on('connection', socket => {
     const choiceIndex = Number(payload.choiceIndex);
     const choice = room.currentEvent.choices[choiceIndex];
     if (!choice) return ack?.({ ok: false, error: '선택지가 올바르지 않습니다.' });
+    if (choice.requiredJob && player.job?.name !== choice.requiredJob) {
+      return ack?.({ ok: false, error: `이 선택지는 ${choice.requiredJob}만 선택할 수 있습니다.` });
+    }
     room.choiceVotes ||= {};
     room.choiceVotes[player.id] = choiceIndex;
     const eligible = storyEligiblePlayers(room);

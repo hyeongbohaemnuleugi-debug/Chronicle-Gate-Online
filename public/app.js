@@ -9,9 +9,9 @@ const REQUIRED_IDS = [
   'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'entryError',
   'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
-  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyActionInput', 'storyActionCount', 'eventText', 'voteTimer', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
-  'myJobMini', 'myStatsMini', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
-  'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'attackBtn', 'combatLog',
+  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
+  'myJobMini', 'myStatsMini', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
+  'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'attackBtn', 'combatLog',
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceSub',
@@ -144,6 +144,53 @@ function rawMod(v) { return Math.floor((Number(v || 10) - 10) / 2); }
 function setWorld(c) { if (!c) return; app.dataset.world = c.id; document.documentElement.style.setProperty('--accent', c.accent); document.documentElement.style.setProperty('--accent2', c.accent2); }
 function makeParticles() { const box = $('#particles'); for (let i = 0; i < 38; i++) { const p = document.createElement('i'); p.className = 'p'; p.style.left = Math.random() * 100 + '%'; p.style.animationDuration = (9 + Math.random() * 18) + 's'; p.style.animationDelay = (-Math.random() * 20) + 's'; p.style.opacity = .25 + Math.random() * .6; p.style.transform = `scale(${.5 + Math.random() * 1.7})`; box.appendChild(p); } }
 function currentCampaign() { return state?.campaign || campaigns.find(x => x.id === state?.campaignId) || campaigns[0] || null; }
+
+function actionHintsFor(player, beat) {
+  const job = player?.job;
+  if (!job) return [];
+  const objective = beat?.objective || '현재 목표를 진행한다';
+  const byStat = {
+    '근력': [`장애물을 힘으로 치우고 ${objective}`, '위험한 대상을 붙잡거나 제압해 길을 만든다', '무너지는 구조물을 버티거나 강제로 연다'],
+    '민첩': [`눈에 띄지 않게 접근해 ${objective}`, '위험 구역을 빠르게 우회해 먼저 위치를 잡는다', '장치나 함정을 손대기 전에 안전하게 접근한다'],
+    '지능': [`기록·장치·단서를 분석해 ${objective}`, '현재 현상의 원리나 규칙을 찾아 약점을 찾는다', '서로 모순되는 정보를 비교해 진짜 단서를 고른다'],
+    '지혜': [`주변의 흔적과 기척을 관찰해 ${objective}`, '보이지 않는 위험의 위치를 먼저 파악한다', '앞선 장면의 흔적과 현재 상황을 연결한다'],
+    '매력': [`상대와 대화하거나 협상해 ${objective}`, '상대가 숨기는 의도나 욕망을 끌어낸다', '동료나 NPC를 안심시키고 협력을 얻는다'],
+    '체력': [`위험을 버티며 직접 ${objective}`, '다른 동료가 행동할 시간을 벌기 위해 몸으로 버틴다', '환경 피해를 감수하고 가장 위험한 위치를 맡는다'],
+  };
+  return byStat[job.prime] || byStat['지능'];
+}
+
+function canUseMySkill(p) {
+  if (!state || !p?.job?.skillDef || !p.connected || p.hp <= 0) return false;
+  const cooldown = Number(p.skillState?.cooldownRemaining || 0);
+  if (cooldown > 0) return false;
+  if (state.phase === 'combat') return state.monster?.turnPhase !== 'boss' && !state.monster?.acted?.includes(p.id);
+  if (state.phase === 'story') {
+    if (state.currentEvent) return state.activeChoice?.playerId === p.id;
+    return state.turnPlayerId === p.id;
+  }
+  return false;
+}
+
+function renderSkillUi() {
+  const p = me();
+  const skill = p?.job?.skillDef;
+  const panel = $('#jobSkillPanel');
+  if (!skill) { panel.classList.add('hidden'); $('#combatSkillBtn').classList.add('hidden'); return; }
+  panel.classList.remove('hidden');
+  $('#jobSkillName').textContent = skill.name;
+  $('#jobSkillDesc').textContent = skill.text;
+  const remaining = Number(p.skillState?.cooldownRemaining || 0);
+  const ready = canUseMySkill(p);
+  $('#jobSkillBtn').disabled = !ready;
+  $('#jobSkillBtn').textContent = remaining > 0 ? `쿨타임 ${remaining}턴` : ready ? '스킬 사용' : '사용 대기';
+  $('#jobSkillCooldown').textContent = remaining > 0 ? `재사용까지 ${remaining}턴` : '사용 가능';
+  $('#jobSkillCooldown').classList.toggle('ready', remaining === 0);
+  $('#combatSkillBtn').classList.toggle('hidden', state?.phase !== 'combat');
+  $('#combatSkillBtn').disabled = !ready;
+  $('#combatSkillBtn').textContent = remaining > 0 ? `${skill.name} · ${remaining}턴` : ready ? `${skill.name} 사용` : `${skill.name} · 대기`;
+}
+
 function sceneWord(campaignId, actIndex = 0) { return WORLD_META[campaignId]?.scene?.[Math.max(0, Math.min(4, actIndex))] || '장면'; }
 function svgUri(svg) { return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`; }
 
@@ -331,6 +378,7 @@ socket.on('chat:new', entry => {
   }
 });
 socket.on('resolution', r => showResolution(r));
+socket.on('skill:ready', payload => toast(`✨ ${payload?.name || '직업 스킬'} 사용이 가능합니다!`));
 socket.on('dice:roll', payload => enqueueDice(payload));
 
 function enqueueDice(payload) {
@@ -373,6 +421,7 @@ function renderState() {
   renderCombat();
   renderEnding();
   renderChat();
+  renderSkillUi();
   renderHelp();
 }
 
@@ -479,6 +528,13 @@ function renderStory() {
   const p = me();
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
+  const roleBeat = beat || ev;
+  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}의 시점</span><b>${esc(roleBeat?.objective || '현재 목표')}</b><small>주 능력치 ${esc(p.job.prime)} · 자유롭게 행동을 입력하면 서버가 행동 의도를 해석해 판정합니다.</small>` : '';
+  const hints = actionHintsFor(p, beat);
+  $('#actionSuggestions').innerHTML = (!ev && hints.length) ? hints.map(h => `<button class="action-suggestion" type="button">${esc(h)}</button>`).join('') : '';
+  $('#actionSuggestions').querySelectorAll('button').forEach(btn => btn.onclick = () => { if (!$('#storyActionInput').disabled) { $('#storyActionInput').value = btn.textContent; $('#storyActionCount').textContent = `${btn.textContent.length}/180`; } });
+  const last = state.lastStoryAction;
+  $('#lastActionResult').innerHTML = last ? `<span class="${last.success ? 'success' : 'failure'}">${last.success ? 'SUCCESS' : 'FAILURE'} · ${esc(last.mode)} · ${esc(last.stat)} ${last.total}/${last.dc}</span><p>${esc(last.narrative || '')}</p>` : '';
 
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
@@ -550,13 +606,16 @@ function renderChoices(ev) {
   });
 }
 
-$('#storyActionInput').addEventListener('input', () => { $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/140`; });
+$('#jobSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#combatSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+
+$('#storyActionInput').addEventListener('input', () => { $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/180`; });
 $('#advanceStoryBtn').onclick = () => {
   const declaration = $('#storyActionInput').value.trim();
   socket.emit('story:advance', { roomCode, playerToken, declaration }, r => {
     if (!r?.ok) return toast(r.error);
     $('#storyActionInput').value = '';
-    $('#storyActionCount').textContent = '0/140';
+    $('#storyActionCount').textContent = '0/180';
   });
 };
 $('#continueBtn').onclick = () => socket.emit('event:continue', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
@@ -573,6 +632,7 @@ $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('sh
 
 function renderCombat() {
   if (!state || state.phase !== 'combat' || !state.monster) return;
+  renderSkillUi();
   const m = state.monster;
   const c = currentCampaign();
   const phase = m.turnPhase || 'players';

@@ -476,10 +476,10 @@ function renderLobby() {
   $('#rollClassBtn').disabled = !state.campaignId || !!p?.job;
   $('#rollStatsBtn').disabled = !p?.job || !!p?.abilities;
   $('#startGameBtn').style.display = isHost() ? 'block' : 'none';
-  const ready = state.players.length >= 2 && state.players.every(x => x.ready && x.connected) && state.campaignId;
+  const ready = state.players.length >= 1 && state.players.every(x => x.ready && x.connected) && state.campaignId;
   $('#startGameBtn').disabled = !ready;
   $('#campaignHint').textContent = isHost() ? '클릭해 선택' : '방장이 선택';
-  $('#lobbyStatus').textContent = state.players.length < 2 ? '최소 한 명의 동료가 더 필요합니다.' : state.players.some(x => !x.connected) ? '오프라인 플레이어가 있습니다. 재접속 후 시작할 수 있습니다.' : state.players.every(x => x.ready) ? '모든 동료의 캐릭터가 준비되었습니다.' : '모든 플레이어가 직업과 능력치를 생성해야 합니다.';
+  $('#lobbyStatus').textContent = state.players.some(x => !x.connected) ? '오프라인 플레이어가 있습니다. 재접속 후 시작할 수 있습니다.' : state.players.every(x => x.ready) ? (state.players.length === 1 ? 'SOLO 준비 완료 · 혼자서 전체 스토리와 전투를 테스트할 수 있습니다.' : '모든 동료의 캐릭터가 준비되었습니다.') : '모든 플레이어가 직업과 능력치를 생성해야 합니다.';
 }
 $('#rollClassBtn').onclick = () => socket.emit('player:classRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 $('#rollStatsBtn').onclick = () => socket.emit('player:statsRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
@@ -529,39 +529,40 @@ function renderStory() {
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
   const roleBeat = beat || ev;
-  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}의 시점</span><b>${esc(roleBeat?.objective || '현재 목표')}</b><small>주 능력치 ${esc(p.job.prime)} · 자유롭게 행동을 입력하면 서버가 행동 의도를 해석해 판정합니다.</small>` : '';
+  const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
+  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}의 시점</span><b>${esc(roleHook || roleBeat?.objective || '현재 목표')}</b><small>주 능력치 ${esc(p.job.prime)} · 추천 행동은 힌트일 뿐입니다. 상황을 읽고 완전히 다른 행동을 직접 입력해도 됩니다.</small>` : '';
   const hints = actionHintsFor(p, beat);
   $('#actionSuggestions').innerHTML = (!ev && hints.length) ? hints.map(h => `<button class="action-suggestion" type="button">${esc(h)}</button>`).join('') : '';
   $('#actionSuggestions').querySelectorAll('button').forEach(btn => btn.onclick = () => { if (!$('#storyActionInput').disabled) { $('#storyActionInput').value = btn.textContent; $('#storyActionCount').textContent = `${btn.textContent.length}/180`; } });
   const last = state.lastStoryAction;
-  $('#lastActionResult').innerHTML = last ? `<span class="${last.success ? 'success' : 'failure'}">${last.success ? 'SUCCESS' : 'FAILURE'} · ${esc(last.mode)} · ${esc(last.stat)} ${last.total}/${last.dc}</span><p>${esc(last.narrative || '')}</p>` : '';
+  $('#lastActionResult').innerHTML = last ? `<div class="eyebrow">PREVIOUS CHAPTER CONSEQUENCE</div><span class="${last.success ? 'success' : 'failure'}">${last.success ? 'SUCCESS' : 'FAILURE'} · ${esc(last.mode)} · ${esc(last.stat)} ${last.total}/${last.dc}</span><p>${esc(last.narrative || '')}</p>` : '<div class="eyebrow">YOUR STORY BEGINS HERE</div><p>첫 행동부터 이후 장면의 로그와 위험도에 영향을 줍니다.</p>'; 
 
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
       ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
-      : `이벤트 발생 · 20초 자동 투표 · 현재 메인 턴 담당자는 ${state.turnPlayerName || '미정'}입니다.`;
+      : `SIDE EVENT · ${state.soloMode ? 'SOLO 5초 선택' : '20초 자동 투표'} · 메인 스토리 사이에 잠깐 발생한 돌발 사건입니다.`;
     $('#storySceneImg').src = storyArt(c, ev);
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
-    $('#actLabel').textContent = `EVENT · ACT ${ev.act}`;
+    $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
     $('#storySituation').textContent = ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.';
     $('#storyObjective').textContent = ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.';
     $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
-    $('#storyPrompt').innerHTML = `<b>테이블에서 먼저 이야기해보세요.</b> 각자 왜 그 선택이 좋은지 짧게 말한 뒤 투표하세요. <span>${esc(ev.stakes || '')}</span>`;
+    $('#storyPrompt').innerHTML = state.soloMode ? `<b>짧은 돌발 사건입니다.</b> 대응 하나를 고르면 5초 후 자동 확정됩니다. <span>${esc(ev.stakes || '')}</span>` : `<b>테이블에서 먼저 이야기해보세요.</b> 각자 왜 그 선택이 좋은지 짧게 말한 뒤 투표하세요. <span>${esc(ev.stakes || '')}</span>`;
     $('#eventText').textContent = ev.text;
     renderChoices(ev);
   } else {
     $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
     $('#storySceneImg').src = storyArt(c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
-    $('#storySceneCaption').textContent = beat ? `${beat.actName} · ${beat.visual} · 지금은 이벤트 카드가 아니라 메인 연대기를 진행하는 장면입니다.` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
+    $('#storySceneCaption').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.actName} · ${beat.visual} · 메인 소설 장면` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
     $('#actLabel').textContent = beat ? `MAIN STORY · ACT ${beat.act}` : 'MAIN STORY';
-    $('#eventTitle').textContent = beat?.title || '연대기가 이어집니다.';
+    $('#eventTitle').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}` : '연대기가 이어집니다.';
     $('#storySituation').textContent = beat?.situation || beat?.text || c?.intro || '';
     $('#storyObjective').textContent = beat?.objective || '현재 차례 플레이어가 다음 행동을 선언합니다.';
     $('#storyWhy').textContent = beat?.why || beat?.stakes || '이 장면은 다음 막으로 이어지는 단서를 만듭니다.';
     $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}에게 질문:</b> ${esc(beat?.prompt || '지금 무엇을 할지 한 문장으로 선언하세요.')} <span>다른 플레이어는 채팅이나 음성으로 의견을 보태도 됩니다.</span>`;
     $('#eventText').textContent = beat?.text || c?.intro || '';
-    $('#choiceArea').innerHTML = `<div class="main-story-note"><div class="eyebrow">MAIN CHRONICLE</div><b>이 장면은 ${esc(state.turnPlayerName || '현재 플레이어')}의 차례입니다.</b><p>위의 ‘상황 → 목표 → 중요성’을 읽고 행동을 한 문장으로 말한 뒤 진행 버튼을 누르세요. 3개의 메인 턴이 지나면 이벤트 카드가 자동으로 끼어듭니다.</p></div>`;
+    $('#choiceArea').innerHTML = `<div class="main-story-note"><div class="eyebrow">NOVEL MODE · MAIN CHRONICLE</div><b>${esc(state.turnPlayerName || '현재 플레이어')}의 자유 행동이 다음 장면으로 이어집니다.</b><p>본문을 읽은 뒤 ‘내 직업이라면 지금 무엇을 할 것인가’를 직접 입력하세요. 성공과 실패 모두 이야기를 계속 전진시킵니다. 이벤트 카드는 3턴마다 잠깐 끼어드는 변수일 뿐, 메인 스토리 진행도에는 포함되지 않습니다.</p></div>`;
   }
 
   $('#gmBar').style.display = 'flex';
@@ -590,7 +591,7 @@ function renderChoices(ev) {
   const votes = state.choiceVotes || {};
   const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
   const highest = Math.max(0, ...counts);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">20 SECOND TABLE VOTE</span><b>호스트 확정 없음 · 서버 자동 집계</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO QUICK CHOICE' : '20 SECOND TABLE VOTE'}</span><b>호스트 확정 없음 · 서버 자동 집계</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
@@ -731,7 +732,7 @@ function renderHelp() {
         '로비에서 스토리를 고른 뒤 각 플레이어는 D6 직업 배정과 4D6 능력치 생성을 각 스토리마다 1번씩만 진행합니다.',
         '메인 스토리 화면에서는 항상 ‘지금 무슨 상황 / 지금 해야 할 일 / 왜 중요한가’를 먼저 확인하세요. 현재 차례 플레이어가 행동을 한 문장으로 선언한 뒤 진행합니다.',
         `가장 많은 표를 받은 선택지가 확정되며, 현재 차례 플레이어(${esc(state?.turnPlayerName || '미정')})가 실제 판정을 굴립니다.`,
-        '메인 턴 3번마다 이벤트 카드가 자동으로 발생하고 20초 투표가 시작됩니다. 전투에서는 연결된 생존 플레이어가 모두 한 번씩 행동하면 몬스터가 반격합니다.',
+        '메인 소설 장면 3개를 진행할 때마다 짧은 이벤트 카드가 끼어듭니다. 멀티플레이는 20초 투표, SOLO는 빠른 5초 선택입니다. 이벤트는 메인 스토리 진행도를 올리지 않습니다.',
       ],
     },
     {
@@ -742,7 +743,7 @@ function renderHelp() {
           ? '현재는 전투 중입니다. 자신의 공격 버튼이 비활성화되어 있다면 이미 이번 라운드에 행동했거나 쓰러진 상태입니다.'
           : phase === 'ending'
             ? '현재는 엔딩 화면입니다. 새 연대기를 시작하려면 버튼을 눌러 메인으로 돌아가세요.'
-            : '현재는 스토리 진행 중입니다. 메인 스토리가 중심이며, 3턴마다 자동 이벤트가 발생합니다. 이벤트 투표는 20초 후 서버가 자동 집계합니다.',
+            : '현재는 소설형 메인 스토리 진행 중입니다. 장면 본문과 직업 시점을 읽고 자유 행동을 선언하세요. 3턴마다 짧은 사이드 이벤트만 발생합니다.',
     },
     {
       title: '주사위 읽는 법',

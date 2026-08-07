@@ -7,11 +7,11 @@ const $$ = s => [...document.querySelectorAll(s)];
 const REQUIRED_IDS = [
   'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'combatView', 'endingView',
   'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'entryError',
-  'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus',
+  'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
-  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'storySceneImg', 'storySceneCaption', 'eventText', 'choiceArea', 'gmBar', 'drawEventBtn', 'finalizeChoiceBtn', 'releaseActionBtn', 'continueBtn',
+  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyActionInput', 'storyActionCount', 'eventText', 'voteTimer', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
   'myJobMini', 'myStatsMini', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
-  'monsterName', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'attackBtn', 'combatLog',
+  'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'attackBtn', 'combatLog',
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceSub',
@@ -197,9 +197,26 @@ function themedBackdrop(id) {
   }
 }
 
-function artSvg(c, title, subtitle, kicker) {
+function sceneMotif(title = '', campaignId = '', monster = '') {
+  const t = `${title} ${monster}`;
+  if (/왕관|왕좌|즉위|왕가/.test(t)) return `<path d="M1000 530 L1060 335 L1155 455 L1245 315 L1330 455 L1420 335 L1480 530 Z" fill="rgba(255,225,155,.22)" stroke="rgba(255,242,198,.55)" stroke-width="8"/><rect x="1015" y="530" width="450" height="78" rx="20" fill="rgba(20,10,9,.45)" stroke="rgba(255,224,170,.45)" stroke-width="6"/>`;
+  if (/시체|망령|죽은|익사체|유령/.test(t)) return `<circle cx="1240" cy="395" r="125" fill="rgba(230,240,245,.13)" stroke="rgba(255,255,255,.32)" stroke-width="7"/><circle cx="1195" cy="378" r="25" fill="rgba(0,0,0,.72)"/><circle cx="1285" cy="378" r="25" fill="rgba(0,0,0,.72)"/><path d="M1200 465 Q1240 490 1280 465" stroke="rgba(0,0,0,.65)" stroke-width="18" fill="none" stroke-linecap="round"/>`;
+  if (/종|시계|시간|회중시계|자정|오후/.test(t)) return `<circle cx="1240" cy="420" r="170" fill="rgba(240,202,98,.08)" stroke="rgba(240,202,98,.48)" stroke-width="10"/><path d="M1240 420 L1240 300 M1240 420 L1338 462" stroke="rgba(255,228,150,.68)" stroke-width="14" stroke-linecap="round"/><circle cx="1240" cy="420" r="18" fill="rgba(255,240,190,.9)"/>`;
+  if (/문|성문|압력문|봉쇄|잠긴|닫히/.test(t)) return `<rect x="1060" y="235" width="360" height="390" rx="22" fill="rgba(5,8,12,.48)" stroke="rgba(255,255,255,.34)" stroke-width="10"/><path d="M1240 235 V625" stroke="rgba(255,255,255,.18)" stroke-width="7"/><circle cx="1320" cy="430" r="18" fill="rgba(255,180,90,.8)"/>`;
+  if (/발자국|추적|흔적/.test(t)) return `<g fill="rgba(255,245,220,.28)"><ellipse cx="1110" cy="520" rx="48" ry="70" transform="rotate(-25 1110 520)"/><ellipse cx="1275" cy="410" rx="48" ry="70" transform="rotate(20 1275 410)"/><ellipse cx="1400" cy="535" rx="48" ry="70" transform="rotate(-18 1400 535)"/></g>`;
+  if (/데이터|암호|로그|AI|MOTHER|백업|삭제|기억/.test(t)) return `<g fill="none" stroke="rgba(55,229,255,.5)" stroke-width="8"><rect x="1050" y="260" width="390" height="310" rx="28"/><path d="M1100 330 H1380 M1100 390 H1310 M1100 450 H1360 M1180 260 V205 M1310 260 V205 M1180 570 V625 M1310 570 V625"/></g><circle cx="1380" cy="390" r="28" fill="rgba(208,91,255,.55)"/>`;
+  if (/드론|감시카메라|눈|광고판/.test(t)) return `<path d="M1060 410 Q1240 245 1420 410 Q1240 575 1060 410 Z" fill="rgba(55,229,255,.08)" stroke="rgba(110,240,255,.45)" stroke-width="9"/><circle cx="1240" cy="410" r="72" fill="rgba(208,91,255,.22)" stroke="rgba(255,130,255,.55)" stroke-width="9"/><circle cx="1240" cy="410" r="25" fill="rgba(255,100,120,.9)"/>`;
+  if (/잠수정|심해|해저|소나|산소|수심|세이렌/.test(t)) return `<ellipse cx="1240" cy="430" rx="220" ry="90" fill="rgba(20,80,115,.32)" stroke="rgba(120,240,255,.45)" stroke-width="9"/><rect x="1180" y="330" width="120" height="90" rx="30" fill="rgba(150,250,255,.12)" stroke="rgba(150,250,255,.4)" stroke-width="7"/><path d="M1018 430 L930 360 V500 Z M1460 430 L1530 365 V495 Z" fill="rgba(70,180,220,.27)"/>`;
+  if (/별|성운|유성|별자리|낙성/.test(t)) return `<path d="M1240 230 L1292 360 L1435 370 L1325 455 L1360 595 L1240 515 L1120 595 L1155 455 L1045 370 L1188 360 Z" fill="rgba(180,255,190,.24)" stroke="rgba(220,185,255,.55)" stroke-width="9"/>`;
+  if (/나무|숲|뿌리|꽃밭|호수/.test(t)) return `<path d="M1240 215 C1180 310 1100 325 1060 420 C1140 405 1185 445 1215 495 L1170 650 H1310 L1270 495 C1305 445 1360 405 1440 420 C1390 325 1315 300 1240 215 Z" fill="rgba(80,155,95,.22)" stroke="rgba(150,245,170,.4)" stroke-width="8"/>`;
+  if (campaignId === 'wild') return `<path d="M1240 230 L1292 360 L1435 370 L1325 455 L1360 595 L1240 515 L1120 595 L1155 455 L1045 370 L1188 360 Z" fill="rgba(180,255,190,.22)" stroke="rgba(220,185,255,.5)" stroke-width="9"/>`;
+  if (/곰|사슴|올빼미|키메라|하운드|맹견|포식자|신수/.test(t) || monster) return `<path d="M1080 500 Q1240 270 1400 500 Q1320 620 1240 630 Q1160 620 1080 500 Z" fill="rgba(15,15,20,.5)" stroke="rgba(255,255,255,.22)" stroke-width="8"/><circle cx="1175" cy="470" r="25" fill="rgba(255,90,80,.9)"/><circle cx="1305" cy="470" r="25" fill="rgba(255,90,80,.9)"/>`;
+  return `<circle cx="1240" cy="420" r="155" fill="rgba(255,255,255,.055)" stroke="rgba(255,255,255,.2)" stroke-width="8"/><path d="M1140 420 H1340 M1240 320 V520" stroke="rgba(255,255,255,.18)" stroke-width="8"/>`;
+}
+
+function artSvg(c, title, subtitle, kicker, visual = '', monster = '') {
   return svgUri(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 800">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid meet">
     <defs>
       <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
         <stop offset="0%" stop-color="${c?.accent || '#935'}"/>
@@ -211,27 +228,31 @@ function artSvg(c, title, subtitle, kicker) {
       </linearGradient>
     </defs>
     ${themedBackdrop(c?.id)}
+    ${sceneMotif(`${title} ${visual}`, c?.id, monster)}
     <rect x="70" y="72" width="1460" height="654" rx="28" fill="none" stroke="rgba(255,255,255,.18)"/>
-    <rect x="95" y="96" width="560" height="208" rx="22" fill="rgba(5,8,13,.42)" stroke="rgba(255,255,255,.08)"/>
-    <text x="135" y="145" fill="${c?.accent2 || '#fff'}" font-size="28" font-family="Orbitron, sans-serif" letter-spacing="5">${esc(kicker)}</text>
-    <text x="135" y="210" fill="#fff6ed" font-size="58" font-weight="800" font-family="Noto Serif KR, serif">${esc(title)}</text>
-    <text x="135" y="258" fill="rgba(255,255,255,.78)" font-size="25" font-family="Noto Serif KR, serif">${esc(subtitle)}</text>
-    <path d="M95 332 h860" stroke="url(#h)" stroke-width="2"/>
+    <rect x="95" y="96" width="710" height="235" rx="22" fill="rgba(5,8,13,.56)" stroke="rgba(255,255,255,.08)"/>
+    <text x="135" y="145" fill="${c?.accent2 || '#fff'}" font-size="26" font-family="Orbitron, sans-serif" letter-spacing="4">${esc(kicker)}</text>
+    <text x="135" y="210" fill="#fff6ed" font-size="52" font-weight="800" font-family="Noto Serif KR, serif">${esc(title)}</text>
+    <text x="135" y="260" fill="rgba(255,255,255,.82)" font-size="23" font-family="Noto Serif KR, serif">${esc(subtitle)}</text>
+    <text x="135" y="303" fill="rgba(255,255,255,.6)" font-size="19" font-family="Noto Serif KR, serif">${esc(visual)}</text>
+    <path d="M95 354 h900" stroke="url(#h)" stroke-width="2"/>
   </svg>`);
 }
 
 function coverArt(c) {
-  return artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE');
+  return artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
-function storyArt(c, ev) {
-  const actIndex = Math.max(0, (ev?.act || 1) - 1);
-  const title = ev?.title || c?.title || '다음 장면';
-  const subtitle = ev?.monster ? `${sceneWord(c?.id, actIndex)} · 위협 ${ev.monster}의 기척이 느껴집니다.` : `${sceneWord(c?.id, actIndex)} · 이번 장면은 투표로 선택합니다.`;
-  return artSvg(c, title, subtitle, ev ? `ACT ${ev.act} · ${ev.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'));
+function storyArt(c, scene) {
+  const actIndex = Math.max(0, (scene?.act || 1) - 1);
+  const title = scene?.title || c?.title || '다음 장면';
+  const visual = scene?.visual || sceneWord(c?.id, actIndex);
+  const subtitle = scene?.monster ? `${visual} · ${scene.monster}의 위협` : `${visual} · ${scene?.id?.includes('STORY') ? '메인 스토리' : '이벤트 사건'}`;
+  return artSvg(c, title, subtitle, scene ? `ACT ${scene.act} · ${scene.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'), visual, scene?.monster || '');
 }
 function monsterArt(c, monster) {
-  return artSvg(c, monster || 'UNKNOWN', `${WORLD_META[c?.id]?.boss || '보스 전투'} · 동료 전원이 차례로 공격할 수 있습니다.`, 'BOSS ENCOUNTER');
+  return artSvg(c, monster || 'UNKNOWN', `${WORLD_META[c?.id]?.boss || '보스 전투'} · 동료 전원이 한 번씩 행동합니다.`, 'BOSS ENCOUNTER', `${monster}와의 전투`, monster || '');
 }
+
 function sendChat(inputSelector) {
   const input = $(inputSelector);
   const text = input.value.trim();
@@ -414,12 +435,42 @@ function renderLobby() {
 $('#rollClassBtn').onclick = () => socket.emit('player:classRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 $('#rollStatsBtn').onclick = () => socket.emit('player:statsRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 $('#startGameBtn').onclick = () => socket.emit('game:start', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#lobbyHomeBtn').onclick = () => leaveLobbyToHome();
+function leaveLobbyToHome(){
+  if(!state || state.phase!=='lobby') return;
+  socket.emit('room:leave',{roomCode,playerToken},res=>{
+    if(!res?.ok) return toast(res?.error||'처음 화면으로 이동하지 못했습니다.');
+    localStorage.removeItem('cg_room'); localStorage.removeItem('cg_token');
+    roomCode=''; playerToken=''; state=null;
+    resetTransientUi(); view('homeView'); toast('처음 화면으로 돌아왔습니다.');
+  });
+}
+
+function voteSecondsLeft() {
+  if (!state?.voteEndsAt) return 0;
+  return Math.max(0, Math.ceil((Number(state.voteEndsAt) - Date.now()) / 1000));
+}
+
+function updateVoteCountdown() {
+  const el = $('#voteTimer');
+  if (!el) return;
+  if (!state?.currentEvent || state?.activeChoice || !state?.voteEndsAt || state.phase !== 'story') {
+    el.classList.add('hidden');
+    return;
+  }
+  const left = voteSecondsLeft();
+  el.classList.remove('hidden');
+  el.innerHTML = `<span>TABLE VOTE</span><b>${left}</b><small>초 후 서버가 자동 집계합니다. 제한시간 동안 표를 바꿀 수 있습니다.</small>`;
+  el.classList.toggle('urgent', left <= 5);
+}
 
 function renderStory() {
   if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
   const c = currentCampaign();
   const ev = state.currentEvent;
+  const beat = state.storyBeat || c?.storyBeats?.[Math.min(state.story || 0, 19)];
   $('#deckCount').textContent = state.deckCount;
+  $('#eventCadence').textContent = `${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴`;
   $('#threatValue').textContent = state.threat;
   $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
   $('#storyValue').textContent = `${state.story}/${state.targetStory || 20}`;
@@ -429,27 +480,45 @@ function renderStory() {
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
 
-  $('#turnBanner').textContent = state.turnPlayerName ? `이번 장면의 행동자 순서: ${state.turnPlayerName} → 장면 해결 후 다음 사람에게 넘어갑니다.` : '행동 순서를 준비 중입니다.';
-  $('#storySceneImg').src = storyArt(c, ev || { act: Math.min(5, 1 + Math.floor((state.story || 0) / 4)), actName: c?.acts?.[Math.min(4, Math.floor((state.story || 0) / 4))], title: c?.title });
-  $('#storySceneCaption').textContent = ev ? `${ev.actName} · ${sceneWord(c?.id, Math.max(0, ev.act - 1))} · 투표로 행동을 정하고 ${state.turnPlayerName || '현재 차례 플레이어'}가 판정합니다.` : `${c?.title || '연대기'}의 메인 스토리를 따라가며 중간중간 이벤트 카드를 해결합니다.`;
-
-  if (!ev) {
-    $('#actLabel').textContent = 'THE TABLE IS QUIET';
-    $('#eventTitle').textContent = isHost() ? '다음 카드를 뽑으세요.' : 'GM이 다음 장면을 준비하고 있습니다.';
-    $('#eventText').textContent = '이 연대기에는 큰 줄거리와 60장의 이벤트 카드가 있습니다. 방장이 카드를 뽑으면 모두가 투표로 행동을 고르고, 현재 차례의 플레이어가 판정합니다.';
-    $('#choiceArea').innerHTML = '';
-  } else {
-    $('#actLabel').textContent = `ACT ${ev.act} · ${ev.actName}`;
+  if (ev) {
+    $('#turnBanner').textContent = state.activeChoice
+      ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
+      : `이벤트 발생 · 20초 자동 투표 · 현재 메인 턴 담당자는 ${state.turnPlayerName || '미정'}입니다.`;
+    $('#storySceneImg').src = storyArt(c, ev);
+    $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
+    $('#actLabel').textContent = `EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
+    $('#storySituation').textContent = ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.';
+    $('#storyObjective').textContent = ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.';
+    $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
+    $('#storyPrompt').innerHTML = `<b>테이블에서 먼저 이야기해보세요.</b> 각자 왜 그 선택이 좋은지 짧게 말한 뒤 투표하세요. <span>${esc(ev.stakes || '')}</span>`;
     $('#eventText').textContent = ev.text;
     renderChoices(ev);
+  } else {
+    $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
+    $('#storySceneImg').src = storyArt(c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
+    $('#storySceneCaption').textContent = beat ? `${beat.actName} · ${beat.visual} · 지금은 이벤트 카드가 아니라 메인 연대기를 진행하는 장면입니다.` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
+    $('#actLabel').textContent = beat ? `MAIN STORY · ACT ${beat.act}` : 'MAIN STORY';
+    $('#eventTitle').textContent = beat?.title || '연대기가 이어집니다.';
+    $('#storySituation').textContent = beat?.situation || beat?.text || c?.intro || '';
+    $('#storyObjective').textContent = beat?.objective || '현재 차례 플레이어가 다음 행동을 선언합니다.';
+    $('#storyWhy').textContent = beat?.why || beat?.stakes || '이 장면은 다음 막으로 이어지는 단서를 만듭니다.';
+    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}에게 질문:</b> ${esc(beat?.prompt || '지금 무엇을 할지 한 문장으로 선언하세요.')} <span>다른 플레이어는 채팅이나 음성으로 의견을 보태도 됩니다.</span>`;
+    $('#eventText').textContent = beat?.text || c?.intro || '';
+    $('#choiceArea').innerHTML = `<div class="main-story-note"><div class="eyebrow">MAIN CHRONICLE</div><b>이 장면은 ${esc(state.turnPlayerName || '현재 플레이어')}의 차례입니다.</b><p>위의 ‘상황 → 목표 → 중요성’을 읽고 행동을 한 문장으로 말한 뒤 진행 버튼을 누르세요. 3개의 메인 턴이 지나면 이벤트 카드가 자동으로 끼어듭니다.</p></div>`;
   }
-  $('#gmBar').style.display = isHost() ? 'flex' : 'none';
-  $('#drawEventBtn').disabled = !!ev || state.phase !== 'story';
-  $('#finalizeChoiceBtn').disabled = !ev || !!state.activeChoice || state.phase !== 'story' || !Object.keys(state.choiceVotes || {}).length;
-  $('#releaseActionBtn').disabled = (!state.activeChoice && !Object.keys(state.choiceVotes || {}).length) || state.phase !== 'story';
+
+  $('#gmBar').style.display = 'flex';
+  $('#advanceStoryBtn').style.display = (!ev && state.phase === 'story') ? 'inline-flex' : 'none';
+  $('#advanceStoryBtn').disabled = !!ev || state.phase !== 'story' || state.turnPlayerId !== playerToken;
+  $('#advanceStoryBtn').textContent = state.turnPlayerId === playerToken ? '내 차례 · 행동 선언 후 진행' : `${state.turnPlayerName || '다른 플레이어'}의 차례`;
+  $('#storyActionInput').disabled = $('#advanceStoryBtn').disabled;
+  $('#storyActionBox').classList.toggle('disabled', $('#advanceStoryBtn').disabled);
+  $('#continueBtn').style.display = state.phase === 'resolution' ? 'inline-flex' : 'none';
   $('#continueBtn').disabled = state.phase !== 'resolution';
+  updateVoteCountdown();
 }
+
 function renderChoices(ev) {
   const active = state.activeChoice;
   const box = $('#choiceArea');
@@ -457,32 +526,41 @@ function renderChoices(ev) {
   if (active) {
     const actorRule = active.choice.requiredJob
       ? `${active.choice.requiredJob} 전용 선택 · 해당 직업 보유자가 판정합니다.`
-      : '일반 선택 · 현재 차례 플레이어가 판정합니다.';
-    box.innerHTML = `<div class="action-lock ${active.choice.requiredJob ? 'job-action-lock' : ''}"><div><div class="eyebrow">ACTION DECLARED</div><b>${esc(active.playerName)}</b> — ${esc(active.choice.label)} <strong>${active.choice.stat} · DC ${active.choice.dc + (state.dcPenalty || 0)}</strong><div class="vote-chip">투표 ${active.voteCount || 0}표 · ${esc(actorRule)}</div></div>${active.playerId === playerToken && state.phase === 'story' ? '<button class="primary" id="rollCheckBtn" type="button">D20 판정</button>' : '<span class="eyebrow">판정 결과를 기다리는 중</span>'}</div>`;
+      : '최다 득표 선택 · 현재 메인 턴 플레이어가 판정합니다.';
+    box.innerHTML = `<div class="action-lock ${active.choice.requiredJob ? 'job-action-lock' : ''}"><div><div class="eyebrow">VOTE COMPLETE</div><b>${esc(active.playerName)}</b> — ${esc(active.choice.label)} <strong>${active.choice.stat} · DC ${active.choice.dc + (state.dcPenalty || 0)}</strong><div class="vote-chip">${active.voteCount || 0}표 · ${esc(actorRule)}</div></div>${active.playerId === playerToken && state.phase === 'story' ? '<button class="primary" id="rollCheckBtn" type="button">D20 판정</button>' : '<span class="eyebrow">판정자를 기다리는 중</span>'}</div>`;
     if (active.playerId === playerToken && state.phase === 'story') $('#rollCheckBtn').onclick = () => socket.emit('event:roll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
     return;
   }
   const votes = state.choiceVotes || {};
   const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
   const highest = Math.max(0, ...counts);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">TABLE VOTE</span><b>${esc(state.turnPlayerName || '차례 플레이어')}</b>가 일반 선택의 판정을 담당합니다.</div><div>${everyoneVoted(votes) ? '모든 생존 플레이어가 투표했습니다. 자동 확정됩니다.' : `연결된 생존 플레이어가 투표 중 · 현재 ${Object.keys(votes).length}표`}</div></div>` + ev.choices.map((c, i) => {
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">20 SECOND TABLE VOTE</span><b>호스트 확정 없음 · 서버 자동 집계</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
     const specialBadge = c.requiredJob ? `<span class="job-choice-badge">${esc(c.requiredJob)} 전용</span>` : '';
-    const lockText = jobLocked ? `<div class="job-choice-lock">🔒 ${esc(c.requiredJob)}만 이 길을 열 수 있습니다.</div>` : '';
+    const lockText = jobLocked ? `<div class="job-choice-lock">🔒 ${esc(c.requiredJob)}만 이 상황의 전문 선택을 사용할 수 있습니다.</div>` : '';
     return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><div class="choice-title-line"><b>${i + 1}. ${esc(c.label)}</b>${specialBadge}</div><small>${c.stat} · DC ${c.dc + (state.dcPenalty || 0)}</small>${lockText}<div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
   }).join('');
   box.querySelectorAll('.choice-card').forEach((b, i) => b.onclick = () => {
     if (b.disabled) return;
+    if (voteSecondsLeft() <= 0) return toast('투표 시간이 종료되었습니다.');
     if (!p || p.hp <= 0) return toast('쓰러진 캐릭터는 투표할 수 없습니다.');
     socket.emit('event:vote', { roomCode, playerToken, choiceIndex: i }, r => !r?.ok && toast(r.error));
   });
 }
-$('#drawEventBtn').onclick = () => socket.emit('event:draw', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
-$('#finalizeChoiceBtn').onclick = () => socket.emit('event:finalizeChoice', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
-$('#releaseActionBtn').onclick = () => socket.emit('event:release', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+
+$('#storyActionInput').addEventListener('input', () => { $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/140`; });
+$('#advanceStoryBtn').onclick = () => {
+  const declaration = $('#storyActionInput').value.trim();
+  socket.emit('story:advance', { roomCode, playerToken, declaration }, r => {
+    if (!r?.ok) return toast(r.error);
+    $('#storyActionInput').value = '';
+    $('#storyActionCount').textContent = '0/140';
+  });
+};
 $('#continueBtn').onclick = () => socket.emit('event:continue', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+setInterval(updateVoteCountdown, 250);
 
 function showResolution(r) {
   if (!r) return;
@@ -497,18 +575,46 @@ function renderCombat() {
   if (!state || state.phase !== 'combat' || !state.monster) return;
   const m = state.monster;
   const c = currentCampaign();
+  const phase = m.turnPhase || 'players';
+  const living = state.players.filter(player => player.connected && player.hp > 0);
+  const acted = new Set(m.acted || []);
+  const remaining = living.filter(player => !acted.has(player.id));
+  const nextPlayer = remaining[0] || null;
+
   $('#monsterName').textContent = m.name;
   $('#combatSceneImg').src = monsterArt(c, m.name);
   $('#monsterAC').textContent = m.ac;
   $('#monsterHpFill').style.width = Math.max(0, m.hp / m.maxHp * 100) + '%';
   $('#monsterHpText').textContent = `${m.hp} / ${m.maxHp}`;
-  $('#combatParty').innerHTML = state.players.map(p => `<div class="combat-member ${m.acted?.includes(p.id) ? 'acted' : ''} ${p.connected ? '' : 'offline'}"><b>${esc(p.name)}</b><div>${esc(p.job?.name || '')}</div><small>HP ${p.hp}/${p.maxHp}${m.acted?.includes(p.id) ? ' · 행동 완료' : ''}</small></div>`).join('');
+  $('#combatRoundLabel').textContent = `ROUND ${m.round || 1}`;
+  $('#combatTurnPhase').textContent = phase === 'boss' ? 'BOSS TURN' : 'PLAYER TURN';
+  $('#combatTurnPanel').classList.toggle('boss-active', phase === 'boss');
+
+  const playerSteps = living.map(player => {
+    const done = acted.has(player.id);
+    const active = phase === 'players' && !done && nextPlayer?.id === player.id;
+    return `<div class="turn-step player-step ${done ? 'done' : ''} ${active ? 'active' : ''}"><span>${done ? '✓' : active ? '▶' : '○'}</span><b>${esc(player.name)}</b><small>${done ? '행동 완료' : active ? '행동 가능' : '대기'}</small></div>`;
+  }).join('');
+  const bossStep = `<div class="turn-arrow">→</div><div class="turn-step boss-step ${phase === 'boss' ? 'active' : ''}"><span>☠</span><b>BOSS</b><small>${phase === 'boss' ? '공격 중' : '플레이어 전원 행동 후'}</small></div>`;
+  $('#combatTimeline').innerHTML = playerSteps + bossStep;
+
+  if (phase === 'boss') {
+    $('#bossTurnWarning').innerHTML = `<strong>⚠ BOSS TURN</strong> · ${esc(m.name)}이(가) 공격을 준비합니다. 잠시 기다리세요.`;
+  } else if (remaining.length === 1) {
+    $('#bossTurnWarning').innerHTML = `<strong>다음은 BOSS TURN</strong> · ${esc(remaining[0].name)} 님이 행동하면 곧바로 보스 차례가 시작됩니다.`;
+  } else {
+    $('#bossTurnWarning').textContent = `플레이어 ${remaining.length}명 행동이 남았습니다. 모두 행동하면 BOSS TURN이 시작됩니다.`;
+  }
+
+  $('#combatParty').innerHTML = state.players.map(p => `<div class="combat-member ${acted.has(p.id) ? 'acted' : ''} ${p.connected ? '' : 'offline'}"><b>${esc(p.name)}</b><div>${esc(p.job?.name || '')}</div><small>HP ${p.hp}/${p.maxHp}${acted.has(p.id) ? ' · 행동 완료' : ''}</small></div>`).join('');
   const p = me();
-  const acted = !!m.acted?.includes(playerToken);
-  $('#attackBtn').disabled = !p || p.hp <= 0 || acted || !p.connected;
-  $('#attackBtn').textContent = acted ? '이번 라운드 행동 완료' : 'D20 공격';
+  const myActed = acted.has(playerToken);
+  $('#attackBtn').disabled = phase === 'boss' || !p || p.hp <= 0 || myActed || !p.connected;
+  $('#attackBtn').textContent = phase === 'boss' ? 'BOSS TURN · 공격 대기' : myActed ? '이번 라운드 행동 완료' : 'PLAYER TURN · D20 공격';
   const atkStat = p?.job?.prime || '근력';
-  $('#combatLog').innerHTML = `<span class="combat-round">ROUND ${m.round || 1}</span> · ${atkStat} 수정치(${signedMod(p?.abilities?.[atkStat]?.total || 10)})로 공격 · D20 vs AC ${m.ac}`;
+  $('#combatLog').innerHTML = phase === 'boss'
+    ? `<span class="combat-round">ROUND ${m.round || 1}</span> · <strong>BOSS TURN</strong> · ${esc(m.name)}의 공격이 곧 실행됩니다.`
+    : `<span class="combat-round">ROUND ${m.round || 1}</span> · <strong>PLAYER TURN</strong> · ${atkStat} 수정치(${signedMod(p?.abilities?.[atkStat]?.total || 10)})로 공격 · D20 vs AC ${m.ac}`;
 }
 $('#attackBtn').onclick = () => socket.emit('combat:attack', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 
@@ -563,9 +669,9 @@ function renderHelp() {
       title: '기본 진행 순서',
       items: [
         '로비에서 스토리를 고른 뒤 각 플레이어는 D6 직업 배정과 4D6 능력치 생성을 각 스토리마다 1번씩만 진행합니다.',
-        '게임 시작 후에는 메인 스토리를 따라 이벤트 카드를 뽑고, 모두가 선택지에 투표합니다.',
+        '메인 스토리 화면에서는 항상 ‘지금 무슨 상황 / 지금 해야 할 일 / 왜 중요한가’를 먼저 확인하세요. 현재 차례 플레이어가 행동을 한 문장으로 선언한 뒤 진행합니다.',
         `가장 많은 표를 받은 선택지가 확정되며, 현재 차례 플레이어(${esc(state?.turnPlayerName || '미정')})가 실제 판정을 굴립니다.`,
-        '전투에서는 연결된 생존 플레이어가 모두 한 번씩 행동하면 몬스터가 반격합니다.',
+        '메인 턴 3번마다 이벤트 카드가 자동으로 발생하고 20초 투표가 시작됩니다. 전투에서는 연결된 생존 플레이어가 모두 한 번씩 행동하면 몬스터가 반격합니다.',
       ],
     },
     {
@@ -576,7 +682,7 @@ function renderHelp() {
           ? '현재는 전투 중입니다. 자신의 공격 버튼이 비활성화되어 있다면 이미 이번 라운드에 행동했거나 쓰러진 상태입니다.'
           : phase === 'ending'
             ? '현재는 엔딩 화면입니다. 새 연대기를 시작하려면 버튼을 눌러 메인으로 돌아가세요.'
-            : '현재는 스토리 진행 중입니다. 이벤트 카드를 뽑은 뒤 투표를 마치면 차례 플레이어가 판정을 수행합니다.',
+            : '현재는 스토리 진행 중입니다. 메인 스토리가 중심이며, 3턴마다 자동 이벤트가 발생합니다. 이벤트 투표는 20초 후 서버가 자동 집계합니다.',
     },
     {
       title: '주사위 읽는 법',

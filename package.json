@@ -1,6 +1,6 @@
 {
   "name": "chronicle-gate-online",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "private": true,
   "type": "module",
   "description": "2-4 player server-authoritative cinematic TRPG for Render + Supabase",

@@ -21,15 +21,19 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '3.5.1';
+const APP_VERSION = '4.0.1-rc.1';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 2;
 const TARGET_STORY = 20;
 const MAX_THREAT = 8;
+const EVENT_EVERY_TURNS = 3;
+const VOTE_DURATION_MS = 20_000;
 const ROOM_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 
 const rooms = new Map();
 const loadLocks = new Map();
+const voteTimers = new Map();
+const bossTurnTimers = new Map();
 
 app.disable('x-powered-by');
 app.use((req, res, next) => {
@@ -66,6 +70,8 @@ app.get('/health', (_req, res) => res.json({
   rooms: rooms.size,
   persistence: persistenceEnabled ? 'supabase' : 'memory',
   timestamp: new Date().toISOString(),
+  uptimeSeconds: Math.floor(process.uptime()),
+  release: 'release-candidate',
 }));
 app.get('/api/config', (_req, res) => res.json({
   version: APP_VERSION,
@@ -74,6 +80,8 @@ app.get('/api/config', (_req, res) => res.json({
   minPlayers: MIN_PLAYERS,
   targetStory: TARGET_STORY,
   maxThreat: MAX_THREAT,
+  eventEveryTurns: EVENT_EVERY_TURNS,
+  voteDurationMs: VOTE_DURATION_MS,
 }));
 
 const rand = sides => crypto.randomInt(1, sides + 1);
@@ -122,6 +130,42 @@ function blankPlayerRuntime(player) {
   player.inspiration = 0;
 }
 
+function normalizeLoadedRoom(room) {
+  if (!room) return room;
+  room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0);
+  room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
+  room.voteEndsAt ||= null;
+  room.choiceVotes ||= {};
+  const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
+  if (!campaign || room.phase === 'lobby') {
+    room.schemaVersion = APP_VERSION;
+    return room;
+  }
+
+  const byId = new Map(campaign.events.map(event => [event.id, event]));
+  const used = new Set((room.discard || []).map(event => event?.id).filter(Boolean));
+  if (room.currentEvent?.id) used.add(room.currentEvent.id);
+  const uniqueDeckIds = [];
+  for (const oldEvent of room.deck || []) {
+    if (!oldEvent?.id || used.has(oldEvent.id) || uniqueDeckIds.includes(oldEvent.id) || !byId.has(oldEvent.id)) continue;
+    uniqueDeckIds.push(oldEvent.id);
+  }
+  room.deck = uniqueDeckIds.map(id => ({ ...byId.get(id) }));
+  room.discard = [...new Set((room.discard || []).map(event => event?.id).filter(id => id && byId.has(id)))].map(id => ({ ...byId.get(id) }));
+  if (room.currentEvent?.id && byId.has(room.currentEvent.id)) {
+    room.currentEvent = { ...byId.get(room.currentEvent.id) };
+    if (room.activeChoice) {
+      const choiceIndex = Number(room.activeChoice.choiceIndex);
+      const choice = room.currentEvent.choices[choiceIndex];
+      if (choice) room.activeChoice = { ...room.activeChoice, choice };
+      else room.activeChoice = null;
+    }
+    if (!room.activeChoice && room.phase === 'story' && !room.voteEndsAt) room.voteEndsAt = Date.now() + VOTE_DURATION_MS;
+  }
+  room.schemaVersion = APP_VERSION;
+  return room;
+}
+
 async function createRoom(hostName, socketId) {
   const roomCode = await reserveRoomCode();
   const player = {
@@ -136,10 +180,11 @@ async function createRoom(hostName, socketId) {
     phase: 'lobby',
     players: [player],
     deck: [], discard: [], currentEvent: null, activeChoice: null,
-    choiceVotes: {},
+    choiceVotes: {}, voteEndsAt: null,
+    mainTurnsSinceEvent: 0, pendingTurnAdvance: false,
     threat: 0, story: 0, dcPenalty: 0, monster: null,
     chat: [], lastResolution: null, ending: null,
-    revision: 1, turnIndex: 0, abandonVote: null,
+    revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
   };
   rooms.set(roomCode, room);
   return { room, player };
@@ -150,7 +195,7 @@ async function getOrLoadRoom(roomCode) {
   if (loadLocks.has(roomCode)) return loadLocks.get(roomCode);
   const promise = (async () => {
     const loaded = await loadRoomSnapshot(roomCode);
-    if (loaded) rooms.set(roomCode, loaded);
+    if (loaded) { normalizeLoadedRoom(loaded); rooms.set(roomCode, loaded); armVoteTimer(loaded); }
     return loaded;
   })().finally(() => loadLocks.delete(roomCode));
   loadLocks.set(roomCode, promise);
@@ -207,7 +252,7 @@ function publicRoom(room) {
       id: campaign.id, title: campaign.title, genre: campaign.genre,
       subtitle: campaign.subtitle, intro: campaign.intro, acts: campaign.acts,
       icon: campaign.icon, accent: campaign.accent, accent2: campaign.accent2,
-      jobs: campaign.jobs, monsters: campaign.monsters, eventCount: campaign.events.length,
+      jobs: campaign.jobs, monsters: campaign.monsters, eventCount: campaign.events.length, storyBeats: campaign.storyBeats,
     } : null,
     players: room.players.map(p => ({
       id: p.id, name: p.name, host: p.host, connected: p.connected,
@@ -219,6 +264,11 @@ function publicRoom(room) {
     currentEvent: room.currentEvent,
     activeChoice: room.activeChoice,
     choiceVotes: room.choiceVotes || {},
+    voteEndsAt: room.voteEndsAt || null,
+    voteDurationMs: VOTE_DURATION_MS,
+    mainTurnsSinceEvent: Number(room.mainTurnsSinceEvent || 0),
+    eventEveryTurns: EVENT_EVERY_TURNS,
+    storyBeat: campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)] || null,
     turnIndex: room.turnIndex || 0,
     turnPlayerId: turnPlayer?.id || null,
     turnPlayerName: turnPlayer?.name || null,
@@ -312,12 +362,8 @@ function shuffle(array) {
 }
 
 function buildDeck(campaign) {
-  const deck = [];
-  for (const event of campaign.events) {
-    deck.push({ ...event, copy: 1 });
-    deck.push({ ...event, copy: 2 });
-  }
-  return shuffle(deck);
+  // v3.6: 30 unique events, one copy each. Events are interruptions, not the main story.
+  return shuffle(campaign.events.map(event => ({ ...event })));
 }
 
 function clearSceneState(room) {
@@ -325,6 +371,7 @@ function clearSceneState(room) {
   room.activeChoice = null;
   room.choiceVotes = {};
   room.lastResolution = null;
+  room.voteEndsAt = null;
   room.monster = null;
 }
 
@@ -399,10 +446,19 @@ function monsterForEvent(room, event) {
     attackBonus: 2 + Math.floor(index / 2),
     round: 1,
     acted: [],
+    turnPhase: 'players',
+    bossTurnStartedAt: null,
   };
 }
 
+function clearBossTurnTimer(roomCode) {
+  const timer = bossTurnTimers.get(roomCode);
+  if (timer) clearTimeout(timer);
+  bossTurnTimers.delete(roomCode);
+}
+
 function monsterTurn(room) {
+  clearBossTurnTimer(room.code);
   const living = room.players.filter(player => player.hp > 0 && player.connected);
   if (!room.monster || !living.length) return;
   const target = living[crypto.randomInt(0, living.length)];
@@ -431,17 +487,59 @@ function monsterTurn(room) {
   });
   room.monster.acted = [];
   room.monster.round += 1;
+  room.monster.turnPhase = 'players';
+  room.monster.bossTurnStartedAt = null;
+  pushChat(room, { type: 'system', text: `ROUND ${room.monster.round} · PLAYER TURN이 시작됩니다.` });
+}
+
+function scheduleMonsterTurn(room, delayMs = 1500) {
+  if (room.phase !== 'combat' || !room.monster) return;
+  if (room.monster.turnPhase === 'boss' && bossTurnTimers.has(room.code)) return;
+  room.monster.turnPhase = 'boss';
+  room.monster.bossTurnStartedAt = Date.now();
+  pushChat(room, { type: 'danger', author: 'GM', text: `BOSS TURN · ${room.monster.name}이(가) 공격을 준비합니다.` });
+  sync(room);
+  clearBossTurnTimer(room.code);
+  const timer = setTimeout(() => {
+    bossTurnTimers.delete(room.code);
+    const liveRoom = rooms.get(room.code);
+    if (!liveRoom || liveRoom.phase !== 'combat' || !liveRoom.monster || liveRoom.monster.turnPhase !== 'boss') return;
+    monsterTurn(liveRoom);
+    evaluateEnding(liveRoom);
+    sync(liveRoom);
+  }, Math.max(300, delayMs));
+  bossTurnTimers.set(room.code, timer);
 }
 
 function reconcileCombatRound(room) {
   if (room.phase !== 'combat' || !room.monster) return;
+  room.monster.turnPhase ||= 'players';
   const eligible = room.players.filter(player => player.connected && player.hp > 0).map(player => player.id);
   room.monster.acted = (room.monster.acted || []).filter(id => eligible.includes(id));
-  if (eligible.length && eligible.every(id => room.monster.acted.includes(id))) monsterTurn(room);
+  if (room.monster.turnPhase === 'boss') {
+    scheduleMonsterTurn(room, 900);
+    return;
+  }
+  if (eligible.length && eligible.every(id => room.monster.acted.includes(id))) scheduleMonsterTurn(room);
+}
+
+function clearVoteTimer(roomCode) {
+  const timer = voteTimers.get(roomCode);
+  if (timer) clearTimeout(timer);
+  voteTimers.delete(roomCode);
+}
+
+function eligibleChoiceIndices(room, player = null) {
+  if (!room.currentEvent) return [];
+  return room.currentEvent.choices
+    .map((choice, index) => ({ choice, index }))
+    .filter(({ choice }) => !choice.requiredJob || (player ? player.job?.name === choice.requiredJob : room.players.some(p => p.connected && p.hp > 0 && p.job?.name === choice.requiredJob)))
+    .map(({ index }) => index);
 }
 
 function finalizeChoiceSelection(room) {
   if (!room.currentEvent || room.activeChoice) return false;
+  clearVoteTimer(room.code);
   const eligible = storyEligiblePlayers(room);
   if (!eligible.length) return false;
   const counts = new Map();
@@ -452,12 +550,23 @@ function finalizeChoiceSelection(room) {
     if (choice.requiredJob && player.job?.name !== choice.requiredJob) continue;
     counts.set(voted, (counts.get(voted) || 0) + 1);
   }
-  if (!counts.size) return false;
-  const highest = Math.max(...counts.values());
-  const tied = [...counts.entries()].filter(([, count]) => count === highest).map(([index]) => index).sort((a, b) => a - b);
+
+  let choiceIndex;
+  let highest = 0;
   const turnActor = currentTurnPlayer(room) || eligible[0];
-  const actorVote = Number(room.choiceVotes?.[turnActor.id]);
-  const choiceIndex = tied.includes(actorVote) ? actorVote : tied[0];
+  if (counts.size) {
+    highest = Math.max(...counts.values());
+    const tied = [...counts.entries()].filter(([, count]) => count === highest).map(([index]) => index);
+    const actorVote = Number(room.choiceVotes?.[turnActor.id]);
+    if (tied.includes(actorVote)) choiceIndex = actorVote;
+    else choiceIndex = tied[crypto.randomInt(0, tied.length)];
+  } else {
+    const fallback = eligibleChoiceIndices(room, turnActor);
+    const pool = fallback.length ? fallback : eligibleChoiceIndices(room);
+    if (!pool.length) return false;
+    choiceIndex = pool[crypto.randomInt(0, pool.length)];
+  }
+
   const choice = room.currentEvent.choices[choiceIndex];
   let actor = turnActor;
   if (choice.requiredJob) {
@@ -472,17 +581,53 @@ function finalizeChoiceSelection(room) {
     choice,
     voteCount: highest,
   };
+  room.voteEndsAt = null;
   pushChat(room, {
     type: 'action',
     author: 'TABLE',
     text: choice.requiredJob
-      ? `직업 전용 선택 「${choice.label}」 확정 · ${choice.requiredJob} ${actor.name}이(가) 행동합니다.`
-      : `투표 결과 「${choice.label}」 선택 · 행동자 ${actor.name}`,
+      ? `투표 종료 · 직업 전용 「${choice.label}」 확정 · ${choice.requiredJob} ${actor.name}이(가) 판정합니다.`
+      : `투표 종료 · 「${choice.label}」 확정 · ${actor.name}이(가) 판정합니다.`,
   });
   return true;
 }
 
+function armVoteTimer(room) {
+  clearVoteTimer(room.code);
+  if (!room.currentEvent || room.activeChoice || !room.voteEndsAt) return;
+  const remaining = Number(room.voteEndsAt) - Date.now();
+  if (remaining <= 0) {
+    if (finalizeChoiceSelection(room)) sync(room);
+    return;
+  }
+  const timer = setTimeout(() => {
+    voteTimers.delete(room.code);
+    if (!rooms.has(room.code) || room.activeChoice || !room.currentEvent) return;
+    if (finalizeChoiceSelection(room)) sync(room);
+  }, remaining);
+  timer.unref?.();
+  voteTimers.set(room.code, timer);
+}
+
+function drawEventForRoom(room) {
+  if (room.currentEvent || !room.deck.length) return false;
+  const desiredAct = Math.min(5, 1 + Math.floor(room.story / 4));
+  const candidates = room.deck.map((event, index) => ({ event, index })).filter(item => item.event.act === desiredAct);
+  const picked = candidates.length ? candidates[crypto.randomInt(0, candidates.length)] : { index: crypto.randomInt(0, room.deck.length) };
+  room.currentEvent = room.deck.splice(picked.index, 1)[0];
+  room.activeChoice = null;
+  room.choiceVotes = {};
+  room.lastResolution = null;
+  room.voteEndsAt = Date.now() + VOTE_DURATION_MS;
+  room.mainTurnsSinceEvent = 0;
+  pushChat(room, { type: 'narration', author: 'GM', text: `이벤트 발생: ${room.currentEvent.title} — ${room.currentEvent.text}` });
+  void appendSessionEvent(room.code, 'event_drawn', { eventId: room.currentEvent.id, title: room.currentEvent.title });
+  armVoteTimer(room);
+  return true;
+}
+
 function resetToLobby(room, reasonText = '세션이 로비로 돌아갔습니다.') {
+  clearVoteTimer(room.code);
   room.phase = 'lobby';
   room.campaignId = null;
   room.deck = [];
@@ -491,6 +636,9 @@ function resetToLobby(room, reasonText = '세션이 로비로 돌아갔습니다
   room.story = 0;
   room.dcPenalty = 0;
   room.turnIndex = 0;
+  room.mainTurnsSinceEvent = 0;
+  room.pendingTurnAdvance = false;
+  room.voteEndsAt = null;
   room.abandonVote = null;
   room.ending = null;
   clearSceneState(room);
@@ -661,6 +809,9 @@ io.on('connection', socket => {
     room.story = 0;
     room.dcPenalty = 0;
     room.choiceVotes = {};
+    room.voteEndsAt = null;
+    room.mainTurnsSinceEvent = 0;
+    room.pendingTurnAdvance = false;
     room.activeChoice = null;
     room.currentEvent = null;
     room.monster = null;
@@ -675,33 +826,52 @@ io.on('connection', socket => {
     ack?.({ ok: true });
   });
 
-  socket.on('event:draw', (payload, ack) => {
-    const { room } = requireHost(socket, payload, ack);
-    if (!room || !requirePhase(room, 'story', ack, '지금은 이벤트를 뽑을 수 없습니다.')) return;
-    if (room.currentEvent) return ack?.({ ok: false, error: '현재 이벤트를 먼저 해결하세요.' });
-    if (!room.deck.length) {
-      const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
-      room.deck = buildDeck(campaign);
-      room.discard = [];
+  socket.on('story:advance', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !requirePhase(room, 'story', ack, '지금은 메인 스토리를 진행할 수 없습니다.')) return;
+    if (room.currentEvent || room.activeChoice) return ack?.({ ok: false, error: '현재 이벤트를 먼저 해결하세요.' });
+    const actor = currentTurnPlayer(room);
+    if (!actor || actor.id !== player.id) return ack?.({ ok: false, error: `현재는 ${actor?.name || '다른 플레이어'}의 차례입니다.` });
+    if (!rateLimit(socket, 'storyAdvance', 700)) return ack?.({ ok: false, error: '잠시 후 다시 시도하세요.' });
+
+    const declaration = sanitize(payload?.declaration, 140);
+    if (declaration.length < 2) return ack?.({ ok: false, error: '이번 장면에서 무엇을 할지 짧게 행동을 선언하세요.' });
+    const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
+    const completedBeat = campaign?.storyBeats?.[Math.min(room.story, TARGET_STORY - 1)];
+    room.story += 1;
+    room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0) + 1;
+    pushChat(room, { type: 'action', author: player.name, text: `행동 선언: ${declaration}` });
+    pushChat(room, { type: 'narration', author: 'GM', text: `메인 스토리 진행: ${completedBeat?.title || `장면 ${room.story}`} 완료.` });
+
+    if (evaluateEnding(room)) {
+      sync(room);
+      return ack?.({ ok: true, ending: true });
     }
-    const desiredAct = Math.min(5, 1 + Math.floor(room.story / 4));
-    const candidates = room.deck.map((event, index) => ({ event, index })).filter(item => item.event.act === desiredAct);
-    const picked = candidates.length ? candidates[crypto.randomInt(0, candidates.length)] : { index: room.deck.length - 1 };
-    room.currentEvent = room.deck.splice(picked.index, 1)[0];
-    room.activeChoice = null;
-    room.choiceVotes = {};
-    room.lastResolution = null;
-    pushChat(room, { type: 'narration', author: 'GM', text: `${room.currentEvent.title} — ${room.currentEvent.text}` });
+
+    if (room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length) {
+      drawEventForRoom(room);
+      pushChat(room, { type: 'system', text: `${EVENT_EVERY_TURNS}개의 메인 턴이 지나 이벤트 카드가 자동으로 공개되었습니다. 투표는 20초 동안 진행됩니다.` });
+    } else {
+      advanceTurn(room);
+    }
     sync(room);
-    void appendSessionEvent(room.code, 'event_drawn', { eventId: room.currentEvent.id, title: room.currentEvent.title, copy: room.currentEvent.copy });
     ack?.({ ok: true });
   });
+
+  // v3.6 compatibility guards: event timing is server-controlled, not host-controlled.
+  socket.on('event:draw', (_payload, ack) => ack?.({ ok: false, error: 'v3.6부터 이벤트 카드는 3개의 메인 턴마다 서버가 자동으로 공개합니다.' }));
+  socket.on('event:finalizeChoice', (_payload, ack) => ack?.({ ok: false, error: '투표는 20초 제한시간 종료 후 서버가 자동 집계합니다.' }));
+  socket.on('event:release', (_payload, ack) => ack?.({ ok: false, error: '투표는 제한시간 동안 자유롭게 변경할 수 있으며 호스트가 초기화할 수 없습니다.' }));
 
   socket.on('event:vote', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'story', ack, '현재 이벤트는 선택할 수 없는 상태입니다.')) return;
     if (!room.currentEvent) return ack?.({ ok: false, error: '진행 중인 이벤트가 없습니다.' });
     if (room.activeChoice) return ack?.({ ok: false, error: '이미 행동이 확정되었습니다.' });
+    if (!room.voteEndsAt || Date.now() >= Number(room.voteEndsAt)) {
+      if (finalizeChoiceSelection(room)) sync(room);
+      return ack?.({ ok: false, error: '투표 시간이 종료되었습니다.' });
+    }
     if (player.hp <= 0) return ack?.({ ok: false, error: '쓰러진 캐릭터는 투표할 수 없습니다.' });
     const choiceIndex = Number(payload.choiceIndex);
     const choice = room.currentEvent.choices[choiceIndex];
@@ -711,38 +881,8 @@ io.on('connection', socket => {
     }
     room.choiceVotes ||= {};
     room.choiceVotes[player.id] = choiceIndex;
-    const eligible = storyEligiblePlayers(room);
-    const everyoneVoted = eligible.length > 0 && eligible.every(member => Number.isInteger(Number(room.choiceVotes[member.id])));
-    if (everyoneVoted) finalizeChoiceSelection(room);
     sync(room);
     ack?.({ ok: true });
-  });
-
-  socket.on('event:finalizeChoice', (payload, ack) => {
-    const { room } = requireHost(socket, payload, ack);
-    if (!room || !requirePhase(room, 'story', ack, '지금은 선택을 확정할 수 없습니다.')) return;
-    if (!room.currentEvent) return ack?.({ ok: false, error: '진행 중인 이벤트가 없습니다.' });
-    if (room.activeChoice) return ack?.({ ok: false, error: '이미 선택이 확정되었습니다.' });
-    if (!finalizeChoiceSelection(room)) return ack?.({ ok: false, error: '먼저 한 개 이상의 투표가 필요합니다.' });
-    sync(room);
-    ack?.({ ok: true });
-  });
-
-  socket.on('event:release', (payload, ack) => {
-    const { room, player } = requireMember(socket, payload, ack);
-    if (!room || !requirePhase(room, 'story', ack)) return;
-    if (room.activeChoice && (player.host || room.activeChoice.playerId === player.id)) {
-      room.activeChoice = null;
-      room.choiceVotes = {};
-      sync(room);
-      return ack?.({ ok: true });
-    }
-    if (!room.activeChoice && player.host) {
-      room.choiceVotes = {};
-      sync(room);
-      return ack?.({ ok: true });
-    }
-    return ack?.({ ok: false, error: '해제할 행동이 없습니다.' });
   });
 
   socket.on('event:roll', (payload, ack) => {
@@ -792,24 +932,22 @@ io.on('connection', socket => {
   });
 
   socket.on('event:continue', (payload, ack) => {
-    const { room } = requireHost(socket, payload, ack);
+    const { room } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'resolution', ack, '계속할 결과가 없습니다.')) return;
     const event = room.currentEvent;
     if (event) room.discard.push(event);
-    room.story += 1;
     room.currentEvent = null;
     room.activeChoice = null;
     room.choiceVotes = {};
+    room.voteEndsAt = null;
     room.phase = 'story';
-    advanceTurn(room);
-    if (evaluateEnding(room)) {
-      sync(room);
-      return ack?.({ ok: true });
-    }
     if (event?.monster) {
       room.monster = monsterForEvent(room, event);
+      room.pendingTurnAdvance = true;
       room.phase = 'combat';
-      pushChat(room, { type: 'danger', author: 'GM', text: `${event.monster} 등장! 전투가 시작됩니다.` });
+      pushChat(room, { type: 'danger', author: 'GM', text: `${event.monster} 등장! 이벤트가 전투로 이어집니다.` });
+    } else {
+      advanceTurn(room);
     }
     sync(room);
     ack?.({ ok: true });
@@ -820,6 +958,7 @@ io.on('connection', socket => {
     if (!room || !requirePhase(room, 'combat', ack, '전투 중이 아닙니다.') || !room.monster) return;
     if (player.hp <= 0) return ack?.({ ok: false, error: '쓰러진 캐릭터는 공격할 수 없습니다.' });
     if (!player.connected) return ack?.({ ok: false, error: '오프라인 상태에서는 공격할 수 없습니다.' });
+    if (room.monster.turnPhase === 'boss') return ack?.({ ok: false, error: '지금은 BOSS TURN입니다. 보스의 공격이 끝날 때까지 기다리세요.' });
     if (room.monster.acted?.includes(player.id)) return ack?.({ ok: false, error: '이번 라운드에는 이미 행동했습니다.' });
     if (!rateLimit(socket, 'attack', 700)) return ack?.({ ok: false, error: '주사위가 멈출 때까지 기다려주세요.' });
 
@@ -849,12 +988,14 @@ io.on('connection', socket => {
     const monsterName = room.monster.name;
     if (room.monster.hp <= 0) {
       pushChat(room, { type: 'success', author: 'GM', text: `${monsterName}이(가) 쓰러졌습니다.` });
+      clearBossTurnTimer(room.code);
       room.monster = null;
       room.phase = 'story';
       room.threat = Math.max(0, room.threat - 1);
+      if (room.pendingTurnAdvance) { advanceTurn(room); room.pendingTurnAdvance = false; }
     } else {
       const eligible = room.players.filter(member => member.connected && member.hp > 0).map(member => member.id);
-      if (eligible.length && eligible.every(id => room.monster.acted.includes(id))) monsterTurn(room);
+      if (eligible.length && eligible.every(id => room.monster.acted.includes(id))) scheduleMonsterTurn(room);
     }
 
     evaluateEnding(room);
@@ -944,6 +1085,7 @@ async function gracefulShutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`[shutdown] ${signal}: flushing ${rooms.size} room snapshot(s)`);
+  for (const roomCode of bossTurnTimers.keys()) clearBossTurnTimer(roomCode);
   const forceTimer = setTimeout(() => process.exit(1), 9_000);
   forceTimer.unref();
   try {
@@ -953,5 +1095,8 @@ async function gracefulShutdown(signal) {
     setTimeout(() => process.exit(0), 1_500).unref();
   }
 }
+process.on('unhandledRejection', error => console.error('[unhandledRejection]', error));
+process.on('uncaughtException', error => { console.error('[uncaughtException]', error); void gracefulShutdown('uncaughtException'); });
+
 process.once('SIGTERM', () => void gracefulShutdown('SIGTERM'));
 process.once('SIGINT', () => void gracefulShutdown('SIGINT'));

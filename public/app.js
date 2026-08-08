@@ -604,26 +604,42 @@ function renderStory() {
   const c = currentCampaign();
   const ev = state.currentEvent;
   const beat = state.storyBeat || c?.storyBeats?.[Math.min(state.story || 0, 19)];
+  const p = me();
+  const isMyTurn = state.turnPlayerId === playerToken;
+  const inResolution = state.phase === 'resolution';
+  const roleplay = !ev && !!beat?.roleplayPrompt;
+
   $('#deckCount').textContent = state.deckCount;
   $('#eventCadence').textContent = `${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴`;
   $('#threatValue').textContent = state.threat;
   $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
   $('#storyValue').textContent = `${state.story}/${state.targetStory || 20}`;
   $('#storyFill').style.width = Math.min(100, state.story / (state.targetStory || 20) * 100) + '%';
-  $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(p => `<div class="party-card ${p.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(p.name)}</b><small>${p.inspiration} ✦</small></div><small>${esc(p.job?.name || '')}</small><div class="hp-line"><i style="width:${p.maxHp ? Math.max(0, p.hp / p.maxHp * 100) : 0}%"></i></div><small>HP ${p.hp}/${p.maxHp}</small></div>`).join('');
-  const p = me();
+  $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(member => {
+    const statuses = member.statuses?.length
+      ? `<div class="status-strip">${member.statuses.map(status => `<span class="status-pill" title="${esc(status.desc || '')}">${esc(status.label)} · ${status.remainingScenes}장면</span>`).join('')}</div>`
+      : `<div class="status-strip"><span class="status-pill ok">정상</span></div>`;
+    return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '')}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}</div>`;
+  }).join('');
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
-  const roleBeat = beat || ev;
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
-  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}</span><b>${esc(roleHook || roleBeat?.objective || '현재 목표')}</b>` : '';
-  const hints = actionHintsFor(p, beat);
-  $('#actionSuggestions').innerHTML = (!ev && hints.length) ? hints.map(h => `<button class="action-suggestion" type="button">${esc(h)}</button>`).join('') : '';
-  $('#actionSuggestions').querySelectorAll('button').forEach(btn => btn.onclick = () => { if (!$('#storyActionInput').disabled) { $('#storyActionInput').value = btn.textContent; $('#storyActionCount').textContent = `${btn.textContent.length}/180`; } });
-  $('#storyActionInput').placeholder = hints[0] ? `예: ${hints[0]}` : '예: 숨겨진 통로가 있는지 조사한다.';
-  const sceneGuide = sceneDecisionGuide(beat, p);
-  const last = state.lastStoryAction;
-  $('#lastActionResult').innerHTML = last ? `<div class="eyebrow">이전 행동의 결과</div><span class="${last.success ? 'success' : 'failure'}">${last.success ? '성공' : '실패'} · ${esc(last.stat)} ${last.total}/${last.dc}</span><p>${esc(last.narrative || '')}</p>` : ''; 
+  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';
+  $('#actionSuggestions').innerHTML = '';
+  $('#storyActionInput').placeholder = roleplay ? (beat?.roleplayPrompt?.placeholder || '짧은 대답을 입력하세요.') : '메인 스토리는 선택지를 골라 진행합니다.';
+  $('#storyActionInput').maxLength = roleplay ? 60 : 180;
+  $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${$('#storyActionInput').maxLength || 180}`;
+
+  const lastResolution = state.lastResolution?.source === 'story' ? state.lastResolution : null;
+  const last = lastResolution || state.lastStoryAction;
+  $('#lastActionResult').innerHTML = last ? `
+    <div class="eyebrow">최근 장면 결과</div>
+    ${last.choiceLabel ? `<div><b>${esc(last.choiceLabel)}</b></div>` : ''}
+    ${last.success === undefined || last.success === null ? '' : `<span class="${last.success ? 'success' : 'failure'}">${last.success ? '성공' : '실패'}${last.stat ? ` · ${esc(last.stat)} ${last.total}/${last.dc}` : ''}</span>`}
+    <p>${esc(last.text || last.narrative || '')}</p>
+    ${last.consequence ? `<p class="failure">${esc(last.consequence)}</p>` : ''}
+    ${last.status ? `<p class="failure">상태이상: ${esc(last.status.label)} — ${esc(last.status.desc || '')}</p>` : ''}
+  ` : '';
 
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
@@ -639,6 +655,7 @@ function renderStory() {
     $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
     $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> 대응 하나를 고르면 5초 후 자동 확정됩니다.` : `<b>짧게 의견을 나눈 뒤 투표하세요.</b>`;
     $('#eventText').textContent = ev.text;
+    $('#storyActionBox').style.display = 'none';
     renderChoices(ev);
   } else {
     $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
@@ -648,22 +665,59 @@ function renderStory() {
     $('#eventTitle').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}` : '연대기가 이어집니다.';
     $('#storyClarity').classList.add('clean-main');
     $('#storySituation').textContent = beat?.situation || beat?.text || c?.intro || '';
-    $('#storyObjective').textContent = beat?.objective || '지금 가장 먼저 할 행동 하나를 정하세요.';
+    $('#storyObjective').textContent = beat?.objective || '장면에 맞는 선택지 중 하나를 고르세요.';
     $('#storyWhy').textContent = beat?.why || beat?.stakes || '';
-    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '지금 가장 먼저 할 행동 하나를 선언하세요.')}`;
-    $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, hints);
-    $('#choiceArea').innerHTML = '';
+    $('#storyPrompt').innerHTML = roleplay
+      ? `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '짧은 대사를 입력하세요.')}`
+      : `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '아래 장면 선택지 중 하나를 고르세요.')}`;
+    $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
+
+    if (roleplay) {
+      $('#storyActionBox').style.display = 'grid';
+      $('#storyActionInput').disabled = !isMyTurn || inResolution;
+      $('#storyActionBox').classList.toggle('disabled', !isMyTurn || inResolution);
+      $('#actionSuggestions').innerHTML = beat?.roleplayPrompt?.help ? `<div class="story-inline-help">${esc(beat.roleplayPrompt.help)}</div>` : '';
+      $('#choiceArea').innerHTML = `<div class="vote-strip"><div><span class="eyebrow">ROLEPLAY SCENE</span><b>짧은 대답을 적으면 다음 이야기 문장에 반영됩니다.</b></div><div>${esc(beat?.roleplayPrompt?.help || '중요한 전투 판정이 아닌 짧은 이야기 장면입니다.')}</div></div>`;
+    } else {
+      $('#storyActionBox').style.display = 'none';
+      $('#storyActionInput').disabled = true;
+      $('#storyActionBox').classList.add('disabled');
+      renderMainStoryChoices(beat);
+    }
   }
 
   $('#gmBar').style.display = 'flex';
-  $('#advanceStoryBtn').style.display = (!ev && state.phase === 'story') ? 'inline-flex' : 'none';
-  $('#advanceStoryBtn').disabled = !!ev || state.phase !== 'story' || state.turnPlayerId !== playerToken;
-  $('#advanceStoryBtn').textContent = state.turnPlayerId === playerToken ? '내 차례 · 행동 선언 후 진행' : `${state.turnPlayerName || '다른 플레이어'}의 차례`;
-  $('#storyActionInput').disabled = $('#advanceStoryBtn').disabled;
-  $('#storyActionBox').classList.toggle('disabled', $('#advanceStoryBtn').disabled);
+  $('#advanceStoryBtn').style.display = (!ev && roleplay && state.phase === 'story') ? 'inline-flex' : 'none';
+  $('#advanceStoryBtn').disabled = !!ev || !roleplay || state.phase !== 'story' || !isMyTurn;
+  $('#advanceStoryBtn').textContent = isMyTurn ? '대사 보내기' : `${state.turnPlayerName || '다른 플레이어'}의 차례`;
   $('#continueBtn').style.display = state.phase === 'resolution' ? 'inline-flex' : 'none';
   $('#continueBtn').disabled = state.phase !== 'resolution';
+  $('#continueBtn').textContent = state.lastResolution?.continueLabel || '결과를 읽고 다음으로';
   updateVoteCountdown();
+}
+
+function renderMainStoryChoices(beat) {
+  const box = $('#choiceArea');
+  const isMyTurn = state.turnPlayerId === playerToken && state.phase === 'story';
+  if (!beat?.choices?.length) {
+    box.innerHTML = '<div class="vote-strip"><div><span class="eyebrow">MAIN STORY</span><b>이 장면의 선택지를 준비 중입니다.</b></div></div>';
+    return;
+  }
+  if (state.phase === 'resolution') {
+    box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">SCENE RESOLVED</div><b>장면 결과를 확인한 뒤 아래 버튼을 눌러 다음 장면으로 넘어가세요.</b><div class="vote-chip">선택은 이미 확정되었습니다.</div></div></div>`;
+    return;
+  }
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">SCENE CHOICES</span><b>각 선택지 아래의 능력치와 DC를 보고 하나를 선택하세요.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + beat.choices.map((choice, index) => `
+    <button class="choice-card story-choice" type="button" ${isMyTurn ? '' : 'disabled'}>
+      <div class="choice-title-line"><b>${index + 1}. ${esc(choice.label)}</b></div>
+      <small>${esc(choice.detail || '')}</small>
+      <div class="story-choice-meta"><span>${esc(choice.stat)} 판정</span><span>DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
+    </button>
+  `).join('');
+  box.querySelectorAll('.story-choice').forEach((button, index) => button.onclick = () => {
+    if (button.disabled) return;
+    socket.emit('story:advance', { roomCode, playerToken, choiceIndex: index }, r => !r?.ok && toast(r.error));
+  });
 }
 
 function renderChoices(ev) {
@@ -700,13 +754,14 @@ function renderChoices(ev) {
 $('#jobSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 $('#combatSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 
-$('#storyActionInput').addEventListener('input', () => { $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/180`; });
+$('#storyActionInput').addEventListener('input', () => { const max = Number($('#storyActionInput').maxLength || 180); $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${max}`; });
 $('#advanceStoryBtn').onclick = () => {
   const declaration = $('#storyActionInput').value.trim();
   socket.emit('story:advance', { roomCode, playerToken, declaration }, r => {
     if (!r?.ok) return toast(r.error);
     $('#storyActionInput').value = '';
-    $('#storyActionCount').textContent = '0/180';
+    const max = Number($('#storyActionInput').maxLength || 180);
+    $('#storyActionCount').textContent = `0/${max}`;
   });
 };
 $('#continueBtn').onclick = () => socket.emit('event:continue', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
@@ -714,9 +769,9 @@ setInterval(updateVoteCountdown, 250);
 
 function showResolution(r) {
   if (!r) return;
-  $('#resolutionEyebrow').textContent = r.ok ? 'SUCCESS' : 'FAILURE';
-  $('#resolutionTitle').textContent = r.ok ? '운명이 길을 열었습니다.' : '주사위는 대가를 요구합니다.';
-  $('#resolutionText').textContent = r.text || '';
+  $('#resolutionEyebrow').textContent = r.roleplay ? 'ROLEPLAY' : (r.ok ? 'SUCCESS' : 'FAILURE');
+  $('#resolutionTitle').textContent = r.roleplay ? '짧은 대화가 이야기 속에 남았습니다.' : (r.ok ? '운명이 길을 열었습니다.' : '주사위는 대가를 요구합니다.');
+  $('#resolutionText').textContent = [r.text, r.consequence, r.status ? `상태이상: ${r.status.label}${r.status.desc ? ` — ${r.status.desc}` : ''}` : ''].filter(Boolean).join('\n\n');
   $('#resolutionModal').classList.add('show');
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');

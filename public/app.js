@@ -473,12 +473,23 @@ function proseParagraphs(text = '') {
 }
 
 
+function storyParagraphHTML(text = '', index = 0) {
+  const sentences = String(text || '').split(/(?<=[.!?…])\s+/).map(v => v.trim()).filter(Boolean);
+  const keyPattern = /(그러나|하지만|그때|그 순간|마침내|사실|진실|정체|발견|드러|깨달|아니었다|없었다|위험|죽음|왕관|봉인|기억|시간|별|심연|경고|배신|목소리)/;
+  let emphasized = sentences.findIndex(sentence => keyPattern.test(sentence));
+  if (emphasized < 0 && sentences.length > 1 && index > 0) emphasized = sentences.length - 1;
+  return sentences.map((sentence, sentenceIndex) => {
+    const safe = esc(sentence);
+    return sentenceIndex === emphasized ? `<strong class="story-key">${safe}</strong>` : safe;
+  }).join(' ');
+}
+
 function storyNarrationHTML(c, beat, player, hints = []) {
   const paragraphs = proseParagraphs(beat?.text || c?.intro || '');
   return `
     <article class="narration-rich clean-narration novel-page">
-      ${paragraphs.map((p, index) => `<p class="${index === 0 ? 'story-lead' : ''}">${esc(p)}</p>`).join('')}
-      ${beat?.continuityHook ? `<p class="continuity-hook"><span>다음 장면의 기척</span>${esc(beat.continuityHook)}</p>` : ''}
+      ${paragraphs.map((p, index) => `<p class="${index === 0 ? 'story-lead' : ''}">${storyParagraphHTML(p, index)}</p>`).join('')}
+      ${beat?.continuityHook ? `<p class="continuity-hook"><span>다음 장면의 기척</span><strong>${esc(beat.continuityHook)}</strong></p>` : ''}
     </article>`;
 }
 
@@ -1015,7 +1026,8 @@ $('#leaveRoomBtn').onclick = () => {
 
 function renderChat() {
   if (!state) return;
-  const markup = (state.chat || []).map(m => `<div class="chat-msg ${m.type || ''}">${m.author ? `<b>${esc(m.author)}</b>` : ''}${esc(m.text)}</div>`).join('');
+  const visibleChat = (state.chat || []).filter(m => !(m.author === 'GM' && m.type === 'narration'));
+  const markup = visibleChat.map(m => `<div class="chat-msg ${m.type || ''}">${m.author ? `<b>${esc(m.author)}</b>` : ''}${esc(m.text)}</div>`).join('');
   const storyLog = $('#chatLog');
   const lobbyLog = $('#lobbyChatLog');
   if (storyLog) { storyLog.innerHTML = markup; storyLog.scrollTop = storyLog.scrollHeight; }

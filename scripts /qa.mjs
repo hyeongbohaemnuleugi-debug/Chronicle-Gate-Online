@@ -20,7 +20,7 @@ for (const campaign of CAMPAIGNS) {
   assert(new Set(campaign.events.map(e => e.title)).size === 30, `${campaign.title}: 이벤트 제목이 중복됩니다.`);
   assert(new Set(campaign.events.map(e => e.id)).size === 30, `${campaign.title}: 이벤트 ID가 중복됩니다.`);
   assert(campaign.acts.length === 5, `${campaign.title}: 5막이어야 합니다.`);
-  assert(campaign.storyBeats?.length === 20, `${campaign.title}: 메인 스토리 장면이 20개여야 합니다.`);
+  assert(campaign.storyBeats?.length === 25, `${campaign.title}: 메인 스토리 장면이 25개여야 합니다.`);
   for (const event of campaign.events) {
     assert(!globalEventIds.has(event.id), `전체 캠페인에서 이벤트 ID 중복: ${event.id}`);
     globalEventIds.add(event.id);
@@ -34,7 +34,7 @@ for (const campaign of CAMPAIGNS) {
       if (choice.requiredJob) assert(campaign.jobs.some(job => job.name === choice.requiredJob), `${event.id}: 존재하지 않는 직업 전용 선택 ${choice.requiredJob}`);
     }
   }
-  notes.push(`${campaign.title}: 메인 스토리 20장면 / 이벤트 30종·30장 / 직업 6종`);
+  notes.push(`${campaign.title}: 메인 스토리 25장면 / 이벤트 30종·30장 / 직업 6종`);
 }
 
 const index = read('public/index.html');
@@ -55,8 +55,7 @@ for (const id of new Set(referencedIds)) assert(idSet.has(id) || dynamicIds.has(
 
 assert((css.match(/{/g) || []).length === (css.match(/}/g) || []).length, 'CSS 중괄호 수가 맞지 않습니다.');
 assert(index.includes('viewport-fit=cover'), '모바일 safe-area 대응 viewport 설정 누락');
-assert(index.includes('id="storyActionInput"') && app.includes("socket.emit('story:advance'"), '메인 스토리 행동 선언 UI 누락');
-assert(server.includes("const declaration = sanitize(payload?.declaration, 180)"), '서버 행동 선언 검증 누락');
+assert(app.includes('renderMainStoryChoices') && app.includes("socket.emit('story:advance'"), '메인 스토리 장면 선택 UI 누락');
 
 
 assert(server.includes('const MIN_PLAYERS = 1'), 'SOLO 1인 시작 설정이 누락되었습니다.');

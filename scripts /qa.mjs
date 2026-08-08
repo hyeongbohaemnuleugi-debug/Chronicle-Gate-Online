@@ -93,7 +93,7 @@ assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공
 assert(server.includes("event:finalizeChoice") && server.includes('서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
 assert(server.includes('beginAllVotedCountdown(room)'), '전원 투표 완료 시 조기 확정 카운트다운 호출이 누락되었습니다.');
 assert(server.includes('clearDetour: isDetour'), '우회 위기 장면 해결 후 제거 플래그가 누락되었습니다.');
-assert(server.includes('canonicalStoryIndex') && server.includes('consumeStoryBeat') && server.includes('storySeenIds'), '메인 스토리 정순 1회 소비 보장 장치가 누락되었습니다.');
+assert(server.includes('storyNodeById') && server.includes('resolveNextStoryNode') && server.includes('consumeStoryBeat') && server.includes('storySeenIds'), '메인 스토리 분기 그래프/1회 소비 장치가 누락되었습니다.');
 assert(!server.includes('findIndex(beat => beat?.id && !seen.has(beat.id))'), '스토리 커서 오류 시 임의의 미소비 장면으로 점프하는 복구 로직이 남아 있습니다.');
 assert(server.includes('lastResolvedStoryBeat') && server.includes("room.phase === 'resolution' && room.lastResolvedStoryBeat"), '결과 화면에서 다음 챕터를 미리 노출하지 않는 스냅샷 장치가 누락되었습니다.');
 assert(!server.includes("type:'narration', author:'GM'") && !server.includes("type: 'narration', author: 'GM'") && !server.includes("type: 'narration', text: campaign.intro, author: 'GM'"), 'GM이 채팅창에 스토리 서술을 다시 기록하는 코드가 남아 있습니다.');
@@ -151,4 +151,25 @@ if (failures.length) {
 }
 console.log('\nALL STATIC QA CHECKS PASSED');
 
-assert(server.includes('Math.floor(room.story / 6)'), '30장 구조의 이벤트 ACT 계산이 6장 단위가 아닙니다.');
+assert(server.includes('storyNodeById(campaign, room.storyNodeId)'), '이벤트 ACT가 현재 분기 노드를 기준으로 계산되지 않습니다.');
+
+// v4.12 branch-graph invariants
+for (const campaign of CAMPAIGNS) {
+  const ids = new Set(campaign.storyBeats.map(b => b.id));
+  if (campaign.storyBeats.length !== 30) throw new Error(`${campaign.id}: expected 30 authored nodes`);
+  for (const beat of campaign.storyBeats) {
+    if (Number(beat.artChapter) !== Number(beat.chapter)) throw new Error(`${beat.id}: artChapter must equal authored chapter`);
+    for (const choice of beat.choices || []) {
+      const targets = [choice.next?.success, choice.next?.failure].filter(Boolean);
+      for (const target of targets) if (target !== '__ENDING__' && !ids.has(target)) throw new Error(`${beat.id}: broken branch target ${target}`);
+    }
+  }
+  // Every graph edge must point forward in authored order; this prevents loops/repeated main scenes.
+  const pos = new Map(campaign.storyBeats.map((b,i)=>[b.id,i]));
+  for (const beat of campaign.storyBeats) for (const choice of beat.choices || []) {
+    for (const target of [choice.next?.success, choice.next?.failure].filter(t=>t && t!=='__ENDING__')) {
+      if (pos.get(target) <= pos.get(beat.id)) throw new Error(`${beat.id}: non-forward edge ${target}`);
+    }
+  }
+}
+console.log('v4.12 branch graph QA PASS');

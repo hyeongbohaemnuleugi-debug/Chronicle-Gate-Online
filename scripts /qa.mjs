@@ -20,7 +20,7 @@ for (const campaign of CAMPAIGNS) {
   assert(new Set(campaign.events.map(e => e.title)).size === 30, `${campaign.title}: 이벤트 제목이 중복됩니다.`);
   assert(new Set(campaign.events.map(e => e.id)).size === 30, `${campaign.title}: 이벤트 ID가 중복됩니다.`);
   assert(campaign.acts.length === 5, `${campaign.title}: 5막이어야 합니다.`);
-  assert(campaign.storyBeats?.length === 25, `${campaign.title}: 메인 스토리 장면이 25개여야 합니다.`);
+  assert(campaign.storyBeats?.length === 30, `${campaign.title}: 메인 스토리 장면이 30개여야 합니다.`);
   for (const event of campaign.events) {
     assert(!globalEventIds.has(event.id), `전체 캠페인에서 이벤트 ID 중복: ${event.id}`);
     globalEventIds.add(event.id);
@@ -34,7 +34,7 @@ for (const campaign of CAMPAIGNS) {
       if (choice.requiredJob) assert(campaign.jobs.some(job => job.name === choice.requiredJob), `${event.id}: 존재하지 않는 직업 전용 선택 ${choice.requiredJob}`);
     }
   }
-  notes.push(`${campaign.title}: 메인 스토리 25장면 / 이벤트 30종·30장 / 직업 6종`);
+  notes.push(`${campaign.title}: 메인 스토리 30장면 / 이벤트 30종·30장 / 직업 6종`);
 }
 
 const index = read('public/index.html');

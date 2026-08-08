@@ -102,16 +102,48 @@ class AudioManager {
   ensureContext(){
     try{
       const AC=window.AudioContext||window.webkitAudioContext;
-      if(!AC) return null;
-      if(!this.ctx) this.ctx=new AC();
-      if(this.ctx.state==='suspended') this.ctx.resume().catch(()=>{});
+      if(!AC){ this.lastError='이 브라우저는 Web Audio API를 지원하지 않습니다.'; return null; }
+      if(!this.ctx) this.ctx=new AC({latencyHint:'interactive'});
       return this.ctx;
     }catch(err){ this.lastError=String(err?.message||err); return null; }
   }
-  unlock(){
+  async unlock(){
     this.unlocked=true;
-    this.ensureContext();
-    this.syncMusic(state);
+    const ctx=this.ensureContext();
+    if(!ctx) return null;
+    try{
+      if(ctx.state==='suspended') await ctx.resume();
+      // Chrome가 사용자 제스처를 인정했는지 한 프레임 뒤 다시 확인한다.
+      if(ctx.state==='suspended'){
+        await new Promise(resolve=>setTimeout(resolve,0));
+        await ctx.resume();
+      }
+    }catch(err){ this.lastError=`AudioContext resume 실패: ${String(err?.message||err)}`; }
+    if(ctx.state==='running') this.syncMusic(state);
+    return ctx;
+  }
+  contextStatus(){
+    const ctx=this.ensureContext();
+    return ctx ? ctx.state : 'unsupported';
+  }
+  forceTestPulse(){
+    const ctx=this.ensureContext();
+    if(!ctx || ctx.state!=='running' || uiPrefs.audioMuted) return false;
+    const now=ctx.currentTime;
+    const notes=[523.25,659.25,783.99];
+    notes.forEach((freq,i)=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      const start=now+i*.16;
+      osc.type='square';
+      osc.frequency.setValueAtTime(freq,start);
+      gain.gain.setValueAtTime(.0001,start);
+      gain.gain.exponentialRampToValueAtTime(Math.max(.18,this.volume(.38)),start+.012);
+      gain.gain.exponentialRampToValueAtTime(.0001,start+.13);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(start); osc.stop(start+.15);
+    });
+    return true;
   }
   makeTone(freq=440,duration=.16,volume=.12,type='sine',delay=0){
     const ctx=this.ensureContext();
@@ -156,7 +188,11 @@ class AudioManager {
   }
   fx(name,mult=1){
     if(uiPrefs.audioMuted || !AUDIO_FILES.fx[name]) return;
-    if(!this.unlocked) this.unlock();
+    const ctx=this.ensureContext();
+    if(!this.unlocked || !ctx || ctx.state!=='running'){
+      this.unlock().then(active=>{ if(active?.state==='running') this.fx(name,mult); });
+      return;
+    }
     const now=performance.now();
     if(now-(this.lastFxAt.get(name)||0)<70) return;
     this.lastFxAt.set(name,now);
@@ -180,7 +216,7 @@ class AudioManager {
   }
   startSynthMusic(key){
     const ctx=this.ensureContext();
-    if(!ctx || uiPrefs.audioMuted || !key) return;
+    if(!ctx || ctx.state!=='running' || uiPrefs.audioMuted || !key) return;
     this.stopSynthMusic();
     const presets={
       ember:[55,82.4,110], neon:[73.4,110,146.8], abyss:[41.2,61.7,82.4],
@@ -190,7 +226,7 @@ class AudioManager {
     freqs.forEach((freq,i)=>{
       const osc=ctx.createOscillator(); const gain=ctx.createGain(); const lfo=ctx.createOscillator(); const lfoGain=ctx.createGain();
       osc.type=i%2?'triangle':'sine'; osc.frequency.value=freq;
-      const base=(key==='combat'?.022:.012)*(1-i*.12)*Math.max(.35,uiPrefs.audioVolume);
+      const base=(key==='combat'?.048:.030)*(1-i*.10)*Math.max(.45,uiPrefs.audioVolume);
       gain.gain.value=base;
       lfo.type='sine'; lfo.frequency.value=.05+i*.03; lfoGain.gain.value=base*.35;
       lfo.connect(lfoGain); lfoGain.connect(gain.gain); osc.connect(gain); gain.connect(ctx.destination);
@@ -219,12 +255,22 @@ class AudioManager {
       a.play().catch(err=>{ this.lastError=String(err?.message||err); });
     }catch(err){ this.lastError=String(err?.message||err); }
   }
-  test(){
+  async test(){
     if(uiPrefs.audioMuted){ uiPrefs.audioMuted=false; saveUiPrefs(); }
-    if(uiPrefs.audioVolume<.35){ uiPrefs.audioVolume=.7; saveUiPrefs(); }
-    this.unlock();
-    this.fx('success',1); setTimeout(()=>this.fx('dice',1),400); setTimeout(()=>this.fx('boss',.8),850);
-    return this.lastError;
+    if(uiPrefs.audioVolume<.55){ uiPrefs.audioVolume=.8; saveUiPrefs(); }
+    this.lastError='';
+    const ctx=await this.unlock();
+    const status=ctx?.state || 'unsupported';
+    if(status!=='running'){
+      this.lastError=`AudioContext가 ${status} 상태입니다. Chrome 주소창 왼쪽 사이트 설정에서 '소리'가 허용인지 확인하세요.`;
+      return {ok:false,status,error:this.lastError};
+    }
+    // 파일과 관계없이 같은 클릭 제스처 안에서 직접 큰 테스트음을 재생한다.
+    const pulse=this.forceTestPulse();
+    setTimeout(()=>this.fx('dice',1.15),560);
+    setTimeout(()=>this.fx('boss',1.0),950);
+    this.syncMusic(state);
+    return {ok:pulse,status,error:this.lastError};
   }
   onState(prev,next){
     this.syncMusic(next);
@@ -242,7 +288,7 @@ class AudioManager {
 }
 
 const audioManager = new AudioManager();
-const unlockAudio=()=>audioManager.unlock();
+const unlockAudio=()=>{ audioManager.unlock().catch(()=>{}); };
 window.addEventListener('pointerdown',unlockAudio,{capture:true,passive:true});
 window.addEventListener('keydown',unlockAudio,{capture:true});
 window.addEventListener('touchstart',unlockAudio,{capture:true,passive:true});
@@ -1296,7 +1342,11 @@ $('#themeLightBtn').onclick = () => { uiPrefs.theme = 'light'; saveUiPrefs(); to
 $('#chatSizeRange').oninput = e => { uiPrefs.chatSize = Number(e.target.value); saveUiPrefs(); };
 $('#audioVolumeRange').oninput = e => { uiPrefs.audioVolume = Math.max(0, Math.min(1, Number(e.target.value)/100)); if (uiPrefs.audioVolume > 0) uiPrefs.audioMuted = false; saveUiPrefs(); audioManager.unlock(); audioManager.syncMusic(state); };
 $('#audioMuteBtn').onclick = () => { uiPrefs.audioMuted = !uiPrefs.audioMuted; saveUiPrefs(); audioManager.unlock(); audioManager.syncMusic(state); toast(uiPrefs.audioMuted ? '게임 사운드를 껐습니다.' : '게임 사운드를 켰습니다.'); };
-$('#audioTestBtn').onclick = () => { const err=audioManager.test(); toast(err ? `사운드 테스트 실행 · ${err}` : '사운드 테스트: 성공음과 주사위 소리가 들리면 정상입니다.'); };
+$('#audioTestBtn').onclick = async () => {
+  const result=await audioManager.test();
+  if(result?.ok) toast(`🔊 오디오 활성화 성공 · AudioContext: ${result.status} · 테스트음이 들려야 정상입니다.`);
+  else toast(`🔇 오디오 활성화 실패 · ${result?.error || '알 수 없는 오류'}`);
+};
 $('#uiResetBtn').onclick = () => { uiPrefs = { ...UI_DEFAULTS }; saveUiPrefs(); toast('화면 설정을 기본값으로 되돌렸습니다.'); };
 $('#abandonRequestBtn').onclick = () => socket.emit('game:abandonRequest', { roomCode, playerToken }, r => { if (!r?.ok) toast(r.error); else toast('포기 투표를 시작했습니다.'); });
 $('#abandonYes').onclick = () => socket.emit('game:abandonRespond', { roomCode, playerToken, approve: true }, r => !r?.ok && toast(r.error));

@@ -13,8 +13,8 @@ for (const campaign of CAMPAIGNS) {
     assert.equal(campaign.events.length, 30);
     assert.equal(new Set(campaign.events.map(e => e.id)).size, 30);
     assert.equal(new Set(campaign.events.map(e => e.title)).size, 30);
-    assert.equal(campaign.storyBeats.length, 25);
-    assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, 25);
+    assert.equal(campaign.storyBeats.length, 30);
+    assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, 30);
     for (const beat of campaign.storyBeats) {
       assert.ok(beat.situation?.length >= 80);
       assert.equal(Object.keys(beat.roleHooks || {}).length, 6);

@@ -78,13 +78,14 @@ function saveUiPrefs() {
 // QA compatibility marker only: ./audio/bgm_ember.wav
 const AUDIO_FILES = {
   music: {
-    ember: '/audio/bgm_ember.wav?v=4121c', neon: '/audio/bgm_neon.wav?v=4121c', abyss: '/audio/bgm_abyss.wav?v=4121c',
-    clock: '/audio/bgm_clock.wav?v=4121c', wild: '/audio/bgm_wild.wav?v=4121c', combat: '/audio/bgm_combat.wav?v=4121c',
+    ember: '/audio/bgm_ember.wav?v=4121d', neon: '/audio/bgm_neon.wav?v=4121d', abyss: '/audio/bgm_abyss.wav?v=4121d',
+    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', combat: '/audio/bgm_combat.wav?v=4121d',
   },
   fx: {
-    dice:'/audio/dice_roll.wav?v=4121c', success:'/audio/success.wav?v=4121c', failure:'/audio/failure.wav?v=4121c',
-    next:'/audio/scene_next.wav?v=4121c', hp:'/audio/hp_loss.wav?v=4121c', attack:'/audio/attack.wav?v=4121c',
-    hit:'/audio/hit.wav?v=4121c', boss:'/audio/boss_warning.wav?v=4121c', vote:'/audio/vote_lock.wav?v=4121c',
+    dice:'/audio/dice_roll.wav?v=4121d', success:'/audio/success.wav?v=4121d', failure:'/audio/failure.wav?v=4121d',
+    next:'/audio/scene_next.wav?v=4121d', hp:'/audio/hp_loss.wav?v=4121d', attack:'/audio/attack.wav?v=4121d',
+    hit:'/audio/hit.wav?v=4121d', boss:'/audio/boss_warning.wav?v=4121d', vote:'/audio/vote_lock.wav?v=4121d',
+    click:'/audio/scene_next.wav?v=4121d', select:'/audio/dice_roll.wav?v=4121d', skill:'/audio/success.wav?v=4121d', combatStart:'/audio/boss_warning.wav?v=4121d', heal:'/audio/success.wav?v=4121d',
   },
 };
 
@@ -179,7 +180,7 @@ class AudioManager {
   }
   async probeAudioAsset(){
     try{
-      const res=await fetch(`/audio/success.wav?v=4121c-${Date.now()}`,{cache:'no-store'});
+      const res=await fetch(`/audio/success.wav?v=4121d-${Date.now()}`,{cache:'no-store'});
       return {ok:res.ok,status:res.status,type:res.headers.get('content-type')||''};
     }catch(err){ return {ok:false,status:0,error:String(err?.message||err)}; }
   }
@@ -191,7 +192,7 @@ class AudioManager {
     const t=ctx.currentTime+delay;
     osc.type=type; osc.frequency.setValueAtTime(freq,t);
     gain.gain.setValueAtTime(.0001,t);
-    gain.gain.exponentialRampToValueAtTime(Math.max(.0001,this.volume(volume)),t+.012);
+    gain.gain.exponentialRampToValueAtTime(Math.max(.025,this.volume(volume)),t+.012);
     gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
     osc.connect(gain); gain.connect(ctx.destination); osc.start(t); osc.stop(t+duration+.02);
   }
@@ -221,8 +222,13 @@ class AudioManager {
     else if(name==='hit'){ this.makeNoise(.10,.20*v); this.makeTone(95,.14,.13*v,'square'); }
     else if(name==='hp'){ this.makeTone(115,.20,.14*v,'sawtooth'); this.makeTone(82,.20,.12*v,'sine',.12); }
     else if(name==='boss'){ this.makeTone(72,.34,.15*v,'sawtooth'); this.makeTone(96,.34,.12*v,'square',.16); }
-    else if(name==='vote'){ this.makeTone(520,.12,.11*v,'sine'); this.makeTone(700,.14,.11*v,'sine',.10); }
-    else this.makeTone(440,.18,.12*v,'sine');
+    else if(name==='vote'){ this.makeTone(520,.12,.15*v,'sine'); this.makeTone(700,.14,.15*v,'sine',.10); }
+    else if(name==='click'){ this.makeTone(560,.045,.18*v,'square'); this.makeTone(720,.055,.12*v,'sine',.035); }
+    else if(name==='select'){ this.makeTone(430,.08,.18*v,'triangle'); this.makeTone(650,.10,.14*v,'sine',.06); }
+    else if(name==='skill'){ this.makeTone(520,.10,.16*v,'sine'); this.makeTone(780,.14,.16*v,'sine',.08); this.makeTone(1040,.18,.13*v,'sine',.16); }
+    else if(name==='heal'){ this.makeTone(440,.14,.13*v,'sine'); this.makeTone(660,.18,.14*v,'sine',.10); this.makeTone(880,.22,.12*v,'sine',.20); }
+    else if(name==='combatStart'){ this.makeTone(92,.32,.16*v,'sawtooth'); this.makeTone(138,.28,.14*v,'square',.16); this.makeNoise(.20,.12*v,.10); }
+    else this.makeTone(440,.12,.15*v,'sine');
   }
   fx(name,mult=1){
     if(uiPrefs.audioMuted || !AUDIO_FILES.fx[name]) return;
@@ -315,8 +321,11 @@ class AudioManager {
   onState(prev,next){
     this.syncMusic(next);
     if(!prev||!next) return;
-    if(prev.phase==='resolution'&&next.phase==='story') this.fx('next',.95);
-    if(prev.phase==='prologue'&&next.phase==='story') this.fx('next',.95);
+    if(prev.phase==='resolution'&&next.phase==='story') this.fx('next',1.05);
+    if(prev.phase==='prologue'&&next.phase==='story') this.fx('next',1.05);
+    if(prev.phase!=='combat'&&next.phase==='combat') this.fx('combatStart',1.15);
+    if(prev.phase==='combat'&&next.phase!=='combat') this.fx('success',1.05);
+    if(prev.phase!=='ending'&&next.phase==='ending') this.fx('success',1.2);
     const prevPlayers=new Map((prev.players||[]).map(p=>[p.id,p]));
     const lostHp=(next.players||[]).some(p=>prevPlayers.has(p.id)&&Number(p.hp)<Number(prevPlayers.get(p.id).hp));
     if(lostHp){ this.fx('hit',.9); setTimeout(()=>this.fx('hp',1),100); }
@@ -332,6 +341,16 @@ const unlockAudio=()=>{ audioManager.unlock().catch(()=>{}); };
 window.addEventListener('pointerdown',unlockAudio,{capture:true,passive:true});
 window.addEventListener('keydown',unlockAudio,{capture:true});
 window.addEventListener('touchstart',unlockAudio,{capture:true,passive:true});
+
+// v4.12.1D: every meaningful UI click gets immediate local feedback.
+// This is client-only and does not alter game state or server flow.
+document.addEventListener('click', async event => {
+  const target = event.target?.closest?.('button, .choice-card, [role="button"], input[type="range"]');
+  if (!target || target.disabled) return;
+  await audioManager.unlock();
+  const isChoice = target.classList?.contains('choice-card') || target.classList?.contains('story-choice');
+  audioManager.fx(isChoice ? 'select' : 'click', isChoice ? 1.15 : .92);
+}, { capture:true });
 
 applyUiPrefs();
 
@@ -634,22 +653,52 @@ function representativeStoryArtCandidates(c, scene) {
   if(!milestone && !eventSample) return [];
   const late=chapter>=21 || ['위기','결단'].includes(String(scene?.phase||''));
   const stem=`${c.id}_${late?'late':'early'}`;
-  return [`/art/${stem}.webp?v=4121c`,`/art/${stem}.png?v=4121c`,`./art/${stem}.webp?v=4121c`,`./art/${stem}.png?v=4121c`];
+  return [`/art/${stem}.webp?v=4121d`,`/art/${stem}.png?v=4121d`,`./art/${stem}.webp?v=4121d`,`./art/${stem}.png?v=4121d`];
+}
+function builtInStoryArt(c,scene){
+  const world=c?.id||'ember';
+  const chapter=Number(scene?.artChapter||scene?.chapter||1);
+  const accent={ember:'#ff7654',neon:'#3fe8ff',abyss:'#68d7ff',clock:'#ffd47c',wild:'#8df4a8'}[world]||'#ff7654';
+  const title=esc(scene?.title||scene?.actName||c?.title||'Chronicle Gate');
+  const visual=esc(scene?.visual||scene?.phase||'중요 장면');
+  const motif={
+    ember:`<path d="M150 520 L360 285 L510 430 L690 220 L860 440 L1060 250 L1240 520" fill="#130b10" stroke="${accent}" stroke-width="6"/><path d="M575 430 h250 l-40 150 H615 Z" fill="#261014" stroke="#ffd0a6" stroke-width="4"/><path d="M660 430 l35-72 38 50 42-82 42 104" fill="none" stroke="#ffd083" stroke-width="9"/>`,
+    neon:`<path d="M120 560 V265 H300 V430 H455 V180 H650 V500 H790 V245 H980 V455 H1170 V215 H1280 V560" fill="#07111d" stroke="${accent}" stroke-width="5"/><path d="M230 210 h190 M880 175 h250 M520 340 h180" stroke="#ff4aa1" stroke-width="12"/><circle cx="1040" cy="355" r="54" fill="none" stroke="${accent}" stroke-width="10"/>`,
+    abyss:`<rect x="180" y="190" width="1040" height="410" rx="80" fill="#071827" stroke="${accent}" stroke-width="6"/><circle cx="720" cy="360" r="125" fill="#0d2a3b" stroke="#9cecff" stroke-width="7"/><path d="M595 520 C520 590 520 650 560 700 M665 520 C640 610 650 670 675 720 M775 520 C800 610 790 670 765 720 M845 520 C920 590 920 650 880 700" fill="none" stroke="${accent}" stroke-width="15"/>`,
+    clock:`<circle cx="720" cy="370" r="190" fill="#11101d" stroke="${accent}" stroke-width="8"/><circle cx="720" cy="370" r="115" fill="none" stroke="#ffe8ad" stroke-width="5"/><path d="M720 370 V260 M720 370 L820 420" stroke="${accent}" stroke-width="13"/><path d="M450 570 H990" stroke="#aa8b50" stroke-width="8"/>`,
+    wild:`<path d="M160 600 C280 310 430 160 590 420 C675 205 800 160 880 420 C1030 160 1160 340 1260 600" fill="#07170f" stroke="${accent}" stroke-width="7"/><path d="M710 600 V270 M710 350 C600 315 540 260 485 205 M710 390 C820 335 900 270 965 190" stroke="#bfffd0" stroke-width="16"/><circle cx="710" cy="225" r="48" fill="#d8ffd8" opacity=".75"/>`
+  }[world]||'';
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07080d"/><stop offset="1" stop-color="#201018"/></linearGradient></defs><rect width="1400" height="760" fill="url(#g)"/><circle cx="1160" cy="125" r="70" fill="${accent}" opacity=".14"/><g opacity=".94">${motif}</g><rect x="70" y="70" width="520" height="170" rx="20" fill="rgba(0,0,0,.56)"/><text x="102" y="112" fill="${accent}" font-family="sans-serif" font-size="20" font-weight="700" letter-spacing="3">IMMERSIVE SCENE · ${chapter}</text><text x="102" y="165" fill="#fff" font-family="sans-serif" font-size="40" font-weight="800">${title}</text><text x="102" y="210" fill="#d8d8df" font-family="sans-serif" font-size="20">${visual}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+function shouldShowBuiltInStoryArt(scene){
+  const chapter=Number(scene?.artChapter||scene?.chapter||0);
+  const isEvent=Boolean(scene?.id && !String(scene.id).includes('STORY'));
+  return [1,6,11,16,21,26,30].includes(chapter) || (isEvent && Math.abs(String(scene?.id||'').split('').reduce((sum,ch)=>sum+ch.charCodeAt(0),0))%4===0);
+}
+function preloadSwapImage(img,candidates){
+  for(const src of candidates){
+    const probe=new Image();
+    probe.onload=()=>{ img.src=src; img.style.display=''; img.dataset.artLoaded='custom'; };
+    probe.src=src;
+  }
 }
 function setSceneImage(img, c, scene) {
   if (!img) return;
-  const exact=chapterArtCandidates(c, scene).map(src=>`${src}${src.includes('?')?'&':'?'}v=4121c`);
-  const candidates=[...exact,...representativeStoryArtCandidates(c,scene)];
-  if (!candidates.length) { img.style.display = 'none'; img.removeAttribute('src'); return; }
-  let index = 0;
-  img.style.display = 'none';
-  img.onload = () => { img.style.display = ''; img.dataset.artLoaded='1'; };
-  img.onerror = () => {
-    index += 1;
-    if (index < candidates.length) img.src = candidates[index];
-    else { img.style.display = 'none'; img.removeAttribute('src'); img.dataset.artLoaded='0'; img.onerror = null; }
-  };
-  img.src = candidates[index];
+  const exact=chapterArtCandidates(c, scene).map(src=>`${src}${src.includes('?')?'&':'?'}v=4121d`);
+  const reps=representativeStoryArtCandidates(c,scene);
+  const custom=[...exact,...reps];
+  if(shouldShowBuiltInStoryArt(scene)){
+    // Important scenes always have an immediate visual, even when GitHub art files are missing.
+    img.src=builtInStoryArt(c,scene);
+    img.style.display='';
+    img.dataset.artLoaded='builtin';
+    preloadSwapImage(img,custom);
+    return;
+  }
+  if(!custom.length){ img.style.display='none'; img.removeAttribute('src'); return; }
+  img.style.display='none';
+  preloadSwapImage(img,custom);
 }
 
 function storyArt(c, scene) {
@@ -720,9 +769,9 @@ function bossArtCandidates(c, monster='') {
   const world = c?.id || 'chronicle';
   const slug = String(monster || '').toLowerCase().replace(/[^a-z0-9가-힣]+/g, '_').replace(/^_+|_+$/g, '');
   return [
-    `/art/${world}_boss.webp?v=4121c`, `/art/${world}_boss.png?v=4121c`,
-    slug ? `/art/${world}_boss_${slug}.webp?v=4121c` : '', slug ? `/art/${world}_boss_${slug}.png?v=4121c` : '',
-    slug ? `/art/${world}_${slug}.webp?v=4121c` : '', slug ? `/art/${world}_${slug}.png?v=4121c` : ''
+    `/art/${world}_boss.webp?v=4121d`, `/art/${world}_boss.png?v=4121d`,
+    slug ? `/art/${world}_boss_${slug}.webp?v=4121d` : '', slug ? `/art/${world}_boss_${slug}.png?v=4121d` : '',
+    slug ? `/art/${world}_${slug}.webp?v=4121d` : '', slug ? `/art/${world}_${slug}.png?v=4121d` : ''
   ].filter(Boolean);
 }
 function monsterArt(c, monster) {
@@ -741,20 +790,15 @@ function monsterArt(c, monster) {
 }
 function setBossSceneImage(img,c,monster){
   if(!img) return;
-  const candidates=bossArtCandidates(c,monster);
-  const fallback=monsterArt(c,monster);
-  let index=0;
+  // Boss appearance is mandatory: render built-in portrait immediately.
+  img.src=monsterArt(c,monster);
   img.style.display='';
-  img.onload=()=>{ img.style.display=''; img.dataset.bossArtLoaded='1'; };
-  img.onerror=()=>{
-    index+=1;
-    if(index<candidates.length){ img.src=candidates[index]; return; }
-    img.onerror=null;
-    img.dataset.bossArtLoaded='fallback';
-    img.src=fallback;
-  };
-  // If no custom boss image exists, the built-in boss illustration is guaranteed to render.
-  img.src=candidates[0]||fallback;
+  img.dataset.bossArtLoaded='builtin';
+  for(const src of bossArtCandidates(c,monster)){
+    const probe=new Image();
+    probe.onload=()=>{ img.src=src; img.dataset.bossArtLoaded='custom'; };
+    probe.src=src;
+  }
 }
 
 function sendChat(inputSelector) {
@@ -837,7 +881,7 @@ socket.on('chat:new', entry => {
 });
 socket.on('resolution', r => { showResolution(r); });
 socket.on('skill:ready', payload => toast(`✨ ${payload?.name || '직업 스킬'} 사용이 가능합니다!`));
-socket.on('skill:used', payload => { const combatKinds=new Set(['blast','markShot','partyAttackBoost','attackBoost']); audioManager.fx(combatKinds.has(payload?.kind)?'attack':'success',1); toast(`✨ ${payload?.playerName || '플레이어'} · ${payload?.name || '직업 스킬'} — ${payload?.summary || '효과 적용'}`); });
+socket.on('skill:used', payload => { const combatKinds=new Set(['blast','markShot','partyAttackBoost','attackBoost']); const healKinds=new Set(['healParty','cleanseParty','healCleanse','partyHeal']); audioManager.fx(healKinds.has(payload?.kind)?'heal':(combatKinds.has(payload?.kind)?'attack':'skill'),1.12); toast(`✨ ${payload?.playerName || '플레이어'} · ${payload?.name || '직업 스킬'} — ${payload?.summary || '효과 적용'}`); });
 socket.on('dice:roll', payload => { audioManager.fx('dice', .85); enqueueDice(payload); });
 
 function enqueueDice(payload) {

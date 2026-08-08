@@ -339,17 +339,22 @@ function coverArt(c) {
 }
 function storyArt(c, scene) {
   const artSet = STORY_ART_FILES[c?.id];
-  if (artSet) {
-    const act = Number(scene?.act || 1);
-    const phase = String(scene?.phase || '도입');
-    return (act >= 4 || (act === 3 && (phase === '위기' || phase === '결단'))) ? artSet.late : artSet.early;
-  }
-  const actIndex = Math.max(0, (scene?.act || 1) - 1);
+  const act = Number(scene?.act || 1);
+  const phase = String(scene?.phase || '도입');
+  const isStory = String(scene?.id || '').includes('STORY');
+  const actIndex = Math.max(0, act - 1);
   const title = scene?.title || c?.title || '다음 장면';
   const visual = scene?.visual || sceneWord(c?.id, actIndex);
-  const subtitle = scene?.monster ? `${visual} · ${scene.monster}의 위협` : `${visual} · ${scene?.id?.includes('STORY') ? '메인 스토리' : '이벤트 사건'}`;
+  const subtitle = scene?.monster ? `${visual} · ${scene.monster}의 위협` : `${visual} · ${isStory ? '메인 스토리' : '이벤트 사건'}`;
+
+  if (isStory && phase === '도입') return coverArt(c);
+  if (artSet && isStory && (phase === '위기' || phase === '결단' || act >= 4)) return artSet.late;
+  if (artSet && isStory && phase === '대면') return artSvg(c, title, subtitle, `ACT ${act} · ${scene?.actName || ''}`, visual, scene?.monster || '');
+  if (artSet && isStory) return artSet.early;
+  if (artSet && !isStory) return (phase === '위기' || phase === '결단' || act >= 4) ? artSet.late : artSet.early;
   return artSvg(c, title, subtitle, scene ? `ACT ${scene.act} · ${scene.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'), visual, scene?.monster || '');
 }
+
 
 function storyArtMeta(c, beat) {
   const src = storyArt(c, beat);
@@ -364,12 +369,15 @@ function storyArtMeta(c, beat) {
 function proseParagraphs(text = '') {
   const cleaned = String(text || '').trim();
   if (!cleaned) return [];
+  const blocks = cleaned.split(/\n{2,}/).map(v => v.trim()).filter(Boolean);
+  if (blocks.length > 1) return blocks;
   const sentences = cleaned.split(/(?<=[.!?])\s+/).map(v => v.trim()).filter(Boolean);
   if (sentences.length <= 2) return [cleaned];
   const out = [];
   for (let i = 0; i < sentences.length; i += 2) out.push(sentences.slice(i, i + 2).join(' '));
   return out;
 }
+
 
 function storyNarrationHTML(c, beat, player, hints = []) {
   const paragraphs = proseParagraphs(beat?.text || c?.intro || '');
@@ -529,14 +537,21 @@ function renderCampaignDetail() {
     el.innerHTML = '<div class="unassigned">방장이 다섯 개의 연대기 중 하나를 선택합니다.</div>';
     return;
   }
+  const previews = [
+    { label: 'LOBBY COVER', src: coverArt(c), text: '로비 대표 이미지' },
+    { label: 'STORY PREVIEW', src: storyArt(c, { act: 1, actName: c.acts?.[0], phase: '대면', title: c.acts?.[0], visual: sceneWord(c.id, 0), id: 'STORY-PREVIEW-1' }), text: '초반 장면 미리보기' },
+    { label: 'CLIMAX PREVIEW', src: storyArt(c, { act: 5, actName: c.acts?.[4], phase: '결단', title: c.acts?.[4], visual: sceneWord(c.id, 4), id: 'STORY-PREVIEW-2' }), text: '후반 장면 미리보기' },
+  ];
   el.innerHTML = `
     <img class="campaign-cover" src="${coverArt(c)}" alt="${esc(c.title)} 대표 이미지">
+    <div class="campaign-preview-strip">${previews.map(item => `<figure class="campaign-preview-thumb"><img src="${item.src}" alt="${esc(c.title)} ${esc(item.text)}"><figcaption><b>${item.label}</b><span>${esc(item.text)}</span></figcaption></figure>`).join('')}</div>
     <div class="eyebrow">${esc(c.genre)}</div>
     <h3>${c.icon} ${esc(c.title)}</h3>
     <p>${esc(c.subtitle)}</p>
     <p>${esc(c.intro)}</p>
     <div class="acts">${c.acts.map((a, i) => `<span>ACT ${i + 1} · ${esc(a)}</span>`).join('')}</div>`;
 }
+
 function renderLobby() {
   if (!state) return;
   renderCampaigns();
@@ -660,7 +675,7 @@ function renderStory() {
   } else {
     $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
     $('#storySceneImg').src = storyArt(c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
-    $('#storySceneCaption').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.actName} · ${beat.visual} · 메인 소설 장면` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
+    $('#storySceneCaption').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)}/${state.targetStory || 25} · ${beat.actName} · ${beat.visual} · 메인 소설 장면` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
     $('#actLabel').textContent = beat ? `MAIN STORY · ACT ${beat.act}` : 'MAIN STORY';
     $('#eventTitle').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}` : '연대기가 이어집니다.';
     $('#storyClarity').classList.add('clean-main');
@@ -707,7 +722,7 @@ function renderMainStoryChoices(beat) {
     box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">SCENE RESOLVED</div><b>장면 결과를 확인한 뒤 아래 버튼을 눌러 다음 장면으로 넘어가세요.</b><div class="vote-chip">선택은 이미 확정되었습니다.</div></div></div>`;
     return;
   }
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">SCENE CHOICES</span><b>각 선택지 아래의 능력치와 DC를 보고 하나를 선택하세요.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + beat.choices.map((choice, index) => `
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">SCENE CHOICES</span><b>각 선택지 아래의 능력치와 DC를 보고 하나를 선택하세요.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 이번 선택이 다음 막의 분위기와 엔딩에 영향을 줍니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + beat.choices.map((choice, index) => `
     <button class="choice-card story-choice" type="button" ${isMyTurn ? '' : 'disabled'}>
       <div class="choice-title-line"><b>${index + 1}. ${esc(choice.label)}</b></div>
       <small>${esc(choice.detail || '')}</small>

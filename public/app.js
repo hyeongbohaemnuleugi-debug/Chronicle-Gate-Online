@@ -583,8 +583,32 @@ function renderLobby() {
   $('#campaignHint').textContent = isHost() ? '클릭해 선택' : '방장이 선택';
   $('#lobbyStatus').textContent = state.players.some(x => !x.connected) ? '오프라인 플레이어가 있습니다. 재접속 후 시작할 수 있습니다.' : state.players.every(x => x.ready) ? (state.players.length === 1 ? 'SOLO 준비 완료 · 혼자서 전체 스토리와 전투를 테스트할 수 있습니다.' : '모든 동료의 캐릭터가 준비되었습니다.') : '모든 플레이어가 직업과 능력치를 생성해야 합니다.';
 }
-$('#rollClassBtn').onclick = () => socket.emit('player:classRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
-$('#rollStatsBtn').onclick = () => socket.emit('player:statsRoll', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#rollClassBtn').onclick = () => {
+  $('#rollClassBtn').disabled = true;
+  socket.emit('player:classRoll', { roomCode, playerToken }, r => {
+    if (!r?.ok) {
+      $('#rollClassBtn').disabled = false;
+      return toast(r?.error || '직업 생성에 실패했습니다.');
+    }
+    if (r.state) {
+      state = r.state;
+      renderState();
+    }
+  });
+};
+$('#rollStatsBtn').onclick = () => {
+  $('#rollStatsBtn').disabled = true;
+  socket.emit('player:statsRoll', { roomCode, playerToken }, r => {
+    if (!r?.ok) {
+      $('#rollStatsBtn').disabled = !me()?.job || !!me()?.abilities;
+      return toast(r?.error || '능력치 생성에 실패했습니다.');
+    }
+    if (r.state) {
+      state = r.state;
+      renderState();
+    }
+  });
+};
 $('#startGameBtn').onclick = () => socket.emit('game:start', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 $('#lobbyHomeBtn').onclick = () => leaveLobbyToHome();
 function leaveLobbyToHome(){

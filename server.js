@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.12.0-true-branch-graph.0';
+const APP_VERSION = '4.12.1-audio-skills-roll.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -1359,29 +1359,142 @@ function canUseSkillNow(room, player) {
 function applyJobSkill(room, player) {
   const skill = player.job?.skillDef;
   if (!skill) return { ok:false, error:'이 직업에는 등록된 스킬이 없습니다.' };
+  const alive = room.players.filter(member => member.hp > 0);
+  const cleanseOne = member => {
+    member.statuses ||= [];
+    if (!member.statuses.length) return 0;
+    member.statuses.shift();
+    return 1;
+  };
+  const guardOne = (member, amount) => {
+    member.skillState ||= { readyAtTurn:0, guard:0, checkBonus:0, attackBonus:0, damageBonus:0 };
+    member.skillState.guard = Math.max(Number(member.skillState.guard || 0), Number(amount || 0));
+  };
+  let summary = skill.text;
   switch (skill.kind) {
-    case 'guard': player.skillState.guard = Math.max(Number(player.skillState.guard || 0), Number(skill.amount || 4)); break;
-    case 'focus': player.skillState.checkBonus = Math.max(Number(player.skillState.checkBonus || 0), Number(skill.amount || 4)); break;
-    case 'insight': room.threat = Math.max(0, room.threat - 1); player.inspiration = Math.min(3, player.inspiration + 1); break;
-    case 'dcDown': room.nextCheckDcReduction = Math.max(Number(room.nextCheckDcReduction || 0), Number(skill.amount || 2)); break;
+    case 'guard':
+      guardOne(player, Number(skill.amount || 4));
+      break;
+    case 'guardParty':
+      for (const member of alive) guardOne(member, Number(skill.amount || 2));
+      break;
+    case 'focus':
+      player.skillState.checkBonus = Math.max(Number(player.skillState.checkBonus || 0), Number(skill.amount || 4));
+      break;
+    case 'insight':
+      room.threat = Math.max(0, room.threat - Number(skill.amount || 1));
+      player.inspiration = Math.min(3, Number(player.inspiration || 0) + 1);
+      break;
+    case 'dcDown':
+      room.nextCheckDcReduction = Math.max(Number(room.nextCheckDcReduction || 0), Number(skill.amount || 2));
+      break;
     case 'heal': {
-      const targets = room.players.filter(member => member.hp > 0).sort((a,b)=>(a.hp/a.maxHp)-(b.hp/b.maxHp));
-      const target = targets[0] || player; const heal = rand(4) + Math.max(1, Number(skill.amount || 4) - 2);
+      const targets = alive.slice().sort((a,b)=>(a.hp/a.maxHp)-(b.hp/b.maxHp));
+      const target = targets[0] || player;
+      const heal = rand(4) + Math.max(1, Number(skill.amount || 4) - 2);
+      const before = target.hp;
       target.hp = Math.min(target.maxHp, target.hp + heal);
-      pushChat(room, { type:'success', author:player.name, text:`${skill.name}: ${target.name} HP ${heal} 회복.` });
+      summary = `${target.name} HP ${target.hp-before} 회복`;
       break;
     }
-    case 'healParty': for (const member of room.players) if (member.hp > 0) member.hp = Math.min(member.maxHp, member.hp + Number(skill.amount || 2)); break;
-    case 'attackBoost': player.skillState.attackBonus = Math.max(Number(player.skillState.attackBonus || 0), Number(skill.amount || 2)); player.skillState.damageBonus = Math.max(Number(player.skillState.damageBonus || 0), Number(skill.amount || 2)); break;
-    case 'threatShield': room.threatShield = Math.max(Number(room.threatShield || 0), 1); break;
-    case 'expose': if (room.phase === 'combat' && room.monster) room.monster.ac = Math.max(8, room.monster.ac - Number(skill.amount || 2)); else player.skillState.checkBonus = Math.max(Number(player.skillState.checkBonus || 0), Number(skill.amount || 2)); break;
-    case 'pacify': if (room.phase === 'combat' && room.monster) room.monster.skipNextBoss = true; else player.skillState.checkBonus = Math.max(Number(player.skillState.checkBonus || 0), 3); break;
-    case 'inspiration': player.inspiration = Math.min(3, player.inspiration + Number(skill.amount || 2)); break;
-    default: return { ok:false, error:'스킬 효과가 정의되지 않았습니다.' };
+    case 'healParty': {
+      const amount = Number(skill.amount || 2);
+      let healed = 0;
+      for (const member of alive) { const before=member.hp; member.hp=Math.min(member.maxHp,member.hp+amount); healed += member.hp-before; }
+      if (skill.name === '대지의 숨') room.threat = Math.max(0, room.threat - 1);
+      summary = `파티 전체 총 ${healed} HP 회복${skill.name === '대지의 숨' ? ' · 위협 -1' : ''}`;
+      break;
+    }
+    case 'healLowestCleanse': {
+      const target = alive.slice().sort((a,b)=>(a.hp/a.maxHp)-(b.hp/b.maxHp))[0] || player;
+      const heal = rand(4) + Math.max(1, Number(skill.amount || 5) - 2);
+      const before = target.hp;
+      target.hp = Math.min(target.maxHp, target.hp + heal);
+      const cleansed = cleanseOne(target);
+      summary = `${target.name} HP ${target.hp-before} 회복${cleansed ? ' · 상태이상 1개 제거' : ''}`;
+      break;
+    }
+    case 'healCleanseParty': {
+      const amount = Number(skill.amount || 2);
+      let healed=0, cleansed=0;
+      for (const member of alive) { const before=member.hp; member.hp=Math.min(member.maxHp,member.hp+amount); healed += member.hp-before; cleansed += cleanseOne(member); }
+      summary = `파티 전체 총 ${healed} HP 회복 · 상태이상 ${cleansed}개 정화`;
+      break;
+    }
+    case 'cleanseParty': {
+      let cleansed=0;
+      for (const member of alive) cleansed += cleanseOne(member);
+      room.threat = Math.max(0, room.threat - 1);
+      if (skill.name === '꿈결 정화') player.inspiration = Math.min(3, Number(player.inspiration || 0)+1);
+      summary = `상태이상 ${cleansed}개 제거 · 위협 -1${skill.name === '꿈결 정화' ? ' · 영감 +1' : ''}`;
+      break;
+    }
+    case 'repairParty': {
+      const amount=Number(skill.amount || 2); let healed=0;
+      for (const member of alive) { const before=member.hp; member.hp=Math.min(member.maxHp,member.hp+amount); healed += member.hp-before; guardOne(member,1); }
+      summary = `파티 전체 총 ${healed} HP 회복 · 피해 1 보호막`;
+      break;
+    }
+    case 'attackBoost':
+      if (room.phase === 'combat') {
+        player.skillState.attackBonus = Math.max(Number(player.skillState.attackBonus || 0), Number(skill.amount || 2));
+        player.skillState.damageBonus = Math.max(Number(player.skillState.damageBonus || 0), Number(skill.amount || 2));
+      } else guardOne(player, Number(skill.amount || 3));
+      break;
+    case 'partyAttackBoost':
+      for (const member of alive) {
+        member.skillState.attackBonus = Math.max(Number(member.skillState.attackBonus || 0), Number(skill.amount || 2));
+        member.skillState.damageBonus = Math.max(Number(member.skillState.damageBonus || 0), Number(skill.amount || 2));
+      }
+      break;
+    case 'threatShield':
+      room.threatShield = Math.max(Number(room.threatShield || 0), 1);
+      player.inspiration = Math.min(3, Number(player.inspiration || 0)+1);
+      break;
+    case 'expose':
+      if (room.phase === 'combat' && room.monster) room.monster.ac = Math.max(8, room.monster.ac - Number(skill.amount || 2));
+      else room.threat = Math.max(0, room.threat - Number(skill.amount || 2));
+      break;
+    case 'pacify':
+      if (room.phase === 'combat' && room.monster) room.monster.skipNextBoss = true;
+      else room.threat = Math.max(0, room.threat - 2);
+      break;
+    case 'jam':
+      if (room.phase === 'combat' && room.monster) room.monster.skipNextBoss = true;
+      else room.threatShield = Math.max(Number(room.threatShield || 0), 1);
+      break;
+    case 'blast':
+    case 'markShot': {
+      if (room.phase === 'combat' && room.monster) {
+        const damage = rand(6) + Number(skill.amount || 3);
+        room.monster.hp = Math.max(0, room.monster.hp - damage);
+        summary = `${room.monster.name}에게 ${damage} 직접 피해`;
+      } else {
+        room.threat = Math.max(0, room.threat - (skill.kind === 'blast' ? 2 : 1));
+        if (skill.kind === 'blast') guardOne(player, Number(skill.amount || 0));
+      }
+      break;
+    }
+    case 'inspiration':
+      player.inspiration = Math.min(3, player.inspiration + Number(skill.amount || 2));
+      break;
+    case 'inspirationParty':
+      for (const member of alive) member.inspiration = Math.min(3, Number(member.inspiration || 0) + Number(skill.amount || 1));
+      if (skill.name === '예정된 순간') room.threat = Math.max(0, room.threat - 1);
+      break;
+    case 'cooldownParty':
+      for (const member of alive) if (member.id !== player.id) member.skillState.readyAtTurn = Math.max(Number(room.turnSerial || 0), Number(member.skillState?.readyAtTurn || 0) - Number(skill.amount || 1));
+      break;
+    case 'cooldownSelf':
+      player.inspiration = Math.min(3, Number(player.inspiration || 0) + 1);
+      break;
+    default:
+      return { ok:false, error:'스킬 효과가 정의되지 않았습니다.' };
   }
   const cooldown = Number(skill.cooldown || 3);
   player.skillState.readyAtTurn = Number(room.turnSerial || 0) + cooldown + 1;
-  return { ok:true, cooldown };
+  if (skill.kind === 'cooldownSelf') player.skillState.readyAtTurn = Math.max(Number(room.turnSerial || 0)+1, player.skillState.readyAtTurn - Number(skill.amount || 2));
+  return { ok:true, cooldown:Math.max(0, player.skillState.readyAtTurn - Number(room.turnSerial || 0)), summary };
 }
 
 function evaluateEnding(room) {
@@ -1981,7 +2094,7 @@ io.on('connection', socket => {
 
     emitRoll(room, player, {
       sides:20, result:roll, purpose:`메인 스토리 · ${choice.stat} 판정 · DC ${dc}`,
-      kind:'story-choice', stat:choice.stat, total, dc, success,
+      kind:'story-choice', stat:choice.stat, total, dc, success, modifiers:[{label:`${choice.stat} 보정`,value:abilityMod},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty}].filter(m=>m.value),
     });
 
     let consequence = '';
@@ -2068,9 +2181,19 @@ io.on('connection', socket => {
     if (!rateLimit(socket, 'skillUse', 700)) return ack?.({ ok:false, error:'잠시 후 다시 시도하세요.' });
     const result = applyJobSkill(room, player);
     if (!result.ok) return ack?.(result);
-    pushChat(room, { type:'success', author:player.name, text:`직업 스킬 「${player.job.skillDef.name}」 사용 — ${player.job.skillDef.text} · 쿨타임 ${result.cooldown}턴` });
+    pushChat(room, { type:'success', author:player.name, text:`직업 스킬 「${player.job.skillDef.name}」 — ${result.summary || player.job.skillDef.text} · 쿨타임 ${result.cooldown}턴` });
+    io.to(room.code).emit('skill:used', { playerId:player.id, playerName:player.name, name:player.job.skillDef.name, kind:player.job.skillDef.kind, summary:result.summary || player.job.skillDef.text });
+    if (room.phase === 'combat' && room.monster && room.monster.hp <= 0) {
+      const monsterName = room.monster.name;
+      pushChat(room, { type:'success', author:'GM', text:`${monsterName}이(가) 직업 스킬에 쓰러졌습니다.` });
+      clearBossTurnTimer(room.code);
+      room.monster = null;
+      room.phase = 'story';
+      room.threat = Math.max(0, room.threat - 1);
+      if (room.pendingTurnAdvance) { advanceTurn(room); room.pendingTurnAdvance = false; }
+    }
     sync(room);
-    ack?.({ ok:true, cooldown:result.cooldown });
+    ack?.({ ok:true, cooldown:result.cooldown, summary:result.summary });
   });
 
   // v3.6 compatibility guards: event timing is server-controlled, not host-controlled.
@@ -2122,7 +2245,7 @@ io.on('connection', socket => {
     const success = result === 20 || (result !== 1 && total >= dc);
     emitRoll(room, player, {
       sides: 20, result, purpose: `${active.choice.stat} 판정 · DC ${dc}`,
-      kind: 'check', stat: active.choice.stat, total, dc, success,
+      kind: 'check', stat: active.choice.stat, total, dc, success, modifiers:[{label:`${active.choice.stat} 보정`,value:abilityMod},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty}].filter(m=>m.value),
     });
 
     const effect = success ? active.choice.successEffect : active.choice.failureEffect;
@@ -2219,7 +2342,7 @@ io.on('connection', socket => {
 
     emitRoll(room, player, {
       sides: 20, result, purpose: `${room.monster.name} 공격 · AC ${room.monster.ac}`,
-      kind: 'attack', total, dc: room.monster.ac, success: hit, damage,
+      kind: 'attack', total, dc: room.monster.ac, success: hit, damage, modifiers:[{label:`${player.job?.prime || '공격'} 보정`,value:bonus},{label:'스킬 명중',value:skillAttackBonus},{label:'상태 효과',value:statusAttackPenalty}].filter(m=>m.value),
     });
     pushChat(room, {
       type: hit ? 'success' : 'failure', author: player.name,

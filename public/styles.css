@@ -260,3 +260,79 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 [data-theme="light"] .facility-panel{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 7%,#fff),#fff)}
 @media(max-width:1000px){.facility-panel{grid-template-columns:1fr}.shop-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.equipment-grid{grid-template-columns:1fr 1fr}.facility-panel{padding:12px}.shop-grid{grid-template-columns:1fr}}
+
+
+/* v4.13.1 chat visibility fix — economy panel must never push chat off screen */
+.right-rail{
+  display:grid;
+  grid-template-rows:minmax(260px,42%) auto minmax(210px,1fr);
+  gap:10px;
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+.right-rail>.stat-card{
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-gutter:stable;
+}
+.right-rail>.threat-card{
+  flex:none;
+  min-height:max-content;
+}
+.right-rail>.chat-card{
+  min-height:210px;
+  height:auto;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.right-rail>.chat-card .chat-log{
+  min-height:120px;
+  flex:1 1 auto;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.right-rail>.chat-card #chatForm{
+  flex:0 0 auto;
+}
+/* Inventory grows inside YOU instead of growing the entire rail. */
+.economy-panel{min-height:0}
+.inventory-drawer[open] .inventory-list{max-height:220px;overflow-y:auto;overscroll-behavior:contain}
+
+@media(max-height:780px) and (min-width:1051px){
+  .right-rail{grid-template-rows:minmax(220px,38%) auto minmax(190px,1fr)}
+  .right-rail>.chat-card{min-height:190px}
+  .inventory-drawer[open] .inventory-list{max-height:150px}
+}
+
+/* Tablet: keep the communication panel instead of deleting the entire right rail. */
+@media(max-width:1050px) and (min-width:721px){
+  .game-shell{grid-template-columns:190px minmax(0,1fr);overflow:auto;align-content:start}
+  .right-rail{
+    display:grid;
+    grid-column:1/-1;
+    grid-template-columns:minmax(260px,.8fr) minmax(180px,.45fr) minmax(320px,1fr);
+    grid-template-rows:minmax(250px,auto);
+    height:auto;
+    min-height:300px;
+    overflow:visible;
+  }
+  .right-rail>.stat-card{max-height:360px}
+  .right-rail>.chat-card{min-height:260px}
+}
+
+@media(max-width:720px){
+  .game-shell{overflow:auto;align-content:start}
+  .right-rail{
+    display:grid;
+    grid-column:1;
+    grid-template-columns:1fr;
+    grid-template-rows:auto auto minmax(280px,auto);
+    height:auto;
+    overflow:visible;
+  }
+  .right-rail>.stat-card{max-height:none;overflow:visible}
+  .right-rail>.chat-card{min-height:280px}
+}

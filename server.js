@@ -21,10 +21,10 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.4.0-branching.1';
+const APP_VERSION = '4.5.0-cinematic.1';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
-const TARGET_STORY = 20;
+const TARGET_STORY = 25;
 const MAX_THREAT = 8;
 const EVENT_EVERY_TURNS = 3;
 const VOTE_DURATION_MS = 20_000;
@@ -329,25 +329,33 @@ function buildVictoryEnding(room) {
   const alias = room.storyMemory?.alias;
   const motive = room.storyMemory?.motive;
   const path = dominantStoryPath(room);
+  const finalBranch = room.storyFlags?.act5 || room.storyFlags?.act4 || 'careful';
   const titles = {
-    truth: '진실을 끝까지 밝혀낸 연대기',
-    survival: '끝끝내 돌파해 낸 연대기',
-    bond: '서로를 붙든 연대의 연대기',
+    truth: { careful:'진실을 끝까지 밝혀낸 연대기', bold:'거친 돌파 끝에 진실을 움켜쥔 연대기', empathetic:'사람을 지키며 진실을 밝힌 연대기' },
+    survival: { careful:'살아남기 위해 끝까지 버틴 연대기', bold:'끝끝내 돌파해 낸 연대기', empathetic:'서로를 살리며 돌파한 연대기' },
+    bond: { careful:'신뢰를 지켜 낸 연대기', bold:'결단으로 동료를 지켜 낸 연대기', empathetic:'서로를 붙든 연대의 연대기' },
   };
   const summaries = {
     truth: '치밀하게 단서를 엮고 거짓을 걷어내며 결말까지 도달했습니다.',
     survival: '상처와 실패를 끌어안고도 한 걸음씩 밀고 나가 결말을 완성했습니다.',
     bond: '사람과 사람 사이의 약속, 설득, 신뢰를 붙들며 세계의 끝까지 나아갔습니다.',
   };
-  const branchNote = room.storyFlags?.act5 === 'empathetic' ? '마지막에는 힘만이 아니라 설득과 공감이 결말의 색을 결정했습니다.'
-    : room.storyFlags?.act5 === 'bold' ? '마지막 막에서는 망설임보다 결단과 돌파가 더 큰 흔적을 남겼습니다.'
-    : '마지막 막에서는 냉정한 판단과 진실 추적이 결말의 균형을 잡았습니다.';
+  const branchNote = finalBranch === 'empathetic'
+    ? '마지막에는 설득과 공감이 닫혀 있던 길을 열었습니다.'
+    : finalBranch === 'bold'
+      ? '마지막 막에서는 망설임보다 결단과 돌파가 더 큰 흔적을 남겼습니다.'
+      : '마지막 막에서는 차분한 판단과 축적한 단서가 결말의 균형을 잡았습니다.';
+  const routeTrail = ['act1','act2','act3','act4','act5']
+    .map(key => room.storyFlags?.[key])
+    .filter(Boolean)
+    .map(flag => flag === 'bold' ? '돌파' : flag === 'empathetic' ? '신뢰' : '추적');
   return {
     victory: true,
-    title: alias ? `「${alias}」 일행의 ${titles[path]}` : titles[path],
-    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} 총 ${room.story}개의 장면을 지나 서로 다른 선택의 흔적이 엔딩에 남았습니다.`,
+    title: alias ? `「${alias}」 일행의 ${titles[path]?.[finalBranch] || titles[path]?.careful}` : (titles[path]?.[finalBranch] || titles[path]?.careful),
+    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 장면을 지나 선택의 흔적이 엔딩에 남았습니다.`,
   };
 }
+
 
 function renderedStoryBeat(room, campaign) {
   const base = campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)];
@@ -355,20 +363,45 @@ function renderedStoryBeat(room, campaign) {
   const beat = JSON.parse(JSON.stringify(base));
   const alias = room.storyMemory?.alias;
   const motive = room.storyMemory?.motive;
-  if (alias && beat.chapter > 2) {
-    beat.situation += `
+  const history = room.storyHistory || [];
+  const prev = history[history.length - 1];
+  const recap = [];
 
-앞선 대화의 흔적처럼 누군가의 말이 다시 떠오른다. “그래, 자네 이름은 ${alias}군.”`;
+  if (prev && Number(prev.chapter || 0) < Number(beat.chapter || 0)) {
+    const outcome = prev.success ? '실마리를 붙잡는 데 성공했고' : '대가를 치르며 간신히 빠져나왔고';
+    recap.push(`직전 장면에서 ${prev.playerName || '파티'}은(는) “${prev.declaration || prev.title || '선택'}”을 택해 ${outcome} 그 여파가 아직 남아 있다.`);
   }
-  if (motive && beat.chapter > 14) {
+
+  const previousActBranch = room.storyFlags?.[`act${Math.max(1, Number(beat.act || 1) - 1)}`];
+  if (beat.branchContext?.summaries && previousActBranch && Number(beat.act || 1) > 1) {
+    recap.push(beat.branchContext.summaries[previousActBranch] || '앞선 막의 선택이 이번 장면에 조용한 그림자를 드리운다.');
+    if (previousActBranch === 'bold') beat.objective += ' 주변 상황이 더 거칠어져 빠른 판단이 필요하다.';
+    else if (previousActBranch === 'empathetic') beat.objective += ' 이전 막에서 얻은 협력과 증언이 실마리가 된다.';
+    else beat.objective += ' 이전 막에서 축적한 기록과 단서 덕분에 더 정교한 접근이 가능하다.';
+  }
+
+  if (alias && beat.chapter > 2) {
+    recap.push(`누군가의 말이 다시 떠오른다. “그래, 자네 이름은 ${alias}군.”`);
+  }
+  if (motive && beat.chapter >= 19) {
     beat.why += ` 또한 파티는 “${motive}”라는 이유를 붙들고 있어 장면의 무게가 더 커진다.`;
   }
-  const previousBranch = room.storyFlags?.[`act${Math.max(1, beat.act - 1)}`];
-  if (previousBranch === 'bold') beat.objective += ' 이전 막의 강행 돌파가 여파를 남겨 상황이 조금 더 거칠다.';
-  else if (previousBranch === 'empathetic') beat.objective += ' 이전 막에서 얻은 신뢰와 증언이 이번 장면의 실마리가 된다.';
-  else if (previousBranch === 'careful') beat.objective += ' 이전 막에서 정리한 기록과 단서 덕분에 더 정교한 접근이 가능하다.';
+
+  const lingering = room.players.flatMap(member => activeStatuses(room, member).map(status => `${member.name}: ${status.label}`));
+  if (lingering.length) {
+    recap.push(`이전 장면의 상처와 후유증도 남아 있다. ${lingering.slice(0, 3).join(', ')}${lingering.length > 3 ? ' 외' : ''}.`);
+  }
+
+  if (recap.length) {
+    const block = recap.join(' ');
+    beat.situation = `${block}\n\n${beat.situation}`;
+    beat.text = `${block}\n\n${beat.text}`;
+  }
+
+  beat.visual = `${beat.visual}${previousActBranch === 'bold' ? ' · 돌파 루트' : previousActBranch === 'empathetic' ? ' · 신뢰 루트' : previousActBranch ? ' · 추적 루트' : ''}`;
   return beat;
 }
+
 
 function publicRoom(room) {
   const campaign = CAMPAIGNS.find(c => c.id === room.campaignId);

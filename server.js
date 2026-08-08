@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.11.1-canonical-flow-readability.0';
+const APP_VERSION = '4.12.0-true-branch-graph.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -171,21 +171,30 @@ function normalizeLoadedRoom(room) {
     return room;
   }
 
-  // v4.11.1: recover story progress only as a contiguous canonical prefix.
-  // Never jump to an arbitrary unseen chapter. If a save is inconsistent, the next
-  // chapter is the first missing chapter in the official sequence, preserving causality.
+  // v4.12: story progress is node-based, not chapter-number based.
+  // A valid session follows explicit next edges stored on each choice. We never search for an arbitrary
+  // "unseen chapter" and never advance by chapter + 1.
   const validStoryIds = new Set(campaign.storyBeats.map(beat => beat.id));
-  const recordedSeen = new Set((room.storySeenIds || []).filter(id => validStoryIds.has(id)));
+  room.storySeenIds = [...new Set((room.storySeenIds || []).filter(id => validStoryIds.has(id)))];
   for (const item of room.storyHistory || []) {
-    if (!item?.isDetour && item?.beatId && validStoryIds.has(item.beatId)) recordedSeen.add(item.beatId);
+    if (!item?.isDetour && item?.beatId && validStoryIds.has(item.beatId) && !room.storySeenIds.includes(item.beatId)) room.storySeenIds.push(item.beatId);
   }
-  const contiguousSeen = [];
-  for (const beat of campaign.storyBeats) {
-    if (!beat?.id || !recordedSeen.has(beat.id)) break;
-    contiguousSeen.push(beat.id);
+  room.story = room.storySeenIds.length;
+  room.storyComplete = Boolean(room.storyComplete);
+  room.storyGraphVersion = 1;
+  if (!room.storyNodeId && !room.storyComplete) {
+    // Legacy-save migration: derive the next node only from the last resolved scene's declared edge.
+    // New sessions always have storyNodeId from the start and do not use numeric chapter recovery.
+    const last = [...(room.storyHistory || [])].reverse().find(item => item?.beatId && !item?.isDetour && validStoryIds.has(item.beatId));
+    if (last) {
+      const lastBeat = campaign.storyBeats.find(beat => beat.id === last.beatId);
+      const selected = lastBeat?.choices?.find(choice => choice.id === last.choiceId || choice.label === last.declaration);
+      const candidate = selected?.next?.[last.success ? 'success' : 'failure'];
+      if (candidate === '__ENDING__') room.storyComplete = true;
+      else if (candidate && validStoryIds.has(candidate) && !room.storySeenIds.includes(candidate)) room.storyNodeId = candidate;
+    }
+    if (!room.storyNodeId && !room.storyComplete && room.storySeenIds.length === 0) room.storyNodeId = campaign.storyBeats[0]?.id || null;
   }
-  room.storySeenIds = contiguousSeen;
-  room.story = contiguousSeen.length;
 
   const byId = new Map(campaign.events.map(event => [event.id, event]));
   const used = new Set((room.discard || []).map(event => event?.id).filter(Boolean));
@@ -237,6 +246,7 @@ async function createRoom(hostName, socketId) {
     narrativeState: { boon: null, lastRoute: null, routeStreak: 0, detours: 0 },
     narrativeLedger: { threads: [], routeShifts: [], jobThreads: {} },
     storySeenIds: [],
+    storyNodeId: null, storyComplete: false, storyGraphVersion: 1,
     lastResolvedStoryBeat: null,
     chat: [], lastResolution: null, ending: null,
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
@@ -360,6 +370,34 @@ function dominantStoryPath(room) {
   return ranked[0]?.[0] || 'truth';
 }
 
+const CAMPAIGN_ENDING_VARIANTS = {
+  ember: {
+    careful:{title:'왕관 없는 새벽', text:'왕관의 거짓과 봉인의 원리를 끝까지 밝혀낸 끝에, 누구도 왕관의 욕망을 이어받지 않는 길을 열었습니다. 왕국은 불완전하지만 처음으로 스스로의 선택을 시작합니다.'},
+    bold:{title:'재 위에 선 새로운 질서', text:'위험을 정면으로 감수하며 왕관과 왕좌의 힘을 꺾었습니다. 왕국은 큰 상처를 입었지만 누가 지배할지보다 누가 책임질지가 새로운 질서의 기준이 됩니다.'},
+    empathetic:{title:'죽은 자와 산 자의 두 번째 맹세', text:'망령과 인간, 적대 세력 사이의 약속을 끝까지 붙들었습니다. 왕관은 완전히 사라지지 않았지만 한 사람의 희생이 아닌 공동의 봉인으로 다시 잠듭니다.'},
+  },
+  neon: {
+    careful:{title:'기억의 소유권', text:'삭제와 조작의 근원을 밝혀 시민들이 자신의 기억을 직접 선택하고 보관할 수 있는 체계를 열었습니다. 루멘-9는 더 이상 하나의 AI만이 진실을 결정하지 않습니다.'},
+    bold:{title:'루멘-9 리부트', text:'도시의 통제 구조를 강제로 끊고 위험한 재시작을 선택했습니다. 많은 것이 흔들렸지만, 처음으로 도시의 미래가 예측 불가능한 인간의 선택에 맡겨졌습니다.'},
+    empathetic:{title:'서로 기억해 주는 도시', text:'개인의 기억보다 관계와 증언을 지키는 길을 선택했습니다. 완벽한 원본은 찾지 못했지만, 사람들은 서로의 삶을 증명하며 새로운 도시 기록을 만들어 갑니다.'},
+  },
+  abyss: {
+    careful:{title:'심연의 언어', text:'세이렌과 탈라스 사이의 신호를 끝까지 해독해 공격과 구조 요청을 구분해 냈습니다. 인간은 처음으로 심해 생명과 협상 가능한 존재가 됩니다.'},
+    bold:{title:'마지막 잠수정의 상승', text:'붕괴하는 기지와 압력을 뚫고 생존자들을 끌어냈습니다. 뒤에는 잃어버린 연구기지가 남았지만, 살아 돌아온 증언이 심연의 진실을 세상에 남깁니다.'},
+    empathetic:{title:'구조 대상은 하나가 아니었다', text:'인간과 탈라스 어느 한쪽도 버리지 않는 길을 택했습니다. 가장 느리고 위험한 선택이었지만 수면 위로 올라온 것은 구조대만이 아니었습니다.'},
+  },
+  clock: {
+    careful:{title:'한 번뿐인 내일', text:'루프의 규칙과 대가를 밝혀 시간을 완전히 지우지 않고 내일로 넘어가는 길을 만들었습니다. 완벽한 하루 대신 다시는 반복되지 않는 하루가 시작됩니다.'},
+    bold:{title:'부서진 열세 번째 종', text:'열세 번째 탑의 장치를 정면으로 파괴해 반복을 끝냈습니다. 재앙의 일부는 현실이 되었지만 도시는 처음으로 결과를 받아들이고 앞으로 나아갑니다.'},
+    empathetic:{title:'기억을 나눈 도시', text:'사라지는 사람들의 기억을 서로에게 나누어 한 사람의 희생 없이 루프의 무게를 분산했습니다. 도시의 역사는 완벽하지 않지만 아무도 완전히 잊히지 않습니다.'},
+  },
+  wild: {
+    careful:{title:'별을 돌려보낸 숲', text:'별과 숲의 순환을 이해해 마지막 별을 하늘로 되돌릴 방법을 찾아냈습니다. 숲은 힘을 잃는 대신 스스로 살아가는 법을 다시 배웁니다.'},
+    bold:{title:'새로운 별자리', text:'별핵의 힘을 직접 다루어 기존 질서를 깨고 새로운 별자리를 만들었습니다. 숲과 하늘은 이전과 다른 규칙으로 이어지지만 멸망은 피했습니다.'},
+    empathetic:{title:'숲과 맺은 마지막 약속', text:'부족과 야수, 숲의 의지를 모두 듣고 누구도 완전히 승리하지 않는 합의를 만들었습니다. 마지막 별은 사라지지 않고 숲과 하늘 사이의 약속이 됩니다.'},
+  },
+};
+
 function buildVictoryEnding(room) {
   const alias = room.storyMemory?.alias;
   const motive = room.storyMemory?.motive;
@@ -376,6 +414,7 @@ function buildVictoryEnding(room) {
     bond: '사람과 사람 사이의 약속, 설득, 신뢰를 붙들며 세계의 끝까지 나아갔습니다.',
   };
   const failures = Number(room.failureCount || 0);
+  const campaignEnding = CAMPAIGN_ENDING_VARIANTS[room.campaignId]?.[finalBranch] || null;
   const branchNote = finalBranch === 'empathetic'
     ? '마지막에는 설득과 공감이 닫혀 있던 길을 열었습니다.'
     : finalBranch === 'bold'
@@ -393,8 +432,8 @@ function buildVictoryEnding(room) {
   const legacyText = jobLegacies.length ? ` 직업 전용 선택으로 열린 결말의 흔적도 남았습니다. ${jobLegacies.join(' · ')}.` : '';
   return {
     victory: true,
-    title: alias ? `「${alias}」 일행의 ${titles[path]?.[finalBranch] || titles[path]?.careful}` : (titles[path]?.[finalBranch] || titles[path]?.careful),
-    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 장면을 지나 선택의 흔적이 엔딩에 남았습니다.${legacyText} ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
+    title: alias ? `「${alias}」 일행의 ${campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful}` : (campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful),
+    text: `${campaignEnding?.text ? `${campaignEnding.text} ` : ''}${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 실제 분기 장면을 지나 선택의 흔적이 엔딩에 남았습니다.${legacyText} ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
   };
 }
 
@@ -608,7 +647,7 @@ function buildDetourScene(campaign, room, choice, player, status) {
   const world = LIVING_NOVEL[campaign?.id] || LIVING_NOVEL.ember;
   const list = world.detours?.[route] || ['예정에 없던 위기'];
   const name = list[(Number(room.story || 0) + Number(room.failureCount || 0)) % list.length];
-  const nextBase = campaign?.storyBeats?.[Math.min(Number(room.story || 0), TARGET_STORY - 1)];
+  const nextBase = storyNodeById(campaign, room.storyNodeId) || campaign?.storyBeats?.[0];
   const act = nextBase?.act || Math.ceil((Number(room.story || 0)+1)/6);
   const chapter = nextBase?.chapter || Number(room.story || 0)+1;
   const statusText = status ? `${player.name}에게 ${status.label}의 후유증까지 남았다.` : `${player.name}은(는) 간신히 중심을 되찾았다.`;
@@ -827,6 +866,10 @@ function injectJobStoryChoices(room, campaign, beat) {
   if(special) {
     special.detail = `희귀 직업 기회 · ${special.detail.replace('직업 전용 · ', '')}`;
     special.rareJobMoment = true;
+    // A rare job option participates in the same story graph. It inherits the edge of the
+    // matching route so choosing a profession-specific action never breaks progression.
+    const routeTemplate = beat.choices.find(choice => choice.branchValue === special.branchValue) || beat.choices[0];
+    special.next = routeTemplate?.next ? JSON.parse(JSON.stringify(routeTemplate.next)) : null;
     beat.choices.push(special);
   }
   return beat;
@@ -878,31 +921,43 @@ function jobStoryContinuity(room, playerName) {
   return `${status} ${last.narrative || ''}`.trim();
 }
 
-function canonicalStoryIndex(room, campaign) {
-  if (!campaign?.storyBeats?.length) return -1;
-  room.storySeenIds ||= [];
-  const seen = new Set(room.storySeenIds);
-  let prefix = 0;
-  while (prefix < campaign.storyBeats.length && seen.has(campaign.storyBeats[prefix]?.id)) prefix += 1;
-
-  // The cursor is derived from the completed canonical prefix, never from a later unseen beat.
-  room.story = prefix;
-  if (prefix >= TARGET_STORY || prefix >= campaign.storyBeats.length) return -1;
-  return prefix;
+function storyNodeById(campaign, nodeId) {
+  if (!campaign?.storyBeats?.length || !nodeId) return null;
+  return campaign.storyBeats.find(beat => beat.id === nodeId) || null;
 }
 
-function consumeStoryBeat(room, campaign, beat) {
-  if (!beat?.id || beat.isDetour) return;
-  const expectedIndex = canonicalStoryIndex(room, campaign);
-  const expectedBeat = expectedIndex >= 0 ? campaign.storyBeats[expectedIndex] : null;
-  if (!expectedBeat || expectedBeat.id !== beat.id) {
-    // Do not skip or fast-forward when state is inconsistent. Restore the exact canonical next chapter.
-    room.story = Math.max(0, expectedIndex);
-    return;
-  }
+function resolveNextStoryNode(campaign, beat, choice, success) {
+  if (!beat || !choice) return null;
+  const next = choice.next?.[success ? 'success' : 'failure'] ?? choice.next?.default ?? beat.next ?? null;
+  if (next === '__ENDING__') return '__ENDING__';
+  return storyNodeById(campaign, next) ? next : null;
+}
+
+function consumeStoryBeat(room, campaign, beat, choice, success) {
+  if (!beat?.id || beat.isDetour) return { ok:false, error:'invalid-beat' };
   room.storySeenIds ||= [];
-  if (!room.storySeenIds.includes(beat.id)) room.storySeenIds.push(beat.id);
-  room.story = expectedIndex + 1;
+  if (room.storySeenIds.includes(beat.id)) {
+    // Hard invariant: a main-story node is consumable only once per session.
+    return { ok:false, error:'repeat-node' };
+  }
+  const current = room.storyNodeId || campaign?.storyBeats?.[0]?.id || null;
+  if (current !== beat.id) return { ok:false, error:'stale-node' };
+
+  room.storySeenIds.push(beat.id);
+  room.story = room.storySeenIds.length;
+  const next = resolveNextStoryNode(campaign, beat, choice, success);
+  if (next === '__ENDING__') {
+    room.storyNodeId = null;
+    room.storyComplete = true;
+  } else if (next && !room.storySeenIds.includes(next)) {
+    room.storyNodeId = next;
+  } else {
+    // Do not skip forward and do not repeat. A broken graph stops instead of inventing continuity.
+    room.storyNodeId = null;
+    room.storyComplete = true;
+    room.storyGraphError = next ? `repeat-edge:${next}` : `missing-edge:${beat.id}`;
+  }
+  return { ok:true, next:room.storyNodeId, complete:room.storyComplete };
 }
 
 function renderedStoryBeat(room, campaign) {
@@ -912,10 +967,11 @@ function renderedStoryBeat(room, campaign) {
     injectJobStoryChoices(room, campaign, detour);
     return detour;
   }
-  const storyIndex = canonicalStoryIndex(room, campaign);
-  if (storyIndex < 0) return null;
-  const base = campaign?.storyBeats?.[storyIndex];
+  if (room.storyComplete) return null;
+  if (!room.storyNodeId) room.storyNodeId = campaign?.storyBeats?.[0]?.id || null;
+  const base = storyNodeById(campaign, room.storyNodeId);
   if (!base) return null;
+  if ((room.storySeenIds || []).includes(base.id)) return null;
   const beat = JSON.parse(JSON.stringify(base));
   const history = room.storyHistory || [];
   const prev = history[history.length - 1];
@@ -1088,6 +1144,9 @@ function publicRoom(room) {
     turnPlayerName: turnPlayer?.name || null,
     threat: room.threat,
     story: room.story,
+    storyNodeId: room.storyNodeId || null,
+    storyComplete: Boolean(room.storyComplete),
+    storyMode: 'branch-graph',
     dcPenalty: room.dcPenalty,
     monster: room.monster,
     lastResolution: room.lastResolution || null,
@@ -1340,7 +1399,7 @@ function evaluateEnding(room) {
     clearSceneState(room);
     return true;
   }
-  if (room.story >= TARGET_STORY) {
+  if (room.storyComplete) {
     room.phase = 'ending';
     room.ending = buildVictoryEnding(room);
     clearSceneState(room);
@@ -1576,7 +1635,9 @@ function armVoteTimer(room) {
 
 function drawEventForRoom(room) {
   if (room.currentEvent || !room.deck.length) return false;
-  const desiredAct = Math.min(5, 1 + Math.floor(room.story / 6));
+  const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
+  const currentMainBeat = storyNodeById(campaign, room.storyNodeId);
+  const desiredAct = Math.min(5, Math.max(1, Number(currentMainBeat?.act || 1)));
   const candidates = room.deck.map((event, index) => ({ event, index })).filter(item => item.event.act === desiredAct);
   const picked = candidates.length ? candidates[crypto.randomInt(0, candidates.length)] : { index: crypto.randomInt(0, room.deck.length) };
   room.currentEvent = room.deck.splice(picked.index, 1)[0];
@@ -1774,6 +1835,9 @@ io.on('connection', socket => {
     room.discard = [];
     room.threat = 0;
     room.story = 0;
+    room.storyNodeId = campaign?.storyBeats?.[0]?.id || null;
+    room.storyComplete = false;
+    room.storyGraphVersion = 1;
     room.dcPenalty = 0;
     room.choiceVotes = {};
     room.voteEndsAt = null;
@@ -1791,6 +1855,9 @@ io.on('connection', socket => {
     room.narrativeState = { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
     room.narrativeLedger = { threads: [], routeShifts: [], jobThreads: {} };
     room.storySeenIds = [];
+    room.storyNodeId = campaign?.storyBeats?.[0]?.id || null;
+    room.storyComplete = false;
+    room.storyGraphVersion = 1;
     room.lastResolvedStoryBeat = null;
     room.pendingContinue = null;
     room.failureCount = 0;
@@ -1870,7 +1937,7 @@ io.on('connection', socket => {
       room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title });
       if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
       room.lastResolvedStoryBeat = JSON.parse(JSON.stringify(beat));
-      consumeStoryBeat(room, campaign, beat);
+      consumeStoryBeat(room, campaign, beat, { next:{ success: beat.choices?.[0]?.next?.success || '__ENDING__' } }, true);
       room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0) + 1;
       room.lastResolution = {
         source:'story', ok:true, roleplay:true,
@@ -1950,7 +2017,7 @@ io.on('connection', socket => {
       room.jobStory.last = { jobName, success, narrative, chapter:beat.chapter, ending:choice.jobEnding || null };
     }
     rememberNarrativeThread(room, campaign, beat, choice, player, success, margin, status);
-    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative, beatId:beat.id };
+    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, choiceId:choice.id, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative, beatId:beat.id };
     room.storyHistory ||= [];
     room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title, isDetour });
     if (room.storyHistory.length > 16) room.storyHistory.splice(0, room.storyHistory.length - 16);
@@ -1959,8 +2026,9 @@ io.on('connection', socket => {
     if (isDetour) {
       room.narrativeState.detours = Number(room.narrativeState.detours || 0) + 1;
     } else {
-      consumeStoryBeat(room, campaign, beat);
-      if (!success && (margin <= -5 || roll === 1) && room.story < TARGET_STORY) {
+      const progression = consumeStoryBeat(room, campaign, beat, choice, success);
+      if (!progression.ok) return ack?.({ ok:false, error:'스토리 분기 상태가 일치하지 않습니다. 장면을 새로고침해 주세요.' });
+      if (!success && (margin <= -5 || roll === 1) && !room.storyComplete) {
         room.storyDetour = buildDetourScene(campaign, room, choice, player, status);
       }
     }

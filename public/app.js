@@ -339,7 +339,7 @@ function coverArt(c) {
   return artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
 function chapterArt(c, scene) {
-  const chapter = Number(scene?.chapter || 0);
+  const chapter = Number(scene?.artChapter || scene?.chapter || 0);
   if (c?.id && chapter >= 1 && chapter <= 25) return `./art/${c.id}_${String(chapter).padStart(2, '0')}.png`;
   return null;
 }
@@ -728,7 +728,7 @@ function renderStory() {
   } else {
     $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
     $('#storySceneImg').src = storyArt(c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
-    $('#storySceneCaption').textContent = beat ? `${beat.isDetour ? 'UNEXPECTED SCENE' : `CHAPTER ${beat.chapter || (state.story + 1)}/${state.targetStory || 25}`} · ${beat.actName} · ${beat.visual}` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
+    $('#storySceneCaption').textContent = beat ? `${beat.isDetour ? 'UNEXPECTED SCENE' : `CHAPTER ${beat.chapter || (state.story + 1)}/${state.targetStory || 30}`} · ${beat.actName} · ${beat.visual}` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
     $('#actLabel').textContent = beat ? (beat.isDetour ? `UNEXPECTED SCENE · ACT ${beat.act}` : `MAIN STORY · ACT ${beat.act}`) : 'MAIN STORY';
     $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}`) : '연대기가 이어집니다.';
     $('#storyClarity').classList.add('clean-main');

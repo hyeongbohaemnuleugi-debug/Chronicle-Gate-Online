@@ -335,7 +335,8 @@ function artSvg(c, title, subtitle, kicker, visual = '', monster = '') {
 }
 
 function coverArt(c) {
-  return artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
+  const artSet = STORY_ART_FILES[c?.id];
+  return artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
 function storyArt(c, scene) {
   const artSet = STORY_ART_FILES[c?.id];
@@ -537,14 +538,8 @@ function renderCampaignDetail() {
     el.innerHTML = '<div class="unassigned">방장이 다섯 개의 연대기 중 하나를 선택합니다.</div>';
     return;
   }
-  const previews = [
-    { label: 'LOBBY COVER', src: coverArt(c), text: '로비 대표 이미지' },
-    { label: 'STORY PREVIEW', src: storyArt(c, { act: 1, actName: c.acts?.[0], phase: '대면', title: c.acts?.[0], visual: sceneWord(c.id, 0), id: 'STORY-PREVIEW-1' }), text: '초반 장면 미리보기' },
-    { label: 'CLIMAX PREVIEW', src: storyArt(c, { act: 5, actName: c.acts?.[4], phase: '결단', title: c.acts?.[4], visual: sceneWord(c.id, 4), id: 'STORY-PREVIEW-2' }), text: '후반 장면 미리보기' },
-  ];
   el.innerHTML = `
     <img class="campaign-cover" src="${coverArt(c)}" alt="${esc(c.title)} 대표 이미지">
-    <div class="campaign-preview-strip">${previews.map(item => `<figure class="campaign-preview-thumb"><img src="${item.src}" alt="${esc(c.title)} ${esc(item.text)}"><figcaption><b>${item.label}</b><span>${esc(item.text)}</span></figcaption></figure>`).join('')}</div>
     <div class="eyebrow">${esc(c.genre)}</div>
     <h3>${c.icon} ${esc(c.title)}</h3>
     <p>${esc(c.subtitle)}</p>
@@ -655,6 +650,35 @@ function renderStory() {
     ${last.consequence ? `<p class="failure">${esc(last.consequence)}</p>` : ''}
     ${last.status ? `<p class="failure">상태이상: ${esc(last.status.label)} — ${esc(last.status.desc || '')}</p>` : ''}
   ` : '';
+
+  if (state.phase === 'prologue') {
+    const myScene = state.prologue?.scenes?.[playerToken];
+    const readyMe = !!state.prologue?.ready?.[playerToken];
+    const readyNames = state.players.filter(member => state.prologue?.ready?.[member.id]).map(member => member.name);
+    $('#turnBanner').textContent = '개인 프롤로그를 읽고 합류 준비를 마치면 메인 스토리가 시작됩니다.';
+    $('#storySceneImg').src = coverArt(c);
+    $('#storySceneCaption').textContent = `${c?.title || '연대기'} · ${p?.job?.name || '모험가'}의 개인 프롤로그`;
+    $('#actLabel').textContent = 'PERSONAL PROLOGUE';
+    $('#eventTitle').textContent = myScene?.title || '각자의 시작';
+    $('#storyClarity').classList.add('clean-main');
+    $('#storySituation').textContent = myScene?.lead || '각 플레이어는 서로 다른 장소에서 이야기를 시작합니다.';
+    $('#storyObjective').textContent = myScene?.objective || '개인 서사를 읽고 다른 인물들과 합류할 준비를 하세요.';
+    $('#storyWhy').textContent = `${state.prologue?.readyCount || 0}/${state.prologue?.totalPlayers || state.players.length}명 준비 완료 · 모두가 준비되면 공통 메인 스토리가 열립니다.`;
+    $('#storyPrompt').innerHTML = `<b>${esc(p?.job?.name || '당신')}의 시작.</b> ${esc(myScene?.prompt || '지금 붙잡은 단서는 결국 다른 인물들과 당신을 만나게 합니다.')}`;
+    $('#eventText').innerHTML = (myScene?.paragraphs || []).map(text => `<p>${esc(text)}</p>`).join('') + `<div class="story-inline-help">합류 후 메인 스토리는 모두가 함께 진행합니다. 현재 준비 완료: ${readyNames.length ? esc(readyNames.join(', ')) : '아직 없음'}.</div>`;
+    $('#storyActionBox').style.display = 'none';
+    $('#storyActionInput').disabled = true;
+    $('#storyActionBox').classList.add('disabled');
+    $('#choiceArea').innerHTML = `<div class="vote-strip"><div><span class="eyebrow">JOIN THE CHRONICLE</span><b>${readyMe ? '합류 준비 완료. 다른 플레이어를 기다리는 중입니다.' : '프롤로그를 읽었다면 합류 준비를 완료하세요.'}</b></div><div>${esc(state.prologue?.meetingText || '')}</div></div>`;
+    $('#gmBar').style.display = 'flex';
+    $('#advanceStoryBtn').style.display = 'inline-flex';
+    $('#advanceStoryBtn').disabled = readyMe;
+    $('#advanceStoryBtn').textContent = readyMe ? '다른 플레이어를 기다리는 중' : '프롤로그 읽고 합류하기';
+    $('#continueBtn').style.display = 'none';
+    $('#continueBtn').disabled = true;
+    updateVoteCountdown();
+    return;
+  }
 
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
@@ -771,6 +795,10 @@ $('#combatSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, 
 
 $('#storyActionInput').addEventListener('input', () => { const max = Number($('#storyActionInput').maxLength || 180); $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${max}`; });
 $('#advanceStoryBtn').onclick = () => {
+  if (state?.phase === 'prologue') {
+    socket.emit('prologue:continue', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+    return;
+  }
   const declaration = $('#storyActionInput').value.trim();
   socket.emit('story:advance', { roomCode, playerToken, declaration }, r => {
     if (!r?.ok) return toast(r.error);

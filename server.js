@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.3.2-rc.1';
+const APP_VERSION = '4.4.0-branching.1';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 20;
@@ -129,6 +129,7 @@ function blankPlayerRuntime(player) {
   player.hp = 0;
   player.maxHp = 0;
   player.inspiration = 0;
+  player.statuses = [];
   player.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
 }
 
@@ -138,12 +139,19 @@ function normalizeLoadedRoom(room) {
   room.turnSerial = Number(room.turnSerial || 0);
   room.nextCheckDcReduction = Number(room.nextCheckDcReduction || 0);
   room.threatShield = Number(room.threatShield || 0);
-  for (const player of room.players || []) player.skillState ||= { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
+  for (const player of room.players || []) {
+    player.skillState ||= { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
+    player.statuses ||= [];
+  }
   room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
   room.voteEndsAt ||= null;
   room.choiceVotes ||= {};
   room.storyHistory ||= [];
   room.lastStoryAction ||= null;
+  room.storyFlags ||= {};
+  room.storyMemory ||= {};
+  room.pathTotals ||= { truth: 0, survival: 0, bond: 0 };
+  room.pendingContinue ||= null;
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
@@ -181,7 +189,7 @@ async function createRoom(hostName, socketId) {
   const roomCode = await reserveRoomCode();
   const player = {
     id: token(), socketId, name: hostName, host: true, connected: true,
-    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 },
+    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 },
   };
   const room = {
     code: roomCode,
@@ -194,6 +202,7 @@ async function createRoom(hostName, socketId) {
     choiceVotes: {}, voteEndsAt: null,
     mainTurnsSinceEvent: 0, pendingTurnAdvance: false, turnSerial: 0, nextCheckDcReduction: 0, threatShield: 0,
     threat: 0, story: 0, dcPenalty: 0, monster: null,
+    storyFlags: {}, storyMemory: {}, pathTotals: { truth: 0, survival: 0, bond: 0 }, pendingContinue: null,
     chat: [], lastResolution: null, ending: null,
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
   };
@@ -252,6 +261,115 @@ function storyEligiblePlayers(room) {
   return room.players.filter(player => player.connected && player.hp > 0);
 }
 
+const STORY_STATUS_DEFS = {
+  '지능': { key:'confused', label:'혼란', desc:'정보가 엉키며 판단이 흔들립니다.', checkPenalty:2, stats:['지능','지혜'], attackPenalty:0, duration:2 },
+  '지혜': { key:'shaken', label:'동요', desc:'불길한 징후가 계속 떠올라 집중이 흐려집니다.', checkPenalty:2, stats:['지혜','매력'], attackPenalty:0, duration:2 },
+  '민첩': { key:'sprain', label:'발목 부상', desc:'움직임이 둔해져 재빠른 대응이 어렵습니다.', checkPenalty:2, stats:['민첩','근력'], attackPenalty:1, duration:2 },
+  '근력': { key:'bruise', label:'타박상', desc:'정면 돌파의 여파로 몸이 무거워졌습니다.', checkPenalty:1, stats:['근력'], attackPenalty:1, duration:2 },
+  '체력': { key:'fatigue', label:'탈진', desc:'거친 장면의 부담으로 기력이 크게 소모됐습니다.', checkPenalty:1, stats:['근력','민첩','체력','지능','지혜','매력'], attackPenalty:1, duration:2 },
+  '매력': { key:'suspected', label:'의심받음', desc:'말실수의 여파로 사람들의 경계가 강해졌습니다.', checkPenalty:2, stats:['매력'], attackPenalty:0, duration:2 },
+};
+
+function activeStatuses(room, player) {
+  return (player?.statuses || [])
+    .filter(status => Number(status.expiresAtStory || 0) > Number(room?.story || 0))
+    .map(status => ({ ...status, remainingScenes: Math.max(0, Number(status.expiresAtStory || 0) - Number(room?.story || 0)) }));
+}
+
+function statusPenaltyForCheck(room, player, stat) {
+  return activeStatuses(room, player).reduce((sum, status) => {
+    if (!status.stats?.length || status.stats.includes(stat)) return sum - Number(status.checkPenalty || 0);
+    return sum;
+  }, 0);
+}
+
+function statusPenaltyForAttack(room, player, stat) {
+  return activeStatuses(room, player).reduce((sum, status) => {
+    const hitByStat = !status.stats?.length || status.stats.includes(stat);
+    return sum - Number(hitByStat ? (status.attackPenalty || 0) : 0);
+  }, 0);
+}
+
+function applyStatus(player, status) {
+  player.statuses ||= [];
+  const existing = player.statuses.find(item => item.key === status.key);
+  if (existing) {
+    existing.expiresAtStory = Math.max(Number(existing.expiresAtStory || 0), Number(status.expiresAtStory || 0));
+    existing.checkPenalty = Math.max(Number(existing.checkPenalty || 0), Number(status.checkPenalty || 0));
+    existing.attackPenalty = Math.max(Number(existing.attackPenalty || 0), Number(status.attackPenalty || 0));
+    existing.desc = status.desc;
+    existing.stats = status.stats;
+    return existing;
+  }
+  player.statuses.push(status);
+  return status;
+}
+
+function storyFailureStatus(choice, room) {
+  const template = STORY_STATUS_DEFS[choice?.stat] || STORY_STATUS_DEFS['체력'];
+  return {
+    id: token(),
+    key: template.key,
+    label: template.label,
+    desc: template.desc,
+    checkPenalty: template.checkPenalty,
+    attackPenalty: template.attackPenalty,
+    stats: [...(template.stats || [])],
+    expiresAtStory: Number(room.story || 0) + Number(template.duration || 2) + 1,
+  };
+}
+
+function dominantStoryPath(room) {
+  const totals = room?.pathTotals || {};
+  const ranked = Object.entries({ truth: 0, survival: 0, bond: 0, ...totals }).sort((a, b) => b[1] - a[1]);
+  return ranked[0]?.[0] || 'truth';
+}
+
+function buildVictoryEnding(room) {
+  const alias = room.storyMemory?.alias;
+  const motive = room.storyMemory?.motive;
+  const path = dominantStoryPath(room);
+  const titles = {
+    truth: '진실을 끝까지 밝혀낸 연대기',
+    survival: '끝끝내 돌파해 낸 연대기',
+    bond: '서로를 붙든 연대의 연대기',
+  };
+  const summaries = {
+    truth: '치밀하게 단서를 엮고 거짓을 걷어내며 결말까지 도달했습니다.',
+    survival: '상처와 실패를 끌어안고도 한 걸음씩 밀고 나가 결말을 완성했습니다.',
+    bond: '사람과 사람 사이의 약속, 설득, 신뢰를 붙들며 세계의 끝까지 나아갔습니다.',
+  };
+  const branchNote = room.storyFlags?.act5 === 'empathetic' ? '마지막에는 힘만이 아니라 설득과 공감이 결말의 색을 결정했습니다.'
+    : room.storyFlags?.act5 === 'bold' ? '마지막 막에서는 망설임보다 결단과 돌파가 더 큰 흔적을 남겼습니다.'
+    : '마지막 막에서는 냉정한 판단과 진실 추적이 결말의 균형을 잡았습니다.';
+  return {
+    victory: true,
+    title: alias ? `「${alias}」 일행의 ${titles[path]}` : titles[path],
+    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} 총 ${room.story}개의 장면을 지나 서로 다른 선택의 흔적이 엔딩에 남았습니다.`,
+  };
+}
+
+function renderedStoryBeat(room, campaign) {
+  const base = campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)];
+  if (!base) return null;
+  const beat = JSON.parse(JSON.stringify(base));
+  const alias = room.storyMemory?.alias;
+  const motive = room.storyMemory?.motive;
+  if (alias && beat.chapter > 2) {
+    beat.situation += `
+
+앞선 대화의 흔적처럼 누군가의 말이 다시 떠오른다. “그래, 자네 이름은 ${alias}군.”`;
+  }
+  if (motive && beat.chapter > 14) {
+    beat.why += ` 또한 파티는 “${motive}”라는 이유를 붙들고 있어 장면의 무게가 더 커진다.`;
+  }
+  const previousBranch = room.storyFlags?.[`act${Math.max(1, beat.act - 1)}`];
+  if (previousBranch === 'bold') beat.objective += ' 이전 막의 강행 돌파가 여파를 남겨 상황이 조금 더 거칠다.';
+  else if (previousBranch === 'empathetic') beat.objective += ' 이전 막에서 얻은 신뢰와 증언이 이번 장면의 실마리가 된다.';
+  else if (previousBranch === 'careful') beat.objective += ' 이전 막에서 정리한 기록과 단서 덕분에 더 정교한 접근이 가능하다.';
+  return beat;
+}
+
 function publicRoom(room) {
   const campaign = CAMPAIGNS.find(c => c.id === room.campaignId);
   const turnPlayer = currentTurnPlayer(room);
@@ -269,6 +387,7 @@ function publicRoom(room) {
       id: p.id, name: p.name, host: p.host, connected: p.connected,
       ready: p.ready, job: p.job, abilities: p.abilities,
       hp: p.hp, maxHp: p.maxHp, inspiration: p.inspiration,
+      statuses: activeStatuses(room, p),
       skillState: { ...(p.skillState || {}), cooldownRemaining: Math.max(0, Number(p.skillState?.readyAtTurn || 0) - Number(room.turnSerial || 0)) },
     })),
     deckCount: room.deck.length,
@@ -283,7 +402,7 @@ function publicRoom(room) {
     turnSerial: Number(room.turnSerial || 0),
     nextCheckDcReduction: Number(room.nextCheckDcReduction || 0),
     eventEveryTurns: EVENT_EVERY_TURNS,
-    storyBeat: campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)] || null,
+    storyBeat: renderedStoryBeat(room, campaign),
     turnIndex: room.turnIndex || 0,
     turnPlayerId: turnPlayer?.id || null,
     turnPlayerName: turnPlayer?.name || null,
@@ -295,6 +414,7 @@ function publicRoom(room) {
     ending: room.ending || null,
     lastStoryAction: room.lastStoryAction || null,
     storyHistory: (room.storyHistory || []).slice(-8),
+    storyMemory: room.storyMemory || {},
     abandonVote: room.abandonVote || null,
     targetStory: TARGET_STORY,
     maxThreat: MAX_THREAT,
@@ -390,6 +510,7 @@ function clearSceneState(room) {
   room.lastResolution = null;
   room.voteEndsAt = null;
   room.monster = null;
+  room.pendingContinue = null;
 }
 
 function applyChoiceEffect(room, player, effect = {}) {
@@ -532,11 +653,7 @@ function evaluateEnding(room) {
   }
   if (room.story >= TARGET_STORY) {
     room.phase = 'ending';
-    room.ending = {
-      victory: true,
-      title: '당신들의 연대기가 완성되었다.',
-      text: `총 ${room.story}개의 장면을 지나 결말에 도달했습니다. 남은 카드와 다른 선택지는 다음 플레이에서 새로운 이야기가 됩니다.`,
-    };
+    room.ending = buildVictoryEnding(room);
     clearSceneState(room);
     return true;
   }
@@ -838,7 +955,7 @@ io.on('connection', socket => {
     const name = sanitize(payload.name || `플레이어 ${room.players.length + 1}`, 18) || `플레이어 ${room.players.length + 1}`;
     const player = {
       id: token(), socketId: socket.id, name, host: room.players.length === 0, connected: true,
-      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 },
+      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 },
     };
     room.players.push(player);
     socket.join(room.code);
@@ -953,7 +1070,14 @@ io.on('connection', socket => {
     room.threatShield = 0;
     room.lastStoryAction = null;
     room.storyHistory = [];
-    for (const member of room.players) member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
+    room.storyFlags = {};
+    room.storyMemory = {};
+    room.pathTotals = { truth: 0, survival: 0, bond: 0 };
+    room.pendingContinue = null;
+    for (const member of room.players) {
+      member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
+      member.statuses = [];
+    }
     room.activeChoice = null;
     room.currentEvent = null;
     room.monster = null;
@@ -967,62 +1091,128 @@ io.on('connection', socket => {
     void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name) });
     ack?.({ ok: true });
   });
-
   socket.on('story:advance', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'story', ack, '지금은 메인 스토리를 진행할 수 없습니다.')) return;
     if (room.currentEvent || room.activeChoice) return ack?.({ ok: false, error: '현재 이벤트를 먼저 해결하세요.' });
     const actor = currentTurnPlayer(room);
     if (!actor || actor.id !== player.id) return ack?.({ ok: false, error: `현재는 ${actor?.name || '다른 플레이어'}의 차례입니다.` });
-    if (!rateLimit(socket, 'storyAdvance', 900)) return ack?.({ ok: false, error: '잠시 후 다시 시도하세요.' });
+    if (!rateLimit(socket, 'storyAdvance', 700)) return ack?.({ ok: false, error: '잠시 후 다시 시도하세요.' });
 
-    const declaration = sanitize(payload?.declaration, 180);
-    if (declaration.length < 4) return ack?.({ ok: false, error: '무엇을, 어떻게 하려는지 조금 더 구체적으로 행동을 선언하세요.' });
     const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
-    const completedBeat = campaign?.storyBeats?.[Math.min(room.story, TARGET_STORY - 1)];
-    const interpreted = interpretFreeAction(declaration, player, completedBeat, room);
-    const ability = player.abilities?.[interpreted.stat];
+    const beat = campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)];
+    if (!beat) return ack?.({ ok:false, error:'더 이상 진행할 스토리 장면이 없습니다.' });
+
+    room.storyFlags ||= {};
+    room.storyMemory ||= {};
+    room.pathTotals ||= { truth: 0, survival: 0, bond: 0 };
+
+    if (beat.roleplayPrompt) {
+      const declaration = sanitize(payload?.declaration, 60);
+      if (!declaration) return ack?.({ ok:false, error:'이 장면에서는 짧은 대답을 입력해 주세요.' });
+      room.storyMemory[beat.roleplayPrompt.key] = declaration;
+      room.lastStoryAction = {
+        playerId: player.id,
+        playerName: player.name,
+        declaration,
+        stat: null,
+        mode: 'roleplay',
+        roll: null,
+        total: null,
+        dc: null,
+        success: true,
+        narrative: beat.roleplayPrompt.responseTemplate.replace('{{value}}', declaration),
+        beatId: beat.id,
+      };
+      room.storyHistory ||= [];
+      room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title });
+      if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
+      room.story += 1;
+      room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0) + 1;
+      room.lastResolution = {
+        source:'story', ok:true, roleplay:true,
+        text: room.lastStoryAction.narrative,
+        playerId: player.id,
+        playerName: player.name,
+        continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
+      };
+      room.phase = 'resolution';
+      room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0 };
+      pushChat(room, { type:'action', author:player.name, text:`짧은 대답: ${declaration}` });
+      pushChat(room, { type:'narration', author:'GM', text: room.lastStoryAction.narrative });
+      if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
+      sync(room);
+      setTimeout(() => io.to(room.code).emit('resolution', room.lastResolution), 350);
+      return ack?.({ ok:true, result:room.lastStoryAction });
+    }
+
+    const choiceIndex = Number(payload?.choiceIndex);
+    const choice = beat.choices?.[choiceIndex];
+    if (!choice) return ack?.({ ok:false, error:'이 장면에서는 주어진 선택지 중 하나를 골라야 합니다.' });
+    const ability = player.abilities?.[choice.stat];
     if (!ability) return ack?.({ ok:false, error:'캐릭터 능력치를 찾을 수 없습니다.' });
-    const baseMod = mod(ability.total);
-    const skillBonus = Number(player.skillState?.checkBonus || 0);
-    const dcReduction = Number(room.nextCheckDcReduction || 0);
-    const dc = Math.max(8, interpreted.dc - dcReduction);
+
     const roll = rand(20);
-    const total = roll + baseMod + interpreted.expertise + skillBonus;
+    const abilityMod = mod(ability.total);
+    const skillBonus = Number(player.skillState?.checkBonus || 0);
+    const statusPenalty = statusPenaltyForCheck(room, player, choice.stat);
+    const dcReduction = Number(room.nextCheckDcReduction || 0);
+    const dc = Math.max(8, Number(choice.dc || 10) + Number(room.dcPenalty || 0) - dcReduction);
+    const total = roll + abilityMod + skillBonus + statusPenalty;
     const success = roll === 20 || (roll !== 1 && total >= dc);
     const margin = total - dc;
     player.skillState.checkBonus = 0;
     room.nextCheckDcReduction = 0;
+    room.pathTotals[choice.path] = Number(room.pathTotals[choice.path] || 0) + 1;
+    if (choice.branchKey) room.storyFlags[choice.branchKey] = choice.branchValue;
 
     emitRoll(room, player, {
-      sides:20, result:roll, purpose:`자유 행동 · ${interpreted.mode} · ${interpreted.stat} DC ${dc}`,
-      kind:'story-action', stat:interpreted.stat, total, dc, success,
+      sides:20, result:roll, purpose:`메인 스토리 · ${choice.stat} 판정 · DC ${dc}`,
+      kind:'story-choice', stat:choice.stat, total, dc, success,
     });
-    const narrative = actionNarrative({ success, declaration, player, beat:completedBeat, interpretation:interpreted, margin });
-    pushChat(room, { type:'action', author:player.name, text:`행동 선언: ${declaration}` });
-    pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${interpreted.mode} · ${interpreted.stat} ${roll}${baseMod>=0?'+':''}${baseMod}${interpreted.expertise?`+전문성${interpreted.expertise}`:''}${skillBonus?`+스킬${skillBonus}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
-    pushChat(room, { type:'narration', author:'GM', text:narrative });
-    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration, stat:interpreted.stat, mode:interpreted.mode, roll, total, dc, success, narrative, beatId:completedBeat?.id || null };
-    room.storyHistory ||= [];
-    room.storyHistory.push({ ...room.lastStoryAction, chapter: completedBeat?.chapter || room.story + 1, act: completedBeat?.act || 1, title: completedBeat?.title || '메인 스토리' });
-    if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
 
+    let consequence = '';
+    let status = null;
     if (success) {
-      if (margin >= 5) { player.inspiration = Math.min(3, player.inspiration + 1); room.threat = Math.max(0, room.threat - 1); }
-    } else if (margin <= -5) {
-      if (room.threatShield > 0) room.threatShield = Math.max(0, room.threatShield - 1);
-      else room.threat = Math.min(MAX_THREAT, room.threat + 1);
+      if (margin >= 5) player.inspiration = Math.min(3, player.inspiration + 1);
+      room.threat = Math.max(0, room.threat - 1);
+      room.dcPenalty = Math.max(0, Number(room.dcPenalty || 0) - 1);
+      consequence = margin >= 5 ? '대성공 여파로 영감 +1, 위협 -1' : '성공 여파로 위협 -1';
+    } else {
+      player.hp = Math.max(0, player.hp - 1);
+      room.threat = Math.min(MAX_THREAT, room.threat + 1);
+      room.dcPenalty = Math.min(2, Number(room.dcPenalty || 0) + 1);
+      status = applyStatus(player, storyFailureStatus(choice, room));
+      consequence = `불상사: ${status.label} 상태이상 적용 · HP -1 · 위협 +1 · 다음 장면 판정 불리`;
     }
+
+    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, stat:choice.stat, mode:'story-choice', roll, total, dc, success, narrative:success ? choice.success : choice.failure, beatId:beat.id };
+    room.storyHistory ||= [];
+    room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title });
+    if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
 
     room.story += 1;
     room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0) + 1;
-    advanceSkillClock(room, 1);
+    room.lastResolution = {
+      source:'story', ok:success, result:roll, total, dc,
+      text: success ? choice.success : choice.failure,
+      consequence,
+      status: status ? { label: status.label, desc: status.desc, remainingScenes: Math.max(0, Number(status.expiresAtStory || 0) - Number(room.story || 0)) } : null,
+      playerId: player.id,
+      playerName: player.name,
+      choiceLabel: choice.label,
+      continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
+    };
+    room.phase = 'resolution';
+    room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0 };
+
+    pushChat(room, { type:'action', author:player.name, text:`메인 선택: ${choice.label}` });
+    pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${choice.stat} 판정 ${roll}${abilityMod>=0?'+':''}${abilityMod}${skillBonus?`+스킬${skillBonus}`:''}${statusPenalty?`${statusPenalty}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
+    pushChat(room, { type:'narration', author:'GM', text: success ? choice.success : `${choice.failure} ${consequence}` });
+
     if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
-    if (room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length) {
-      drawEventForRoom(room);
-      pushChat(room, { type:'system', text:`${EVENT_EVERY_TURNS}개의 메인 턴이 지나 이벤트 카드가 자동으로 공개되었습니다. 투표는 20초 동안 진행됩니다.` });
-    } else advanceTurn(room);
     sync(room);
+    setTimeout(() => io.to(room.code).emit('resolution', room.lastResolution), 350);
     ack?.({ ok:true, result:room.lastStoryAction });
   });
 
@@ -1080,8 +1270,9 @@ io.on('connection', socket => {
     const result = rand(20);
     const abilityMod = mod(ability.total);
     const skillBonus = Number(player.skillState?.checkBonus || 0);
+    const statusPenalty = statusPenaltyForCheck(room, player, active.choice.stat);
     const dcReduction = Number(room.nextCheckDcReduction || 0);
-    const total = result + abilityMod + skillBonus;
+    const total = result + abilityMod + skillBonus + statusPenalty;
     const dc = Math.max(8, active.choice.dc + room.dcPenalty - dcReduction);
     player.skillState.checkBonus = 0;
     room.nextCheckDcReduction = 0;
@@ -1111,7 +1302,7 @@ io.on('connection', socket => {
     room.phase = 'resolution';
     pushChat(room, {
       type: success ? 'success' : 'failure', author: player.name,
-      text: `${result} ${abilityMod >= 0 ? '+' : ''}${abilityMod} = ${total} / DC ${dc} → ${success ? '성공' : '실패'}`,
+      text: `${result} ${abilityMod >= 0 ? '+' : ''}${abilityMod}${skillBonus ? ` +스킬${skillBonus}` : ''}${statusPenalty ? ` ${statusPenalty}` : ''} = ${total} / DC ${dc} → ${success ? '성공' : '실패'}`,
     });
     sync(room);
     setTimeout(() => io.to(room.code).emit('resolution', room.lastResolution), 2200);
@@ -1121,13 +1312,26 @@ io.on('connection', socket => {
   socket.on('event:continue', (payload, ack) => {
     const { room } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'resolution', ack, '계속할 결과가 없습니다.')) return;
+    const pending = room.pendingContinue || {};
     const event = room.currentEvent;
     if (event) room.discard.push(event);
     room.currentEvent = null;
     room.activeChoice = null;
     room.choiceVotes = {};
     room.voteEndsAt = null;
+    room.lastResolution = null;
+    room.pendingContinue = null;
     room.phase = 'story';
+    if (pending.source === 'story') {
+      advanceSkillClock(room, 1);
+      if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true }); }
+      if (pending.drawEvent && room.deck.length) {
+        drawEventForRoom(room);
+        pushChat(room, { type:'system', text:`${EVENT_EVERY_TURNS}개의 메인 턴이 지나 이벤트 카드가 자동으로 공개되었습니다. 투표는 20초 동안 진행됩니다.` });
+      } else advanceTurn(room);
+      sync(room);
+      return ack?.({ ok: true });
+    }
     if (event?.monster) {
       room.monster = monsterForEvent(room, event);
       room.pendingTurnAdvance = true;
@@ -1153,8 +1357,9 @@ io.on('connection', socket => {
     const bonus = mod(player.abilities?.[stat]?.total || 10);
     const skillAttackBonus = Number(player.skillState?.attackBonus || 0);
     const skillDamageBonus = Number(player.skillState?.damageBonus || 0);
+    const statusAttackPenalty = statusPenaltyForAttack(room, player, stat);
     const result = rand(20);
-    const total = result + bonus + skillAttackBonus;
+    const total = result + bonus + skillAttackBonus + statusAttackPenalty;
     const hit = result === 20 || (result !== 1 && total >= room.monster.ac);
     let damage = 0;
     if (hit) {

@@ -3,7 +3,6 @@ import { DiceTheater } from './dice3d.js';
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const STORY_KEY_CLASS = 'story-key';
 
 const REQUIRED_IDS = [
   'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'combatView', 'endingView',
@@ -76,238 +75,169 @@ function saveUiPrefs() {
   localStorage.setItem('cg_audio_muted', uiPrefs.audioMuted ? '1' : '0');
   applyUiPrefs();
 }
-function assetPath(path = '') {
-  const value = String(path || '').trim();
-  if (!value) return '';
-  if (/^(data:|blob:|https?:)/.test(value)) return value;
-  const cleaned = value.replace(/^\.\//, '').replace(/^\//, '');
-  return `/${cleaned}`;
-}
-function slugifyAssetName(value = '') {
-  return String(value || '').toLowerCase().trim().replace(/[^a-z0-9가-힣]+/g, '_').replace(/^_+|_+$/g, '');
-}
-// QA legacy marker: ./audio/bgm_ember.wav
+// QA compatibility marker only: ./audio/bgm_ember.wav
 const AUDIO_FILES = {
   music: {
-    ember: assetPath('audio/bgm_ember.wav'), neon: assetPath('audio/bgm_neon.wav'), abyss: assetPath('audio/bgm_abyss.wav'),
-    clock: assetPath('audio/bgm_clock.wav'), wild: assetPath('audio/bgm_wild.wav'), combat: assetPath('audio/bgm_combat.wav'),
+    ember: '/audio/bgm_ember.wav', neon: '/audio/bgm_neon.wav', abyss: '/audio/bgm_abyss.wav',
+    clock: '/audio/bgm_clock.wav', wild: '/audio/bgm_wild.wav', combat: '/audio/bgm_combat.wav',
   },
   fx: {
-    dice: assetPath('audio/dice_roll.wav'), success: assetPath('audio/success.wav'), failure: assetPath('audio/failure.wav'),
-    next: assetPath('audio/scene_next.wav'), hp: assetPath('audio/hp_loss.wav'), attack: assetPath('audio/attack.wav'),
-    hit: assetPath('audio/hit.wav'), boss: assetPath('audio/boss_warning.wav'), vote: assetPath('audio/vote_lock.wav'),
+    dice:'/audio/dice_roll.wav', success:'/audio/success.wav', failure:'/audio/failure.wav',
+    next:'/audio/scene_next.wav', hp:'/audio/hp_loss.wav', attack:'/audio/attack.wav',
+    hit:'/audio/hit.wav', boss:'/audio/boss_warning.wav', vote:'/audio/vote_lock.wav',
   },
 };
 
 class AudioManager {
-  constructor() {
-    this.unlocked = false;
-    this.musicKey = '';
-    this.musicHtml = null;
-    this.musicSource = null;
-    this.musicGain = null;
-    this.lastFxAt = new Map();
-    this.fxPool = new Map();
-    this.buffers = { fx: new Map(), music: new Map() };
-    this.ctx = null;
-    this.preloadStarted = false;
-    this.lastError = '';
-    for (const [name, src] of Object.entries(AUDIO_FILES.fx)) {
-      const a = new Audio(src);
-      a.preload = 'auto';
-      a.addEventListener('error', () => { this.lastError = `효과음 파일을 불러오지 못했습니다: ${src}`; }, { once: true });
-      this.fxPool.set(name, a);
-    }
+  constructor(){
+    this.unlocked=false;
+    this.ctx=null;
+    this.music=null;
+    this.musicKey='';
+    this.synthMusic=[];
+    this.lastFxAt=new Map();
+    this.lastError='';
   }
-  volume(mult = 1) { return uiPrefs.audioMuted ? 0 : Math.max(0, Math.min(1, uiPrefs.audioVolume * mult)); }
-  ensureContext() {
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!this.ctx && AC) this.ctx = new AC();
-      if (this.ctx?.state === 'suspended') this.ctx.resume().catch(() => {});
+  volume(mult=1){ return uiPrefs.audioMuted ? 0 : Math.max(0,Math.min(1,uiPrefs.audioVolume*mult)); }
+  ensureContext(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC) return null;
+      if(!this.ctx) this.ctx=new AC();
+      if(this.ctx.state==='suspended') this.ctx.resume().catch(()=>{});
       return this.ctx;
-    } catch (err) {
-      this.lastError = String(err?.message || err);
-      return null;
-    }
+    }catch(err){ this.lastError=String(err?.message||err); return null; }
   }
-  async loadBuffer(kind, key, src) {
-    if (this.buffers[kind].has(key)) return this.buffers[kind].get(key);
-    const ctx = this.ensureContext();
-    if (!ctx) return null;
-    try {
-      const res = await fetch(src, { cache: 'force-cache' });
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-      const arrayBuffer = await res.arrayBuffer();
-      const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-      this.buffers[kind].set(key, audioBuffer);
-      return audioBuffer;
-    } catch (err) {
-      this.lastError = `${kind === 'music' ? '배경음' : '효과음'} 버퍼 로드 실패: ${key} · ${String(err?.message || err)}`;
-      return null;
-    }
-  }
-  preloadAll() {
-    if (this.preloadStarted) return;
-    this.preloadStarted = true;
-    const jobs = [];
-    for (const [name, src] of Object.entries(AUDIO_FILES.fx)) jobs.push(this.loadBuffer('fx', name, src));
-    for (const [name, src] of Object.entries(AUDIO_FILES.music)) jobs.push(this.loadBuffer('music', name, src));
-    Promise.allSettled(jobs).catch(() => {});
-  }
-  unlock() {
-    this.unlocked = true;
+  unlock(){
+    this.unlocked=true;
     this.ensureContext();
-    this.preloadAll();
     this.syncMusic(state);
   }
-  synthFallback(name = 'success', mult = .55) {
-    const ctx = this.ensureContext();
-    if (!ctx || ctx.state === 'closed' || uiPrefs.audioMuted) return;
-    const map = { dice: 180, success: 720, failure: 150, next: 440, hp: 110, attack: 260, hit: 190, boss: 80, vote: 520 };
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const now = ctx.currentTime;
-    osc.type = name === 'failure' || name === 'boss' ? 'sawtooth' : 'sine';
-    osc.frequency.setValueAtTime(map[name] || 440, now);
-    if (name === 'success') osc.frequency.exponentialRampToValueAtTime(980, now + .16);
-    if (name === 'failure') osc.frequency.exponentialRampToValueAtTime(90, now + .18);
-    if (name === 'dice') osc.frequency.exponentialRampToValueAtTime(240, now + .12);
-    gain.gain.setValueAtTime(Math.max(.0001, this.volume(mult)), now);
-    gain.gain.exponentialRampToValueAtTime(.0001, now + .22);
-    osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + .23);
+  makeTone(freq=440,duration=.16,volume=.12,type='sine',delay=0){
+    const ctx=this.ensureContext();
+    if(!ctx || uiPrefs.audioMuted) return;
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    const t=ctx.currentTime+delay;
+    osc.type=type; osc.frequency.setValueAtTime(freq,t);
+    gain.gain.setValueAtTime(.0001,t);
+    gain.gain.exponentialRampToValueAtTime(Math.max(.0001,this.volume(volume)),t+.012);
+    gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    osc.connect(gain); gain.connect(ctx.destination); osc.start(t); osc.stop(t+duration+.02);
   }
-  playOneShotBuffer(name, mult = 1) {
-    const ctx = this.ensureContext();
-    const buffer = this.buffers.fx.get(name);
-    if (!ctx || !buffer || uiPrefs.audioMuted) return false;
-    const source = ctx.createBufferSource();
-    const gain = ctx.createGain();
-    gain.gain.value = this.volume(Math.min(1.35, mult));
-    source.buffer = buffer;
-    source.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-    source.onended = () => { try { source.disconnect(); gain.disconnect(); } catch {} };
-    return true;
+  makeNoise(duration=.18,volume=.10,delay=0){
+    const ctx=this.ensureContext();
+    if(!ctx || uiPrefs.audioMuted) return;
+    const length=Math.max(1,Math.floor(ctx.sampleRate*duration));
+    const buffer=ctx.createBuffer(1,length,ctx.sampleRate);
+    const data=buffer.getChannelData(0);
+    for(let i=0;i<length;i++) data[i]=(Math.random()*2-1)*(1-i/length);
+    const src=ctx.createBufferSource();
+    const filter=ctx.createBiquadFilter();
+    const gain=ctx.createGain();
+    const t=ctx.currentTime+delay;
+    filter.type='lowpass'; filter.frequency.value=1500;
+    gain.gain.setValueAtTime(this.volume(volume),t);
+    gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    src.buffer=buffer; src.connect(filter); filter.connect(gain); gain.connect(ctx.destination); src.start(t);
   }
-  stopMusic() {
-    if (this.musicHtml) {
-      try { this.musicHtml.pause(); this.musicHtml.currentTime = 0; } catch {}
-    }
-    this.musicHtml = null;
-    if (this.musicSource) {
-      try { this.musicSource.stop(); } catch {}
-      try { this.musicSource.disconnect(); } catch {}
-    }
-    if (this.musicGain) {
-      try { this.musicGain.disconnect(); } catch {}
-    }
-    this.musicSource = null;
-    this.musicGain = null;
+  synthFx(name,mult=1){
+    const v=Math.max(.45,Math.min(1.25,mult));
+    if(name==='dice'){ this.makeNoise(.20,.16*v); this.makeTone(160,.09,.10*v,'square',.02); this.makeTone(220,.10,.08*v,'square',.11); }
+    else if(name==='success'){ this.makeTone(620,.15,.14*v,'sine'); this.makeTone(820,.18,.14*v,'sine',.10); this.makeTone(1040,.22,.12*v,'sine',.20); }
+    else if(name==='failure'){ this.makeTone(210,.18,.14*v,'sawtooth'); this.makeTone(145,.26,.14*v,'sawtooth',.12); }
+    else if(name==='next'){ this.makeTone(390,.12,.10*v,'sine'); this.makeTone(590,.18,.10*v,'sine',.10); }
+    else if(name==='attack'){ this.makeNoise(.12,.18*v); this.makeTone(150,.12,.14*v,'sawtooth'); }
+    else if(name==='hit'){ this.makeNoise(.10,.20*v); this.makeTone(95,.14,.13*v,'square'); }
+    else if(name==='hp'){ this.makeTone(115,.20,.14*v,'sawtooth'); this.makeTone(82,.20,.12*v,'sine',.12); }
+    else if(name==='boss'){ this.makeTone(72,.34,.15*v,'sawtooth'); this.makeTone(96,.34,.12*v,'square',.16); }
+    else if(name==='vote'){ this.makeTone(520,.12,.11*v,'sine'); this.makeTone(700,.14,.11*v,'sine',.10); }
+    else this.makeTone(440,.18,.12*v,'sine');
   }
-  startMusicBuffer(key) {
-    const ctx = this.ensureContext();
-    const buffer = this.buffers.music.get(key);
-    if (!ctx || !buffer || uiPrefs.audioMuted) return false;
-    this.stopMusic();
-    const source = ctx.createBufferSource();
-    const gain = ctx.createGain();
-    gain.gain.value = this.volume(.52);
-    source.buffer = buffer;
-    source.loop = true;
-    source.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-    this.musicSource = source;
-    this.musicGain = gain;
-    return true;
+  fx(name,mult=1){
+    if(uiPrefs.audioMuted || !AUDIO_FILES.fx[name]) return;
+    if(!this.unlocked) this.unlock();
+    const now=performance.now();
+    if(now-(this.lastFxAt.get(name)||0)<70) return;
+    this.lastFxAt.set(name,now);
+    // WebAudio tone is always played. It does not depend on WAV loading, so effects remain audible even if an asset is missing.
+    this.synthFx(name,mult);
+    try{
+      const a=new Audio(AUDIO_FILES.fx[name]);
+      a.preload='auto'; a.volume=this.volume(Math.min(.8,mult*.65));
+      a.play().catch(err=>{ this.lastError=String(err?.message||err); });
+    }catch(err){ this.lastError=String(err?.message||err); }
   }
-  applyPrefs() {
-    if (this.musicHtml) this.musicHtml.volume = this.volume(.52);
-    if (this.musicGain && this.ctx) this.musicGain.gain.setValueAtTime(this.volume(.52), this.ctx.currentTime);
-    if (uiPrefs.audioMuted) {
-      this.musicHtml?.pause?.();
-      if (this.musicGain && this.ctx) this.musicGain.gain.setValueAtTime(.0001, this.ctx.currentTime);
-    } else if (this.unlocked && this.musicHtml) {
-      this.musicHtml.play().catch(err => { this.lastError = String(err?.message || err); });
-    }
-  }
-  fx(name, mult = 1) {
-    if (uiPrefs.audioMuted || !AUDIO_FILES.fx[name]) return;
-    if (!this.unlocked) this.unlock();
-    const now = performance.now();
-    if (now - (this.lastFxAt.get(name) || 0) < 80) return;
-    this.lastFxAt.set(name, now);
-    let played = false;
-    if (this.buffers.fx.has(name)) played = this.playOneShotBuffer(name, mult);
-    if (!played) {
-      const base = this.fxPool.get(name);
-      const a = base ? base.cloneNode(true) : new Audio(AUDIO_FILES.fx[name]);
-      a.volume = this.volume(Math.min(1.35, mult));
-      const p = a.play();
-      if (p?.catch) p.catch(err => { this.lastError = String(err?.message || err); this.synthFallback(name, Math.min(.7, mult * .75)); });
-      else this.synthFallback(name, Math.min(.5, mult * .45));
-    }
-  }
-  wantedMusic(s) {
-    if (!s?.campaignId) return '';
-    if (s.phase === 'combat') return 'combat';
-    if (['lobby', 'prologue', 'story', 'resolution', 'ending'].includes(s.phase)) return s.campaignId;
+  wantedMusic(s){
+    if(!s?.campaignId) return '';
+    if(s.phase==='combat') return 'combat';
+    if(['lobby','prologue','story','resolution','ending'].includes(s.phase)) return s.campaignId;
     return '';
   }
-  syncMusic(s) {
-    if (!this.unlocked) return;
-    const key = this.wantedMusic(s);
-    if (key === this.musicKey && (this.musicHtml || this.musicSource)) { this.applyPrefs(); return; }
-    this.stopMusic();
-    this.musicKey = key;
-    const src = AUDIO_FILES.music[key];
-    if (!src || uiPrefs.audioMuted) return;
-    if (this.buffers.music.has(key) && this.startMusicBuffer(key)) return;
-    const a = new Audio(src);
-    a.loop = true;
-    a.preload = 'auto';
-    a.volume = this.volume(.52);
-    a.addEventListener('error', () => { this.lastError = `배경음 파일을 불러오지 못했습니다: ${src}`; }, { once: true });
-    this.musicHtml = a;
-    a.play().catch(err => {
-      this.lastError = String(err?.message || err);
-      this.loadBuffer('music', key, src).then(() => {
-        if (this.musicKey === key && this.buffers.music.has(key) && !uiPrefs.audioMuted) this.startMusicBuffer(key);
-      });
-    });
-    this.loadBuffer('music', key, src).then(() => {
-      if (this.musicKey === key && this.buffers.music.has(key) && !uiPrefs.audioMuted) {
-        try { a.pause(); } catch {}
-        if (this.musicHtml === a) this.musicHtml = null;
-        this.startMusicBuffer(key);
-      }
+  stopSynthMusic(){
+    for(const item of this.synthMusic){ try{ item.osc.stop(); }catch{} try{ item.osc.disconnect(); item.gain.disconnect(); }catch{} }
+    this.synthMusic=[];
+  }
+  startSynthMusic(key){
+    const ctx=this.ensureContext();
+    if(!ctx || uiPrefs.audioMuted || !key) return;
+    this.stopSynthMusic();
+    const presets={
+      ember:[55,82.4,110], neon:[73.4,110,146.8], abyss:[41.2,61.7,82.4],
+      clock:[65.4,98,130.8], wild:[49,73.4,98], combat:[55,73.4,110,146.8]
+    };
+    const freqs=presets[key]||presets.ember;
+    freqs.forEach((freq,i)=>{
+      const osc=ctx.createOscillator(); const gain=ctx.createGain(); const lfo=ctx.createOscillator(); const lfoGain=ctx.createGain();
+      osc.type=i%2?'triangle':'sine'; osc.frequency.value=freq;
+      const base=(key==='combat'?.022:.012)*(1-i*.12)*Math.max(.35,uiPrefs.audioVolume);
+      gain.gain.value=base;
+      lfo.type='sine'; lfo.frequency.value=.05+i*.03; lfoGain.gain.value=base*.35;
+      lfo.connect(lfoGain); lfoGain.connect(gain.gain); osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); lfo.start();
+      this.synthMusic.push({osc,gain,lfo,lfoGain});
     });
   }
-  test() {
-    if (uiPrefs.audioMuted) { uiPrefs.audioMuted = false; saveUiPrefs(); }
-    if (uiPrefs.audioVolume < .4) { uiPrefs.audioVolume = .8; saveUiPrefs(); }
+  applyPrefs(){
+    if(this.music) this.music.volume=this.volume(.34);
+    if(uiPrefs.audioMuted){ this.music?.pause?.(); this.stopSynthMusic(); }
+    else if(this.unlocked && this.music) this.music.play().catch(()=>{});
+  }
+  syncMusic(s){
+    if(!this.unlocked) return;
+    const key=this.wantedMusic(s);
+    if(key===this.musicKey){ this.applyPrefs(); return; }
+    if(this.music){ try{this.music.pause();this.music.currentTime=0;}catch{} }
+    this.music=null; this.stopSynthMusic(); this.musicKey=key;
+    if(!key || uiPrefs.audioMuted) return;
+    // Generated ambience starts immediately and is different for every chronicle/combat.
+    this.startSynthMusic(key);
+    const src=AUDIO_FILES.music[key];
+    if(!src) return;
+    try{
+      const a=new Audio(src); a.loop=true; a.preload='auto'; a.volume=this.volume(.28); this.music=a;
+      a.play().catch(err=>{ this.lastError=String(err?.message||err); });
+    }catch(err){ this.lastError=String(err?.message||err); }
+  }
+  test(){
+    if(uiPrefs.audioMuted){ uiPrefs.audioMuted=false; saveUiPrefs(); }
+    if(uiPrefs.audioVolume<.35){ uiPrefs.audioVolume=.7; saveUiPrefs(); }
     this.unlock();
-    this.fx('success', 1.1);
-    setTimeout(() => this.fx('dice', 1.05), 280);
-    setTimeout(() => this.fx('boss', .8), 540);
-    this.syncMusic(state);
+    this.fx('success',1); setTimeout(()=>this.fx('dice',1),400); setTimeout(()=>this.fx('boss',.8),850);
     return this.lastError;
   }
-  onState(prev, next) {
+  onState(prev,next){
     this.syncMusic(next);
-    if (!prev || !next) return;
-    if (prev.phase === 'resolution' && next.phase === 'story') this.fx('next', .95);
-    if (prev.phase === 'prologue' && next.phase === 'story') this.fx('next', .95);
-    const prevPlayers = new Map((prev.players || []).map(p => [p.id, p]));
-    const lostHp = (next.players || []).some(p => prevPlayers.has(p.id) && Number(p.hp) < Number(prevPlayers.get(p.id).hp));
-    if (lostHp) { this.fx('hit', 1); setTimeout(() => this.fx('hp', 1.05), 90); }
-    const prevMonster = prev.monster;
-    const nextMonster = next.monster;
-    if (prevMonster && nextMonster && Number(nextMonster.hp) < Number(prevMonster.hp)) this.fx('hit', 1);
-    if (prevMonster?.turnPhase !== 'boss' && nextMonster?.turnPhase === 'boss') this.fx('boss', 1);
-    if (!prev.voteAllVotedCountdown && next.voteAllVotedCountdown) this.fx('vote', 1);
+    if(!prev||!next) return;
+    if(prev.phase==='resolution'&&next.phase==='story') this.fx('next',.95);
+    if(prev.phase==='prologue'&&next.phase==='story') this.fx('next',.95);
+    const prevPlayers=new Map((prev.players||[]).map(p=>[p.id,p]));
+    const lostHp=(next.players||[]).some(p=>prevPlayers.has(p.id)&&Number(p.hp)<Number(prevPlayers.get(p.id).hp));
+    if(lostHp){ this.fx('hit',.9); setTimeout(()=>this.fx('hp',1),100); }
+    const prevMonster=prev.monster; const nextMonster=next.monster;
+    if(prevMonster&&nextMonster&&Number(nextMonster.hp)<Number(prevMonster.hp)) this.fx('hit',1);
+    if(prevMonster?.turnPhase!=='boss'&&nextMonster?.turnPhase==='boss') this.fx('boss',1);
+    if(!prev.voteAllVotedCountdown&&next.voteAllVotedCountdown) this.fx('vote',1);
   }
 }
 
@@ -380,11 +310,11 @@ const WORLD_META = {
 };
 
 const STORY_ART_FILES = {
-  ember: { early: [assetPath('art/ember_early.webp'), assetPath('art/ember_early.png'), assetPath('art/ember_01.webp'), assetPath('art/ember_01.png')], late: [assetPath('art/ember_late.webp'), assetPath('art/ember_late.png'), assetPath('art/ember_30.webp'), assetPath('art/ember_30.png')] },
-  neon: { early: [assetPath('art/neon_early.webp'), assetPath('art/neon_early.png'), assetPath('art/neon_01.webp'), assetPath('art/neon_01.png')], late: [assetPath('art/neon_late.webp'), assetPath('art/neon_late.png'), assetPath('art/neon_30.webp'), assetPath('art/neon_30.png')] },
-  abyss: { early: [assetPath('art/abyss_early.webp'), assetPath('art/abyss_early.png'), assetPath('art/abyss_01.webp'), assetPath('art/abyss_01.png')], late: [assetPath('art/abyss_late.webp'), assetPath('art/abyss_late.png'), assetPath('art/abyss_30.webp'), assetPath('art/abyss_30.png')] },
-  clock: { early: [assetPath('art/clock_early.webp'), assetPath('art/clock_early.png'), assetPath('art/clock_01.webp'), assetPath('art/clock_01.png')], late: [assetPath('art/clock_late.webp'), assetPath('art/clock_late.png'), assetPath('art/clock_30.webp'), assetPath('art/clock_30.png')] },
-  wild: { early: [assetPath('art/wild_early.webp'), assetPath('art/wild_early.png'), assetPath('art/wild_01.webp'), assetPath('art/wild_01.png')], late: [assetPath('art/wild_late.webp'), assetPath('art/wild_late.png'), assetPath('art/wild_30.webp'), assetPath('art/wild_30.png')] },
+  ember: { early: './art/ember_early.png', late: './art/ember_late.png' },
+  neon: { early: './art/neon_early.png', late: './art/neon_late.png' },
+  abyss: { early: './art/abyss_early.png', late: './art/abyss_late.png' },
+  clock: { early: './art/clock_early.png', late: './art/clock_late.png' },
+  wild: { early: './art/wild_early.png', late: './art/wild_late.png' },
 };
 
 function toast(msg) {
@@ -589,53 +519,40 @@ function artSvg(c, title, subtitle, kicker, visual = '', monster = '') {
   </svg>`);
 }
 
-function artList(spec) {
-  return Array.isArray(spec) ? spec.filter(Boolean) : (spec ? [spec] : []);
-}
-function coverArtCandidates(c) {
-  const artSet = STORY_ART_FILES[c?.id];
-  return artList(artSet?.early);
-}
 function coverArt(c) {
-  return coverArtCandidates(c)[0] || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
+  const artSet = STORY_ART_FILES[c?.id];
+  return artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
 function chapterArtCandidates(c, scene) {
   if (!c?.id) return [];
   const explicit = String(scene?.artFile || '').trim();
   const chapter = Number(scene?.artChapter || scene?.chapter || 0);
   const candidates = [];
-  if (explicit) candidates.push(assetPath(explicit.startsWith('.') || explicit.startsWith('/') ? explicit : `art/${explicit}`));
+  if (explicit) candidates.push(explicit.startsWith('.') || explicit.startsWith('/') ? explicit : `./art/${explicit}`);
   if (chapter >= 1 && chapter <= 99) {
     const base = scene?.artFileBase || `${c.id}_${String(chapter).padStart(2, '0')}`;
-    candidates.push(assetPath(`art/${base}.webp`), assetPath(`art/${base}.png`));
+    // Prefer the WEBP files users add to GitHub, then transparently fall back to the older PNG assets.
+    candidates.push(`/art/${base}.webp`, `/art/${base}.png`, `./art/${base}.webp`, `./art/${base}.png`);
   }
-  return [...new Set(candidates.filter(Boolean))];
+  return [...new Set(candidates)];
 }
 function chapterArt(c, scene) {
   return chapterArtCandidates(c, scene)[0] || null;
 }
-function setImageByCandidates(img, candidates = [], fallback = '') {
-  if (!img) return;
-  const queue = [...new Set([...(candidates || []).filter(Boolean), fallback].filter(Boolean))];
-  if (!queue.length) return;
-  let index = 0;
-  const trySet = () => {
-    img.onerror = () => {
-      index += 1;
-      if (index < queue.length) trySet();
-      else img.onerror = null;
-    };
-    img.src = queue[index];
-  };
-  trySet();
-}
 function setSceneImage(img, c, scene) {
   if (!img) return;
   const candidates = chapterArtCandidates(c, scene);
-  const artSet = STORY_ART_FILES[c?.id];
-  const fallbackArt = artSet ? artList((Number(scene?.act || 1) >= 4 || ['위기', '결단'].includes(String(scene?.phase || ''))) ? artSet.late : artSet.early) : [];
-  const fallbackSvg = artSvg(c, scene?.title || c?.title || 'Chronicle Gate', scene?.monster ? `${scene?.visual || sceneWord(c?.id, 0)} · ${scene.monster}` : `${scene?.visual || sceneWord(c?.id, 0)} · ${scene?.phase || '장면'}`, scene ? `ACT ${scene.act || 1} · ${scene.actName || c?.title || ''}` : (WORLD_META[c?.id]?.motif || 'SCENE'), scene?.visual || sceneWord(c?.id, Math.max(0, Number(scene?.act || 1) - 1)), scene?.monster || '');
-  setImageByCandidates(img, [...candidates, ...fallbackArt], fallbackSvg);
+  // Story artwork is optional. Show it only when a real uploaded image succeeds.
+  if (!candidates.length) { img.style.display = 'none'; img.removeAttribute('src'); return; }
+  let index = 0;
+  img.style.display = 'none';
+  img.onload = () => { img.style.display = ''; };
+  img.onerror = () => {
+    index += 1;
+    if (index < candidates.length) img.src = candidates[index];
+    else { img.style.display = 'none'; img.removeAttribute('src'); img.onerror = null; }
+  };
+  img.src = candidates[index];
 }
 
 function storyArt(c, scene) {
@@ -649,8 +566,8 @@ function storyArt(c, scene) {
   const title = scene?.title || c?.title || '다음 장면';
   const visual = scene?.visual || sceneWord(c?.id, actIndex);
   const subtitle = scene?.monster ? `${visual} · ${scene.monster}의 위협` : `${visual} · ${isStory ? '메인 스토리' : '이벤트 사건'}`;
-  if (artSet && isStory) return artList(act >= 4 || phase === '위기' || phase === '결단' ? artSet.late : artSet.early)[0];
-  if (artSet && !isStory) return artList((phase === '위기' || phase === '결단' || act >= 4) ? artSet.late : artSet.early)[0];
+  if (artSet && isStory) return act >= 4 || phase === '위기' || phase === '결단' ? artSet.late : artSet.early;
+  if (artSet && !isStory) return (phase === '위기' || phase === '결단' || act >= 4) ? artSet.late : artSet.early;
   return artSvg(c, title, subtitle, scene ? `ACT ${scene.act} · ${scene.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'), visual, scene?.monster || '');
 }
 
@@ -668,105 +585,70 @@ function storyArtMeta(c, beat) {
   return { src, world, visual, caption, focus, accent };
 }
 
-function bossArtCandidates(c, monster = '') {
+function proseParagraphs(text = '') {
+  const cleaned = String(text || '').trim();
+  if (!cleaned) return [];
+  const blocks = cleaned.split(/\n{2,}/).map(v => v.trim()).filter(Boolean);
+  const out = [];
+  for (const block of blocks) {
+    const sentences = block.split(/(?<=[.!?])\s+/).map(v => v.trim()).filter(Boolean);
+    if (sentences.length <= 2) out.push(block);
+    else for (let i = 0; i < sentences.length; i += 2) out.push(sentences.slice(i, i + 2).join(' '));
+  }
+  return out;
+}
+
+
+function storyParagraphHTML(text = '', index = 0) {
+  const sentences = String(text || '').split(/(?<=[.!?…])\s+/).map(v => v.trim()).filter(Boolean);
+  const keyPattern = /(그러나|하지만|그때|그 순간|마침내|사실|진실|정체|발견|드러|깨달|아니었다|없었다|위험|죽음|왕관|봉인|기억|시간|별|심연|경고|배신|목소리)/;
+  let emphasized = sentences.findIndex(sentence => keyPattern.test(sentence));
+  if (emphasized < 0 && sentences.length > 1 && index > 0) emphasized = sentences.length - 1;
+  return sentences.map((sentence, sentenceIndex) => {
+    const safe = esc(sentence);
+    return sentenceIndex === emphasized ? `<strong class="story-key">${safe}</strong>` : safe;
+  }).join(' ');
+}
+
+function storyNarrationHTML(c, beat, player, hints = []) {
+  const paragraphs = proseParagraphs(beat?.text || c?.intro || '');
+  return `
+    <article class="narration-rich clean-narration novel-page">
+      ${paragraphs.map((p, index) => `<p class="${index === 0 ? 'story-lead' : ''}">${storyParagraphHTML(p, index)}</p>`).join('')}
+      ${beat?.continuityHook ? `<p class="continuity-hook"><span>다음 장면의 기척</span><strong>${esc(beat.continuityHook)}</strong></p>` : ''}
+    </article>`;
+}
+
+function bossArtCandidates(c, monster='') {
   const world = c?.id || 'chronicle';
-  const slug = slugifyAssetName(monster);
-  const candidates = [
-    assetPath(`art/${world}_boss.webp`),
-    assetPath(`art/${world}_boss.png`),
-    slug ? assetPath(`art/${world}_boss_${slug}.webp`) : '',
-    slug ? assetPath(`art/${world}_boss_${slug}.png`) : '',
-    slug ? assetPath(`art/${world}_${slug}.webp`) : '',
-    slug ? assetPath(`art/${world}_${slug}.png`) : '',
-    assetPath(`art/${world}_31.webp`),
-    assetPath(`art/${world}_31.png`),
-    assetPath(`art/${world}_30.webp`),
-    assetPath(`art/${world}_30.png`),
-  ];
-  return [...new Set(candidates.filter(Boolean))];
+  const slug = String(monster || '').toLowerCase().replace(/[^a-z0-9가-힣]+/g, '_').replace(/^_+|_+$/g, '');
+  return [
+    `/art/${world}_boss.webp`, `/art/${world}_boss.png`,
+    slug ? `/art/${world}_boss_${slug}.webp` : '', slug ? `/art/${world}_boss_${slug}.png` : '',
+    slug ? `/art/${world}_${slug}.webp` : '', slug ? `/art/${world}_${slug}.png` : ''
+  ].filter(Boolean);
 }
 function monsterArt(c, monster) {
-  const world = c?.id || 'chronicle';
-  const bossSummary = WORLD_META[c?.id]?.boss || '보스 전투';
-  const title = monster || 'UNKNOWN';
-  let motif = '';
-  if (world === 'ember') motif = `
-    <ellipse cx="760" cy="208" rx="208" ry="86" fill="rgba(255,160,90,.22)"/>
-    <path d="M714 226 l44-112 38 78 35-70 43 104" fill="none" stroke="#ffd37c" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M662 420 q88-132 188-132 q102 0 184 132" fill="none" stroke="rgba(255,122,76,.92)" stroke-width="24" stroke-linecap="round"/>
-    <path d="M650 508 q110-176 224-176 q112 0 214 176" fill="rgba(28,10,10,.78)" stroke="rgba(255,192,160,.45)" stroke-width="6"/>
-    <circle cx="760" cy="408" r="10" fill="#ffe8b0"/><circle cx="902" cy="408" r="10" fill="#ffe8b0"/>
-    <path d="M782 470 q50 30 100 0" fill="none" stroke="#ffb38d" stroke-width="6"/>
-    <path d="M692 556 h272" stroke="rgba(255,180,120,.45)" stroke-width="12" stroke-linecap="round"/>
-  `;
-  else if (world === 'neon') motif = `
-    <rect x="574" y="132" width="380" height="310" rx="22" fill="rgba(12,18,34,.82)" stroke="rgba(64,241,255,.48)" stroke-width="4"/>
-    <circle cx="760" cy="282" r="92" fill="rgba(0,0,0,.35)" stroke="#7ff7ff" stroke-width="12"/>
-    <circle cx="724" cy="266" r="18" fill="#ff5ca9"/><circle cx="796" cy="266" r="18" fill="#ff5ca9"/>
-    <path d="M714 320 q46 36 92 0" fill="none" stroke="#7ff7ff" stroke-width="8"/>
-    <path d="M606 362 q76 40 108 108" fill="none" stroke="#44d5ff" stroke-width="14" stroke-linecap="round"/>
-    <path d="M914 362 q-76 40 -108 108" fill="none" stroke="#44d5ff" stroke-width="14" stroke-linecap="round"/>
-    <path d="M564 210 h120 M836 210 h120 M548 262 h88 M884 262 h88" stroke="rgba(123,255,233,.48)" stroke-width="6" stroke-linecap="round"/>
-    <path d="M564 150 l80 0 28 -26 28 26 120 0" stroke="#ff5ca9" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  `;
-  else if (world === 'abyss') motif = `
-    <ellipse cx="780" cy="248" rx="210" ry="118" fill="rgba(19,55,82,.6)"/>
-    <circle cx="720" cy="238" r="14" fill="#9cecff"/><circle cx="840" cy="238" r="14" fill="#9cecff"/>
-    <path d="M694 308 q86 42 172 0" fill="none" stroke="#95dfff" stroke-width="8"/>
-    <path d="M628 330 q-48 96 -20 198" fill="none" stroke="rgba(118,221,255,.72)" stroke-width="18" stroke-linecap="round"/>
-    <path d="M704 342 q-20 102 24 202" fill="none" stroke="rgba(118,221,255,.72)" stroke-width="18" stroke-linecap="round"/>
-    <path d="M784 342 q12 112 62 204" fill="none" stroke="rgba(118,221,255,.72)" stroke-width="18" stroke-linecap="round"/>
-    <path d="M868 334 q38 100 14 206" fill="none" stroke="rgba(118,221,255,.72)" stroke-width="18" stroke-linecap="round"/>
-    <path d="M972 210 q-28 104 -122 178" fill="none" stroke="rgba(170,235,255,.54)" stroke-width="7" stroke-linecap="round"/>
-  `;
-  else if (world === 'clock') motif = `
-    <circle cx="766" cy="244" r="104" fill="rgba(27,28,54,.44)" stroke="rgba(255,225,164,.92)" stroke-width="12"/>
-    <circle cx="766" cy="244" r="52" fill="rgba(12,12,22,.85)" stroke="rgba(255,214,124,.52)" stroke-width="6"/>
-    <path d="M766 244 l0 -50" stroke="#ffe29a" stroke-width="8" stroke-linecap="round"/>
-    <path d="M766 244 l36 18" stroke="#ffe29a" stroke-width="8" stroke-linecap="round"/>
-    <path d="M652 418 q114-156 228 0" fill="rgba(8,8,18,.66)" stroke="rgba(255,224,154,.48)" stroke-width="6"/>
-    <path d="M708 210 l58 -70 58 70" fill="none" stroke="#ffe29a" stroke-width="12" stroke-linejoin="round"/>
-    <circle cx="670" cy="190" r="32" fill="none" stroke="rgba(255,224,154,.42)" stroke-width="8"/>
-    <circle cx="868" cy="214" r="42" fill="none" stroke="rgba(255,224,154,.42)" stroke-width="8"/>
-  `;
-  else if (world === 'wild') motif = `
-    <path d="M650 444 q136-208 278 0" fill="rgba(8,22,18,.72)" stroke="rgba(164,255,200,.48)" stroke-width="6"/>
-    <circle cx="744" cy="350" r="12" fill="#d0ffb3"/><circle cx="834" cy="350" r="12" fill="#d0ffb3"/>
-    <path d="M732 188 q-76 -98 -142 -112 q38 44 52 108 q-54 -24 -98 -12 q64 36 110 92" fill="none" stroke="#b7ffca" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M844 188 q76 -98 142 -112 q-38 44 -52 108 q54 -24 98 -12 q-64 36 -110 92" fill="none" stroke="#b7ffca" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M722 414 q66 44 132 0" fill="none" stroke="#e6ffd5" stroke-width="7"/>
-    <path d="M650 494 q112 38 278 0" fill="none" stroke="rgba(190,255,214,.36)" stroke-width="10" stroke-linecap="round"/>
-  `;
-  const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 780">
-    <defs>
-      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#080a14"/>
-        <stop offset="50%" stop-color="#1a1322"/>
-        <stop offset="100%" stop-color="#2a1012"/>
-      </linearGradient>
-      <linearGradient id="fog" x1="0" y1="1" x2="1" y2="0">
-        <stop offset="0%" stop-color="rgba(255,110,84,.16)"/>
-        <stop offset="100%" stop-color="rgba(124,207,255,.15)"/>
-      </linearGradient>
-      <filter id="glow"><feGaussianBlur stdDeviation="16" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <rect width="1400" height="780" fill="url(#bg)"/>
-    <rect width="1400" height="780" fill="url(#fog)"/>
-    <circle cx="1168" cy="146" r="56" fill="rgba(255,214,130,.18)"/>
-    <path d="M0 620 C240 540 360 652 548 588 C734 524 876 610 1028 562 C1182 512 1296 582 1400 546 L1400 780 L0 780 Z" fill="rgba(10,10,18,.88)"/>
-    <g filter="url(#glow)">${motif}</g>
-    <rect x="82" y="72" width="410" height="172" rx="20" fill="rgba(10,10,18,.58)" stroke="rgba(255,255,255,.08)"/>
-    <text x="112" y="116" fill="#ffb58d" style="font:600 22px sans-serif; letter-spacing:3px;">BOSS ENCOUNTER</text>
-    <text x="112" y="164" fill="#ffffff" style="font:700 48px sans-serif;">${esc(title)}</text>
-    <text x="112" y="206" fill="rgba(255,255,255,.82)" style="font:400 20px sans-serif;">${esc(bossSummary)}</text>
-    <text x="112" y="546" fill="rgba(255,255,255,.92)" style="font:600 24px sans-serif; letter-spacing:2px;">${esc(world.toUpperCase())}</text>
-    <text x="112" y="588" fill="rgba(255,255,255,.72)" style="font:400 18px sans-serif;">턴 표시를 따라 행동하세요. 전원이 한 번씩 행동하면 보스가 공격합니다.</text>
-  </svg>`;
+  const world=c?.id||'ember';
+  const names={ember:'재와 왕관의 망령',neon:'네온 코어의 포식자',abyss:'심연에서 솟은 거대 생명체',clock:'시간을 베는 파수꾼',wild:'별빛을 삼킨 신수'};
+  const accent={ember:'#ff7b52',neon:'#42e7ff',abyss:'#75d9ff',clock:'#ffd58a',wild:'#94f0aa'}[world]||'#ff7b52';
+  const shape={
+    ember:`<path d="M700 500 C590 450 590 300 670 260 L710 145 L758 225 L810 130 L855 250 C945 302 930 458 820 500 Z" fill="rgba(28,10,12,.88)" stroke="${accent}" stroke-width="10"/><circle cx="720" cy="335" r="12" fill="#ffe2bc"/><circle cx="810" cy="335" r="12" fill="#ffe2bc"/><path d="M680 262 L718 188 L754 240 L810 156 L854 266" fill="none" stroke="#ffd286" stroke-width="12"/>`,
+    neon:`<rect x="590" y="180" width="340" height="300" rx="55" fill="rgba(7,13,27,.9)" stroke="${accent}" stroke-width="10"/><circle cx="700" cy="315" r="28" fill="#ff4d9b"/><circle cx="820" cy="315" r="28" fill="#ff4d9b"/><path d="M620 410 C540 450 530 520 500 575 M900 410 C980 450 990 520 1020 575" fill="none" stroke="${accent}" stroke-width="18" stroke-linecap="round"/>`,
+    abyss:`<ellipse cx="760" cy="315" rx="195" ry="130" fill="rgba(12,40,62,.9)" stroke="${accent}" stroke-width="10"/><circle cx="700" cy="300" r="15" fill="#d5fbff"/><circle cx="820" cy="300" r="15" fill="#d5fbff"/><path d="M620 405 C550 500 550 565 590 635 M700 420 C660 520 675 590 700 650 M820 420 C860 520 845 590 820 650 M900 405 C970 500 970 565 930 635" fill="none" stroke="${accent}" stroke-width="20" stroke-linecap="round"/>`,
+    clock:`<circle cx="760" cy="325" r="150" fill="rgba(17,16,30,.9)" stroke="${accent}" stroke-width="12"/><circle cx="760" cy="325" r="82" fill="none" stroke="rgba(255,225,155,.6)" stroke-width="8"/><path d="M760 325 L760 245 M760 325 L830 358" stroke="${accent}" stroke-width="12" stroke-linecap="round"/><path d="M630 500 C665 410 855 410 890 500" fill="rgba(8,8,16,.9)" stroke="${accent}" stroke-width="8"/>`,
+    wild:`<path d="M610 510 C625 340 675 225 760 210 C845 225 895 340 910 510 C850 470 805 445 760 445 C715 445 670 470 610 510 Z" fill="rgba(8,32,22,.9)" stroke="${accent}" stroke-width="10"/><path d="M680 255 C610 205 575 135 560 95 C625 115 680 155 716 205 M840 255 C910 205 945 135 960 95 C895 115 840 155 804 205" fill="none" stroke="${accent}" stroke-width="14"/><circle cx="715" cy="350" r="15" fill="#efffd2"/><circle cx="805" cy="350" r="15" fill="#efffd2"/>`
+  }[world]||'';
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760"><defs><radialGradient id="bg"><stop offset="0" stop-color="#2a1720"/><stop offset="1" stop-color="#07080e"/></radialGradient></defs><rect width="1400" height="760" fill="url(#bg)"/><circle cx="1130" cy="140" r="55" fill="${accent}" opacity=".18"/><g>${shape}</g><rect x="75" y="70" width="480" height="170" rx="18" fill="rgba(4,5,10,.64)"/><text x="105" y="113" fill="${accent}" font-family="sans-serif" font-size="20" font-weight="700" letter-spacing="3">BOSS ENCOUNTER</text><text x="105" y="165" fill="#fff" font-family="sans-serif" font-size="45" font-weight="800">${esc(monster||'UNKNOWN')}</text><text x="105" y="207" fill="#ddd" font-family="sans-serif" font-size="20">${esc(names[world]||'강대한 적')}</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
-function setBossSceneImage(img, c, monster) {
-  setImageByCandidates(img, bossArtCandidates(c, monster), monsterArt(c, monster));
+function setBossSceneImage(img,c,monster){
+  const candidates=bossArtCandidates(c,monster);
+  let index=0;
+  img.style.display='';
+  img.onload=()=>{ img.style.display=''; };
+  img.onerror=()=>{ index+=1; if(index<candidates.length) img.src=candidates[index]; else { img.onerror=null; img.src=monsterArt(c,monster); } };
+  img.src=candidates[0]||monsterArt(c,monster);
 }
 
 function sendChat(inputSelector) {
@@ -1087,7 +969,7 @@ function renderStory() {
     const readyMe = !!state.prologue?.ready?.[playerToken];
     const readyNames = state.players.filter(member => state.prologue?.ready?.[member.id]).map(member => member.name);
     $('#turnBanner').textContent = '개인 프롤로그를 읽고 합류 준비를 마치면 메인 스토리가 시작됩니다.';
-    setImageByCandidates($('#storySceneImg'), coverArtCandidates(c), artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0)));
+    $('#storySceneImg').src = coverArt(c);
     $('#storySceneCaption').textContent = `${c?.title || '연대기'} · ${p?.job?.name || '모험가'}의 개인 프롤로그`;
     $('#actLabel').textContent = 'PERSONAL PROLOGUE';
     $('#eventTitle').textContent = myScene?.title || '각자의 시작';

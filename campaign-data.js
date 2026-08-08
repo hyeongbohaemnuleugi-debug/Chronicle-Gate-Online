@@ -637,7 +637,7 @@ function buildStoryBeats(c){
         : step===3 ? '이 사실이 맞다면 지금까지의 사건을 바라보는 전제가 바뀐다.'
         : step===4 ? '여기서의 실패는 단순한 지연이 아니라 이후 장면의 위협과 상태이상을 남길 수 있다.'
         : '이번 결단이 다음 막에서 누구를 믿고 무엇을 포기할지 결정한다.';
-      const artChapter = act*5 + Math.min(step,4) + 1;
+      const artChapter = chapter;
       const beat = {
         id:`${c.id.toUpperCase()}-STORY-${String(index+1).padStart(2,'0')}`,
         act:act+1, actName:c.acts[act], chapter, artChapter, phase,
@@ -646,7 +646,7 @@ function buildStoryBeats(c){
         prompt: `${sceneAnchor(guide.place)}에서 무엇을 할지 아래 선택지 중 하나를 고르세요.`,
         reveal:guide.reveal, stakes:guide.stakes,
         visual:`${eventStyles[c.id].visuals[(act*2+step)%eventStyles[c.id].visuals.length]} · ${c.acts[act]}`,
-        continuityHook: step < 5 ? `이 장면의 결과는 같은 막의 다음 장면인 ‘${phases[step+1]}’로 직접 이어진다.` : (act < 4 ? `이번 결단이 끝나면 다음 막 ‘${c.acts[act+1]}’의 첫 장면이 열린다.` : `이번 결단이 최종 엔딩의 색을 결정한다.`),
+        continuityHook: `이 장면 뒤의 이야기는 현재 선택과 판정 결과에 따라 달라진다. 같은 막에서도 다른 장소·인물·위기로 갈라질 수 있다.`,
         branchContext: step === 0 ? { fromAct: Math.max(0, act), summaries: { careful:'앞선 막에서 차분히 모은 기록과 단서가 이번 시작을 더 정교하게 만든다.', bold:'앞선 막의 강행 돌파 여파가 남아 이번 시작은 더 거칠고 급박하다.', empathetic:'앞선 막에서 얻은 신뢰와 협력이 이번 시작의 든든한 발판이 된다.' } } : null,
         roleHooks:{
           '근력': '힘으로 길을 열거나 위험한 존재를 붙잡아 동료가 움직일 시간을 벌 수 있다.',
@@ -659,6 +659,47 @@ function buildStoryBeats(c){
       };
       beat.choices = buildStoryChoices(c, guide, beat, act, step, index);
       beats.push(beat);
+    }
+  }
+  // v4.12 TRUE BRANCH GRAPH
+  // Each act has one entry, three mutually-exclusive route scenes, a crisis and a decision.
+  // The selected choice AND its D20 result decide the next node. This is a DAG: no main node points backward,
+  // so a main-story scene can never repeat during one session.
+  const nodeAt = (actIndex, stepIndex) => beats[actIndex * 6 + stepIndex];
+  for (let actIndex = 0; actIndex < 5; actIndex++) {
+    const entry = nodeAt(actIndex, 0);
+    const careful = nodeAt(actIndex, 1);
+    const bold = nodeAt(actIndex, 2);
+    const empathic = nodeAt(actIndex, 3);
+    const crisis = nodeAt(actIndex, 4);
+    const decision = nodeAt(actIndex, 5);
+    const nextAct = actIndex < 4 ? nodeAt(actIndex + 1, 0)?.id : '__ENDING__';
+
+    entry.nodeRole = 'entry';
+    careful.nodeRole = 'route-careful';
+    bold.nodeRole = 'route-bold';
+    empathic.nodeRole = 'route-empathetic';
+    crisis.nodeRole = 'crisis';
+    decision.nodeRole = 'decision';
+
+    // Opening choice establishes the route. A failed attempt can throw the party into a different route
+    // for a narratively understandable recovery rather than simply showing the same next chapter.
+    if (entry.choices?.[0]) entry.choices[0].next = { success: careful.id, failure: bold.id };
+    if (entry.choices?.[1]) entry.choices[1].next = { success: bold.id, failure: empathic.id };
+    if (entry.choices?.[2]) entry.choices[2].next = { success: empathic.id, failure: careful.id };
+
+    // Route scenes form an acyclic recovery chain. Failure exposes another angle; success reaches the crisis.
+    for (const choice of careful.choices || []) choice.next = { success: crisis.id, failure: bold.id };
+    for (const choice of bold.choices || []) choice.next = { success: crisis.id, failure: empathic.id };
+    for (const choice of empathic.choices || []) choice.next = { success: crisis.id, failure: crisis.id };
+    for (const choice of crisis.choices || []) choice.next = { success: decision.id, failure: decision.id };
+    for (const choice of decision.choices || []) choice.next = { success: nextAct, failure: nextAct };
+
+    // Image names are intentionally simple and work with user-added WEBP or existing PNG files.
+    for (let stepIndex = 0; stepIndex < 6; stepIndex++) {
+      const beat = nodeAt(actIndex, stepIndex);
+      beat.artChapter = beat.chapter;
+      beat.artFileBase = `${c.id}_${String(beat.chapter).padStart(2, '0')}`;
     }
   }
   return beats;

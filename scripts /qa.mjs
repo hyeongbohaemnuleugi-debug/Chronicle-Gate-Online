@@ -127,6 +127,15 @@ const requiredAudio = [
 for (const name of requiredAudio) assert(fs.existsSync(path.join(root,'public/audio',name)), `오디오 파일 누락: ${name}`);
 assert(app.includes('class AudioManager') && app.includes("./audio/bgm_ember.wav"), '오디오 매니저 또는 BGM 연결이 누락되었습니다.');
 assert(index.includes('id="audioVolumeRange"') && index.includes('id="audioMuteBtn"'), '오디오 설정 UI가 누락되었습니다.');
+assert(index.includes('id="economyPanel"') && index.includes('id="facilityPanel"'), '코인/장비/시설 UI가 누락되었습니다.');
+assert(server.includes("socket.on('facility:action'") && server.includes("socket.on('item:equip'"), '경제/장비 서버 핸들러가 누락되었습니다.');
+assert(server.includes('effectiveAbilityTotal') && server.includes('equipmentStatBonus'), '장비 능력치 반영 로직이 누락되었습니다.');
+for (const campaign of CAMPAIGNS) {
+  assert((campaign.items || []).length === 6, `${campaign.title}: 장비 6종이 필요합니다.`);
+  assert(campaign.events.some(event => event.facility?.type === 'shop'), `${campaign.title}: 상점 이벤트가 필요합니다.`);
+  assert(campaign.events.some(event => event.facility?.type === 'inn'), `${campaign.title}: 여관 이벤트가 필요합니다.`);
+  assert(campaign.events.some(event => event.facility?.type === 'gamble'), `${campaign.title}: 도박 이벤트가 필요합니다.`);
+}
 
 for (const publicFile of ['public/index.html','public/app.js','public/dice3d.js','public/styles.css']) {
   const text = read(publicFile);

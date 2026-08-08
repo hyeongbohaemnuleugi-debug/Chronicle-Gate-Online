@@ -221,3 +221,42 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 
 /* v4.12.1 staged dice arithmetic */
 .dice-breakdown{min-height:58px;margin:8px auto 6px;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;font-family:Orbitron,sans-serif;color:#fff}.dice-breakdown>span{animation:roll-mod-pop .22s ease both}.roll-raw,.roll-mod,.roll-total{display:grid;gap:2px;min-width:72px;padding:8px 12px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(0,0,0,.28);backdrop-filter:blur(8px)}.roll-raw b,.roll-mod b,.roll-total b{font-size:18px}.roll-mod small,.roll-total small{font-size:8px;letter-spacing:.08em;color:#d7d9e2}.roll-plus,.roll-equals{font-size:24px;font-weight:800;color:var(--accent)}.roll-total{border-color:color-mix(in srgb,var(--accent) 70%,#fff);box-shadow:0 0 24px color-mix(in srgb,var(--accent) 22%,transparent)}@keyframes roll-mod-pop{from{opacity:0;transform:translateY(7px) scale(.94)}to{opacity:1;transform:none}}html[data-theme="light"] .dice-breakdown{color:#17191f}html[data-theme="light"] .roll-raw,html[data-theme="light"] .roll-mod,html[data-theme="light"] .roll-total{background:rgba(255,255,255,.72);border-color:rgba(0,0,0,.14)}html[data-theme="light"] .roll-mod small,html[data-theme="light"] .roll-total small{color:#4c515e}
+
+/* v4.13 economy / equipment */
+.economy-panel{margin-top:12px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px;display:grid;gap:10px}
+.economy-panel.hidden,.facility-panel.hidden{display:none!important}
+.economy-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}
+.economy-head span{font:700 11px/1 var(--ui);letter-spacing:2px;color:var(--muted)}
+.economy-head b{color:var(--accent2);font-size:18px}
+.equipment-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.equip-slot{min-width:0;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px;background:rgba(0,0,0,.12);display:grid;gap:3px}
+.equip-slot span{font:700 9px/1 var(--ui);letter-spacing:1.2px;color:var(--muted)}
+.equip-slot b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.equip-slot small{font-size:10px;color:var(--accent2)}
+.equip-slot.filled{border-color:color-mix(in srgb,var(--accent) 38%,transparent);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.inventory-drawer{border:1px solid rgba(255,255,255,.08);border-radius:11px;overflow:hidden}
+.inventory-drawer summary{cursor:pointer;list-style:none;padding:10px 12px;font:700 10px/1 var(--ui);letter-spacing:1.5px;color:var(--muted)}
+.inventory-drawer summary::-webkit-details-marker{display:none}
+.inventory-list{display:grid;gap:7px;padding:0 8px 8px}
+.inventory-item,.shop-item{width:100%;text-align:left;border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:10px;background:rgba(255,255,255,.025);color:inherit;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;cursor:pointer}
+.inventory-item:hover,.shop-item:hover{border-color:var(--accent)}
+.inventory-item>span,.shop-item>span{display:grid;min-width:0}
+.inventory-item b,.shop-item b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inventory-item small,.shop-item small{font-size:10px;color:var(--muted);grid-column:1/-1;line-height:1.45}
+.inventory-item em,.shop-item em{font-style:normal;color:var(--accent2);font:700 11px/1 var(--ui)}
+.inventory-item strong,.shop-item strong{grid-column:1/-1;font:700 10px/1 var(--ui);color:var(--accent)}
+.inventory-item.equipped{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent) inset}
+.inventory-empty{padding:12px;color:var(--muted);font-size:11px;text-align:center}
+.gear-stat{display:block;grid-column:1/-1;color:var(--accent2);font-size:9px;margin-top:-2px}
+.facility-panel{margin:16px 0;border:1px solid color-mix(in srgb,var(--accent) 40%,rgba(255,255,255,.08));border-radius:18px;padding:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 8%,rgba(10,10,16,.96)),rgba(10,10,16,.96));display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);gap:16px;align-items:start}
+.facility-copy h3{margin:5px 0 7px;font-size:19px}
+.facility-copy p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.coin-chip{display:inline-flex;margin-top:10px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.05);color:var(--accent2);font:700 11px/1 var(--ui)}
+.facility-actions{min-width:0}
+.facility-action{width:100%;min-height:48px}
+.shop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.shop-item:disabled{opacity:.45;cursor:not-allowed}
+[data-theme="light"] .economy-head,[data-theme="light"] .equip-slot,[data-theme="light"] .inventory-item,[data-theme="light"] .shop-item{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.09)}
+[data-theme="light"] .facility-panel{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 7%,#fff),#fff)}
+@media(max-width:1000px){.facility-panel{grid-template-columns:1fr}.shop-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.equipment-grid{grid-template-columns:1fr 1fr}.facility-panel{padding:12px}.shop-grid{grid-template-columns:1fr}}

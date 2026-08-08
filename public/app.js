@@ -14,8 +14,8 @@ const REQUIRED_IDS = [
   'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'attackBtn', 'combatLog',
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
-  'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceSub',
-  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel'
+  'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceBreakdown', 'diceSub',
+  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioTestBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
@@ -88,64 +88,116 @@ const AUDIO_FILES = {
 };
 
 class AudioManager {
-  constructor(){ this.unlocked=false; this.music=null; this.musicKey=''; this.lastFxAt=new Map(); }
+  constructor(){
+    this.unlocked=false;
+    this.music=null;
+    this.musicKey='';
+    this.lastFxAt=new Map();
+    this.fxPool=new Map();
+    this.ctx=null;
+    this.lastError='';
+    for (const [name,src] of Object.entries(AUDIO_FILES.fx)) {
+      const a=new Audio(src);
+      a.preload='auto';
+      a.addEventListener('error',()=>{ this.lastError=`효과음 파일을 불러오지 못했습니다: ${src}`; },{once:true});
+      this.fxPool.set(name,a);
+    }
+  }
   volume(mult=1){ return uiPrefs.audioMuted ? 0 : Math.max(0, Math.min(1, uiPrefs.audioVolume * mult)); }
+  ensureContext(){
+    try {
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if (!this.ctx && AC) this.ctx=new AC();
+      if (this.ctx?.state==='suspended') this.ctx.resume().catch(()=>{});
+    } catch (err) { this.lastError=String(err?.message||err); }
+  }
   unlock(){
-    if (this.unlocked) return;
     this.unlocked=true;
+    this.ensureContext();
     this.syncMusic(state);
   }
+  synthFallback(name='success', mult=.45){
+    this.ensureContext();
+    const ctx=this.ctx;
+    if (!ctx || ctx.state==='closed' || uiPrefs.audioMuted) return;
+    const map={dice:180,success:720,failure:150,next:440,hp:110,attack:260,hit:95,boss:80,vote:520};
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    const now=ctx.currentTime;
+    osc.type=name==='failure'||name==='boss'?'sawtooth':'sine';
+    osc.frequency.setValueAtTime(map[name]||440,now);
+    if(name==='success') osc.frequency.exponentialRampToValueAtTime(980,now+.14);
+    if(name==='failure') osc.frequency.exponentialRampToValueAtTime(90,now+.18);
+    gain.gain.setValueAtTime(Math.max(.0001,this.volume(mult)),now);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+.2);
+    osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now+.21);
+  }
   applyPrefs(){
-    if (this.music) this.music.volume=this.volume(.34);
+    if (this.music) this.music.volume=this.volume(.42);
     if (uiPrefs.audioMuted) this.music?.pause?.();
-    else if (this.unlocked) this.music?.play?.().catch(()=>{});
+    else if (this.unlocked && this.music) this.music.play().catch(err=>{ this.lastError=String(err?.message||err); });
   }
   fx(name, mult=1){
-    if (!this.unlocked || uiPrefs.audioMuted || !AUDIO_FILES.fx[name]) return;
+    if (uiPrefs.audioMuted || !AUDIO_FILES.fx[name]) return;
+    if (!this.unlocked) this.unlock();
     const now=performance.now();
     if (now-(this.lastFxAt.get(name)||0)<80) return;
     this.lastFxAt.set(name,now);
-    const a=new Audio(AUDIO_FILES.fx[name]);
-    a.volume=this.volume(mult);
-    a.play().catch(()=>{});
+    const base=this.fxPool.get(name);
+    const a=base ? base.cloneNode(true) : new Audio(AUDIO_FILES.fx[name]);
+    a.volume=this.volume(Math.min(1.2,mult));
+    const p=a.play();
+    if (p?.catch) p.catch(err=>{ this.lastError=String(err?.message||err); this.synthFallback(name,Math.min(.5,mult*.45)); });
   }
   wantedMusic(s){
     if (!s?.campaignId) return '';
     if (s.phase==='combat') return 'combat';
-    if (['prologue','story','resolution','ending'].includes(s.phase)) return s.campaignId;
+    if (['lobby','prologue','story','resolution','ending'].includes(s.phase)) return s.campaignId;
     return '';
   }
   syncMusic(s){
     if (!this.unlocked) return;
     const key=this.wantedMusic(s);
-    if (key===this.musicKey) { this.applyPrefs(); return; }
+    if (key===this.musicKey && this.music) { this.applyPrefs(); return; }
     if (this.music){ this.music.pause(); this.music.currentTime=0; }
     this.music=null; this.musicKey=key;
     const src=AUDIO_FILES.music[key];
     if (!src || uiPrefs.audioMuted) return;
-    const a=new Audio(src); a.loop=true; a.preload='auto'; a.volume=this.volume(.34);
-    this.music=a; a.play().catch(()=>{});
+    const a=new Audio(src); a.loop=true; a.preload='auto'; a.volume=this.volume(.42);
+    a.addEventListener('error',()=>{ this.lastError=`배경음 파일을 불러오지 못했습니다: ${src}`; },{once:true});
+    this.music=a;
+    a.play().catch(err=>{ this.lastError=String(err?.message||err); });
+  }
+  test(){
+    if (uiPrefs.audioMuted) { uiPrefs.audioMuted=false; saveUiPrefs(); }
+    if (uiPrefs.audioVolume < .25) { uiPrefs.audioVolume=.65; saveUiPrefs(); }
+    this.unlock();
+    this.fx('success',1);
+    setTimeout(()=>this.fx('dice',.95),280);
+    this.syncMusic(state);
+    return this.lastError;
   }
   onState(prev,next){
     this.syncMusic(next);
     if (!prev || !next) return;
-    if (prev.phase==='resolution' && next.phase==='story') this.fx('next',.9);
-    if (prev.phase==='prologue' && next.phase==='story') this.fx('next',.9);
+    if (prev.phase==='resolution' && next.phase==='story') this.fx('next',.95);
+    if (prev.phase==='prologue' && next.phase==='story') this.fx('next',.95);
     const prevPlayers=new Map((prev.players||[]).map(p=>[p.id,p]));
     const lostHp=(next.players||[]).some(p=>prevPlayers.has(p.id)&&Number(p.hp)<Number(prevPlayers.get(p.id).hp));
-    if (lostHp) { this.fx('hit',.7); setTimeout(()=>this.fx('hp',.9),90); }
+    if (lostHp) { this.fx('hit',.9); setTimeout(()=>this.fx('hp',1),100); }
     const prevMonster=prev.monster;
     const nextMonster=next.monster;
     if (prevMonster && nextMonster && Number(nextMonster.hp)<Number(prevMonster.hp)) this.fx('hit',1);
-    if (prevMonster?.turnPhase!=='boss' && nextMonster?.turnPhase==='boss') this.fx('boss',.9);
-    if (!prev.voteAllVotedCountdown && next.voteAllVotedCountdown) this.fx('vote',.75);
+    if (prevMonster?.turnPhase!=='boss' && nextMonster?.turnPhase==='boss') this.fx('boss',1);
+    if (!prev.voteAllVotedCountdown && next.voteAllVotedCountdown) this.fx('vote',1);
   }
 }
 
 const audioManager = new AudioManager();
 const unlockAudio=()=>audioManager.unlock();
-window.addEventListener('pointerdown',unlockAudio,{once:true,capture:true});
-window.addEventListener('keydown',unlockAudio,{once:true,capture:true});
+window.addEventListener('pointerdown',unlockAudio,{capture:true,passive:true});
+window.addEventListener('keydown',unlockAudio,{capture:true});
+window.addEventListener('touchstart',unlockAudio,{capture:true,passive:true});
 
 applyUiPrefs();
 
@@ -599,18 +651,21 @@ socket.on('chat:new', entry => {
     renderChat();
   }
 });
-socket.on('resolution', r => { audioManager.fx(r?.ok ? 'success' : 'failure', .9); showResolution(r); });
+socket.on('resolution', r => { showResolution(r); });
 socket.on('skill:ready', payload => toast(`✨ ${payload?.name || '직업 스킬'} 사용이 가능합니다!`));
+socket.on('skill:used', payload => { const combatKinds=new Set(['blast','markShot','partyAttackBoost','attackBoost']); audioManager.fx(combatKinds.has(payload?.kind)?'attack':'success',1); toast(`✨ ${payload?.playerName || '플레이어'} · ${payload?.name || '직업 스킬'} — ${payload?.summary || '효과 적용'}`); });
 socket.on('dice:roll', payload => { audioManager.fx('dice', .85); enqueueDice(payload); });
 
 function enqueueDice(payload) {
   diceQueue = diceQueue.then(async () => {
+    audioManager.unlock();
     const c = currentCampaign();
     $('#diceOverlay').classList.add('show');
     $('#diceRoller').textContent = `${payload.rollerName} · ${payload.kind?.toUpperCase() || 'ROLL'}`;
     $('#dicePurpose').textContent = payload.purpose;
     $('#diceFinal').textContent = '';
     $('#diceFinal').classList.remove('is-result');
+    $('#diceBreakdown').innerHTML = '';
     $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     const theater = getDiceTheater();
     if (theater) {
@@ -619,10 +674,36 @@ function enqueueDice(payload) {
       $('#diceSub').textContent = '3D 렌더러를 사용할 수 없어 결과를 바로 표시합니다.';
       await new Promise(r => setTimeout(r, 450));
     }
-    $('#diceFinal').textContent = payload.sides === 20 && payload.result === 20 ? 'NATURAL 20' : payload.sides === 20 && payload.result === 1 ? 'NATURAL 1' : `결과 ${payload.result}`;
+
+    const rawLabel = payload.sides === 20 && payload.result === 20 ? 'NATURAL 20' : payload.sides === 20 && payload.result === 1 ? 'NATURAL 1' : `D${payload.sides} ${payload.result}`;
+    $('#diceFinal').textContent = rawLabel;
     $('#diceFinal').classList.add('is-result');
-    $('#diceSub').textContent = payload.total != null ? `최종 ${payload.total} · 기준 ${payload.dc}${payload.damage ? ` · 피해 ${payload.damage}` : ''}` : '운명이 결정되었습니다.';
-    await new Promise(r => setTimeout(r, 1000));
+    $('#diceBreakdown').innerHTML = `<span class="roll-raw">원값 <b>${payload.result}</b></span>`;
+    $('#diceSub').textContent = '주사위 원값이 확정되었습니다.';
+
+    if (payload.total != null) {
+      await new Promise(r => setTimeout(r, 650));
+      const mods = Array.isArray(payload.modifiers) ? payload.modifiers : [];
+      let expression = `${payload.result}`;
+      for (const mod of mods) {
+        const value = Number(mod?.value || 0);
+        if (!value) continue;
+        expression += ` ${value >= 0 ? '+' : '−'} ${Math.abs(value)}`;
+        $('#diceBreakdown').insertAdjacentHTML('beforeend', `<span class="roll-plus">${value >= 0 ? '+' : '−'}</span><span class="roll-mod"><small>${esc(mod.label || '보정')}</small><b>${value >= 0 ? '+' : ''}${value}</b></span>`);
+        $('#diceSub').textContent = `${esc(mod.label || '보정')} ${value >= 0 ? '+' : ''}${value} 적용…`;
+        await new Promise(r => setTimeout(r, 520));
+      }
+      $('#diceBreakdown').insertAdjacentHTML('beforeend', `<span class="roll-equals">=</span><span class="roll-total"><small>최종</small><b>${payload.total}</b></span>`);
+      $('#diceFinal').textContent = `최종 ${payload.total}`;
+      const outcome = payload.success === true ? '성공' : payload.success === false ? '실패' : '확정';
+      $('#diceSub').textContent = `${expression} = ${payload.total}${payload.dc != null ? ` · 기준 ${payload.dc}` : ''}${payload.damage ? ` · 피해 ${payload.damage}` : ''} · ${outcome}`;
+      if (payload.success === true) audioManager.fx('success',1);
+      else if (payload.success === false) audioManager.fx('failure',1);
+      await new Promise(r => setTimeout(r, 1400));
+    } else {
+      $('#diceSub').textContent = '주사위 결과가 확정되었습니다.';
+      await new Promise(r => setTimeout(r, 950));
+    }
     $('#diceOverlay').classList.remove('show');
     await new Promise(r => setTimeout(r, 180));
   }).catch(console.error);
@@ -694,7 +775,7 @@ function renderLobby() {
   if (!p?.job) {
     cs.innerHTML = '<div class="unassigned"><div><div style="font-size:42px;color:var(--accent)">◇</div><p>D6을 굴리면 이 세계의 여섯 직업 중 하나가 당신을 선택합니다. 각 스토리마다 직업/능력치는 한 번만 정할 수 있습니다.</p></div></div>';
   } else {
-    cs.innerHTML = `<div class="job-big"><div class="job-rune">${state.campaign?.icon || '◆'}</div><div class="eyebrow">${p.job.prime} SPECIALIST</div><h3>${esc(p.job.name)}</h3><p>${esc(p.job.skill)}</p></div>${p.abilities ? `<div class="stats-compact">${Object.entries(p.abilities).map(([k, v]) => `<div class="stat-mini"><span>${k}</span><b>${v.total}</b><em>${signedMod(v.total)}</em></div>`).join('')}</div>` : '<div class="unassigned"><p>직업이 정해졌습니다. 이제 4D6으로 능력치를 생성하세요.</p></div>'}`;
+    cs.innerHTML = `<div class="job-big"><div class="job-rune">${state.campaign?.icon || '◆'}</div><div class="eyebrow">${p.job.prime} SPECIALIST</div><h3>${esc(p.job.name)}</h3><p><b>${esc(p.job.skillDef?.name || String(p.job.skill || '').split(':')[0])}</b> · ${esc(p.job.skillDef?.text || p.job.skill || '')}</p></div>${p.abilities ? `<div class="stats-compact">${Object.entries(p.abilities).map(([k, v]) => `<div class="stat-mini"><span>${k}</span><b>${v.total}</b><em>${signedMod(v.total)}</em></div>`).join('')}</div>` : '<div class="unassigned"><p>직업이 정해졌습니다. 이제 4D6으로 능력치를 생성하세요.</p></div>'}`;
   }
   $('#rollClassBtn').disabled = !state.campaignId || !!p?.job;
   $('#rollStatsBtn').disabled = !p?.job || !!p?.abilities;
@@ -1137,6 +1218,7 @@ $('#themeLightBtn').onclick = () => { uiPrefs.theme = 'light'; saveUiPrefs(); to
 $('#chatSizeRange').oninput = e => { uiPrefs.chatSize = Number(e.target.value); saveUiPrefs(); };
 $('#audioVolumeRange').oninput = e => { uiPrefs.audioVolume = Math.max(0, Math.min(1, Number(e.target.value)/100)); if (uiPrefs.audioVolume > 0) uiPrefs.audioMuted = false; saveUiPrefs(); audioManager.unlock(); audioManager.syncMusic(state); };
 $('#audioMuteBtn').onclick = () => { uiPrefs.audioMuted = !uiPrefs.audioMuted; saveUiPrefs(); audioManager.unlock(); audioManager.syncMusic(state); toast(uiPrefs.audioMuted ? '게임 사운드를 껐습니다.' : '게임 사운드를 켰습니다.'); };
+$('#audioTestBtn').onclick = () => { const err=audioManager.test(); toast(err ? `사운드 테스트 실행 · ${err}` : '사운드 테스트: 성공음과 주사위 소리가 들리면 정상입니다.'); };
 $('#uiResetBtn').onclick = () => { uiPrefs = { ...UI_DEFAULTS }; saveUiPrefs(); toast('화면 설정을 기본값으로 되돌렸습니다.'); };
 $('#abandonRequestBtn').onclick = () => socket.emit('game:abandonRequest', { roomCode, playerToken }, r => { if (!r?.ok) toast(r.error); else toast('포기 투표를 시작했습니다.'); });
 $('#abandonYes').onclick = () => socket.emit('game:abandonRespond', { roomCode, playerToken, approve: true }, r => !r?.ok && toast(r.error));

@@ -298,51 +298,75 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
   const actNo = act + 1;
   const phase = beat.phase || ['도입','대면','진실','위기','결단'][step] || '장면';
   const anchor = sceneAnchor(guide.place || beat.situation || beat.text || c.title);
-  const reveal = storyPhrase(guide.reveal || beat.reveal || beat.text || '진실');
+  const goal = storyPhrase(guide.goal || beat.objective || '목표');
+  const reveal = storyPhrase(guide.reveal || beat.reveal || '진실');
   const stakes = storyPhrase(guide.stakes || beat.stakes || c.intro);
-  const contextual = contextualActions(c, `${beat.title} ${beat.text || ''}`);
-  const branchByIndex = ['careful','bold','empathetic'];
-  const prefixByPhase = {
-    '도입': ['정황을 침착하게 정리하며','상황을 먼저 장악하기 위해','현장 인물과 관계를 열기 위해'],
-    '대면': ['핵심 장면을 직접 마주하며','위험이 커지기 전에 선수를 치기 위해','상대의 입을 열게 만들기 위해'],
-    '진실': ['방금 드러난 단서를 검증하며','결정적 물증을 놓치지 않기 위해','엇갈린 증언을 한 줄기로 묶기 위해'],
-    '위기': ['무너지는 상황을 붙들기 위해','가장 위험한 지점을 먼저 뚫기 위해','동료와 협력자를 잃지 않기 위해'],
-    '결단': ['다음 막으로 이어질 방향을 정하기 위해','돌파구를 직접 열어젖히기 위해','누구와 무엇을 지킬지 분명히 하기 위해'],
+  const flavor = {
+    ember: {
+      careful:['봉인 흔적과 왕가 문장을 서로 대조한다','왕묘와 성채의 기록에서 누락된 이름을 찾는다','왕관의 마력이 남긴 방향을 추적한다'],
+      bold:['봉인된 길을 강제로 열고 가장 먼저 안쪽으로 들어간다','죽은 기사들의 행렬을 따라 위험 지역을 정면 돌파한다','왕관에 반응하는 물건을 직접 건드려 판을 흔든다'],
+      empathetic:['마을 사람·사제·귀족에게 말을 걸어 숨긴 증언을 끌어낸다','망령이 공격하지 않는 이유를 관찰하고 대화를 시도한다','서로 의심하는 사람들을 진정시켜 협력을 만든다'],
+    },
+    neon: {
+      careful:['로그 시간표와 삭제 흔적을 맞춰 진짜 기록을 복구한다','도시 감시망의 사각지대를 계산해 원본 데이터를 좁힌다','서로 다른 기억 조각의 불일치를 비교한다'],
+      bold:['추적망이 닫히기 전에 보안 노드를 뚫고 안으로 침투한다','도망치는 거래자나 드론을 끝까지 추격해 증거를 빼앗는다','위험한 백도어를 직접 열어 숨겨진 시스템을 깨운다'],
+      empathetic:['기억을 잃은 시민과 거래자에게 신뢰를 얻어 증언을 모은다','상대가 원하는 대가를 짚어 협상을 유리하게 이끈다','파티를 의심하는 사람들을 설득해 안전한 협력선을 만든다'],
+    },
+    abyss: {
+      careful:['산소·압력·소나 기록을 함께 비교해 이상 발생 지점을 찾는다','기지 로그와 생체 반응을 대조해 누가 먼저 움직였는지 추적한다','관측창과 균열의 신호 패턴을 분석한다'],
+      bold:['잠긴 압력문을 열고 가장 위험한 구역부터 직접 확인한다','산소가 떨어지기 전에 침수 통로를 빠르게 돌파한다','고장 난 장비를 현장에서 강제로 복구해 길을 만든다'],
+      empathetic:['겁에 질린 생존자를 안정시키고 숨겨 둔 증언을 듣는다','심해 신호에 즉시 적대하지 않고 반응을 관찰한다','서로 다른 구조 우선순위를 조율해 동료를 잃지 않는다'],
+    },
+    clock: {
+      careful:['이전 루프와 지금의 차이를 기록해 바뀐 한 지점을 찾는다','시계 장치와 예언 기록의 시간 오차를 비교한다','사라진 거리와 사람의 공통 규칙을 좁혀 간다'],
+      bold:['시간이 멈춘 틈을 이용해 금지된 구역으로 먼저 뛰어든다','루프가 닫히기 전에 문제의 장치를 강제로 멈춘다','역행하는 길을 정면으로 타고 사건 중심으로 들어간다'],
+      empathetic:['루프를 기억하는 사람들을 찾아 서로의 기억을 맞춘다','공포에 질린 시민을 설득해 사라진 사람의 흔적을 모은다','종지기와 밀수꾼의 이유를 먼저 듣고 진짜 목적을 확인한다'],
+    },
+    wild: {
+      careful:['별가루·뿌리·짐승 흔적을 읽어 숲이 바뀌는 규칙을 찾는다','두 부족의 기록과 별빛 반응을 비교한다','숲의 심장이 끌어당기는 마력 흐름을 추적한다'],
+      bold:['움직이는 숲길이 닫히기 전에 앞질러 중심부로 들어간다','오염된 야수의 길을 뚫고 위험 지역을 정면 돌파한다','별철과 신수의 힘을 직접 시험해 길을 연다'],
+      empathetic:['말하는 고목과 야수에게 해를 끼치지 않고 의사를 묻는다','두 부족의 두려움과 요구를 듣고 충돌을 중재한다','오르바와 숲을 적으로 단정하지 않고 행동의 이유를 살핀다'],
+    },
+  }[c.id] || {};
+  const branchOrder=['careful','bold','empathetic'];
+  const phaseLead={
+    '도입':['첫 단서를 잡기 위해','사건이 커지기 전에','현장에 있는 이들의 경계를 풀기 위해'],
+    '대면':['눈앞의 장면을 정확히 이해하려','주도권을 빼앗기지 않기 위해','상대의 반응에서 진짜 이유를 끌어내기 위해'],
+    '진실':['방금 드러난 사실을 검증하려','결정적 증거가 사라지기 전에','엇갈린 증언을 하나의 흐름으로 묶기 위해'],
+    '위기':['혼란 속에서도 핵심 단서를 지키려','지금 당장 위험을 뚫고 나가기 위해','동료와 협력자를 잃지 않기 위해'],
+    '결단':['다음 막의 방향을 정하려','망설임을 끝내고 길을 열기 위해','누구와 무엇을 지킬지 분명히 하기 위해'],
+  }[phase] || ['','',''];
+  const statMap={
+    careful:{ember:'지능',neon:'지능',abyss:'지혜',clock:'지혜',wild:'지혜'},
+    bold:{ember:'근력',neon:'민첩',abyss:'체력',clock:'민첩',wild:'민첩'},
+    empathetic:{ember:'매력',neon:'매력',abyss:'매력',clock:'매력',wild:'매력'},
   };
-  const detailByPhase = {
-    '도입':'이 장면이 무엇을 요구하는지 먼저 파악한다.',
-    '대면':'사건의 중심과 처음 맞부딪히는 장면이다.',
-    '진실':'정보를 연결해 진짜 흐름을 읽어내야 한다.',
-    '위기':'실패하면 피해와 상태이상이 남을 수 있다.',
-    '결단':'이번 선택이 다음 장면의 분위기와 연결 방향을 만든다.',
-  };
-  const dcBase = 10 + Math.max(0, actNo - 1) + (phase === '위기' ? 2 : phase === '결단' ? 1 : 0);
-  return [0,1,2].map(choiceIndex => {
-    const action = contextual[choiceIndex] || eventStyles[c.id].actions[choiceIndex];
-    const stat = action[1];
-    const label = `${prefixByPhase[phase]?.[choiceIndex] || ''} ${action[0]}`.trim();
-    const branchValue = branchByIndex[choiceIndex];
-    const good = branchValue === 'careful'
-      ? `${anchor}에서 얻은 단서들이 질서 있게 연결되며 ${reveal} 쪽으로 시야가 또렷하게 열린다.`
-      : branchValue === 'bold'
-        ? `과감한 선택이 판을 움직였다. 파티는 주도권을 쥔 채 ${anchor}의 위험을 밀어내고 앞으로 치고 나간다.`
-        : `대화와 공감이 길을 만들었다. 경계하던 인물과 현장이 파티에게 협조하며 ${reveal}의 의미가 살아난다.`;
-    const bad = branchValue === 'careful'
-      ? '정황을 읽는 과정에서 중요한 순서를 놓쳤다. 잘못 정리된 정보가 파티를 잠시 빗나가게 만든다.'
-      : branchValue === 'bold'
-        ? '과감한 돌파는 했지만 대가가 컸다. 위험을 뚫는 동안 파티가 직접 상처와 소모를 떠안는다.'
-        : '관계를 열려던 시도는 완전히 먹히지 않았다. 상대는 망설이거나 거짓을 섞어 더 불안한 기류를 남긴다.';
+  const dcBase=10+actNo+(phase==='위기'?2:phase==='결단'?1:0);
+  return branchOrder.map((branchValue,i)=>{
+    const pool=flavor[branchValue] || ['현재 장면의 핵심을 확인한다'];
+    const action=pool[(act+step+i)%pool.length];
+    const stat=statMap[branchValue]?.[c.id] || ['지능','민첩','매력'][i];
+    const success=branchValue==='careful'
+      ? `${anchor}의 단서가 서로 맞물린다. ${reveal}라는 사실에 가까워지며, 파티는 다음 장면을 더 정확한 정보와 함께 맞는다.`
+      : branchValue==='bold'
+        ? `위험을 감수한 행동이 흐름을 바꾼다. 파티는 ${anchor}에서 주도권을 얻고 ${goal}을 향해 한발 먼저 움직인다.`
+        : `상대의 경계가 풀리고 새로운 협력선이 열린다. 사람들의 증언이 ${reveal}와 연결되며 다음 장면의 선택지가 넓어진다.`;
+    const failure=branchValue==='careful'
+      ? `단서를 너무 늦게 연결했다. 잘못 읽은 정보가 발목을 잡고, ${stakes}`
+      : branchValue==='bold'
+        ? `길은 열었지만 대가가 컸다. 파티가 직접 상처와 소모를 떠안았고, ${stakes}`
+        : `신뢰를 얻지 못했다. 상대는 더 입을 닫거나 거짓을 섞었고, ${stakes}`;
     return {
-      id: `${beat.id}-CHOICE-${choiceIndex + 1}`,
-      label,
-      detail: `${detailByPhase[phase]} · 요구 능력치: ${stat}`,
+      id:`${beat.id}-CHOICE-${i+1}`,
+      label:`「${beat.actName}」 ${phaseLead[i]} ${action}`.trim(),
+      detail:`${phase} 장면 전용 행동 · 요구 능력치: ${stat}`,
       stat,
-      dc: dcBase + choiceIndex,
-      path: statPath(stat),
-      branchKey: `act${actNo}`,
+      dc:Math.min(18, dcBase+i),
+      path:statPath(stat),
+      branchKey:`act${actNo}`,
       branchValue,
-      success: `${good} 이제 다음 장면에서 “${guide.goal}”에 한 걸음 더 가까워진다.`,
-      failure: `${bad} ${stakes}`,
+      success,
+      failure,
     };
   });
 }

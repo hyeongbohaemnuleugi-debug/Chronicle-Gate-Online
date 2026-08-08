@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.10.2-flow-combat-vote.0';
+const APP_VERSION = '4.11.0-master-story-audio.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -163,11 +163,26 @@ function normalizeLoadedRoom(room) {
   room.storyDetour ||= null;
   room.narrativeState ||= { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
   room.narrativeLedger ||= { threads: [], routeShifts: [], jobThreads: {} };
+  room.storySeenIds ||= [];
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
     return room;
   }
+
+  // v4.11: rebuild the consumed-story ledger from persisted history/cursor.
+  // This makes old rooms safe even if an earlier version repeated or rewound the cursor.
+  const validStoryIds = new Set(campaign.storyBeats.map(beat => beat.id));
+  const inferredSeen = new Set((room.storySeenIds || []).filter(id => validStoryIds.has(id)));
+  for (const item of room.storyHistory || []) {
+    if (!item?.isDetour && item?.beatId && validStoryIds.has(item.beatId)) inferredSeen.add(item.beatId);
+  }
+  const cursor = Math.max(0, Math.min(TARGET_STORY, Number(room.story || 0)));
+  for (let i = 0; i < cursor; i += 1) {
+    const id = campaign.storyBeats[i]?.id;
+    if (id) inferredSeen.add(id);
+  }
+  room.storySeenIds = [...inferredSeen];
 
   const byId = new Map(campaign.events.map(event => [event.id, event]));
   const used = new Set((room.discard || []).map(event => event?.id).filter(Boolean));
@@ -218,6 +233,7 @@ async function createRoom(hostName, socketId) {
     storyDetour: null,
     narrativeState: { boon: null, lastRoute: null, routeStreak: 0, detours: 0 },
     narrativeLedger: { threads: [], routeShifts: [], jobThreads: {} },
+    storySeenIds: [],
     chat: [], lastResolution: null, ending: null,
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
   };
@@ -858,6 +874,31 @@ function jobStoryContinuity(room, playerName) {
   return `${status} ${last.narrative || ''}`.trim();
 }
 
+function nextUnseenStoryIndex(room, campaign) {
+  if (!campaign?.storyBeats?.length) return -1;
+  room.storySeenIds ||= [];
+  const seen = new Set(room.storySeenIds);
+  let index = Math.max(0, Number(room.story || 0));
+  while (index < TARGET_STORY && seen.has(campaign.storyBeats[index]?.id)) index += 1;
+  // If an old save has a broken cursor, recover by finding the first unseen chapter anywhere.
+  if (index >= TARGET_STORY && seen.size < TARGET_STORY) {
+    index = campaign.storyBeats.findIndex(beat => beat?.id && !seen.has(beat.id));
+  }
+  if (index < 0 || index >= TARGET_STORY) return -1;
+  room.story = index;
+  return index;
+}
+
+function consumeStoryBeat(room, campaign, beat) {
+  if (!beat?.id || beat.isDetour) return;
+  room.storySeenIds ||= [];
+  if (!room.storySeenIds.includes(beat.id)) room.storySeenIds.push(beat.id);
+  const index = campaign.storyBeats.findIndex(item => item.id === beat.id);
+  room.story = Math.max(Number(room.story || 0), index >= 0 ? index + 1 : Number(beat.chapter || 0));
+  const next = nextUnseenStoryIndex(room, campaign);
+  if (next < 0) room.story = TARGET_STORY;
+}
+
 function renderedStoryBeat(room, campaign) {
   if (room.storyDetour) {
     const detour = JSON.parse(JSON.stringify(room.storyDetour));
@@ -865,7 +906,9 @@ function renderedStoryBeat(room, campaign) {
     injectJobStoryChoices(room, campaign, detour);
     return detour;
   }
-  const base = campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)];
+  const storyIndex = nextUnseenStoryIndex(room, campaign);
+  if (storyIndex < 0) return null;
+  const base = campaign?.storyBeats?.[storyIndex];
   if (!base) return null;
   const beat = JSON.parse(JSON.stringify(base));
   const history = room.storyHistory || [];
@@ -1049,6 +1092,7 @@ function publicRoom(room) {
     jobStory: room.jobStory || {},
     abandonVote: room.abandonVote || null,
     targetStory: TARGET_STORY,
+    storySeenCount: room.storySeenIds?.length || 0,
     maxThreat: MAX_THREAT,
     revision: room.revision,
     chat: room.chat.slice(-120),
@@ -1741,6 +1785,7 @@ io.on('connection', socket => {
     room.storyDetour = null;
     room.narrativeState = { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
     room.narrativeLedger = { threads: [], routeShifts: [], jobThreads: {} };
+    room.storySeenIds = [];
     room.pendingContinue = null;
     room.failureCount = 0;
     room.jobStory = {};
@@ -1820,7 +1865,7 @@ io.on('connection', socket => {
       room.storyHistory ||= [];
       room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title });
       if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
-      room.story += 1;
+      consumeStoryBeat(room, campaign, beat);
       room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0) + 1;
       room.lastResolution = {
         source:'story', ok:true, roleplay:true,
@@ -1909,7 +1954,7 @@ io.on('connection', socket => {
     if (isDetour) {
       room.narrativeState.detours = Number(room.narrativeState.detours || 0) + 1;
     } else {
-      room.story += 1;
+      consumeStoryBeat(room, campaign, beat);
       if (!success && (margin <= -5 || roll === 1) && room.story < TARGET_STORY) {
         room.storyDetour = buildDetourScene(campaign, room, choice, player, status);
       }

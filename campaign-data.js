@@ -309,10 +309,10 @@ function roleplayPromptFor(c, chapter, act, step) {
       prompt: asks[c.id],
       placeholder: '예: 커피',
       responseTemplate: '“그래, 자네 이름은 {{value}}군.” 그 한마디가 장면 속에 새겨졌다.',
-      help: '중요한 판정은 아니지만, 지금 적는 말은 이후 이야기 문장에 반영됩니다.'
+      help: '짧은 말이지만 이후 NPC 대사와 장면 문장에 실제로 반영됩니다.'
     };
   }
-  if (chapter === 14) {
+  if (chapter === 19) {
     const asks = {
       ember: '봉인 앞에서 동료가 숨을 고르며 묻는다. “끝까지 가는 이유가 뭐지?”',
       neon: '코어실 직전, 누군가 낮게 묻는다. “네가 되찾고 싶은 건 기억이야, 진실이야, 아니면 사람인가?”',
@@ -326,78 +326,103 @@ function roleplayPromptFor(c, chapter, act, step) {
       prompt: asks[c.id],
       placeholder: '예: 모두가 살아남는 내일',
       responseTemplate: '그 대답은 곧 결단의 기준이 된다. “좋아. {{value}}를 위해 움직이는 거군.”',
-      help: '대답은 이후 장면과 엔딩 문장에 반영됩니다.'
+      help: '대답은 이후 후반부 장면과 엔딩 문장에 반영됩니다.'
     };
   }
   return null;
 }
 
+
 function buildStoryChoices(c, guide, beat, act, step, index) {
   const actNo = act + 1;
-  const phase = ['도입','진실','위기','결단'][step];
+  const phase = beat.phase || ['도입','대면','진실','위기','결단'][step] || '장면';
   const anchor = sceneAnchor(guide.place || beat.situation || beat.text || c.title);
   const reveal = storyPhrase(guide.reveal || beat.reveal || beat.text || '진실');
   const stakes = storyPhrase(guide.stakes || beat.stakes || c.intro);
-  const tone = storyTone[c.id]?.[Math.min(act, (storyTone[c.id] || []).length - 1)] || c.intro;
-  const dcBase = 10 + Math.max(0, actNo - 1) + (step === 2 ? 1 : 0);
-  const sets = {
-    '도입': [
-      { stat:'지능', label:`${anchor}의 기록·장치·문양을 대조해 첫 단서를 확보한다`, detail:`${tone}의 출발점이 되는 규칙과 구조를 분석한다.`, success:`분석이 맞아떨어졌다. ${anchor}에 남은 흔적이 서로 이어지며 다음 단서가 선명해진다.`, failure:`분석 도중 핵심 징후를 잘못 읽었다. 파티는 잘못된 전제를 붙든 채 위험한 준비를 하게 된다.` },
-      { stat:'지혜', label:`${anchor} 주변의 기척과 흔적을 먼저 훑어 위험의 흐름을 읽는다`, detail:`눈에 보이지 않는 변화와 징후를 먼저 파악한다.`, success:`기척을 정확히 읽었다. ${reveal}와 연결되는 미세한 흔적이 파티를 올바른 방향으로 이끈다.`, failure:`놓친 징후가 있었다. 누군가 혹은 무언가가 파티보다 한발 앞서 움직이며 불길한 여파를 남긴다.` },
-      { stat:'매력', label:`${anchor}에서 만난 인물에게 말을 걸어 숨긴 사실을 끌어낸다`, detail:`긴장을 누그러뜨리거나 신뢰를 얻어 정보를 이끌어낸다.`, success:`대화의 실마리가 열렸다. 상대는 경계심을 풀고 ${reveal}와 맞닿은 증언을 건넨다.`, failure:`말의 타이밍이 어긋났다. 상대는 입을 다물고, 파티는 의심을 산 채 다음 장면으로 밀려난다.` },
-    ],
-    '진실': [
-      { stat:'지능', label:`방금 드러난 사실과 ${anchor}의 증거를 교차 검증한다`, detail:`새로운 진실이 함정인지 돌파구인지 판별한다.`, success:`교차 검증이 성공했다. 흩어져 있던 정보가 맞물리며 ${reveal}의 의미가 또렷해진다.`, failure:`증거 연결이 어긋났다. 가짜 정보가 섞여 들어오며 이후 판단이 흐려진다.` },
-      { stat:'민첩', label:`누군가 증거를 치우기 전에 먼저 움직여 결정적 단서를 확보한다`, detail:`현장이 바뀌기 전에 빠르게 핵심 물건·문서·통로를 선점한다.`, success:`한발 빨랐다. 사라지기 직전의 핵심 단서를 선점해 다음 장면의 주도권을 잡는다.`, failure:`한순간 늦었다. 단서는 훼손되거나 도망치고, 파티는 불완전한 정보만 쥔 채 추적해야 한다.` },
-      { stat:'매력', label:`증언이 엇갈리는 인물들 사이에서 진짜 의도를 말하게 만든다`, detail:`거짓말과 망설임을 밀어내고 필요한 고백을 받아낸다.`, success:`상대가 끝내 입을 열었다. 숨어 있던 동기와 배신의 방향이 드러난다.`, failure:`압박이 지나쳤다. 상대는 더 강하게 숨거나 거짓을 덧씌워, 파티에 불신만 남긴다.` },
-    ],
-    '위기': [
-      { stat:'근력', label:`눈앞의 위협을 정면으로 막아 핵심 단서와 동료를 지켜낸다`, detail:`버티고 밀어붙이며 무너지는 상황을 붙든다.`, success:`정면 돌파가 통했다. 파티는 중요한 것을 잃지 않고 위기를 비틀어 돌파한다.`, failure:`힘겨루기에서 밀렸다. 구조물·장비·진형이 무너지고 파티가 직접 대가를 떠안는다.` },
-      { stat:'민첩', label:`혼란이 번지기 전에 우회로를 열어 가장 위험한 지점을 먼저 장악한다`, detail:`빠른 발과 타이밍으로 위기 속 틈을 만든다.`, success:`움직임이 완벽했다. 파티는 가장 불리한 위치를 선점하며 반격의 틈을 만든다.`, failure:`발이 꼬였다. 위험 지역에 발이 묶이고 적이나 환경의 압박이 더 커진다.` },
-      { stat:'체력', label:`환경의 압박을 견디며 모두가 빠져나올 시간을 번다`, detail:`버티고 감싸며 파티 전체가 무너지지 않게 만든다.`, success:`끝까지 버텨 냈다. 파티는 큰 붕괴 없이 한 호흡의 여유를 되찾는다.`, failure:`부담이 몸으로 몰려온다. 지친 상태로 다음 장면을 맞으며 움직임이 둔해진다.` },
-    ],
-    '결단': [
-      { stat:'매력', label:`지금까지 모은 진실을 바탕으로 동맹 또는 핵심 인물을 설득한다`, detail:`다음 막으로 가기 위해 누구를 믿고 끌어안을지 정한다.`, success:`말이 먹혀들었다. 파티는 믿을 수 있는 협력자와 방향을 함께 확보한다.`, failure:`설득은 반쪽짜리였다. 파티는 도움을 얻지 못한 채 더 큰 의심을 안고 나아간다.` },
-      { stat:'지혜', label:`얻은 정보의 무게를 재며 가장 위험이 적은 다음 길을 골라낸다`, detail:`성급한 선택 대신 흐름과 징후를 비교해 방향을 정한다.`, success:`판단이 정확했다. 다음 장면으로 이어질 실마리와 안전한 접근 순서를 동시에 붙잡는다.`, failure:`잘못 본 징후가 파티를 돌아가게 만든다. 더 거친 상황과 마주칠 준비가 필요해진다.` },
-      { stat:'근력', label:`망설임을 끝내고 길을 직접 열어 다음 막으로 돌입한다`, detail:`행동으로 결론을 밀어붙이며 흐름을 끊기지 않게 만든다.`, success:`결단이 판을 열었다. 파티는 주도권을 쥔 채 다음 막의 문턱을 넘는다.`, failure:`너무 이른 돌입이었다. 길은 열렸지만 소모가 커져 다음 장면이 더 불안해진다.` },
-    ]
+  const contextual = contextualActions(c, `${beat.title} ${beat.text || ''}`);
+  const branchByIndex = ['careful','bold','empathetic'];
+  const prefixByPhase = {
+    '도입': ['정황을 침착하게 정리하며','상황을 먼저 장악하기 위해','현장 인물과 관계를 열기 위해'],
+    '대면': ['핵심 장면을 직접 마주하며','위험이 커지기 전에 선수를 치기 위해','상대의 입을 열게 만들기 위해'],
+    '진실': ['방금 드러난 단서를 검증하며','결정적 물증을 놓치지 않기 위해','엇갈린 증언을 한 줄기로 묶기 위해'],
+    '위기': ['무너지는 상황을 붙들기 위해','가장 위험한 지점을 먼저 뚫기 위해','동료와 협력자를 잃지 않기 위해'],
+    '결단': ['다음 막으로 이어질 방향을 정하기 위해','돌파구를 직접 열어젖히기 위해','누구와 무엇을 지킬지 분명히 하기 위해'],
   };
-  return sets[phase].map((item, choiceIndex) => ({
-    id: `${beat.id}-CHOICE-${choiceIndex + 1}`,
-    label: item.label,
-    detail: item.detail,
-    stat: item.stat,
-    dc: dcBase + choiceIndex,
-    path: statPath(item.stat),
-    branchKey: `act${actNo}`,
-    branchValue: ['careful','bold','empathetic'][choiceIndex],
-    success: item.success,
-    failure: `${item.failure} 또한 ${stakes}`,
-  }));
+  const detailByPhase = {
+    '도입':'이 장면이 무엇을 요구하는지 먼저 파악한다.',
+    '대면':'사건의 중심과 처음 맞부딪히는 장면이다.',
+    '진실':'정보를 연결해 진짜 흐름을 읽어내야 한다.',
+    '위기':'실패하면 피해와 상태이상이 남을 수 있다.',
+    '결단':'이번 선택이 다음 장면의 분위기와 연결 방향을 만든다.',
+  };
+  const dcBase = 10 + Math.max(0, actNo - 1) + (phase === '위기' ? 2 : phase === '결단' ? 1 : 0);
+  return [0,1,2].map(choiceIndex => {
+    const action = contextual[choiceIndex] || eventStyles[c.id].actions[choiceIndex];
+    const stat = action[1];
+    const label = `${prefixByPhase[phase]?.[choiceIndex] || ''} ${action[0]}`.trim();
+    const branchValue = branchByIndex[choiceIndex];
+    const good = branchValue === 'careful'
+      ? `${anchor}에서 얻은 단서들이 질서 있게 연결되며 ${reveal} 쪽으로 시야가 또렷하게 열린다.`
+      : branchValue === 'bold'
+        ? `과감한 선택이 판을 움직였다. 파티는 주도권을 쥔 채 ${anchor}의 위험을 밀어내고 앞으로 치고 나간다.`
+        : `대화와 공감이 길을 만들었다. 경계하던 인물과 현장이 파티에게 협조하며 ${reveal}의 의미가 살아난다.`;
+    const bad = branchValue === 'careful'
+      ? '정황을 읽는 과정에서 중요한 순서를 놓쳤다. 잘못 정리된 정보가 파티를 잠시 빗나가게 만든다.'
+      : branchValue === 'bold'
+        ? '과감한 돌파는 했지만 대가가 컸다. 위험을 뚫는 동안 파티가 직접 상처와 소모를 떠안는다.'
+        : '관계를 열려던 시도는 완전히 먹히지 않았다. 상대는 망설이거나 거짓을 섞어 더 불안한 기류를 남긴다.';
+    return {
+      id: `${beat.id}-CHOICE-${choiceIndex + 1}`,
+      label,
+      detail: `${detailByPhase[phase]} · 요구 능력치: ${stat}`,
+      stat,
+      dc: dcBase + choiceIndex,
+      path: statPath(stat),
+      branchKey: `act${actNo}`,
+      branchValue,
+      success: `${good} 이제 다음 장면에서 “${guide.goal}”에 한 걸음 더 가까워진다.`,
+      failure: `${bad} ${stakes}`,
+    };
+  });
+}
+
+
+function buildBridgeScene(c, guide, act) {
+  const branch = storyTone[c.id]?.[Math.min(act, (storyTone[c.id] || []).length - 1)] || guide.goal;
+  return `${sceneAnchor(guide.place)}에서 파티는 본격적으로 장면의 중심과 마주 선다. 지금 당장 해야 할 일은 “${guide.goal}”. ${branch}라는 흐름이 분명해지고, 눈앞의 인물·장치·흔적이 모두 같은 질문으로 수렴한다. 잘못 건드리면 ${guide.stakes}.`;
 }
 
 function buildStoryBeats(c){
   const beats=[];
-  const phases=["도입","진실","위기","결단"];
+  const phases=['도입','대면','진실','위기','결단'];
   const guides=actGuides[c.id];
   const scripts=novelActs[c.id];
   for(let act=0;act<5;act++){
     const guide=guides[act];
     const script=scripts[act];
-    const prose=[script.intro,script.discovery,script.crisis,script.climax];
-    for(let step=0;step<4;step++){
-      const index=act*4+step;
+    const prose=[script.intro, buildBridgeScene(c, guide, act), script.discovery, script.crisis, script.climax];
+    for(let step=0;step<5;step++){
+      const index=act*5+step;
       const chapter=index+1;
-      const objective = step===0 ? guide.goal : step===1 ? `방금 드러난 진실을 검증하고 다음 단서를 연결한다` : step===2 ? `위기를 넘기되 핵심 단서와 동료를 잃지 않는다` : `이번 막에서 얻은 진실을 바탕으로 다음 막으로 넘어갈 결정을 만든다`;
-      const why = step===0 ? guide.stakes : step===1 ? `이 사실이 맞다면 지금까지의 사건을 바라보는 전제가 바뀐다.` : step===2 ? `여기서의 실패는 단순한 지연이 아니라 이후 장면의 위협과 상태이상을 남길 수 있다.` : `이번 결단이 다음 막에서 누구를 믿고 무엇을 포기할지 결정한다.`;
+      const phase=phases[step];
+      const objective = step===0 ? guide.goal
+        : step===1 ? '지금 눈앞에 펼쳐진 장면의 중심을 직접 마주하고, 무엇을 먼저 건드려야 하는지 정한다'
+        : step===2 ? '방금 드러난 진실이 맞는지 검증하고 다음 단서를 연결한다'
+        : step===3 ? '위기를 넘기되 핵심 단서와 동료를 잃지 않는다'
+        : '이번 막에서 얻은 진실을 바탕으로 다음 막으로 넘어갈 결정을 만든다';
+      const why = step===0 ? guide.stakes
+        : step===1 ? '지금 장면에서 무엇을 선택하느냐가 이후 흐름의 색을 결정한다.'
+        : step===2 ? '이 사실이 맞다면 지금까지의 사건을 바라보는 전제가 바뀐다.'
+        : step===3 ? '여기서의 실패는 단순한 지연이 아니라 이후 장면의 위협과 상태이상을 남길 수 있다.'
+        : '이번 결단이 다음 막에서 누구를 믿고 무엇을 포기할지 결정한다.';
       const roleplayPrompt = roleplayPromptFor(c, chapter, act, step);
       const beat = {
-        id:`${c.id.toUpperCase()}-STORY-${String(index+1).padStart(2,"0")}`,
+        id:`${c.id.toUpperCase()}-STORY-${String(index+1).padStart(2,'0')}`,
         act:act+1,
         actName:c.acts[act],
         chapter,
-        phase:phases[step],
-        title:`${c.acts[act]} · ${phases[step]}`,
+        phase,
+        title:`${c.acts[act]} · ${phase}`,
         text:prose[step],
         situation:prose[step],
         objective,
@@ -407,13 +432,14 @@ function buildStoryBeats(c){
         stakes:guide.stakes,
         visual:`${eventStyles[c.id].visuals[(act*2+step)%eventStyles[c.id].visuals.length]} · ${c.acts[act]}`,
         roleplayPrompt,
+        branchContext: step === 0 ? { fromAct: Math.max(0, act), summaries: { careful:'앞선 막에서 차분히 모은 기록과 단서가 이번 시작을 더 정교하게 만든다.', bold:'앞선 막의 강행 돌파 여파가 남아 이번 시작은 더 거칠고 급박하다.', empathetic:'앞선 막에서 얻은 신뢰와 협력이 이번 시작의 든든한 발판이 된다.' } } : null,
         roleHooks:{
-          "근력":`힘으로 길을 열거나 위험한 존재를 붙잡아 동료가 움직일 시간을 벌 수 있다.`,
-          "민첩":`남들이 접근하기 어려운 위치로 먼저 들어가 물건·통로·증거를 확보할 수 있다.`,
-          "지능":`장치, 기록, 마법, 생체 신호의 원리를 분석해 숨은 규칙을 찾아낼 수 있다.`,
-          "지혜":`말과 흔적, 환경의 변화에서 거짓과 위험의 징후를 먼저 읽어낼 수 있다.`,
-          "매력":`NPC나 적대 세력의 욕망을 읽고 대화, 협상, 기만으로 새로운 길을 열 수 있다.`,
-          "체력":`환경의 압박을 견디거나 위험을 대신 받아 파티가 행동할 시간을 확보할 수 있다.`
+          '근력': '힘으로 길을 열거나 위험한 존재를 붙잡아 동료가 움직일 시간을 벌 수 있다.',
+          '민첩': '남들이 접근하기 어려운 위치로 먼저 들어가 물건·통로·증거를 확보할 수 있다.',
+          '지능': '장치, 기록, 마법, 생체 신호의 원리를 분석해 숨은 규칙을 찾아낼 수 있다.',
+          '지혜': '말과 흔적, 환경의 변화에서 거짓과 위험의 징후를 먼저 읽어낼 수 있다.',
+          '매력': 'NPC나 적대 세력의 욕망을 읽고 대화, 협상, 기만으로 새로운 길을 열 수 있다.',
+          '체력': '환경의 압박을 견디거나 위험을 대신 받아 파티가 행동할 시간을 확보할 수 있다.'
         }
       };
       if (!roleplayPrompt) beat.choices = buildStoryChoices(c, guide, beat, act, step, index);
@@ -422,6 +448,7 @@ function buildStoryBeats(c){
   }
   return beats;
 }
+
 
 function buildEvents(c) {
   const style=eventStyles[c.id];

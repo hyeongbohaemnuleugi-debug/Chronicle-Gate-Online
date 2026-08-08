@@ -423,10 +423,34 @@ function coverArt(c) {
   const artSet = STORY_ART_FILES[c?.id];
   return artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
-function chapterArt(c, scene) {
+function chapterArtCandidates(c, scene) {
+  if (!c?.id) return [];
+  const explicit = String(scene?.artFile || '').trim();
   const chapter = Number(scene?.artChapter || scene?.chapter || 0);
-  if (c?.id && chapter >= 1 && chapter <= 25) return `./art/${c.id}_${String(chapter).padStart(2, '0')}.png`;
-  return null;
+  const candidates = [];
+  if (explicit) candidates.push(explicit.startsWith('.') || explicit.startsWith('/') ? explicit : `./art/${explicit}`);
+  if (chapter >= 1 && chapter <= 99) {
+    const base = scene?.artFileBase || `${c.id}_${String(chapter).padStart(2, '0')}`;
+    // Prefer the WEBP files users add to GitHub, then transparently fall back to the older PNG assets.
+    candidates.push(`./art/${base}.webp`, `./art/${base}.png`);
+  }
+  return [...new Set(candidates)];
+}
+function chapterArt(c, scene) {
+  return chapterArtCandidates(c, scene)[0] || null;
+}
+function setSceneImage(img, c, scene) {
+  if (!img) return;
+  const candidates = chapterArtCandidates(c, scene);
+  const fallback = storyArt(c, { ...(scene || {}), artChapter:0, chapter:0, artFile:null, artFileBase:null });
+  if (fallback) candidates.push(fallback);
+  let index = 0;
+  img.onerror = () => {
+    index += 1;
+    if (index < candidates.length) img.src = candidates[index];
+    else img.onerror = null;
+  };
+  img.src = candidates[0] || fallback;
 }
 
 function storyArt(c, scene) {
@@ -743,7 +767,7 @@ function renderStory() {
   if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
   const c = currentCampaign();
   const ev = state.currentEvent;
-  const beat = state.storyBeat || c?.storyBeats?.[Math.min(state.story || 0, Math.max(0, Number(state.targetStory || 30) - 1))];
+  const beat = state.storyBeat || c?.storyBeats?.find(item => item.id === state.storyNodeId) || c?.storyBeats?.[0];
   const p = me();
   const isMyTurn = state.turnPlayerId === playerToken;
   const inResolution = state.phase === 'resolution';
@@ -752,8 +776,9 @@ function renderStory() {
   $('#eventCadence').textContent = `${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴`;
   $('#threatValue').textContent = state.threat;
   $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
-  $('#storyValue').textContent = `${state.story}/${state.targetStory || 20}`;
-  $('#storyFill').style.width = Math.min(100, state.story / (state.targetStory || 20) * 100) + '%';
+  $('#storyValue').textContent = `${state.story || 0} SCENES`;
+  const actProgress = beat?.act ? ((Number(beat.act) - 1) / 5) * 100 : 0;
+  $('#storyFill').style.width = Math.max(4, Math.min(100, actProgress + 8)) + '%';
   $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(member => {
     const statuses = member.statuses?.length
       ? `<div class="status-strip">${member.statuses.map(status => `<span class="status-pill" title="${esc(status.desc || '')}">${esc(status.label)} · ${status.remainingScenes}장면</span>`).join('')}</div>`
@@ -813,7 +838,7 @@ function renderStory() {
     $('#turnBanner').textContent = state.activeChoice
       ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
       : `SIDE EVENT · ${state.soloMode ? 'SOLO 12초 선택' : '45초 테이블 투표'} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
-    $('#storySceneImg').src = storyArt(c, ev);
+    setSceneImage($('#storySceneImg'), c, ev);
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
     $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
@@ -827,10 +852,10 @@ function renderStory() {
     renderChoices(ev);
   } else {
     $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
-    $('#storySceneImg').src = storyArt(c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
-    $('#storySceneCaption').textContent = beat ? `${beat.isDetour ? 'UNEXPECTED SCENE' : `CHAPTER ${beat.chapter || (state.story + 1)}/${state.targetStory || 30}`} · ${beat.actName} · ${beat.visual}` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
+    setSceneImage($('#storySceneImg'), c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
+    $('#storySceneCaption').textContent = beat ? `${beat.isDetour ? 'UNEXPECTED SCENE' : `STORY SCENE ${(state.storySeenCount || 0) + (state.phase === 'resolution' ? 0 : 1)} · NODE ${beat.chapter || '?'}`} · ${beat.actName} · ${beat.visual}` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
     $('#actLabel').textContent = beat ? (beat.isDetour ? `UNEXPECTED SCENE · ACT ${beat.act}` : `MAIN STORY · ACT ${beat.act}`) : 'MAIN STORY';
-    $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}`) : '연대기가 이어집니다.';
+    $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `${beat.title}`) : '연대기가 이어집니다.';
     $('#storyClarity').classList.add('clean-main');
     $('#storySituation').textContent = `${beat?.actName || c?.title || '현재 장면'} · ${beat?.phase || '진행'}`;
     $('#storyObjective').textContent = beat?.objective || '장면에 맞는 선택지 중 하나를 고르세요.';
@@ -999,7 +1024,7 @@ function renderEnding() {
   $('#endingIcon').textContent = state.campaign?.icon || '◆';
   $('#endingTitle').textContent = e.title || '연대기가 끝났습니다.';
   $('#endingText').textContent = e.text || '';
-  $('#endingStats').innerHTML = `<span>STORY ${state.story}/${state.targetStory || 20}</span><span>THREAT ${state.threat}/${state.maxThreat || 8}</span><span>CARDS ${state.discardCount} USED</span><span>PLAYERS ${state.players.length}</span>`;
+  $('#endingStats').innerHTML = `<span>STORY ${state.story || 0} SCENES</span><span>THREAT ${state.threat}/${state.maxThreat || 8}</span><span>CARDS ${state.discardCount} USED</span><span>PLAYERS ${state.players.length}</span>`;
 }
 $('#endingHomeBtn').onclick = () => {
   localStorage.removeItem('cg_room');

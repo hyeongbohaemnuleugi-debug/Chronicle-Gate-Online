@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.5.0-cinematic.1';
+const APP_VERSION = '4.5.1-job-origins.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 25;
@@ -152,6 +152,7 @@ function normalizeLoadedRoom(room) {
   room.storyMemory ||= {};
   room.pathTotals ||= { truth: 0, survival: 0, bond: 0 };
   room.pendingContinue ||= null;
+  room.prologue ||= null;
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
@@ -203,6 +204,7 @@ async function createRoom(hostName, socketId) {
     mainTurnsSinceEvent: 0, pendingTurnAdvance: false, turnSerial: 0, nextCheckDcReduction: 0, threatShield: 0,
     threat: 0, story: 0, dcPenalty: 0, monster: null,
     storyFlags: {}, storyMemory: {}, pathTotals: { truth: 0, survival: 0, bond: 0 }, pendingContinue: null,
+    prologue: null,
     chat: [], lastResolution: null, ending: null,
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
   };
@@ -367,6 +369,10 @@ function renderedStoryBeat(room, campaign) {
   const prev = history[history.length - 1];
   const recap = [];
 
+  if (beat.chapter === 1 && room.storyMemory?.prologueMeeting) {
+    recap.push(room.storyMemory.prologueMeeting);
+  }
+
   if (prev && Number(prev.chapter || 0) < Number(beat.chapter || 0)) {
     const outcome = prev.success ? '실마리를 붙잡는 데 성공했고' : '대가를 치르며 간신히 빠져나왔고';
     recap.push(`직전 장면에서 ${prev.playerName || '파티'}은(는) “${prev.declaration || prev.title || '선택'}”을 택해 ${outcome} 그 여파가 아직 남아 있다.`);
@@ -402,6 +408,103 @@ function renderedStoryBeat(room, campaign) {
   return beat;
 }
 
+
+const PROLOGUE_META = {
+  ember: {
+    opening: '왕이 죽은 뒤 잿빛 성채 전체가 장례의 연기와 음모의 속삭임으로 뒤덮였다.',
+    places: { 근력:'무너진 외성의 성문', 지능:'불탄 기록 보관실', 지혜:'왕가 예배당의 낡은 회랑', 민첩:'봉인된 왕묘 외벽', 매력:'장례객이 모인 추도 홀', 체력:'검은 숲과 맞닿은 성벽 초소' },
+    hooks: {
+      근력:'흩어진 경비대를 추슬러 장송 행렬을 지키는 동안, 누군가가 왕관의 봉인을 노리고 있다는 소문을 듣는다.',
+      지능:'타버린 장부 속에서 왕관 계승자와 관련된 지워진 기록 한 줄을 복원한다.',
+      지혜:'성흔이 남은 바닥과 향 냄새 속에서 누군가 의도적으로 의식을 어지럽혔다는 사실을 직감한다.',
+      민첩:'도굴꾼의 흔적을 쫓다 왕묘 깊숙한 곳으로 통하는 샛길을 먼저 발견한다.',
+      매력:'슬픔에 젖은 귀족과 사제들 사이를 오가며 모두가 감추는 불안의 정체를 읽어 낸다.',
+      체력:'성벽 아래 검은 숲에서 올라온 짐승의 발자국이 장례일 밤의 소란과 이어진다는 사실을 붙잡는다.',
+    },
+    meet: '장례의 종이 세 번 울리자, 서로 다른 길을 걷던 이들은 모두 잿빛 성채의 봉인실 앞으로 불려 온다. 각자가 쥔 단서가 마침내 하나의 왕관을 가리킨다.',
+  },
+  neon: {
+    opening: '네온 비가 쏟아지는 2099년, 도시 전체가 지워진 기억 조각과 불법 데이터 거래로 술렁이고 있었다.',
+    places: { 근력:'하층 구역 검문소', 지능:'암호화 서버실', 지혜:'응급 진료 스테이션', 민첩:'드론 이착륙 옥상', 매력:'기억 경매장 로비', 체력:'추적망이 얽힌 뒷골목' },
+    hooks: {
+      근력:'폭주 직전의 치안 드론 떼를 막아 세우다 누군가 도시의 핵심 기억을 훔쳤다는 경보를 듣는다.',
+      지능:'잠긴 백업 노드 안에서 삭제된 시민 기록과 이어지는 백도어를 발견한다.',
+      지혜:'패닉에 빠진 시민들을 진정시키며 이 사건이 단순 사고가 아니라 계획된 조작임을 알아차린다.',
+      민첩:'원격 시야로 좇은 이상 신호가 동일한 허브 좌표로 수렴한다는 사실을 먼저 포착한다.',
+      매력:'거래장 한복판에서 모두가 부정하는 공포와 욕망을 읽고, 사건의 배후가 거래자들 사이에 숨어 있음을 감지한다.',
+      체력:'추적팀의 포위를 피해 달리며, 잃어버린 데이터 조각이 사람 목숨과 직결된다는 진실에 닿는다.',
+    },
+    meet: '서로 다른 네트워크를 뒤지던 이들은 버려진 메모리 허브에서 같은 좌표를 가리키는 로그를 맞대게 된다. 그 순간, 개인 의뢰는 도시 전체의 사건으로 바뀐다.',
+  },
+  abyss: {
+    opening: '심해 관측 기지가 마지막 구조 신호를 보낸 뒤, 바다는 유난히 조용했고 그 침묵이 더 불길했다.',
+    places: { 근력:'침수된 갑판 통로', 지능:'생체 표본 연구실', 지혜:'소나 관측실', 민첩:'잠수정 정비 베이', 매력:'응급 격리 병동', 체력:'감압 게이트 앞' },
+    hooks: {
+      근력:'기울어진 통로에서 부상자를 끌어내며, 무언가가 내부에서 문을 두드렸다는 증언을 듣는다.',
+      지능:'비정상적으로 변형된 표본을 분석하다 기지 심부에서 온 생체 반응을 확인한다.',
+      지혜:'모니터에 겹쳐 찍힌 반향 속에서 구조 요청이 조작되었을 가능성을 읽어 낸다.',
+      민첩:'망가진 잠수정 배선을 잇는 동안, 외부 도킹 라인에 누군가 손댄 흔적을 찾아낸다.',
+      매력:'공포에 질린 생존자를 안정시키며 그들이 끝내 말하지 못한 금지 구역의 이름을 듣게 된다.',
+      체력:'감압실을 버티며 압력 이상을 막던 중, 바깥이 아니라 안쪽에서 재난이 시작됐음을 깨닫는다.',
+    },
+    meet: '비상 조명이 깜빡이는 중앙 수문 앞, 각 구역에서 살아 돌아온 이들이 구조 지도를 펼친다. 흩어진 보고가 하나로 연결되며 등대의 진짜 비밀이 드러나기 시작한다.',
+  },
+  clock: {
+    opening: '13번째 종이 울린 밤, 시계탑 도시는 한순간씩 어긋난 시간 때문에 같은 공포를 되풀이하고 있었다.',
+    places: { 근력:'시계탑 하부 검문 회랑', 지능:'톱니 장치실', 지혜:'시간 기록 보관소', 민첩:'루프 경계 골목', 매력:'예언 낭독실', 체력:'종소리 감시 발코니' },
+    hooks: {
+      근력:'되감기 직전의 폭주자를 제압하며 누군가 의도적으로 루프를 연장하고 있다는 흔적을 본다.',
+      지능:'멈춰 선 기어를 맞추다 정상 시간과 다른 각도로 돌아가는 숨은 축을 발견한다.',
+      지혜:'사라졌다 나타나는 기록 조각을 읽고, 반복되는 밤마다 한 문장씩 바뀌는 예언을 포착한다.',
+      민첩:'시간이 얇아진 골목을 빠져나오며 금지된 방으로 향하는 가장 빠른 길을 기억해 낸다.',
+      매력:'예언을 두려워하는 사람들의 목소리에서 그들이 감춘 죄책감과 바람을 길어 올린다.',
+      체력:'매번 더 세게 울리는 종소리를 버티며, 도시 전체를 잠식하는 루프의 진동을 몸으로 느낀다.',
+    },
+    meet: '종이 열세 번 울리는 정확한 시각, 서로 다른 시간 조각을 쥔 이들이 시계탑 중심의 회합실에서 한자리에 모인다. 각자의 기억이 겹치며 루프의 진짜 입구가 열린다.',
+  },
+  wild: {
+    opening: '하늘의 별 하나가 숲 깊숙이 떨어진 뒤, 나무와 짐승, 꿈과 현실의 경계가 서서히 뒤틀리기 시작했다.',
+    places: { 근력:'별철 대장간의 불꽃 앞', 지능:'꿈길과 겹친 수풀 공터', 지혜:'거대한 고목의 뿌리 아래', 민첩:'별빛이 내려앉은 사냥 길목', 매력:'야수들이 모이는 샘터', 체력:'운석 충돌 지대의 가장자리' },
+    hooks: {
+      근력:'부서진 별철을 두드리다 숲의 심장부로 이어지는 이상 진동을 감지한다.',
+      지능:'꿈과 현실이 엇갈린 흔적을 쫓다 같은 장소를 두 개의 방식으로 기억하게 된다.',
+      지혜:'수목의 낮은 속삭임에서 별을 삼킨 존재가 깨어나고 있다는 경고를 듣는다.',
+      민첩:'별가루가 남긴 발자국을 따라가며 누구보다 먼저 변화의 중심을 포착한다.',
+      매력:'경계하던 야수들을 달래는 동안 그들이 두려워하는 그림자의 방향을 알아낸다.',
+      체력:'운석 파편의 독한 기운을 버텨 내며 숲을 삼키는 병이 어디서 시작됐는지 찾는다.',
+    },
+    meet: '숲 한가운데 별빛이 스며든 제단에서, 서로 다른 징조를 따라온 이들이 결국 한 원을 그리며 만난다. 각자의 목격담이 합쳐지는 순간, 숲 전체의 상처가 모습을 드러낸다.',
+  },
+};
+
+function buildPlayerPrologue(campaign, player) {
+  const job = player?.job || {};
+  const meta = PROLOGUE_META[campaign?.id] || PROLOGUE_META.ember;
+  const prime = job.prime || '지혜';
+  const place = meta.places?.[prime] || Object.values(meta.places || {})[0] || '낯선 현장';
+  const hook = meta.hooks?.[prime] || '작은 단서는 더 큰 사건의 문을 연다.';
+  const skillName = job.skillDef?.name || (job.skill ? job.skill.split(':')[0] : '고유 기술');
+  const paragraphA = `${meta.opening} ${player.name}는(은) ${place}에서 ${job.name || '여행자'}로서 자신의 일을 해내고 있었다.`;
+  const paragraphB = `${hook} 이때 ${player.name}는(은) ${skillName}의 감각과 ${prime} 능력을 바탕으로 남들이 지나친 균열을 붙잡는다. 개인적인 일이던 사건은 점점 더 큰 연대기의 서막으로 변한다.`;
+  const paragraphC = `마지막 단서는 분명하다. 지금 붙잡은 흔적은 혼자 해결할 수 있는 규모가 아니다. 누군가 같은 진실을 뒤쫓고 있으며, 곧 같은 장소에서 만나게 될 것이다.`;
+  return {
+    title: `${job.name || '모험가'}의 시작`,
+    lead: `${place}에서 시작된 개인 서사`,
+    objective: '개인 프롤로그를 읽고 합류 준비를 완료하세요.',
+    prompt: `${job.name || '당신'}은(는) 어떤 이유로 이 사건을 끝까지 추적하려 하나요? 그 답은 이후 이야기의 분위기에 남습니다.`,
+    paragraphs: [paragraphA, paragraphB, paragraphC],
+  };
+}
+
+function buildCampaignPrologue(room, campaign) {
+  const scenes = {};
+  for (const player of room.players) scenes[player.id] = buildPlayerPrologue(campaign, player);
+  return {
+    scenes,
+    ready: {},
+    meetingText: (PROLOGUE_META[campaign?.id] || PROLOGUE_META.ember).meet,
+  };
+}
 
 function publicRoom(room) {
   const campaign = CAMPAIGNS.find(c => c.id === room.campaignId);
@@ -453,6 +556,13 @@ function publicRoom(room) {
     maxThreat: MAX_THREAT,
     revision: room.revision,
     chat: room.chat.slice(-120),
+    prologue: room.prologue ? {
+      ready: room.prologue.ready || {},
+      scenes: room.prologue.scenes || {},
+      meetingText: room.prologue.meetingText || '',
+      readyCount: Object.values(room.prologue.ready || {}).filter(Boolean).length,
+      totalPlayers: room.players.length,
+    } : null,
   };
 }
 
@@ -1088,7 +1198,7 @@ io.on('connection', socket => {
     if (!room.campaignId) return ack?.({ ok: false, error: '캠페인을 선택하세요.' });
     if (room.players.some(player => !player.ready)) return ack?.({ ok: false, error: '모든 플레이어가 직업과 능력치를 완성해야 합니다.' });
     const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
-    room.phase = 'story';
+    room.phase = 'prologue';
     room.deck = buildDeck(campaign);
     room.discard = [];
     room.threat = 0;
@@ -1107,6 +1217,7 @@ io.on('connection', socket => {
     room.storyMemory = {};
     room.pathTotals = { truth: 0, survival: 0, bond: 0 };
     room.pendingContinue = null;
+    room.prologue = buildCampaignPrologue(room, campaign);
     for (const member of room.players) {
       member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
       member.statuses = [];
@@ -1119,11 +1230,30 @@ io.on('connection', socket => {
     room.abandonVote = null;
     room.turnIndex = 0;
     currentTurnPlayer(room);
+    room.storyMemory.prologueMeeting = room.prologue.meetingText;
     pushChat(room, { type: 'narration', text: campaign.intro, author: 'GM' });
+    pushChat(room, { type: 'system', text: '각 플레이어의 개인 프롤로그가 시작되었습니다. 모두가 합류 준비를 마치면 메인 스토리가 열립니다.' });
     sync(room);
     void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name) });
     ack?.({ ok: true });
   });
+  socket.on('prologue:continue', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !requirePhase(room, 'prologue', ack, '지금은 프롤로그를 진행할 수 없습니다.')) return;
+    room.prologue ||= { scenes: {}, ready: {}, meetingText: '' };
+    room.prologue.ready[player.id] = true;
+    const connected = room.players.filter(member => member.connected);
+    const allReady = connected.every(member => room.prologue.ready?.[member.id]);
+    if (allReady) {
+      room.phase = 'story';
+      room.turnIndex = 0;
+      currentTurnPlayer(room);
+      pushChat(room, { type:'narration', author:'GM', text: room.prologue.meetingText || '각자의 길을 지나온 인물들이 마침내 한곳에 모인다.' });
+    }
+    sync(room);
+    ack?.({ ok:true, allReady });
+  });
+
   socket.on('story:advance', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'story', ack, '지금은 메인 스토리를 진행할 수 없습니다.')) return;

@@ -93,7 +93,13 @@ assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공
 assert(server.includes("event:finalizeChoice") && server.includes('서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
 assert(server.includes('beginAllVotedCountdown(room)'), '전원 투표 완료 시 조기 확정 카운트다운 호출이 누락되었습니다.');
 assert(server.includes('clearDetour: isDetour'), '우회 위기 장면 해결 후 제거 플래그가 누락되었습니다.');
-assert(server.includes('nextUnseenStoryIndex') && server.includes('consumeStoryBeat') && server.includes('storySeenIds'), '메인 스토리 1회 소비 보장 장치가 누락되었습니다.');
+assert(server.includes('canonicalStoryIndex') && server.includes('consumeStoryBeat') && server.includes('storySeenIds'), '메인 스토리 정순 1회 소비 보장 장치가 누락되었습니다.');
+assert(!server.includes('findIndex(beat => beat?.id && !seen.has(beat.id))'), '스토리 커서 오류 시 임의의 미소비 장면으로 점프하는 복구 로직이 남아 있습니다.');
+assert(server.includes('lastResolvedStoryBeat') && server.includes("room.phase === 'resolution' && room.lastResolvedStoryBeat"), '결과 화면에서 다음 챕터를 미리 노출하지 않는 스냅샷 장치가 누락되었습니다.');
+assert(!server.includes("type:'narration', author:'GM'") && !server.includes("type: 'narration', author: 'GM'") && !server.includes("type: 'narration', text: campaign.intro, author: 'GM'"), 'GM이 채팅창에 스토리 서술을 다시 기록하는 코드가 남아 있습니다.');
+assert(app.includes("m.author === 'GM' && m.type === 'narration'"), '기존 방의 GM 스토리 서술을 채팅에서 숨기는 호환 필터가 없습니다.');
+assert(app.includes('story-key') && css.includes('.story-key'), '스토리 중요 문장 강조 스타일이 누락되었습니다.');
+assert(css.includes('--muted:#c8c6cf'), '다크 테마 보조 텍스트 대비 개선값이 적용되지 않았습니다.');
 assert(!index.includes('id="finalizeChoiceBtn"'), '호스트 투표 조기 확정 버튼이 남아 있습니다.');
 assert(index.includes('id="voteTimer"') && index.includes('id="advanceStoryBtn"'), '메인 스토리 진행/투표 타이머 UI가 없습니다.');
 assert(css.includes('object-fit:contain!important'), '스토리 이미지 잘림 방지 contain 규칙이 없습니다.');

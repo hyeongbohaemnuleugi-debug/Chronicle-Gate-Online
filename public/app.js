@@ -9,8 +9,8 @@ const REQUIRED_IDS = [
   'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'entryError',
   'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
-  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
-  'myJobMini', 'myStatsMini', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
+  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
+  'myJobMini', 'myStatsMini', 'economyPanel', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
   'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'attackBtn', 'combatLog',
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
@@ -508,6 +508,92 @@ function canUseMySkill(p) {
     return state.turnPlayerId === p.id;
   }
   return false;
+}
+
+
+function itemCatalog() { return currentCampaign()?.items || []; }
+function itemById(id) { return itemCatalog().find(item => item.id === id) || null; }
+function equippedItemIds(player) { return new Set(Object.values(player?.equipment || {}).filter(Boolean)); }
+function equipmentBonusFor(player, stat) { return Number(player?.equipmentBonuses?.[stat] || 0); }
+function effectiveStatTotal(player, stat, ability) { return Number(ability?.total || 10) + equipmentBonusFor(player, stat); }
+function slotLabel(slot) { return ({weapon:'무기',armor:'방어구',charm:'부적',tool:'도구'})[slot] || slot; }
+
+function renderEconomyPanel(player) {
+  const panel = $('#economyPanel');
+  if (!panel) return;
+  if (!player?.abilities) { panel.innerHTML = ''; panel.classList.add('hidden'); return; }
+  panel.classList.remove('hidden');
+  const equipped = equippedItemIds(player);
+  const inventory = (player.inventory || []).map(itemById).filter(Boolean);
+  const equipment = ['weapon','armor','charm','tool'].map(slot => {
+    const item = itemById(player.equipment?.[slot]);
+    return `<div class="equip-slot ${item ? 'filled' : ''}"><span>${slotLabel(slot)}</span><b>${item ? esc(item.name) : '비어 있음'}</b>${item ? `<small>${esc(item.stat)} +${item.bonus}</small>` : ''}</div>`;
+  }).join('');
+  const inventoryHtml = inventory.length ? inventory.map(item => `
+    <button class="inventory-item ${equipped.has(item.id) ? 'equipped' : ''}" type="button" data-equip-item="${esc(item.id)}">
+      <span><b>${esc(item.name)}</b><small>${esc(slotLabel(item.slot))} · ${esc(item.rarity || '장비')}</small></span>
+      <em>${esc(item.stat)} +${item.bonus}</em>
+      <small>${esc(item.passive || '')}</small>
+      <strong>${equipped.has(item.id) ? '장착 해제' : '장착'}</strong>
+    </button>`).join('') : '<div class="inventory-empty">아직 획득한 장비가 없습니다.</div>';
+  panel.innerHTML = `
+    <div class="economy-head"><span>COINS</span><b>◈ ${Number(player.coins || 0)}</b></div>
+    <div class="equipment-grid">${equipment}</div>
+    <details class="inventory-drawer"><summary>INVENTORY · ${inventory.length}개</summary><div class="inventory-list">${inventoryHtml}</div></details>`;
+  panel.querySelectorAll('[data-equip-item]').forEach(button => button.onclick = () => {
+    socket.emit('item:equip', { roomCode, playerToken, itemId: button.dataset.equipItem }, r => {
+      if (!r?.ok) return toast(r?.error || '장비 변경 실패');
+      audioManager.fx?.('success', .7);
+    });
+  });
+}
+
+function facilityUsed(eventId, playerId, action) {
+  return Boolean(state?.facilityUses?.[`${eventId}:${playerId}:${action}`]);
+}
+function renderFacilityPanel(event, player) {
+  const panel = $('#facilityPanel');
+  if (!panel) return;
+  const facility = event?.facility;
+  if (!facility || !['story','resolution'].includes(state?.phase) || !player) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
+  panel.classList.remove('hidden');
+  const used = facilityUsed(event.id, player.id, facility.type);
+  let actions = '';
+  if (facility.type === 'shop') {
+    const owned = new Set(player.inventory || []);
+    actions = `<div class="shop-grid">${itemCatalog().map(item => `
+      <button class="shop-item" type="button" data-shop-item="${esc(item.id)}" ${owned.has(item.id) || Number(player.coins || 0) < Number(item.price || 0) ? 'disabled' : ''}>
+        <span><b>${esc(item.name)}</b><small>${esc(slotLabel(item.slot))} · ${esc(item.rarity)}</small></span>
+        <em>${esc(item.stat)} +${item.bonus}</em>
+        <small>${esc(item.passive || '')}</small>
+        <strong>${owned.has(item.id) ? '보유 중' : `◈ ${item.price}`}</strong>
+      </button>`).join('')}</div>`;
+  } else {
+    const label = facility.type === 'inn' ? `숙박하기 · ◈ ${facility.cost}`
+      : facility.type === 'restaurant' ? `식사하기 · ◈ ${facility.cost}`
+      : facility.type === 'gamble' ? `D6 내기 · ◈ ${facility.cost}`
+      : facility.type === 'quest' ? '의뢰 맡기 · 성공 시 코인' : '이용하기';
+    actions = `<button class="primary facility-action" type="button" data-facility-action="${esc(facility.type)}" ${used ? 'disabled' : ''}>${used ? '이번 이벤트에서 이용 완료' : label}</button>`;
+  }
+  panel.innerHTML = `
+    <div class="facility-copy"><span class="eyebrow">OPTIONAL STOP · ${esc(facility.type.toUpperCase())}</span><h3>${esc(facility.label)}</h3><p>${esc(facility.description || '')}</p><div class="coin-chip">보유 코인 ◈ ${Number(player.coins || 0)}</div></div>
+    <div class="facility-actions">${actions}</div>`;
+  panel.querySelectorAll('[data-facility-action]').forEach(button => button.onclick = () => {
+    button.disabled = true;
+    socket.emit('facility:action', { roomCode, playerToken, action: button.dataset.facilityAction }, r => {
+      if (!r?.ok) { button.disabled = false; return toast(r?.error || '시설 이용 실패'); }
+      audioManager.fx?.('success', 1);
+      toast(r.summary || '시설을 이용했습니다.');
+    });
+  });
+  panel.querySelectorAll('[data-shop-item]').forEach(button => button.onclick = () => {
+    button.disabled = true;
+    socket.emit('facility:action', { roomCode, playerToken, action:'shop', itemId:button.dataset.shopItem }, r => {
+      if (!r?.ok) { button.disabled = false; return toast(r?.error || '구매 실패'); }
+      audioManager.fx?.('success', 1);
+      toast(r.summary || '아이템을 구매했습니다.');
+    });
+  });
 }
 
 function renderSkillUi() {
@@ -1095,7 +1181,13 @@ function renderStory() {
     return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '')}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}</div>`;
   }).join('');
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
-  $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
+  $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => {
+    const gear = equipmentBonusFor(p, k);
+    const total = effectiveStatTotal(p, k, v);
+    return `<div class="stat-line"><span>${k}</span><b>${total} <i>${signedMod(total)}</i></b>${gear ? `<small class="gear-stat">기본 ${v.total} + 장비 ${gear}</small>` : ''}</div>`;
+  }).join('') : '';
+  renderEconomyPanel(p);
+  renderFacilityPanel(ev, p);
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
   $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}${beat?.route ? ` · ${esc(beat.route.name)}` : ''}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';
   $('#actionSuggestions').innerHTML = '';
@@ -1139,6 +1231,7 @@ function renderStory() {
     $('#advanceStoryBtn').textContent = readyMe ? '다른 플레이어를 기다리는 중' : '프롤로그 읽고 합류하기';
     $('#continueBtn').style.display = 'none';
     $('#continueBtn').disabled = true;
+    $('#facilityPanel')?.classList.add('hidden');
     updateVoteCountdown();
     return;
   }

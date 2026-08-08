@@ -338,7 +338,15 @@ function coverArt(c) {
   const artSet = STORY_ART_FILES[c?.id];
   return artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
+function chapterArt(c, scene) {
+  const chapter = Number(scene?.chapter || 0);
+  if (c?.id && chapter >= 1 && chapter <= 25) return `./art/scenes/${c.id}/${String(chapter).padStart(2, '0')}.webp`;
+  return null;
+}
+
 function storyArt(c, scene) {
+  const sceneFile = chapterArt(c, scene);
+  if (sceneFile) return sceneFile;
   const artSet = STORY_ART_FILES[c?.id];
   const act = Number(scene?.act || 1);
   const phase = String(scene?.phase || '도입');
@@ -347,22 +355,13 @@ function storyArt(c, scene) {
   const title = scene?.title || c?.title || '다음 장면';
   const visual = scene?.visual || sceneWord(c?.id, actIndex);
   const subtitle = scene?.monster ? `${visual} · ${scene.monster}의 위협` : `${visual} · ${isStory ? '메인 스토리' : '이벤트 사건'}`;
-
-  if (artSet && isStory) {
-    if (act >= 4 || phase === '위기' || phase === '결단') return artSet.late;
-    return artSet.early;
-  }
+  if (artSet && isStory) return act >= 4 || phase === '위기' || phase === '결단' ? artSet.late : artSet.early;
   if (artSet && !isStory) return (phase === '위기' || phase === '결단' || act >= 4) ? artSet.late : artSet.early;
   return artSvg(c, title, subtitle, scene ? `ACT ${scene.act} · ${scene.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'), visual, scene?.monster || '');
 }
 
 function storyDetailArt(c, beat) {
-  const artSet = STORY_ART_FILES[c?.id];
-  if (!artSet) return storyArt(c, beat);
-  const act = Number(beat?.act || 1);
-  const phase = String(beat?.phase || '도입');
-  if (act >= 4) return phase === '도입' || phase === '대면' ? artSet.early : artSet.late;
-  return phase === '위기' || phase === '결단' ? artSet.late : artSet.early;
+  return chapterArt(c, beat) || storyArt(c, beat);
 }
 
 function storyArtMeta(c, beat) {
@@ -379,27 +378,24 @@ function proseParagraphs(text = '') {
   const cleaned = String(text || '').trim();
   if (!cleaned) return [];
   const blocks = cleaned.split(/\n{2,}/).map(v => v.trim()).filter(Boolean);
-  if (blocks.length > 1) return blocks;
-  const sentences = cleaned.split(/(?<=[.!?])\s+/).map(v => v.trim()).filter(Boolean);
-  if (sentences.length <= 2) return [cleaned];
   const out = [];
-  for (let i = 0; i < sentences.length; i += 2) out.push(sentences.slice(i, i + 2).join(' '));
+  for (const block of blocks) {
+    const sentences = block.split(/(?<=[.!?])\s+/).map(v => v.trim()).filter(Boolean);
+    if (sentences.length <= 2) out.push(block);
+    else for (let i = 0; i < sentences.length; i += 2) out.push(sentences.slice(i, i + 2).join(' '));
+  }
   return out;
 }
 
 
 function storyNarrationHTML(c, beat, player, hints = []) {
   const paragraphs = proseParagraphs(beat?.text || c?.intro || '');
-  const first = paragraphs[0] || '';
-  const rest = paragraphs.slice(1);
-  const detailSrc = storyDetailArt(c, beat);
-  const showDetail = !!beat && Number(beat.chapter || 1) > 1;
+  const route = beat?.route;
   return `
     <div class="narration-rich clean-narration">
-      ${first ? `<p>${esc(first)}</p>` : ''}
-      ${showDetail ? `<figure class="story-detail-image"><img src="${detailSrc}" alt="${esc(beat?.title || c?.title || '스토리 장면')}"><figcaption>${esc(beat?.visual || beat?.actName || '장면의 인상')}</figcaption></figure>` : ''}
-      ${rest.map(p => `<p>${esc(p)}</p>`).join('')}
-      ${beat?.continuityHook ? `<p class="continuity-hook">${esc(beat.continuityHook)}</p>` : ''}
+      ${route ? `<div class="route-banner route-${esc(route.key)}"><span>${esc(route.name)}</span><b>${esc(route.short)}</b>${route.previousSuccess === false ? '<em>직전 실패의 여파가 반영된 장면</em>' : ''}</div>` : ''}
+      ${paragraphs.map((p, index) => `<p class="${index === 0 ? 'story-lead' : ''}">${esc(p)}</p>`).join('')}
+      ${beat?.continuityHook ? `<p class="continuity-hook"><span>NEXT THREAD</span>${esc(beat.continuityHook)}</p>` : ''}
     </div>`;
 }
 
@@ -645,7 +641,7 @@ function renderStory() {
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
-  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';
+  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}${beat?.route ? ` · ${esc(beat.route.name)}` : ''}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';
   $('#actionSuggestions').innerHTML = '';
   $('#storyActionInput').placeholder = '메인 스토리는 장면별 선택지를 골라 진행합니다.';
   $('#storyActionInput').maxLength = 180;
@@ -750,7 +746,7 @@ function renderMainStoryChoices(beat) {
     <button class="choice-card story-choice" type="button" ${isMyTurn ? '' : 'disabled'}>
       <div class="choice-title-line"><b>${index + 1}. ${esc(choice.label)}</b></div>
       <small>${esc(choice.detail || '')}</small>
-      <div class="story-choice-meta"><span>${esc(choice.stat)} 판정</span><span>DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
+      <div class="story-choice-meta"><span>${choice.branchValue === 'careful' ? '추적' : choice.branchValue === 'bold' ? '돌파' : '신뢰'} · ${esc(choice.stat)} 판정</span><span>DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
     </button>
   `).join('');
   box.querySelectorAll('.story-choice').forEach((button, index) => button.onclick = () => {
@@ -814,7 +810,7 @@ function showResolution(r) {
   if (!r) return;
   $('#resolutionEyebrow').textContent = r.roleplay ? 'ROLEPLAY' : (r.ok ? 'SUCCESS' : 'FAILURE');
   $('#resolutionTitle').textContent = r.roleplay ? '짧은 대화가 이야기 속에 남았습니다.' : (r.ok ? '운명이 길을 열었습니다.' : '주사위는 대가를 요구합니다.');
-  $('#resolutionText').textContent = [r.text, r.consequence, r.status ? `상태이상: ${r.status.label}${r.status.desc ? ` — ${r.status.desc}` : ''}` : ''].filter(Boolean).join('\n\n');
+  $('#resolutionText').textContent = [r.text, r.route?.name ? `이 선택으로 다음 장면은 ${r.route.name} 흐름에 영향을 받습니다.` : '', r.consequence, r.status ? `상태이상: ${r.status.label}${r.status.desc ? ` — ${r.status.desc}` : ''}` : ''].filter(Boolean).join('\n\n');
   $('#resolutionModal').classList.add('show');
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');

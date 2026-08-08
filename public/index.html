@@ -211,6 +211,14 @@
               <div class="setting-copy"><b>채팅창 크기</b><small>스토리 우측 채팅 영역과 로비 채팅 높이를 내 화면에서만 조절합니다.</small></div>
               <div class="range-wrap"><input id="chatSizeRange" type="range" min="300" max="520" step="20" value="300"><b id="chatSizeValue">기본</b></div>
             </div>
+            <div class="setting-card setting-card-wide audio-setting-card">
+              <div class="setting-icon">♪</div>
+              <div class="setting-copy"><b>게임 사운드</b><small>캠페인별 배경음과 주사위·전투·성공/실패 효과음을 조절합니다.</small></div>
+              <div class="audio-setting-controls">
+                <button class="ghost" id="audioMuteBtn" type="button">사운드 켜짐</button>
+                <div class="range-wrap"><input id="audioVolumeRange" type="range" min="0" max="100" step="5" value="65"><b id="audioVolumeValue">65%</b></div>
+              </div>
+            </div>
           </div>
           <button class="ghost full settings-reset" id="uiResetBtn" type="button">화면 설정 기본값으로 되돌리기</button>
         </section>

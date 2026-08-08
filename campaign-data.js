@@ -347,18 +347,18 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
     const action=pool[(act+step+i)%pool.length];
     const stat=statMap[branchValue]?.[c.id] || ['지능','민첩','매력'][i];
     const success=branchValue==='careful'
-      ? `${anchor}의 단서가 서로 맞물린다. ${reveal}라는 사실에 가까워지며, 파티는 다음 장면을 더 정확한 정보와 함께 맞는다.`
+      ? `흩어져 있던 단서가 하나의 방향을 가리키기 시작한다. 이제 파티는 무엇을 확인해야 하는지 분명히 안다.`
       : branchValue==='bold'
-        ? `위험을 감수한 행동이 흐름을 바꾼다. 파티는 ${anchor}에서 주도권을 얻고 ${goal}을 향해 한발 먼저 움직인다.`
-        : `상대의 경계가 풀리고 새로운 협력선이 열린다. 사람들의 증언이 ${reveal}와 연결되며 다음 장면의 선택지가 넓어진다.`;
+        ? `위험을 감수한 선택이 통했다. 파티는 상대보다 한발 먼저 움직일 수 있는 짧은 틈을 얻는다.`
+        : `경계하던 태도가 누그러지고, 혼자서는 얻을 수 없었던 정보와 도움의 길이 열린다.`;
     const failure=branchValue==='careful'
-      ? `단서를 너무 늦게 연결했다. 잘못 읽은 정보가 발목을 잡고, ${stakes}`
+      ? `처음에는 맞아 보였던 단서 하나가 거짓이었다. 그 착오가 다음 움직임을 늦추고 위험을 가까이 끌어당긴다.`
       : branchValue==='bold'
-        ? `길은 열었지만 대가가 컸다. 파티가 직접 상처와 소모를 떠안았고, ${stakes}`
-        : `신뢰를 얻지 못했다. 상대는 더 입을 닫거나 거짓을 섞었고, ${stakes}`;
+        ? `길은 열렸지만 너무 거칠었다. 파티가 남긴 흔적과 소음 때문에 다음 위험이 먼저 준비할 시간을 얻는다.`
+        : `마음을 열게 하려던 시도는 반쯤만 성공했다. 중요한 말 하나가 끝내 나오지 않은 채 불신이 남는다.`;
     return {
       id:`${beat.id}-CHOICE-${i+1}`,
-      label:`「${beat.actName}」 ${phaseLead[i]} ${action}`.trim(),
+      label:`${phaseLead[i]} ${action}`.trim(),
       detail:`${phase} 장면 전용 행동 · 요구 능력치: ${stat}`,
       stat,
       dc:Math.min(18, dcBase+i),
@@ -373,8 +373,14 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
 
 
 function buildBridgeScene(c, guide, act) {
-  const branch = storyTone[c.id]?.[Math.min(act, (storyTone[c.id] || []).length - 1)] || guide.goal;
-  return `${sceneAnchor(guide.place)}에서 파티는 본격적으로 장면의 중심과 마주 선다. 지금 당장 해야 할 일은 “${guide.goal}”. ${branch}라는 흐름이 분명해지고, 눈앞의 인물·장치·흔적이 모두 같은 질문으로 수렴한다. 잘못 건드리면 ${guide.stakes}.`;
+  const openings = {
+    ember: `해가 기울수록 ${guide.place}의 재 냄새가 짙어진다. 겉으로는 조용하지만, 누군가 급히 감추고 지나간 흔적이 곳곳에 남아 있다. 파티가 한 걸음 더 안쪽으로 들어서자 서로 상관없어 보이던 징후들이 같은 사건을 가리키기 시작한다.`,
+    neon: `${guide.place}의 불빛은 멀쩡해 보였지만 네트워크 안쪽은 이미 누군가 지나간 뒤였다. 광고와 경보, 시민 기록 사이에 같은 시각의 빈칸이 반복되고 있었다. 파티는 그 빈칸이 우연이 아니라는 걸 곧 알아차린다.`,
+    abyss: `${guide.place}에 들어서자 금속 벽 너머에서 낮은 진동이 발바닥까지 전해졌다. 전력은 불안정했고, 남겨진 장비는 누군가 급하게 자리를 떠난 모습 그대로였다. 여기에 무슨 일이 있었는지 알기 전에는 더 깊이 내려갈 수 없다.`,
+    clock: `${guide.place}의 시계들은 모두 같은 시간을 가리키고 있었지만 초침만 서로 다른 방향으로 움직였다. 파티가 지나온 장면과 지금의 풍경 사이에는 설명할 수 없는 작은 차이가 생겨 있었다. 그 차이가 다음 단서였다.`,
+    wild: `${guide.place}의 숲은 바람도 없는데 천천히 방향을 바꾸고 있었다. 나뭇잎 사이의 별빛과 짐승의 발자국이 한쪽으로 모였다가 갑자기 끊긴다. 숲이 무언가를 숨기고 있다는 느낌이 점점 확실해진다.`,
+  };
+  return `${openings[c.id] || openings.ember} 지금 필요한 것은 ${guide.goal}. 서두르거나 잘못 판단하면 ${guide.stakes}`;
 }
 
 function buildStoryBeats(c){

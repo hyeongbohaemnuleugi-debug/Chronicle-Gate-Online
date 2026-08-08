@@ -340,7 +340,7 @@ function coverArt(c) {
 }
 function chapterArt(c, scene) {
   const chapter = Number(scene?.chapter || 0);
-  if (c?.id && chapter >= 1 && chapter <= 25) return `./art/scenes/${c.id}/${String(chapter).padStart(2, '0')}.webp`;
+  if (c?.id && chapter >= 1 && chapter <= 25) return `./art/${c.id}_${String(chapter).padStart(2, '0')}.webp`;
   return null;
 }
 

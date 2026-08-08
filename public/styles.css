@@ -202,3 +202,10 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
   .combat-visual{width:94vw}
   .combat-log{width:94vw}
 }
+
+/* v4.11 audio controls */
+.audio-setting-card{align-items:center}
+.audio-setting-controls{display:flex;gap:10px;align-items:center;min-width:min(100%,360px)}
+.audio-setting-controls .range-wrap{flex:1;min-width:150px}
+#audioMuteBtn{white-space:nowrap}
+@media (max-width:720px){.audio-setting-controls{width:100%;flex-direction:column;align-items:stretch}.audio-setting-controls .range-wrap{width:100%}}

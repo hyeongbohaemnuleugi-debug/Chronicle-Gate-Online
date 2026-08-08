@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.11.0-master-story-audio.0';
+const APP_VERSION = '4.11.1-canonical-flow-readability.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -164,25 +164,28 @@ function normalizeLoadedRoom(room) {
   room.narrativeState ||= { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
   room.narrativeLedger ||= { threads: [], routeShifts: [], jobThreads: {} };
   room.storySeenIds ||= [];
+  room.lastResolvedStoryBeat ||= null;
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
     return room;
   }
 
-  // v4.11: rebuild the consumed-story ledger from persisted history/cursor.
-  // This makes old rooms safe even if an earlier version repeated or rewound the cursor.
+  // v4.11.1: recover story progress only as a contiguous canonical prefix.
+  // Never jump to an arbitrary unseen chapter. If a save is inconsistent, the next
+  // chapter is the first missing chapter in the official sequence, preserving causality.
   const validStoryIds = new Set(campaign.storyBeats.map(beat => beat.id));
-  const inferredSeen = new Set((room.storySeenIds || []).filter(id => validStoryIds.has(id)));
+  const recordedSeen = new Set((room.storySeenIds || []).filter(id => validStoryIds.has(id)));
   for (const item of room.storyHistory || []) {
-    if (!item?.isDetour && item?.beatId && validStoryIds.has(item.beatId)) inferredSeen.add(item.beatId);
+    if (!item?.isDetour && item?.beatId && validStoryIds.has(item.beatId)) recordedSeen.add(item.beatId);
   }
-  const cursor = Math.max(0, Math.min(TARGET_STORY, Number(room.story || 0)));
-  for (let i = 0; i < cursor; i += 1) {
-    const id = campaign.storyBeats[i]?.id;
-    if (id) inferredSeen.add(id);
+  const contiguousSeen = [];
+  for (const beat of campaign.storyBeats) {
+    if (!beat?.id || !recordedSeen.has(beat.id)) break;
+    contiguousSeen.push(beat.id);
   }
-  room.storySeenIds = [...inferredSeen];
+  room.storySeenIds = contiguousSeen;
+  room.story = contiguousSeen.length;
 
   const byId = new Map(campaign.events.map(event => [event.id, event]));
   const used = new Set((room.discard || []).map(event => event?.id).filter(Boolean));
@@ -234,6 +237,7 @@ async function createRoom(hostName, socketId) {
     narrativeState: { boon: null, lastRoute: null, routeStreak: 0, detours: 0 },
     narrativeLedger: { threads: [], routeShifts: [], jobThreads: {} },
     storySeenIds: [],
+    lastResolvedStoryBeat: null,
     chat: [], lastResolution: null, ending: null,
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
   };
@@ -874,29 +878,31 @@ function jobStoryContinuity(room, playerName) {
   return `${status} ${last.narrative || ''}`.trim();
 }
 
-function nextUnseenStoryIndex(room, campaign) {
+function canonicalStoryIndex(room, campaign) {
   if (!campaign?.storyBeats?.length) return -1;
   room.storySeenIds ||= [];
   const seen = new Set(room.storySeenIds);
-  let index = Math.max(0, Number(room.story || 0));
-  while (index < TARGET_STORY && seen.has(campaign.storyBeats[index]?.id)) index += 1;
-  // If an old save has a broken cursor, recover by finding the first unseen chapter anywhere.
-  if (index >= TARGET_STORY && seen.size < TARGET_STORY) {
-    index = campaign.storyBeats.findIndex(beat => beat?.id && !seen.has(beat.id));
-  }
-  if (index < 0 || index >= TARGET_STORY) return -1;
-  room.story = index;
-  return index;
+  let prefix = 0;
+  while (prefix < campaign.storyBeats.length && seen.has(campaign.storyBeats[prefix]?.id)) prefix += 1;
+
+  // The cursor is derived from the completed canonical prefix, never from a later unseen beat.
+  room.story = prefix;
+  if (prefix >= TARGET_STORY || prefix >= campaign.storyBeats.length) return -1;
+  return prefix;
 }
 
 function consumeStoryBeat(room, campaign, beat) {
   if (!beat?.id || beat.isDetour) return;
+  const expectedIndex = canonicalStoryIndex(room, campaign);
+  const expectedBeat = expectedIndex >= 0 ? campaign.storyBeats[expectedIndex] : null;
+  if (!expectedBeat || expectedBeat.id !== beat.id) {
+    // Do not skip or fast-forward when state is inconsistent. Restore the exact canonical next chapter.
+    room.story = Math.max(0, expectedIndex);
+    return;
+  }
   room.storySeenIds ||= [];
   if (!room.storySeenIds.includes(beat.id)) room.storySeenIds.push(beat.id);
-  const index = campaign.storyBeats.findIndex(item => item.id === beat.id);
-  room.story = Math.max(Number(room.story || 0), index >= 0 ? index + 1 : Number(beat.chapter || 0));
-  const next = nextUnseenStoryIndex(room, campaign);
-  if (next < 0) room.story = TARGET_STORY;
+  room.story = expectedIndex + 1;
 }
 
 function renderedStoryBeat(room, campaign) {
@@ -906,7 +912,7 @@ function renderedStoryBeat(room, campaign) {
     injectJobStoryChoices(room, campaign, detour);
     return detour;
   }
-  const storyIndex = nextUnseenStoryIndex(room, campaign);
+  const storyIndex = canonicalStoryIndex(room, campaign);
   if (storyIndex < 0) return null;
   const base = campaign?.storyBeats?.[storyIndex];
   if (!base) return null;
@@ -1076,7 +1082,7 @@ function publicRoom(room) {
     turnSerial: Number(room.turnSerial || 0),
     nextCheckDcReduction: Number(room.nextCheckDcReduction || 0),
     eventEveryTurns: EVENT_EVERY_TURNS,
-    storyBeat: (room.phase === 'story' || room.phase === 'resolution') ? renderedStoryBeat(room, campaign) : null,
+    storyBeat: room.phase === 'resolution' && room.lastResolvedStoryBeat ? JSON.parse(JSON.stringify(room.lastResolvedStoryBeat)) : ((room.phase === 'story' || room.phase === 'resolution') ? renderedStoryBeat(room, campaign) : null),
     turnIndex: room.turnIndex || 0,
     turnPlayerId: turnPlayer?.id || null,
     turnPlayerName: turnPlayer?.name || null,
@@ -1581,7 +1587,6 @@ function drawEventForRoom(room) {
   const voteDuration = connectedPlayers(room).length <= 1 ? SOLO_VOTE_DURATION_MS : VOTE_DURATION_MS;
   room.voteEndsAt = Date.now() + voteDuration;
   room.mainTurnsSinceEvent = 0;
-  pushChat(room, { type: 'narration', author: 'GM', text: `이벤트 발생: ${room.currentEvent.title} — ${room.currentEvent.text}` });
   void appendSessionEvent(room.code, 'event_drawn', { eventId: room.currentEvent.id, title: room.currentEvent.title });
   armVoteTimer(room);
   return true;
@@ -1786,6 +1791,7 @@ io.on('connection', socket => {
     room.narrativeState = { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
     room.narrativeLedger = { threads: [], routeShifts: [], jobThreads: {} };
     room.storySeenIds = [];
+    room.lastResolvedStoryBeat = null;
     room.pendingContinue = null;
     room.failureCount = 0;
     room.jobStory = {};
@@ -1803,7 +1809,6 @@ io.on('connection', socket => {
     room.turnIndex = 0;
     currentTurnPlayer(room);
     room.storyMemory.prologueMeeting = room.prologue.meetingText;
-    pushChat(room, { type: 'narration', text: campaign.intro, author: 'GM' });
     pushChat(room, { type: 'system', text: '각 플레이어의 개인 프롤로그가 시작되었습니다. 모두가 합류 준비를 마치면 메인 스토리가 열립니다.' });
     sync(room);
     void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name) });
@@ -1820,7 +1825,6 @@ io.on('connection', socket => {
       room.phase = 'story';
       room.turnIndex = 0;
       currentTurnPlayer(room);
-      pushChat(room, { type:'narration', author:'GM', text: room.prologue.meetingText || '각자의 길을 지나온 인물들이 마침내 한곳에 모인다.' });
     }
     sync(room);
     ack?.({ ok:true, allReady });
@@ -1865,6 +1869,7 @@ io.on('connection', socket => {
       room.storyHistory ||= [];
       room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title });
       if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
+      room.lastResolvedStoryBeat = JSON.parse(JSON.stringify(beat));
       consumeStoryBeat(room, campaign, beat);
       room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0) + 1;
       room.lastResolution = {
@@ -1877,7 +1882,6 @@ io.on('connection', socket => {
       room.phase = 'resolution';
       room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0, clearDetour: isDetour };
       pushChat(room, { type:'action', author:player.name, text:`짧은 대답: ${declaration}` });
-      pushChat(room, { type:'narration', author:'GM', text: room.lastStoryAction.narrative });
       if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
       sync(room);
       setTimeout(() => io.to(room.code).emit('resolution', room.lastResolution), 350);
@@ -1950,6 +1954,7 @@ io.on('connection', socket => {
     room.storyHistory ||= [];
     room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title, isDetour });
     if (room.storyHistory.length > 16) room.storyHistory.splice(0, room.storyHistory.length - 16);
+    room.lastResolvedStoryBeat = JSON.parse(JSON.stringify(beat));
 
     if (isDetour) {
       room.narrativeState.detours = Number(room.narrativeState.detours || 0) + 1;
@@ -1978,7 +1983,6 @@ io.on('connection', socket => {
 
     pushChat(room, { type:'action', author:player.name, text:`메인 선택: ${choice.label}` });
     pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${choice.stat} 판정 ${roll}${abilityMod>=0?'+':''}${abilityMod}${skillBonus?`+스킬${skillBonus}`:''}${statusPenalty?`${statusPenalty}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
-    pushChat(room, { type:'narration', author:'GM', text: narrative });
 
     if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
     sync(room);
@@ -2091,6 +2095,7 @@ io.on('connection', socket => {
     room.choiceVotes = {};
     room.voteEndsAt = null;
     room.lastResolution = null;
+    room.lastResolvedStoryBeat = null;
     room.pendingContinue = null;
     room.phase = 'story';
     if (pending.source === 'story') {

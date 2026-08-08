@@ -21,13 +21,15 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.10.1-longer-story.0';
+const APP_VERSION = '4.10.2-flow-combat-vote.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
 const MAX_THREAT = 8;
 const EVENT_EVERY_TURNS = 3;
-const VOTE_DURATION_MS = 20_000;
+const VOTE_DURATION_MS = 45_000;
+const SOLO_VOTE_DURATION_MS = 12_000;
+const ALL_VOTED_COUNTDOWN_MS = 3_000;
 const ROOM_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 
 const rooms = new Map();
@@ -82,7 +84,8 @@ app.get('/api/config', (_req, res) => res.json({
   maxThreat: MAX_THREAT,
   eventEveryTurns: EVENT_EVERY_TURNS,
   voteDurationMs: VOTE_DURATION_MS,
-  soloVoteDurationMs: 5000,
+  soloVoteDurationMs: SOLO_VOTE_DURATION_MS,
+  allVotedCountdownMs: ALL_VOTED_COUNTDOWN_MS,
 }));
 
 const rand = sides => crypto.randomInt(1, sides + 1);
@@ -146,6 +149,7 @@ function normalizeLoadedRoom(room) {
   }
   room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
   room.voteEndsAt ||= null;
+  room.voteAllVotedCountdown = Boolean(room.voteAllVotedCountdown);
   room.choiceVotes ||= {};
   room.storyHistory ||= [];
   room.lastStoryAction ||= null;
@@ -185,7 +189,7 @@ function normalizeLoadedRoom(room) {
     }
     if (!room.activeChoice && room.phase === 'story' && !room.voteEndsAt) {
       const connectedCount = (room.players || []).filter(player => player.connected).length;
-      room.voteEndsAt = Date.now() + (connectedCount <= 1 ? 5000 : VOTE_DURATION_MS);
+      room.voteEndsAt = Date.now() + (connectedCount <= 1 ? SOLO_VOTE_DURATION_MS : VOTE_DURATION_MS);
     }
   }
   room.schemaVersion = APP_VERSION;
@@ -585,7 +589,7 @@ function buildDetourScene(campaign, room, choice, player, status) {
   const list = world.detours?.[route] || ['예정에 없던 위기'];
   const name = list[(Number(room.story || 0) + Number(room.failureCount || 0)) % list.length];
   const nextBase = campaign?.storyBeats?.[Math.min(Number(room.story || 0), TARGET_STORY - 1)];
-  const act = nextBase?.act || Math.ceil((Number(room.story || 0)+1)/5);
+  const act = nextBase?.act || Math.ceil((Number(room.story || 0)+1)/6);
   const chapter = nextBase?.chapter || Number(room.story || 0)+1;
   const statusText = status ? `${player.name}에게 ${status.label}의 후유증까지 남았다.` : `${player.name}은(는) 간신히 중심을 되찾았다.`;
   return {
@@ -1020,8 +1024,11 @@ function publicRoom(room) {
     activeChoice: room.activeChoice,
     choiceVotes: room.choiceVotes || {},
     voteEndsAt: room.voteEndsAt || null,
+    voteAllVotedCountdown: Boolean(room.voteAllVotedCountdown),
     voteDurationMs: VOTE_DURATION_MS,
-  soloVoteDurationMs: 5000,
+    soloVoteDurationMs: SOLO_VOTE_DURATION_MS,
+    allVotedCountdownMs: ALL_VOTED_COUNTDOWN_MS,
+    soloMode: connectedPlayers(room).length <= 1,
     mainTurnsSinceEvent: Number(room.mainTurnsSinceEvent || 0),
     turnSerial: Number(room.turnSerial || 0),
     nextCheckDcReduction: Number(room.nextCheckDcReduction || 0),
@@ -1420,6 +1427,30 @@ function eligibleChoiceIndices(room, player = null) {
     .map(({ index }) => index);
 }
 
+function allEligiblePlayersVoted(room) {
+  if (!room.currentEvent || room.activeChoice) return false;
+  const eligible = storyEligiblePlayers(room);
+  if (!eligible.length) return false;
+  return eligible.every(player => {
+    const voted = Number(room.choiceVotes?.[player.id]);
+    const choice = room.currentEvent.choices?.[voted];
+    if (!Number.isInteger(voted) || !choice) return false;
+    return !choice.requiredJob || player.job?.name === choice.requiredJob;
+  });
+}
+
+function beginAllVotedCountdown(room) {
+  if (!allEligiblePlayersVoted(room)) return false;
+  const target = Date.now() + ALL_VOTED_COUNTDOWN_MS;
+  // Do not repeatedly extend an already-running all-voted countdown.
+  if (room.voteAllVotedCountdown && Number(room.voteEndsAt || 0) <= target + 250) return false;
+  room.voteAllVotedCountdown = true;
+  room.voteEndsAt = target;
+  pushChat(room, { type:'system', text:'전원이 투표를 완료했습니다. 3초 뒤 선택을 확정합니다.' });
+  armVoteTimer(room);
+  return true;
+}
+
 function finalizeChoiceSelection(room) {
   if (!room.currentEvent || room.activeChoice) return false;
   clearVoteTimer(room.code);
@@ -1465,6 +1496,7 @@ function finalizeChoiceSelection(room) {
     voteCount: highest,
   };
   room.voteEndsAt = null;
+  room.voteAllVotedCountdown = false;
   pushChat(room, {
     type: 'action',
     author: 'TABLE',
@@ -1494,14 +1526,15 @@ function armVoteTimer(room) {
 
 function drawEventForRoom(room) {
   if (room.currentEvent || !room.deck.length) return false;
-  const desiredAct = Math.min(5, 1 + Math.floor(room.story / 4));
+  const desiredAct = Math.min(5, 1 + Math.floor(room.story / 6));
   const candidates = room.deck.map((event, index) => ({ event, index })).filter(item => item.event.act === desiredAct);
   const picked = candidates.length ? candidates[crypto.randomInt(0, candidates.length)] : { index: crypto.randomInt(0, room.deck.length) };
   room.currentEvent = room.deck.splice(picked.index, 1)[0];
   room.activeChoice = null;
   room.choiceVotes = {};
+  room.voteAllVotedCountdown = false;
   room.lastResolution = null;
-  const voteDuration = connectedPlayers(room).length <= 1 ? 5000 : VOTE_DURATION_MS;
+  const voteDuration = connectedPlayers(room).length <= 1 ? SOLO_VOTE_DURATION_MS : VOTE_DURATION_MS;
   room.voteEndsAt = Date.now() + voteDuration;
   room.mainTurnsSinceEvent = 0;
   pushChat(room, { type: 'narration', author: 'GM', text: `이벤트 발생: ${room.currentEvent.title} — ${room.currentEvent.text}` });
@@ -1896,7 +1929,7 @@ io.on('connection', socket => {
       continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
     };
     room.phase = 'resolution';
-    room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0 };
+    room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0, clearDetour: isDetour };
 
     pushChat(room, { type:'action', author:player.name, text:`메인 선택: ${choice.label}` });
     pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${choice.stat} 판정 ${roll}${abilityMod>=0?'+':''}${abilityMod}${skillBonus?`+스킬${skillBonus}`:''}${statusPenalty?`${statusPenalty}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
@@ -1946,6 +1979,7 @@ io.on('connection', socket => {
     }
     room.choiceVotes ||= {};
     room.choiceVotes[player.id] = choiceIndex;
+    beginAllVotedCountdown(room);
     sync(room);
     ack?.({ ok: true });
   });
@@ -2020,7 +2054,7 @@ io.on('connection', socket => {
       if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true }); }
       if (pending.drawEvent && room.deck.length) {
         drawEventForRoom(room);
-        pushChat(room, { type:'system', text:`${EVENT_EVERY_TURNS}개의 메인 턴이 지나 이벤트 카드가 자동으로 공개되었습니다. 투표는 20초 동안 진행됩니다.` });
+        pushChat(room, { type:'system', text:`${EVENT_EVERY_TURNS}개의 메인 턴이 지나 이벤트 카드가 자동으로 공개되었습니다. 투표는 ${Math.round((connectedPlayers(room).length <= 1 ? SOLO_VOTE_DURATION_MS : VOTE_DURATION_MS)/1000)}초 동안 진행됩니다.` });
       } else advanceTurn(room);
       sync(room);
       return ack?.({ ok: true });

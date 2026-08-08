@@ -294,45 +294,6 @@ function statPath(stat='') {
   return 'bond';
 }
 
-function roleplayPromptFor(c, chapter, act, step) {
-  if (chapter === 2) {
-    const asks = {
-      ember: '재를 뒤집어쓴 노파가 촛불을 들고 묻는다. “자네들의 이름은 무엇인가?”',
-      neon: '백도어 상인이 눈동자를 스캔하며 묻는다. “호출명을 말해. 널 뭐라고 기록해야 하지?”',
-      abyss: '생존한 승무원이 떨리는 목소리로 묻는다. “당신들 이름은… 뭐였죠? 혹시 구조팀 맞나요?”',
-      clock: '사라지기 직전의 아이가 소매를 붙잡고 묻는다. “당신 이름을 말해 줘요. 잊어버리기 전에.”',
-      wild: '말하는 고목이 가지를 낮추며 묻는다. “별빛을 건너온 이여, 너희 이름은 무엇이냐?”',
-    };
-    return {
-      key: 'alias',
-      title: '짧은 대화 장면',
-      prompt: asks[c.id],
-      placeholder: '예: 커피',
-      responseTemplate: '“그래, 자네 이름은 {{value}}군.” 그 한마디가 장면 속에 새겨졌다.',
-      help: '짧은 말이지만 이후 NPC 대사와 장면 문장에 실제로 반영됩니다.'
-    };
-  }
-  if (chapter === 19) {
-    const asks = {
-      ember: '봉인 앞에서 동료가 숨을 고르며 묻는다. “끝까지 가는 이유가 뭐지?”',
-      neon: '코어실 직전, 누군가 낮게 묻는다. “네가 되찾고 싶은 건 기억이야, 진실이야, 아니면 사람인가?”',
-      abyss: '심해의 어둠 속에서 생존자가 묻는다. “정말로 여기서 가장 구하고 싶은 건 뭐죠?”',
-      clock: '멈춘 시간 사이에서 동료가 묻는다. “내일이 와도, 네가 꼭 남기고 싶은 건 뭐야?”',
-      wild: '별빛 제단 앞에서 숲이 속삭인다. “네가 포기하지 못하는 소원은 무엇이냐?”',
-    };
-    return {
-      key: 'motive',
-      title: '짧은 역할극 장면',
-      prompt: asks[c.id],
-      placeholder: '예: 모두가 살아남는 내일',
-      responseTemplate: '그 대답은 곧 결단의 기준이 된다. “좋아. {{value}}를 위해 움직이는 거군.”',
-      help: '대답은 이후 후반부 장면과 엔딩 문장에 반영됩니다.'
-    };
-  }
-  return null;
-}
-
-
 function buildStoryChoices(c, guide, beat, act, step, index) {
   const actNo = act + 1;
   const phase = beat.phase || ['도입','대면','진실','위기','결단'][step] || '장면';
@@ -415,7 +376,6 @@ function buildStoryBeats(c){
         : step===2 ? '이 사실이 맞다면 지금까지의 사건을 바라보는 전제가 바뀐다.'
         : step===3 ? '여기서의 실패는 단순한 지연이 아니라 이후 장면의 위협과 상태이상을 남길 수 있다.'
         : '이번 결단이 다음 막에서 누구를 믿고 무엇을 포기할지 결정한다.';
-      const roleplayPrompt = roleplayPromptFor(c, chapter, act, step);
       const beat = {
         id:`${c.id.toUpperCase()}-STORY-${String(index+1).padStart(2,'0')}`,
         act:act+1,
@@ -427,11 +387,11 @@ function buildStoryBeats(c){
         situation:prose[step],
         objective,
         why,
-        prompt: roleplayPrompt ? roleplayPrompt.prompt : `${sceneAnchor(guide.place)}에서 무엇을 할지 아래 선택지 중 하나를 고르세요.`,
+        prompt: `${sceneAnchor(guide.place)}에서 무엇을 할지 아래 선택지 중 하나를 고르세요.`,
         reveal:guide.reveal,
         stakes:guide.stakes,
         visual:`${eventStyles[c.id].visuals[(act*2+step)%eventStyles[c.id].visuals.length]} · ${c.acts[act]}`,
-        roleplayPrompt,
+        continuityHook: step < 4 ? `이 장면의 결과는 같은 막의 다음 장면인 ‘${phases[step+1]}’로 직접 이어진다.` : (act < 4 ? `이번 결단이 끝나면 다음 막 ‘${c.acts[act+1]}’의 첫 장면이 열린다.` : `이번 결단이 최종 엔딩의 색을 결정한다.`),
         branchContext: step === 0 ? { fromAct: Math.max(0, act), summaries: { careful:'앞선 막에서 차분히 모은 기록과 단서가 이번 시작을 더 정교하게 만든다.', bold:'앞선 막의 강행 돌파 여파가 남아 이번 시작은 더 거칠고 급박하다.', empathetic:'앞선 막에서 얻은 신뢰와 협력이 이번 시작의 든든한 발판이 된다.' } } : null,
         roleHooks:{
           '근력': '힘으로 길을 열거나 위험한 존재를 붙잡아 동료가 움직일 시간을 벌 수 있다.',
@@ -442,7 +402,7 @@ function buildStoryBeats(c){
           '체력': '환경의 압박을 견디거나 위험을 대신 받아 파티가 행동할 시간을 확보할 수 있다.'
         }
       };
-      if (!roleplayPrompt) beat.choices = buildStoryChoices(c, guide, beat, act, step, index);
+      beat.choices = buildStoryChoices(c, guide, beat, act, step, index);
       beats.push(beat);
     }
   }

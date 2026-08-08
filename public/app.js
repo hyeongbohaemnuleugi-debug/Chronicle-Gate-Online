@@ -15,7 +15,7 @@ const REQUIRED_IDS = [
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceSub',
-  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel'
+  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
@@ -39,12 +39,15 @@ let diceQueue = Promise.resolve();
 let resumeInFlight = false;
 const app = $('#app');
 
-const UI_DEFAULTS = { theme: 'dark', chatSize: 300 };
+const UI_DEFAULTS = { theme: 'dark', chatSize: 300, audioVolume: 0.65, audioMuted: false };
 function loadUiPrefs() {
   const theme = localStorage.getItem('cg_theme') === 'light' ? 'light' : 'dark';
   const rawSize = Number(localStorage.getItem('cg_chat_size') || UI_DEFAULTS.chatSize);
   const chatSize = Math.max(300, Math.min(520, Number.isFinite(rawSize) ? rawSize : UI_DEFAULTS.chatSize));
-  return { theme, chatSize };
+  const rawVolume = Number(localStorage.getItem('cg_audio_volume'));
+  const audioVolume = Number.isFinite(rawVolume) ? Math.max(0, Math.min(1, rawVolume)) : UI_DEFAULTS.audioVolume;
+  const audioMuted = localStorage.getItem('cg_audio_muted') === '1';
+  return { theme, chatSize, audioVolume, audioMuted };
 }
 let uiPrefs = loadUiPrefs();
 function applyUiPrefs() {
@@ -57,12 +60,93 @@ function applyUiPrefs() {
   if (value) value.textContent = uiPrefs.chatSize === 300 ? '기본' : `${uiPrefs.chatSize}px`;
   $('#themeDarkBtn')?.classList.toggle('selected-setting', uiPrefs.theme === 'dark');
   $('#themeLightBtn')?.classList.toggle('selected-setting', uiPrefs.theme === 'light');
+  const audioRange = $('#audioVolumeRange');
+  if (audioRange) audioRange.value = String(Math.round(uiPrefs.audioVolume * 100));
+  const audioValue = $('#audioVolumeValue');
+  if (audioValue) audioValue.textContent = uiPrefs.audioMuted ? '음소거' : `${Math.round(uiPrefs.audioVolume * 100)}%`;
+  const muteBtn = $('#audioMuteBtn');
+  if (muteBtn) muteBtn.textContent = uiPrefs.audioMuted ? '사운드 꺼짐' : '사운드 켜짐';
+  if (typeof audioManager !== 'undefined') audioManager.applyPrefs();
 }
 function saveUiPrefs() {
   localStorage.setItem('cg_theme', uiPrefs.theme);
   localStorage.setItem('cg_chat_size', String(uiPrefs.chatSize));
+  localStorage.setItem('cg_audio_volume', String(uiPrefs.audioVolume));
+  localStorage.setItem('cg_audio_muted', uiPrefs.audioMuted ? '1' : '0');
   applyUiPrefs();
 }
+const AUDIO_FILES = {
+  music: {
+    ember: './audio/bgm_ember.wav', neon: './audio/bgm_neon.wav', abyss: './audio/bgm_abyss.wav',
+    clock: './audio/bgm_clock.wav', wild: './audio/bgm_wild.wav', combat: './audio/bgm_combat.wav',
+  },
+  fx: {
+    dice:'./audio/dice_roll.wav', success:'./audio/success.wav', failure:'./audio/failure.wav',
+    next:'./audio/scene_next.wav', hp:'./audio/hp_loss.wav', attack:'./audio/attack.wav',
+    hit:'./audio/hit.wav', boss:'./audio/boss_warning.wav', vote:'./audio/vote_lock.wav',
+  },
+};
+
+class AudioManager {
+  constructor(){ this.unlocked=false; this.music=null; this.musicKey=''; this.lastFxAt=new Map(); }
+  volume(mult=1){ return uiPrefs.audioMuted ? 0 : Math.max(0, Math.min(1, uiPrefs.audioVolume * mult)); }
+  unlock(){
+    if (this.unlocked) return;
+    this.unlocked=true;
+    this.syncMusic(state);
+  }
+  applyPrefs(){
+    if (this.music) this.music.volume=this.volume(.34);
+    if (uiPrefs.audioMuted) this.music?.pause?.();
+    else if (this.unlocked) this.music?.play?.().catch(()=>{});
+  }
+  fx(name, mult=1){
+    if (!this.unlocked || uiPrefs.audioMuted || !AUDIO_FILES.fx[name]) return;
+    const now=performance.now();
+    if (now-(this.lastFxAt.get(name)||0)<80) return;
+    this.lastFxAt.set(name,now);
+    const a=new Audio(AUDIO_FILES.fx[name]);
+    a.volume=this.volume(mult);
+    a.play().catch(()=>{});
+  }
+  wantedMusic(s){
+    if (!s?.campaignId) return '';
+    if (s.phase==='combat') return 'combat';
+    if (['prologue','story','resolution','ending'].includes(s.phase)) return s.campaignId;
+    return '';
+  }
+  syncMusic(s){
+    if (!this.unlocked) return;
+    const key=this.wantedMusic(s);
+    if (key===this.musicKey) { this.applyPrefs(); return; }
+    if (this.music){ this.music.pause(); this.music.currentTime=0; }
+    this.music=null; this.musicKey=key;
+    const src=AUDIO_FILES.music[key];
+    if (!src || uiPrefs.audioMuted) return;
+    const a=new Audio(src); a.loop=true; a.preload='auto'; a.volume=this.volume(.34);
+    this.music=a; a.play().catch(()=>{});
+  }
+  onState(prev,next){
+    this.syncMusic(next);
+    if (!prev || !next) return;
+    if (prev.phase==='resolution' && next.phase==='story') this.fx('next',.9);
+    if (prev.phase==='prologue' && next.phase==='story') this.fx('next',.9);
+    const prevPlayers=new Map((prev.players||[]).map(p=>[p.id,p]));
+    const lostHp=(next.players||[]).some(p=>prevPlayers.has(p.id)&&Number(p.hp)<Number(prevPlayers.get(p.id).hp));
+    if (lostHp) { this.fx('hit',.7); setTimeout(()=>this.fx('hp',.9),90); }
+    const prevMonster=prev.monster;
+    const nextMonster=next.monster;
+    if (prevMonster && nextMonster && Number(nextMonster.hp)<Number(prevMonster.hp)) this.fx('hit',1);
+    if (prevMonster?.turnPhase!=='boss' && nextMonster?.turnPhase==='boss') this.fx('boss',.9);
+    if (!prev.voteAllVotedCountdown && next.voteAllVotedCountdown) this.fx('vote',.75);
+  }
+}
+
+const audioManager = new AudioManager();
+const unlockAudio=()=>audioManager.unlock();
+window.addEventListener('pointerdown',unlockAudio,{once:true,capture:true});
+window.addEventListener('keydown',unlockAudio,{once:true,capture:true});
+
 applyUiPrefs();
 
 function resetTransientUi() {
@@ -91,6 +175,7 @@ function resumeSavedSession(attempt = 0) {
     resumeInFlight = false;
     if (!err && res?.ok) {
       state = res.state;
+      audioManager.syncMusic(state);
       renderState();
       if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
       $('#connectionText').textContent = 'ONLINE';
@@ -443,6 +528,7 @@ function onJoined(res) {
   localStorage.setItem('cg_room', roomCode);
   localStorage.setItem('cg_token', playerToken);
   state = res.state;
+  audioManager.syncMusic(state);
   renderState();
   if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
   toast(`ROOM ${roomCode} 입장 완료`);
@@ -470,7 +556,7 @@ socket.on('connect', () => {
 });
 socket.on('disconnect', () => { $('#connectionText').textContent = 'RECONNECTING'; $('.live-dot').style.background = 'var(--danger)'; });
 socket.on('campaigns', list => { campaigns = list; renderCampaigns(); });
-socket.on('state', s => { if (!roomCode || s.code === roomCode) { state = s; renderState(); } });
+socket.on('state', s => { if (!roomCode || s.code === roomCode) { const prev = state; state = s; audioManager.onState(prev, state); renderState(); } });
 socket.on('chat:new', entry => {
   if (state) {
     const ids = new Set((state.chat || []).map(item => item.id));
@@ -478,9 +564,9 @@ socket.on('chat:new', entry => {
     renderChat();
   }
 });
-socket.on('resolution', r => showResolution(r));
+socket.on('resolution', r => { audioManager.fx(r?.ok ? 'success' : 'failure', .9); showResolution(r); });
 socket.on('skill:ready', payload => toast(`✨ ${payload?.name || '직업 스킬'} 사용이 가능합니다!`));
-socket.on('dice:roll', payload => enqueueDice(payload));
+socket.on('dice:roll', payload => { audioManager.fx('dice', .85); enqueueDice(payload); });
 
 function enqueueDice(payload) {
   diceQueue = diceQueue.then(async () => {
@@ -893,7 +979,7 @@ function renderCombat() {
     ? `<span class="combat-round">ROUND ${m.round || 1}</span> · <strong>BOSS TURN</strong> · ${esc(m.name)}의 공격이 곧 실행됩니다.`
     : `<span class="combat-round">ROUND ${m.round || 1}</span> · <strong>PLAYER TURN</strong> · ${atkStat} 수정치(${signedMod(p?.abilities?.[atkStat]?.total || 10)})로 공격 · D20 vs AC ${m.ac}`;
 }
-$('#attackBtn').onclick = () => socket.emit('combat:attack', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+$('#attackBtn').onclick = () => { audioManager.fx('attack', .9); socket.emit('combat:attack', { roomCode, playerToken }, r => !r?.ok && toast(r.error)); };
 
 function renderEnding() {
   if (!state || state.phase !== 'ending') return;
@@ -1012,6 +1098,8 @@ $$('[data-help-tab]').forEach(button => button.onclick = () => setHelpTab(button
 $('#themeDarkBtn').onclick = () => { uiPrefs.theme = 'dark'; saveUiPrefs(); toast('검정 테마로 변경했습니다.'); };
 $('#themeLightBtn').onclick = () => { uiPrefs.theme = 'light'; saveUiPrefs(); toast('하양 테마로 변경했습니다.'); };
 $('#chatSizeRange').oninput = e => { uiPrefs.chatSize = Number(e.target.value); saveUiPrefs(); };
+$('#audioVolumeRange').oninput = e => { uiPrefs.audioVolume = Math.max(0, Math.min(1, Number(e.target.value)/100)); if (uiPrefs.audioVolume > 0) uiPrefs.audioMuted = false; saveUiPrefs(); audioManager.unlock(); audioManager.syncMusic(state); };
+$('#audioMuteBtn').onclick = () => { uiPrefs.audioMuted = !uiPrefs.audioMuted; saveUiPrefs(); audioManager.unlock(); audioManager.syncMusic(state); toast(uiPrefs.audioMuted ? '게임 사운드를 껐습니다.' : '게임 사운드를 켰습니다.'); };
 $('#uiResetBtn').onclick = () => { uiPrefs = { ...UI_DEFAULTS }; saveUiPrefs(); toast('화면 설정을 기본값으로 되돌렸습니다.'); };
 $('#abandonRequestBtn').onclick = () => socket.emit('game:abandonRequest', { roomCode, playerToken }, r => { if (!r?.ok) toast(r.error); else toast('포기 투표를 시작했습니다.'); });
 $('#abandonYes').onclick = () => socket.emit('game:abandonRespond', { roomCode, playerToken, approve: true }, r => !r?.ok && toast(r.error));

@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import crypto from 'crypto';
 import { Server } from 'socket.io';
-import { CAMPAIGNS, STAT_NAMES } from './campaign-data.js';
+import { CAMPAIGNS, STAT_NAMES, ITEMS_BY_CAMPAIGN } from './campaign-data.js';
 import {
   appendSessionEvent,
   loadRoomSnapshot,
@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.12.2-audio-boss-art-fix.0';
+const APP_VERSION = '4.13.0-economy-gear.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -135,7 +135,78 @@ function blankPlayerRuntime(player) {
   player.inspiration = 0;
   player.statuses = [];
   player.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
+  player.coins = 10;
+  player.inventory = [];
+  player.equipment = { weapon: null, armor: null, charm: null, tool: null };
 }
+
+function normalizeEconomyPlayer(player) {
+  player.coins = Math.max(0, Number(player.coins ?? 10));
+  player.inventory = Array.isArray(player.inventory) ? [...new Set(player.inventory.filter(Boolean))] : [];
+  player.equipment ||= { weapon: null, armor: null, charm: null, tool: null };
+  for (const slot of ['weapon','armor','charm','tool']) if (!(slot in player.equipment)) player.equipment[slot] = null;
+}
+
+function campaignItemCatalog(campaignId) {
+  return ITEMS_BY_CAMPAIGN[campaignId] || [];
+}
+function findCampaignItem(campaignId, itemId) {
+  return campaignItemCatalog(campaignId).find(item => item.id === itemId) || null;
+}
+function equippedItems(room, player) {
+  return Object.values(player.equipment || {}).map(id => findCampaignItem(room.campaignId, id)).filter(Boolean);
+}
+function equipmentStatBonus(room, player, stat) {
+  return equippedItems(room, player).filter(item => item.stat === stat).reduce((sum, item) => sum + Number(item.bonus || 0), 0);
+}
+function effectiveAbilityTotal(room, player, stat) {
+  return Number(player.abilities?.[stat]?.total || 10) + equipmentStatBonus(room, player, stat);
+}
+function grantCoins(player, amount) {
+  const value = Math.max(0, Number(amount || 0));
+  player.coins = Math.max(0, Number(player.coins || 0) + value);
+  return value;
+}
+function spendCoins(player, amount) {
+  const value = Math.max(0, Number(amount || 0));
+  if (Number(player.coins || 0) < value) return false;
+  player.coins -= value;
+  return true;
+}
+function grantItem(room, player, itemId = null) {
+  const catalog = campaignItemCatalog(room.campaignId);
+  let item = itemId ? catalog.find(entry => entry.id === itemId) : null;
+  if (!item) item = catalog.find(entry => !player.inventory.includes(entry.id)) || null;
+  if (!item) {
+    grantCoins(player, 4);
+    return { duplicate:true, coins:4, item:null };
+  }
+  if (player.inventory.includes(item.id)) {
+    grantCoins(player, 3);
+    return { duplicate:true, coins:3, item };
+  }
+  player.inventory.push(item.id);
+  return { duplicate:false, coins:0, item };
+}
+function rollReward(room, player, { margin = 0, natural = 0, guaranteedItem = false, coinBonus = 0 } = {}) {
+  const rewards = [];
+  if (coinBonus > 0) {
+    grantCoins(player, coinBonus);
+    rewards.push(`코인 +${coinBonus}`);
+  }
+  if (margin >= 7) {
+    const coins = margin >= 10 ? 4 : 2;
+    grantCoins(player, coins);
+    rewards.push(`대성공 보상 · 코인 +${coins}`);
+  }
+  if (guaranteedItem || natural === 20 || margin >= 10) {
+    const got = grantItem(room, player);
+    if (got.item && !got.duplicate) rewards.push(`아이템 획득 · ${got.item.name}`);
+    else if (got.coins) rewards.push(`중복 장비 환산 · 코인 +${got.coins}`);
+  }
+  return rewards;
+}
+
 
 function normalizeLoadedRoom(room) {
   if (!room) return room;
@@ -146,6 +217,7 @@ function normalizeLoadedRoom(room) {
   for (const player of room.players || []) {
     player.skillState ||= { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
     player.statuses ||= [];
+    normalizeEconomyPlayer(player);
   }
   room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
   room.voteEndsAt ||= null;
@@ -165,6 +237,7 @@ function normalizeLoadedRoom(room) {
   room.narrativeLedger ||= { threads: [], routeShifts: [], jobThreads: {} };
   room.storySeenIds ||= [];
   room.lastResolvedStoryBeat ||= null;
+  room.facilityUses ||= {};
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
@@ -227,7 +300,7 @@ async function createRoom(hostName, socketId) {
   const roomCode = await reserveRoomCode();
   const player = {
     id: token(), socketId, name: hostName, host: true, connected: true,
-    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 },
+    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 10, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
   };
   const room = {
     code: roomCode,
@@ -248,7 +321,7 @@ async function createRoom(hostName, socketId) {
     storySeenIds: [],
     storyNodeId: null, storyComplete: false, storyGraphVersion: 1,
     lastResolvedStoryBeat: null,
-    chat: [], lastResolution: null, ending: null,
+    chat: [], lastResolution: null, ending: null, facilityUses: {},
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
   };
   rooms.set(roomCode, room);
@@ -1114,12 +1187,14 @@ function publicRoom(room) {
       id: campaign.id, title: campaign.title, genre: campaign.genre,
       subtitle: campaign.subtitle, intro: campaign.intro, acts: campaign.acts,
       icon: campaign.icon, accent: campaign.accent, accent2: campaign.accent2,
-      jobs: campaign.jobs, monsters: campaign.monsters, eventCount: campaign.events.length, storyBeats: campaign.storyBeats,
+      jobs: campaign.jobs, monsters: campaign.monsters, items: campaign.items || [], eventCount: campaign.events.length, storyBeats: campaign.storyBeats,
     } : null,
     players: room.players.map(p => ({
       id: p.id, name: p.name, host: p.host, connected: p.connected,
       ready: p.ready, job: p.job, abilities: p.abilities,
       hp: p.hp, maxHp: p.maxHp, inspiration: p.inspiration,
+      coins: Number(p.coins || 0), inventory: [...(p.inventory || [])], equipment: { ...(p.equipment || {}) },
+      equipmentBonuses: Object.fromEntries(STAT_NAMES.map(stat => [stat, equipmentStatBonus(room, p, stat)])),
       statuses: activeStatuses(room, p),
       skillState: { ...(p.skillState || {}), cooldownRemaining: Math.max(0, Number(p.skillState?.readyAtTurn || 0) - Number(room.turnSerial || 0)) },
     })),
@@ -1158,6 +1233,7 @@ function publicRoom(room) {
     abandonVote: room.abandonVote || null,
     targetStory: TARGET_STORY,
     storySeenCount: room.storySeenIds?.length || 0,
+    facilityUses: room.facilityUses || {},
     maxThreat: MAX_THREAT,
     revision: room.revision,
     chat: room.chat.slice(-120),
@@ -1572,7 +1648,7 @@ function monsterTurn(room) {
   }
   const target = living[crypto.randomInt(0, living.length)];
   const roll = rand(20);
-  const armor = 10 + mod(target.abilities?.민첩?.total || 10);
+  const armor = 10 + mod(effectiveAbilityTotal(room, target, '민첩'));
   const total = roll + room.monster.attackBonus;
   const hit = roll === 20 || (roll !== 1 && total >= armor);
   let damage = hit ? rand(4) + 1 : 0;
@@ -1843,7 +1919,7 @@ io.on('connection', socket => {
     const name = sanitize(payload.name || `플레이어 ${room.players.length + 1}`, 18) || `플레이어 ${room.players.length + 1}`;
     const player = {
       id: token(), socketId: socket.id, name, host: room.players.length === 0, connected: true,
-      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 },
+      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 10, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
     };
     room.players.push(player);
     socket.join(room.code);
@@ -1893,6 +1969,7 @@ io.on('connection', socket => {
     room.turnIndex = 0;
     room.abandonVote = null;
     room.choiceVotes = {};
+    room.facilityUses = {};
     for (const player of room.players) blankPlayerRuntime(player);
     room.ending = null;
     pushChat(room, { type: 'system', text: `캠페인이 「${campaign.title}」로 선택되었습니다.` });
@@ -2076,7 +2153,7 @@ io.on('connection', socket => {
     if (!ability) return ack?.({ ok:false, error:'캐릭터 능력치를 찾을 수 없습니다.' });
 
     const roll = rand(20);
-    const abilityMod = mod(ability.total);
+    const abilityMod = mod(effectiveAbilityTotal(room, player, choice.stat));
     const skillBonus = Number(player.skillState?.checkBonus || 0);
     const statusPenalty = statusPenaltyForCheck(room, player, choice.stat);
     const dcReduction = Number(room.nextCheckDcReduction || 0);
@@ -2104,6 +2181,8 @@ io.on('connection', socket => {
       room.threat = Math.max(0, room.threat - 1);
       room.dcPenalty = Math.max(0, Number(room.dcPenalty || 0) - 1);
       consequence = margin >= 5 ? '대성공 여파로 영감 +1, 위협 -1' : '성공 여파로 위협 -1';
+      const economyRewards = rollReward(room, player, { margin, natural: roll });
+      if (economyRewards.length) consequence += ` · ${economyRewards.join(' · ')}`;
     } else {
       player.hp = Math.max(0, player.hp - 1);
       room.threat = Math.min(MAX_THREAT, room.threat + 1);
@@ -2171,6 +2250,85 @@ io.on('connection', socket => {
     ack?.({ ok:true, result:room.lastStoryAction });
   });
 
+  socket.on('item:equip', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !player) return;
+    normalizeEconomyPlayer(player);
+    const item = findCampaignItem(room.campaignId, payload?.itemId);
+    if (!item || !player.inventory.includes(item.id)) return ack?.({ ok:false, error:'보유하지 않은 아이템입니다.' });
+    const slot = item.slot;
+    if (!['weapon','armor','charm','tool'].includes(slot)) return ack?.({ ok:false, error:'장착할 수 없는 아이템입니다.' });
+    if (player.equipment[slot] === item.id) {
+      player.equipment[slot] = null;
+      pushChat(room, { type:'action', author:player.name, text:`${item.name} 장착 해제` });
+    } else {
+      player.equipment[slot] = item.id;
+      pushChat(room, { type:'success', author:player.name, text:`${item.name} 장착 · ${item.stat} +${item.bonus}` });
+    }
+    sync(room);
+    ack?.({ ok:true, equipment:player.equipment });
+  });
+
+  socket.on('facility:action', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !player) return;
+    if (!['story','resolution'].includes(room.phase) || !room.currentEvent?.facility) return ack?.({ ok:false, error:'지금은 시설을 이용할 수 없습니다.' });
+    normalizeEconomyPlayer(player);
+    room.facilityUses ||= {};
+    const facility = room.currentEvent.facility;
+    const action = String(payload?.action || facility.type);
+    const itemId = String(payload?.itemId || '');
+    const useKey = `${room.currentEvent.id}:${player.id}:${action}`;
+    const oneUseKinds = new Set(['inn','restaurant','gamble','quest']);
+    if (oneUseKinds.has(action) && room.facilityUses[useKey]) return ack?.({ ok:false, error:'이 이벤트에서는 이미 이용했습니다.' });
+    let summary = '';
+    if (action === 'inn') {
+      const cost = Number(facility.cost || 4);
+      if (!spendCoins(player, cost)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${cost} 코인` });
+      const before = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + Number(facility.heal || 5));
+      let cleansed = '';
+      const status = activeStatuses(room, player)[0];
+      if (status) { player.statuses = (player.statuses || []).filter(entry => entry.id !== status.id); cleansed = ` · ${status.label} 제거`; }
+      summary = `숙박 -${cost} 코인 · HP +${player.hp - before}${cleansed}`;
+    } else if (action === 'restaurant') {
+      const cost = Number(facility.cost || 2);
+      if (!spendCoins(player, cost)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${cost} 코인` });
+      const before = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + Number(facility.heal || 2));
+      summary = `식사 -${cost} 코인 · HP +${player.hp - before}`;
+    } else if (action === 'shop') {
+      const item = findCampaignItem(room.campaignId, itemId);
+      if (!item) return ack?.({ ok:false, error:'판매 목록에 없는 아이템입니다.' });
+      if (player.inventory.includes(item.id)) return ack?.({ ok:false, error:'이미 보유한 아이템입니다.' });
+      if (!spendCoins(player, item.price)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${item.price} 코인` });
+      player.inventory.push(item.id);
+      summary = `${item.name} 구매 · -${item.price} 코인`;
+    } else if (action === 'gamble') {
+      const cost = Number(facility.cost || 2);
+      if (!spendCoins(player, cost)) return ack?.({ ok:false, error:`내기에는 ${cost} 코인이 필요합니다.` });
+      const die = rand(6);
+      const payout = die <= 2 ? 0 : die <= 4 ? cost : die === 5 ? 5 : 8;
+      if (payout) grantCoins(player, payout);
+      summary = `D6 내기 ${die} · ${payout ? `+${payout} 코인` : '획득 없음'} (참가비 -${cost})`;
+      emitRoll(room, player, { sides:6, result:die, purpose:'위험한 내기', kind:'facility-gamble', total:die, modifiers:[] });
+    } else if (action === 'quest') {
+      const stat = player.job?.prime || '지혜';
+      const result = rand(20);
+      const bonus = mod(effectiveAbilityTotal(room, player, stat));
+      const total = result + bonus;
+      const success = result === 20 || total >= 12;
+      const coins = success ? (total >= 17 ? 7 : 5) : 0;
+      if (coins) grantCoins(player, coins);
+      summary = `${stat} 의뢰 ${result}${bonus>=0?'+':''}${bonus}=${total} · ${success ? `성공, 코인 +${coins}` : '실패'}`;
+      emitRoll(room, player, { sides:20, result, purpose:`짧은 의뢰 · ${stat} 판정`, kind:'facility-quest', stat, total, dc:12, success, modifiers:[{label:`${stat} 보정`,value:bonus}] });
+    } else return ack?.({ ok:false, error:'알 수 없는 시설 행동입니다.' });
+    if (oneUseKinds.has(action)) room.facilityUses[useKey] = true;
+    pushChat(room, { type:'success', author:player.name, text:`${facility.label} · ${summary}` });
+    sync(room);
+    ack?.({ ok:true, summary });
+  });
+
   socket.on('player:skillUse', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room) return;
@@ -2234,7 +2392,7 @@ io.on('connection', socket => {
     if (!ability) return ack?.({ ok: false, error: '능력치가 없습니다.' });
 
     const result = rand(20);
-    const abilityMod = mod(ability.total);
+    const abilityMod = mod(effectiveAbilityTotal(room, player, active.choice.stat));
     const skillBonus = Number(player.skillState?.checkBonus || 0);
     const statusPenalty = statusPenaltyForCheck(room, player, active.choice.stat);
     const dcReduction = Number(room.nextCheckDcReduction || 0);
@@ -2243,6 +2401,7 @@ io.on('connection', socket => {
     player.skillState.checkBonus = 0;
     room.nextCheckDcReduction = 0;
     const success = result === 20 || (result !== 1 && total >= dc);
+    const margin = total - dc;
     emitRoll(room, player, {
       sides: 20, result, purpose: `${active.choice.stat} 판정 · DC ${dc}`,
       kind: 'check', stat: active.choice.stat, total, dc, success, modifiers:[{label:`${active.choice.stat} 보정`,value:abilityMod},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty}].filter(m=>m.value),
@@ -2260,9 +2419,18 @@ io.on('connection', socket => {
       room.dcPenalty = Math.min(2, room.dcPenalty + 1);
     }
 
+    const eventRewardNotes = success ? rollReward(room, player, {
+      margin,
+      natural: result,
+      guaranteedItem: Boolean(room.currentEvent?.lootReward && margin >= 4),
+      coinBonus: Number(room.currentEvent?.coinReward || 0),
+    }) : [];
     room.lastResolution = {
       ok: success, result, total, dc,
-      text: success ? active.choice.success : active.choice.failure,
+      text: `${success ? active.choice.success : active.choice.failure}${eventRewardNotes.length ? `
+
+보상: ${eventRewardNotes.join(' · ')}` : ''}`,
+      rewards: eventRewardNotes,
       playerId: player.id,
     };
     room.phase = 'resolution';
@@ -2322,7 +2490,7 @@ io.on('connection', socket => {
     if (!rateLimit(socket, 'attack', 700)) return ack?.({ ok: false, error: '주사위가 멈출 때까지 기다려주세요.' });
 
     const stat = player.job?.prime || '근력';
-    const bonus = mod(player.abilities?.[stat]?.total || 10);
+    const bonus = mod(effectiveAbilityTotal(room, player, stat));
     const skillAttackBonus = Number(player.skillState?.attackBonus || 0);
     const skillDamageBonus = Number(player.skillState?.damageBonus || 0);
     const statusAttackPenalty = statusPenaltyForAttack(room, player, stat);

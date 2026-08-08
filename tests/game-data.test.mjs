@@ -21,6 +21,19 @@ for (const campaign of CAMPAIGNS) {
       assert.ok(beat.objective?.length > 10);
       assert.ok(beat.why?.length > 10);
       assert.ok(beat.prompt?.length > 10);
+      if (beat.roleplayPrompt) {
+        assert.ok(beat.roleplayPrompt.key);
+        assert.ok(beat.roleplayPrompt.responseTemplate?.includes('{{value}}'));
+      } else {
+        assert.equal(beat.choices?.length, 3);
+        for (const choice of beat.choices) {
+          assert.ok(STAT_NAMES.includes(choice.stat));
+          assert.ok(choice.dc >= 10 && choice.dc <= 18);
+          assert.ok(choice.detail?.length > 10);
+          assert.ok(choice.success?.length > 10);
+          assert.ok(choice.failure?.length > 10);
+        }
+      }
     }
   });
 

@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.5.2-continuity-images.0';
+const APP_VERSION = '4.6.0-branching-scenes.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 25;
@@ -152,6 +152,7 @@ function normalizeLoadedRoom(room) {
   room.storyMemory ||= {};
   room.pathTotals ||= { truth: 0, survival: 0, bond: 0 };
   room.pendingContinue ||= null;
+  room.failureCount = Number(room.failureCount || 0);
   room.prologue ||= null;
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
@@ -203,7 +204,7 @@ async function createRoom(hostName, socketId) {
     choiceVotes: {}, voteEndsAt: null,
     mainTurnsSinceEvent: 0, pendingTurnAdvance: false, turnSerial: 0, nextCheckDcReduction: 0, threatShield: 0,
     threat: 0, story: 0, dcPenalty: 0, monster: null,
-    storyFlags: {}, storyMemory: {}, pathTotals: { truth: 0, survival: 0, bond: 0 }, pendingContinue: null,
+    storyFlags: {}, storyMemory: {}, pathTotals: { truth: 0, survival: 0, bond: 0 }, pendingContinue: null, failureCount: 0,
     prologue: null,
     chat: [], lastResolution: null, ending: null,
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
@@ -342,6 +343,7 @@ function buildVictoryEnding(room) {
     survival: '상처와 실패를 끌어안고도 한 걸음씩 밀고 나가 결말을 완성했습니다.',
     bond: '사람과 사람 사이의 약속, 설득, 신뢰를 붙들며 세계의 끝까지 나아갔습니다.',
   };
+  const failures = Number(room.failureCount || 0);
   const branchNote = finalBranch === 'empathetic'
     ? '마지막에는 설득과 공감이 닫혀 있던 길을 열었습니다.'
     : finalBranch === 'bold'
@@ -354,57 +356,107 @@ function buildVictoryEnding(room) {
   return {
     victory: true,
     title: alias ? `「${alias}」 일행의 ${titles[path]?.[finalBranch] || titles[path]?.careful}` : (titles[path]?.[finalBranch] || titles[path]?.careful),
-    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 장면을 지나 선택의 흔적이 엔딩에 남았습니다.`,
+    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 장면을 지나 선택의 흔적이 엔딩에 남았습니다. ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
   };
 }
 
+
+const ROUTE_META = {
+  careful: { name:'추적 루트', short:'단서를 쌓아 진실로 접근', color:'TRUTH' },
+  bold: { name:'돌파 루트', short:'위험을 감수하고 주도권 확보', color:'FORCE' },
+  empathetic: { name:'신뢰 루트', short:'사람과 존재의 협력을 얻어 접근', color:'BOND' },
+};
+
+const WORLD_ROUTE_WORDS = {
+  ember: { threat:'왕관의 의지와 죽은 기사들', ally:'사제·주민·왕가의 증언자', medium:'재와 봉인의 흔적' },
+  neon: { threat:'도시 감시망과 MOTHER-9의 추적', ally:'시민·기억 거래자·내부 협력자', medium:'삭제 로그와 기억 조각' },
+  abyss: { threat:'심해 신호와 무너지는 기지', ally:'생존자·승무원·탈라스의 반응', medium:'소나·압력·생체 기록' },
+  clock: { threat:'루프와 열세 번째 종의 압박', ally:'루프를 기억하는 시민과 종지기의 흔적', medium:'시간 오차와 사라진 기록' },
+  wild: { threat:'뒤틀린 숲과 별빛의 포식', ally:'부족·야수·숲의 정령', medium:'별가루·뿌리·꿈의 흔적' },
+};
+
+function branchTransitionText(campaign, beat, prev) {
+  if (!prev?.branchValue) return null;
+  const route = prev.branchValue;
+  const words = WORLD_ROUTE_WORDS[campaign?.id] || WORLD_ROUTE_WORDS.ember;
+  const choice = prev.declaration || '이전 선택';
+  const success = prev.success !== false;
+  if (route === 'careful') {
+    return success
+      ? `직전 장면에서 “${choice}”를 택한 덕분에 ${words.medium}이 서로 이어졌다. 파티는 남들이 놓친 순서를 붙잡은 채 다음 현장에 도착한다. 이번 장면은 우연히 이어진 것이 아니라, 방금 확보한 단서가 직접 이곳을 가리킨 결과다.`
+      : `직전 장면에서 “${choice}”를 시도했지만 해석이 어긋났다. 잘못 짚은 단서 하나 때문에 파티는 한 번 돌아왔고, 그 사이 ${words.threat}이 먼저 움직였다. 다음 장면은 같은 출발점이 아니다. 부족한 정보를 메우면서 동시에 뒤처진 시간을 되찾아야 한다.`;
+  }
+  if (route === 'bold') {
+    return success
+      ? `직전 장면에서 “${choice}”로 판을 강하게 흔든 결과, ${words.threat}이 예상보다 빨리 반응했다. 대신 파티가 주도권을 쥐었다. 다음 장면은 조용한 조사보다 추격과 대치가 앞서는 흐름으로 바뀐다.`
+      : `직전 장면의 “${choice}”는 길을 열었지만 너무 큰 소리를 냈다. ${words.threat}이 파티의 위치와 방식까지 알아챘고, 다음 장면은 준비된 함정 속에서 시작된다. 성공했을 때와 같은 길이지만 난이도와 분위기는 완전히 달라졌다.`;
+  }
+  return success
+    ? `직전 장면에서 “${choice}”를 통해 ${words.ally}의 마음을 얻었다. 그들이 건넨 정보와 도움 덕분에 원래는 닫혀 있었을 길이 열린다. 다음 장면은 혼자 힘으로 밀어붙이는 이야기가 아니라, 얻어낸 신뢰를 어떻게 사용할지에 달려 있다.`
+    : `직전 장면에서 “${choice}”를 시도했지만 신뢰를 완전히 얻지 못했다. ${words.ally}은(는) 중요한 사실 하나를 감췄고, 그 빈틈이 다음 장면의 위험으로 돌아온다. 이제 파티는 불완전한 협력 속에서 누구를 믿을지 다시 판단해야 한다.`;
+}
+
+function branchCliffhanger(campaign, beat, prev) {
+  const route = prev?.branchValue || 'careful';
+  const phase = beat?.phase || '장면';
+  const actEnd = phase === '결단';
+  const world = campaign?.id;
+  const hooks = {
+    ember: actEnd ? '그리고 성문 너머에서, 아직 등장하지 않았어야 할 왕의 종이 한 번 울린다.' : '그 순간 재 속에서 금속이 긁히는 소리가 난다. 누군가 파티보다 먼저 다음 봉인을 건드렸다.',
+    neon: actEnd ? '새 좌표가 화면에 뜬다. 문제는 그 좌표의 접속자 이름이 파티 중 한 사람과 같다는 것이다.' : '곧이어 삭제된 로그 한 줄이 복구된다. 발신 시각은 아직 오지 않은 미래다.',
+    abyss: actEnd ? '상승용 통신기에 짧은 목소리가 잡힌다. 구조 요청이 아니라, 파티의 이름을 부르는 음성이다.' : '소나 화면 한쪽에 지금까지 없던 거대한 반향이 천천히 돌아선다.',
+    clock: actEnd ? '종이 멈춘 뒤에도 그림자 하나만 계속 움직인다. 그것은 다음 루프를 이미 알고 있는 사람의 그림자다.' : '벽시계의 초침이 한 칸 역행하고, 방금 사라진 문장이 다른 내용으로 돌아온다.',
+    wild: actEnd ? '숲 위의 마지막 별이 한 번 크게 흔들리고, 전혀 다른 방향의 길이 열리기 시작한다.' : '나무들이 동시에 숨을 멈춘 듯 조용해지고, 멀리서 한 번도 듣지 못한 울음소리가 번진다.',
+  };
+  const routeTail = route === 'bold' ? '이번엔 기다릴 시간이 없다.' : route === 'empathetic' ? '누군가가 그 신호에 먼저 답하려 한다.' : '방금 모은 단서가 그 방향과 정확히 겹친다.';
+  return `${hooks[world] || hooks.ember} ${routeTail}`;
+}
+
+function applyBranchToChoices(beat, prev) {
+  if (!prev?.branchValue || !Array.isArray(beat.choices)) return;
+  const route = prev.branchValue;
+  const failed = prev.success === false;
+  beat.choices = beat.choices.map(choice => {
+    const next = { ...choice };
+    if (choice.branchValue === route) {
+      next.dc = Math.max(8, Number(next.dc || 10) - (failed ? 0 : 1));
+      next.detail = `${failed ? '이전 시도가 꼬여 위험하지만, 같은 방식의 흐름을 이어간다.' : '이전 선택의 흐름을 이어가므로 준비된 이점이 있다.'} ${next.detail || ''}`;
+    } else if (failed) {
+      next.dc = Number(next.dc || 10) + 1;
+      next.detail = `직전 실패의 여파로 접근 방식을 바꾸는 데 추가 부담이 있다. ${next.detail || ''}`;
+    }
+    return next;
+  });
+}
 
 function renderedStoryBeat(room, campaign) {
   const base = campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)];
   if (!base) return null;
   const beat = JSON.parse(JSON.stringify(base));
-  const alias = room.storyMemory?.alias;
-  const motive = room.storyMemory?.motive;
   const history = room.storyHistory || [];
   const prev = history[history.length - 1];
-  const recap = [];
-
-  if (beat.chapter === 1 && room.storyMemory?.prologueMeeting) {
-    recap.push(room.storyMemory.prologueMeeting);
-  }
-
-  if (prev && Number(prev.chapter || 0) < Number(beat.chapter || 0)) {
-    const outcome = prev.success ? '실마리를 붙잡는 데 성공했고' : '대가를 치르며 간신히 빠져나왔고';
-    recap.push(`직전 장면에서 ${prev.playerName || '파티'}은(는) “${prev.declaration || prev.title || '선택'}”을 택해 ${outcome} 그 여파가 아직 남아 있다.`);
-  }
-
-  const previousActBranch = room.storyFlags?.[`act${Math.max(1, Number(beat.act || 1) - 1)}`];
-  if (beat.branchContext?.summaries && previousActBranch && Number(beat.act || 1) > 1) {
-    recap.push(beat.branchContext.summaries[previousActBranch] || '앞선 막의 선택이 이번 장면에 조용한 그림자를 드리운다.');
-    if (previousActBranch === 'bold') beat.objective += ' 주변 상황이 더 거칠어져 빠른 판단이 필요하다.';
-    else if (previousActBranch === 'empathetic') beat.objective += ' 이전 막에서 얻은 협력과 증언이 실마리가 된다.';
-    else beat.objective += ' 이전 막에서 축적한 기록과 단서 덕분에 더 정교한 접근이 가능하다.';
-  }
-
-  if (alias && beat.chapter > 2) {
-    recap.push(`누군가의 말이 다시 떠오른다. “그래, 자네 이름은 ${alias}군.”`);
-  }
-  if (motive && beat.chapter >= 19) {
-    beat.why += ` 또한 파티는 “${motive}”라는 이유를 붙들고 있어 장면의 무게가 더 커진다.`;
-  }
-
+  const route = prev?.branchValue || room.storyFlags?.[`act${beat.act}`] || 'careful';
+  const routeMeta = ROUTE_META[route] || ROUTE_META.careful;
+  const transition = branchTransitionText(campaign, beat, prev);
   const lingering = room.players.flatMap(member => activeStatuses(room, member).map(status => `${member.name}: ${status.label}`));
-  if (lingering.length) {
-    recap.push(`이전 장면의 상처와 후유증도 남아 있다. ${lingering.slice(0, 3).join(', ')}${lingering.length > 3 ? ' 외' : ''}.`);
-  }
 
-  if (recap.length) {
-    const block = recap.join(' ');
-    beat.situation = `${block}\n\n${beat.situation}`;
-    beat.text = `${block}\n\n${beat.text}`;
-  }
+  const paragraphs = [];
+  if (beat.chapter === 1 && room.storyMemory?.prologueMeeting) paragraphs.push(room.storyMemory.prologueMeeting);
+  if (transition) paragraphs.push(transition);
+  paragraphs.push(beat.situation || beat.text || '');
+  if (lingering.length) paragraphs.push(`이전 선택의 상처도 사라지지 않았다. ${lingering.slice(0, 3).join(', ')}${lingering.length > 3 ? ' 외' : ''}. 이 상태는 이번 판정과 전투에도 실제 영향을 준다.`);
 
-  beat.visual = `${beat.visual}${previousActBranch === 'bold' ? ' · 돌파 루트' : previousActBranch === 'empathetic' ? ' · 신뢰 루트' : previousActBranch ? ' · 추적 루트' : ''}`;
+  beat.route = { key:route, ...routeMeta, previousSuccess: prev?.success ?? null };
+  beat.title = `${beat.title} · ${routeMeta.name}`;
+  beat.situation = paragraphs.filter(Boolean).join('\n\n');
+  beat.text = beat.situation;
+  beat.objective = `${beat.objective} 현재는 ${routeMeta.short} 흐름으로 이야기가 진행 중이다.`;
+  beat.why = prev?.success === false
+    ? `${beat.why} 직전 실패 때문에 같은 장면이라도 더 불리한 조건과 새로운 후유증을 안고 시작한다.`
+    : `${beat.why} 직전 선택에서 얻은 이점이 이번 장면의 접근법과 난이도를 바꾼다.`;
+  beat.continuityHook = branchCliffhanger(campaign, beat, prev);
+  beat.visual = `${beat.visual} · ${routeMeta.name}${prev?.success === false ? ' · 실패 여파' : ''}`;
+  applyBranchToChoices(beat, prev);
   return beat;
 }
 
@@ -1217,6 +1269,7 @@ io.on('connection', socket => {
     room.storyMemory = {};
     room.pathTotals = { truth: 0, survival: 0, bond: 0 };
     room.pendingContinue = null;
+    room.failureCount = 0;
     room.prologue = buildCampaignPrologue(room, campaign);
     for (const member of room.players) {
       member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
@@ -1346,10 +1399,11 @@ io.on('connection', socket => {
       room.threat = Math.min(MAX_THREAT, room.threat + 1);
       room.dcPenalty = Math.min(2, Number(room.dcPenalty || 0) + 1);
       status = applyStatus(player, storyFailureStatus(choice, room));
+      room.failureCount = Number(room.failureCount || 0) + 1;
       consequence = `불상사: ${status.label} 상태이상 적용 · HP -1 · 위협 +1 · 다음 장면 판정 불리`;
     }
 
-    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, stat:choice.stat, mode:'story-choice', roll, total, dc, success, narrative:success ? choice.success : choice.failure, beatId:beat.id };
+    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative:success ? choice.success : choice.failure, beatId:beat.id };
     room.storyHistory ||= [];
     room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title });
     if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
@@ -1364,6 +1418,7 @@ io.on('connection', socket => {
       playerId: player.id,
       playerName: player.name,
       choiceLabel: choice.label,
+      route: ROUTE_META[choice.branchValue] || null,
       continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
     };
     room.phase = 'resolution';

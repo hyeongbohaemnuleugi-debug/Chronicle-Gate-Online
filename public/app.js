@@ -340,7 +340,7 @@ function coverArt(c) {
 }
 function chapterArt(c, scene) {
   const chapter = Number(scene?.chapter || 0);
-  if (c?.id && chapter >= 1 && chapter <= 25) return `./art/${c.id}_${String(chapter).padStart(2, '0')}.webp`;
+  if (c?.id && chapter >= 1 && chapter <= 25) return `./art/${c.id}_${String(chapter).padStart(2, '0')}.png`;
   return null;
 }
 
@@ -390,13 +390,11 @@ function proseParagraphs(text = '') {
 
 function storyNarrationHTML(c, beat, player, hints = []) {
   const paragraphs = proseParagraphs(beat?.text || c?.intro || '');
-  const route = beat?.route;
   return `
-    <div class="narration-rich clean-narration">
-      ${route ? `<div class="route-banner route-${esc(route.key)}"><span>${esc(route.name)}</span><b>${esc(route.short)}</b>${route.previousSuccess === false ? '<em>직전 실패의 여파가 반영된 장면</em>' : ''}</div>` : ''}
+    <article class="narration-rich clean-narration novel-page">
       ${paragraphs.map((p, index) => `<p class="${index === 0 ? 'story-lead' : ''}">${esc(p)}</p>`).join('')}
-      ${beat?.continuityHook ? `<p class="continuity-hook"><span>NEXT THREAD</span>${esc(beat.continuityHook)}</p>` : ''}
-    </div>`;
+      ${beat?.continuityHook ? `<p class="continuity-hook"><span>다음 장면의 기척</span>${esc(beat.continuityHook)}</p>` : ''}
+    </article>`;
 }
 
 function monsterArt(c, monster) {
@@ -706,14 +704,14 @@ function renderStory() {
   } else {
     $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
     $('#storySceneImg').src = storyArt(c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
-    $('#storySceneCaption').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)}/${state.targetStory || 25} · ${beat.actName} · ${beat.visual} · 메인 소설 장면` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
-    $('#actLabel').textContent = beat ? `MAIN STORY · ACT ${beat.act}` : 'MAIN STORY';
-    $('#eventTitle').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}` : '연대기가 이어집니다.';
+    $('#storySceneCaption').textContent = beat ? `${beat.isDetour ? 'UNEXPECTED SCENE' : `CHAPTER ${beat.chapter || (state.story + 1)}/${state.targetStory || 25}`} · ${beat.actName} · ${beat.visual}` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
+    $('#actLabel').textContent = beat ? (beat.isDetour ? `UNEXPECTED SCENE · ACT ${beat.act}` : `MAIN STORY · ACT ${beat.act}`) : 'MAIN STORY';
+    $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}`) : '연대기가 이어집니다.';
     $('#storyClarity').classList.add('clean-main');
-    $('#storySituation').textContent = beat?.situation || beat?.text || c?.intro || '';
+    $('#storySituation').textContent = `${beat?.actName || c?.title || '현재 장면'} · ${beat?.phase || '진행'}`;
     $('#storyObjective').textContent = beat?.objective || '장면에 맞는 선택지 중 하나를 고르세요.';
-    $('#storyWhy').textContent = beat?.why || beat?.stakes || '';
-    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '아래 장면 선택지 중 하나를 고르세요.')}`;
+    $('#storyWhy').textContent = beat?.continuityHook || beat?.why || '';
+    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}의 선택.</b> ${esc(beat?.prompt || '아래 행동 중 하나를 고르세요.')}`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
 
     $('#storyActionBox').style.display = 'none';
@@ -742,16 +740,21 @@ function renderMainStoryChoices(beat) {
     box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">SCENE RESOLVED</div><b>장면 결과를 확인한 뒤 아래 버튼을 눌러 다음 장면으로 넘어가세요.</b><div class="vote-chip">선택은 이미 확정되었습니다.</div></div></div>`;
     return;
   }
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">SCENE CHOICES</span><b>각 선택지 아래의 능력치와 DC를 보고 하나를 선택하세요.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 이번 선택이 다음 막의 분위기와 엔딩에 영향을 줍니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + beat.choices.map((choice, index) => `
-    <button class="choice-card story-choice" type="button" ${isMyTurn ? '' : 'disabled'}>
-      <div class="choice-title-line"><b>${index + 1}. ${esc(choice.label)}</b></div>
+  const myJob = me()?.job?.name;
+  const visibleChoices = beat.choices
+    .map((choice, originalIndex) => ({ choice, originalIndex }))
+    .filter(({ choice }) => !choice.requiredJob || choice.requiredJob === myJob);
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">SCENE CHOICES</span><b>공통 선택지와 현재 직업만 사용할 수 있는 전용 선택지가 함께 표시됩니다.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 선택과 주사위 결과가 다음 장면과 엔딩 후보를 바꿉니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
+    <button class="choice-card story-choice ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
+      <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${esc(choice.requiredJob)} 전용</span>` : ''}</div>
       <small>${esc(choice.detail || '')}</small>
       <div class="story-choice-meta"><span>${choice.branchValue === 'careful' ? '추적' : choice.branchValue === 'bold' ? '돌파' : '신뢰'} · ${esc(choice.stat)} 판정</span><span>DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
     </button>
   `).join('');
-  box.querySelectorAll('.story-choice').forEach((button, index) => button.onclick = () => {
+  box.querySelectorAll('.story-choice').forEach(button => button.onclick = () => {
     if (button.disabled) return;
-    socket.emit('story:advance', { roomCode, playerToken, choiceIndex: index }, r => !r?.ok && toast(r.error));
+    const choiceIndex = Number(button.dataset.choiceIndex);
+    socket.emit('story:advance', { roomCode, playerToken, choiceIndex }, r => !r?.ok && toast(r.error));
   });
 }
 
@@ -808,9 +811,11 @@ setInterval(updateVoteCountdown, 250);
 
 function showResolution(r) {
   if (!r) return;
-  $('#resolutionEyebrow').textContent = r.roleplay ? 'ROLEPLAY' : (r.ok ? 'SUCCESS' : 'FAILURE');
-  $('#resolutionTitle').textContent = r.roleplay ? '짧은 대화가 이야기 속에 남았습니다.' : (r.ok ? '운명이 길을 열었습니다.' : '주사위는 대가를 요구합니다.');
-  $('#resolutionText').textContent = [r.text, r.route?.name ? `이 선택으로 다음 장면은 ${r.route.name} 흐름에 영향을 받습니다.` : '', r.consequence, r.status ? `상태이상: ${r.status.label}${r.status.desc ? ` — ${r.status.desc}` : ''}` : ''].filter(Boolean).join('\n\n');
+  $('#resolutionEyebrow').textContent = r.ok ? 'SCENE RESULT' : 'SCENE CONSEQUENCE';
+  $('#resolutionTitle').textContent = r.detourCreated ? '길이 예상과 다르게 꺾였다' : (r.isDetour ? '예정에 없던 위기의 결과' : (r.ok ? '선택의 결과' : '실패가 남긴 흔적'));
+  const mechanics = [r.consequence, r.status ? `${r.status.label}: ${r.status.desc || ''}` : ''].filter(Boolean).join(' · ');
+  const branchAfter = r.detourCreated ? '<small class="resolution-next">방금 실패 때문에 원래 다음 장면 앞에 새로운 위기가 생겼습니다.</small>' : '';
+  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<small class="resolution-mechanics">게임 효과 · ${esc(mechanics)}</small>` : ''}`;
   $('#resolutionModal').classList.add('show');
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');

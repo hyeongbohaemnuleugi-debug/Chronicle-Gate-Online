@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.9.0-causal-novel.0';
+const APP_VERSION = '4.9.1-lobby-fix.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 25;
@@ -88,6 +88,7 @@ app.get('/api/config', (_req, res) => res.json({
 const rand = sides => crypto.randomInt(1, sides + 1);
 const token = () => crypto.randomBytes(16).toString('hex');
 const mod = value => Math.floor((Number(value || 10) - 10) / 2);
+const statPath = stat => ({ '지능':'careful', '지혜':'careful', '근력':'bold', '민첩':'bold', '매력':'empathetic', '체력':'empathetic' }[stat] || 'careful');
 const roll4d6 = () => {
   const rolls = [rand(6), rand(6), rand(6), rand(6)].sort((a, b) => a - b);
   return { rolls, total: rolls[1] + rolls[2] + rolls[3] };
@@ -999,7 +1000,7 @@ function publicRoom(room) {
     turnSerial: Number(room.turnSerial || 0),
     nextCheckDcReduction: Number(room.nextCheckDcReduction || 0),
     eventEveryTurns: EVENT_EVERY_TURNS,
-    storyBeat: renderedStoryBeat(room, campaign),
+    storyBeat: (room.phase === 'story' || room.phase === 'resolution') ? renderedStoryBeat(room, campaign) : null,
     turnIndex: room.turnIndex || 0,
     turnPlayerId: turnPlayer?.id || null,
     turnPlayerName: turnPlayer?.name || null,
@@ -1633,7 +1634,7 @@ io.on('connection', socket => {
     player.ready = false;
     emitRoll(room, player, { sides: 6, result, purpose: '직업 배정', kind: 'class' });
     sync(room);
-    ack?.({ ok: true, result });
+    ack?.({ ok: true, result, state: publicRoom(room) });
   });
 
   socket.on('player:statsRoll', (payload, ack) => {
@@ -1648,7 +1649,7 @@ io.on('connection', socket => {
     player.ready = true;
     emitRoll(room, player, { sides: 6, result: rand(6), purpose: '능력치 생성 · 4D6 × 6', kind: 'stats' });
     sync(room);
-    ack?.({ ok: true });
+    ack?.({ ok: true, state: publicRoom(room) });
   });
 
   socket.on('game:start', (payload, ack) => {

@@ -165,7 +165,7 @@
 
   <div class="toast" id="toast"></div>
   <div class="resolution-modal" id="resolutionModal"><div class="resolution-card ornate"><div class="eyebrow" id="resolutionEyebrow">RESULT</div><h2 id="resolutionTitle"></h2><p id="resolutionText"></p><button class="primary" id="resolutionClose" type="button">확인</button></div></div>
-  <div class="dice-overlay" id="diceOverlay"><canvas id="diceCanvas"></canvas><div class="dice-ui"><div class="eyebrow" id="diceRoller">THE DIE IS CAST</div><h2 id="dicePurpose">D20 CHECK</h2><div class="dice-final" id="diceFinal"></div><div class="dice-sub" id="diceSub">서버가 결과를 확정했습니다.</div></div></div>
+  <div class="dice-overlay" id="diceOverlay"><canvas id="diceCanvas"></canvas><div class="dice-ui"><div class="eyebrow" id="diceRoller">THE DIE IS CAST</div><h2 id="dicePurpose">D20 CHECK</h2><div class="dice-final" id="diceFinal"></div><div class="dice-breakdown" id="diceBreakdown" aria-live="polite"></div><div class="dice-sub" id="diceSub">서버가 결과를 확정했습니다.</div></div></div>
 
   <div class="help-modal" id="helpModal" aria-hidden="true" hidden>
     <div class="help-card help-card-v35 ornate" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
@@ -216,6 +216,7 @@
               <div class="setting-copy"><b>게임 사운드</b><small>캠페인별 배경음과 주사위·전투·성공/실패 효과음을 조절합니다.</small></div>
               <div class="audio-setting-controls">
                 <button class="ghost" id="audioMuteBtn" type="button">사운드 켜짐</button>
+                <button class="ghost" id="audioTestBtn" type="button">소리 테스트</button>
                 <div class="range-wrap"><input id="audioVolumeRange" type="range" min="0" max="100" step="5" value="65"><b id="audioVolumeValue">65%</b></div>
               </div>
             </div>

@@ -13,26 +13,22 @@ for (const campaign of CAMPAIGNS) {
     assert.equal(campaign.events.length, 30);
     assert.equal(new Set(campaign.events.map(e => e.id)).size, 30);
     assert.equal(new Set(campaign.events.map(e => e.title)).size, 30);
-    assert.equal(campaign.storyBeats.length, 20);
-    assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, 20);
+    assert.equal(campaign.storyBeats.length, 25);
+    assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, 25);
     for (const beat of campaign.storyBeats) {
       assert.ok(beat.situation?.length >= 80);
       assert.equal(Object.keys(beat.roleHooks || {}).length, 6);
       assert.ok(beat.objective?.length > 10);
       assert.ok(beat.why?.length > 10);
       assert.ok(beat.prompt?.length > 10);
-      if (beat.roleplayPrompt) {
-        assert.ok(beat.roleplayPrompt.key);
-        assert.ok(beat.roleplayPrompt.responseTemplate?.includes('{{value}}'));
-      } else {
-        assert.equal(beat.choices?.length, 3);
-        for (const choice of beat.choices) {
-          assert.ok(STAT_NAMES.includes(choice.stat));
-          assert.ok(choice.dc >= 10 && choice.dc <= 18);
-          assert.ok(choice.detail?.length > 10);
-          assert.ok(choice.success?.length > 10);
-          assert.ok(choice.failure?.length > 10);
-        }
+      assert.equal(beat.roleplayPrompt, undefined);
+      assert.equal(beat.choices?.length, 3);
+      for (const choice of beat.choices) {
+        assert.ok(STAT_NAMES.includes(choice.stat));
+        assert.ok(choice.dc >= 10 && choice.dc <= 18);
+        assert.ok(choice.detail?.length > 10);
+        assert.ok(choice.success?.length > 10);
+        assert.ok(choice.failure?.length > 10);
       }
     }
   });

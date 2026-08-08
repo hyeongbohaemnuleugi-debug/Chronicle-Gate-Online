@@ -755,6 +755,112 @@ function buildEvents(c) {
   });
 }
 
+
+// v4.13 economy / equipment catalog
+const ITEM_CATALOG = {
+  ember: [
+    {id:'ember_rune_gauntlet',name:'왕가의 룬 건틀릿',slot:'weapon',stat:'근력',bonus:2,price:8,rarity:'희귀',passive:'룬이 반응할 때 힘을 끌어올린다.'},
+    {id:'ember_ash_lens',name:'재를 보는 렌즈',slot:'tool',stat:'지능',bonus:2,price:7,rarity:'고급',passive:'불탄 흔적과 봉인의 결을 읽는다.'},
+    {id:'ember_silver_rosary',name:'백은 묵주',slot:'charm',stat:'매력',bonus:2,price:8,rarity:'희귀',passive:'망령과 대화할 때 목소리에 힘을 싣는다.'},
+    {id:'ember_grave_boots',name:'왕묘의 무음 장화',slot:'armor',stat:'민첩',bonus:2,price:7,rarity:'고급',passive:'돌바닥에서도 발소리를 죽인다.'},
+    {id:'ember_hunters_cloak',name:'검은 숲 사냥망토',slot:'armor',stat:'체력',bonus:2,price:9,rarity:'희귀',passive:'재와 눈보라 속에서 체온을 지킨다.'},
+    {id:'ember_crown_shard',name:'금이 간 왕관 조각',slot:'charm',stat:'지혜',bonus:3,price:12,rarity:'전설',passive:'죽은 왕의 의지가 남긴 미세한 징후를 감지한다.'},
+  ],
+  neon: [
+    {id:'neon_servo_arm',name:'군용 서보 암',slot:'weapon',stat:'근력',bonus:2,price:8,rarity:'희귀',passive:'순간 출력으로 육체 한계를 밀어낸다.'},
+    {id:'neon_ghost_deck',name:'고스트 덱 Mk.IV',slot:'tool',stat:'지능',bonus:3,price:12,rarity:'전설',passive:'폐쇄망의 숨은 포트를 자동 탐색한다.'},
+    {id:'neon_reflex_mesh',name:'반응신경 메쉬',slot:'armor',stat:'민첩',bonus:2,price:8,rarity:'희귀',passive:'위험 신호를 근육에 먼저 전달한다.'},
+    {id:'neon_empathy_chip',name:'감정 공명 칩',slot:'charm',stat:'매력',bonus:2,price:7,rarity:'고급',passive:'상대 감정의 작은 흔들림을 증폭해 읽는다.'},
+    {id:'neon_med_patch',name:'나노 회복 패치',slot:'armor',stat:'체력',bonus:2,price:9,rarity:'희귀',passive:'미세 손상을 자동 봉합한다.'},
+    {id:'neon_truth_filter',name:'진실 필터 렌즈',slot:'tool',stat:'지혜',bonus:2,price:7,rarity:'고급',passive:'광고·위조 영상의 비정상 패턴을 걸러낸다.'},
+  ],
+  abyss: [
+    {id:'abyss_pressure_suit',name:'심해 압력복 Σ',slot:'armor',stat:'체력',bonus:3,price:12,rarity:'전설',passive:'극심한 수압과 냉기를 버틴다.'},
+    {id:'abyss_sonar_scope',name:'공명 소나 스코프',slot:'tool',stat:'지혜',bonus:2,price:8,rarity:'희귀',passive:'벽 너머의 움직임을 반향으로 읽는다.'},
+    {id:'abyss_bio_scanner',name:'심해 생체 스캐너',slot:'tool',stat:'지능',bonus:2,price:8,rarity:'희귀',passive:'미지 생물의 조직 반응을 즉시 분석한다.'},
+    {id:'abyss_thruster_fins',name:'마이크로 추진 핀',slot:'armor',stat:'민첩',bonus:2,price:7,rarity:'고급',passive:'침수 구역에서 급격한 방향 전환을 돕는다.'},
+    {id:'abyss_rescue_frame',name:'구조용 외골격',slot:'weapon',stat:'근력',bonus:2,price:9,rarity:'희귀',passive:'잔해와 압력문을 강제로 들어올린다.'},
+    {id:'abyss_pearl',name:'검은 진주 부적',slot:'charm',stat:'매력',bonus:2,price:10,rarity:'희귀',passive:'심연의 목소리에 휩쓸리지 않고 의사를 전한다.'},
+  ],
+  clock: [
+    {id:'clock_rewind_blade',name:'7초 역행검',slot:'weapon',stat:'근력',bonus:2,price:9,rarity:'희귀',passive:'휘두른 궤적이 잠깐 되감기며 힘을 겹친다.'},
+    {id:'clock_precision_gear',name:'무오차 태엽핵',slot:'tool',stat:'지능',bonus:3,price:12,rarity:'전설',passive:'시간 장치의 오차를 미세 단위로 계산한다.'},
+    {id:'clock_echo_watch',name:'잔상 회중시계',slot:'charm',stat:'지혜',bonus:2,price:8,rarity:'희귀',passive:'방금 사라진 시간의 흔적을 보여준다.'},
+    {id:'clock_secondstep_boots',name:'초침 장화',slot:'armor',stat:'민첩',bonus:2,price:8,rarity:'희귀',passive:'한 박자 늦게 남는 시간 잔상을 이용한다.'},
+    {id:'clock_bell_badge',name:'열세 번째 종 배지',slot:'charm',stat:'매력',bonus:2,price:7,rarity:'고급',passive:'루프에 지친 사람들의 신뢰를 얻기 쉽다.'},
+    {id:'clock_anchor_coat',name:'시간 고정 코트',slot:'armor',stat:'체력',bonus:2,price:9,rarity:'희귀',passive:'시간 왜곡 속에서도 육체 감각을 유지한다.'},
+  ],
+  wild: [
+    {id:'wild_starbow',name:'유성목 장궁',slot:'weapon',stat:'민첩',bonus:2,price:9,rarity:'희귀',passive:'별빛을 따라 화살의 궤적이 미세하게 휜다.'},
+    {id:'wild_root_bracer',name:'고목 뿌리 완갑',slot:'weapon',stat:'근력',bonus:2,price:8,rarity:'희귀',passive:'숲의 생명력을 팔에 둘러 힘을 보탠다.'},
+    {id:'wild_dreamseed',name:'꿈씨앗 펜던트',slot:'charm',stat:'매력',bonus:2,price:8,rarity:'희귀',passive:'꿈속 존재와 감정을 교환할 수 있다.'},
+    {id:'wild_starseer',name:'별점 수정안',slot:'tool',stat:'지혜',bonus:3,price:12,rarity:'전설',passive:'별빛의 흐름으로 위험과 길을 읽는다.'},
+    {id:'wild_meteor_kit',name:'유성 대장간 도구',slot:'tool',stat:'지능',bonus:2,price:7,rarity:'고급',passive:'마력 광물과 고대 장치를 정밀하게 다룬다.'},
+    {id:'wild_barkcloak',name:'별껍질 망토',slot:'armor',stat:'체력',bonus:2,price:9,rarity:'희귀',passive:'상처를 입으면 나무결처럼 단단해진다.'},
+  ],
+};
+
+const FACILITY_ROTATION = [
+  {index:2,type:'restaurant',label:'따뜻한 식사',cost:2,heal:2,description:'코인 2개로 식사하고 HP 2를 회복한다.'},
+  {index:7,type:'inn',label:'안전한 숙박',cost:4,heal:5,description:'코인 4개로 숙박해 HP 5를 회복하고 상태이상 1개를 제거한다.'},
+  {index:11,type:'shop',label:'떠돌이 상점',description:'이 캠페인 전용 장비를 코인으로 구매할 수 있다.'},
+  {index:16,type:'quest',label:'짧은 의뢰',description:'현재 직업의 주 능력치로 의뢰를 해결해 코인을 벌 수 있다.'},
+  {index:21,type:'gamble',label:'위험한 내기',cost:2,description:'코인 2개를 걸고 D6 내기를 한다. 큰 수가 나오면 더 많은 코인을 얻는다.'},
+  {index:25,type:'shop',label:'후반부 암시장',description:'후반부에 다시 장비를 정비할 수 있는 상점이다.'},
+];
+
+
+const FACILITY_THEME = {
+  ember: {
+    restaurant:{label:'재난로 식당',description:'사건이 잠시 소강된 틈, 아직 불이 살아 있는 작은 식당에서 코인 2개로 뜨거운 스튜를 먹고 HP 2를 회복할 수 있다.'},
+    inn:{label:'은사슴 여관',description:'왕도 외곽의 오래된 여관. 코인 4개로 숙박해 HP 5를 회복하고 상태이상 1개를 털어낸다.'},
+    shop:{label:'떠돌이 유물상',description:'왕묘와 성채에서 흘러나온 수상한 장비들을 파는 상인이 잠시 길목을 막고 있다.'},
+    quest:{label:'경비대의 긴급 의뢰',description:'경비대가 지금 직업의 전문성을 빌려 달라고 요청한다. 성공하면 코인을 받을 수 있다.'},
+    gamble:{label:'붉은 주사위판',description:'용병들이 코인을 걸고 D6 내기를 벌인다. 참가비는 2코인, 6이 나오면 큰돈을 딴다.'},
+  },
+  neon: {
+    restaurant:{label:'24H 네온 누들바',description:'추적망이 잠시 느슨해진 골목의 누들바. 코인 2개로 식사해 HP 2를 회복한다.'},
+    inn:{label:'오프그리드 캡슐 모텔',description:'도시 감시망에서 잠시 사라질 수 있는 캡슐 숙소. 코인 4개로 HP 5 회복 + 상태이상 1개 제거.'},
+    shop:{label:'기억 암시장 장비상',description:'추적 불가능한 크레딧 대신 현물 코인을 받는 불법 장비상이 접속했다.'},
+    quest:{label:'익명 데이터 의뢰',description:'발신자를 알 수 없는 단기 의뢰. 직업의 주 능력치로 해결하면 코인을 받는다.'},
+    gamble:{label:'글리치 룰렛',description:'불법 AR 주사위 게임. 코인 2개를 걸고 D6 결과에 따라 배당을 받는다.'},
+  },
+  abyss: {
+    restaurant:{label:'세이렌 비상 식당',description:'자동 조리기가 아직 작동한다. 코인 2개로 고열량 식사를 받아 HP 2를 회복한다.'},
+    inn:{label:'압력 안전실 숙영',description:'기밀이 유지되는 안전실에서 잠시 쉰다. 코인 4개 상당의 보급품을 사용해 HP 5 + 상태이상 1개 제거.'},
+    shop:{label:'폐쇄 보급창',description:'무인 보급 단말이 아직 살아 있다. 심해 장비를 코인으로 교환할 수 있다.'},
+    quest:{label:'구조팀 잔여 의뢰',description:'남겨진 구조 요청 하나를 처리하면 기지 비상 코인을 회수할 수 있다.'},
+    gamble:{label:'승무원 주사위통',description:'옛 승무원들이 남긴 금속 D6와 내기 기록. 2코인을 걸고 기록대로 승부한다.'},
+  },
+  clock: {
+    restaurant:{label:'자정 전의 빵집',description:'루프가 반복되어도 매번 빵을 굽는 가게. 코인 2개로 식사해 HP 2를 회복한다.'},
+    inn:{label:'멈춘 시계 여관',description:'객실 안에서는 몇 분 동안 시간이 느리게 흐른다. 코인 4개로 HP 5 + 상태이상 1개 제거.'},
+    shop:{label:'태엽 골동품점',description:'주인만 이전 루프를 기억하는 듯한 상점. 시간 관련 장비를 코인으로 구입한다.'},
+    quest:{label:'사라질 사람의 부탁',description:'다음 루프에서 사라질지도 모르는 시민이 짧은 부탁을 남겼다. 성공하면 코인을 받는다.'},
+    gamble:{label:'내일의 눈금 내기',description:'주사위 결과를 미리 봤다고 주장하는 시간 밀수꾼과 2코인짜리 내기를 한다.'},
+  },
+  wild: {
+    restaurant:{label:'숲불 식탁',description:'여행자들이 별빛 아래 나눈 따뜻한 식사. 코인 2개로 HP 2를 회복한다.'},
+    inn:{label:'말하는 나무집 쉼터',description:'고목이 허락한 사람만 들어갈 수 있는 쉼터. 코인 4개로 HP 5 + 상태이상 1개 제거.'},
+    shop:{label:'별철 행상인',description:'유성 조각과 숲의 유물을 싣고 다니는 행상인이 장비를 꺼내 보인다.'},
+    quest:{label:'숲 부족의 부탁',description:'부족민이 지금 직업에만 맡길 수 있는 짧은 일을 부탁한다. 성공하면 코인을 얻는다.'},
+    gamble:{label:'도토리 별점 내기',description:'작은 정령들이 D6 결과를 별점으로 점친다. 코인 2개를 걸고 내기에 참여한다.'},
+  },
+};
+
+function decorateEconomyEvents(c, events) {
+  const cloned = events.map(event => ({...event}));
+  for (const facility of FACILITY_ROTATION) {
+    const event = cloned[facility.index];
+    if (event) event.facility = {...facility, ...(FACILITY_THEME[c.id]?.[facility.type] || {})};
+  }
+  const lootIndices = [4, 14, 24];
+  for (const index of lootIndices) if (cloned[index]) cloned[index].lootReward = true;
+  const coinIndices = [9, 19, 27];
+  for (const index of coinIndices) if (cloned[index]) cloned[index].coinReward = 4 + Math.floor(index / 10);
+  return cloned;
+}
+
 const JOB_SKILL_DEFS = {
   "룬 기사": {name:"룬 수호진", cooldown:3, kind:"guardParty", amount:2, text:"파티 전원에게 피해 2를 막는 룬 보호막을 부여한다."},
   "재의 마도사": {name:"재폭발", cooldown:3, kind:"blast", amount:3, text:"전투에서는 보스에게 1D6+3 직접 피해, 비전투에서는 위협도 2를 낮춘다."},
@@ -796,7 +902,9 @@ export const CAMPAIGNS = campaigns.map(c => ({
   ...c,
   jobs: c.jobs.map((j, i) => ({roll:i+1,name:j[0],prime:j[1],skill:j[2],skillDef:JOB_SKILL_DEFS[j[0]],baseHp:10 + (i%3)*2})),
   storyBeats: buildStoryBeats(c),
-  events: buildEvents(c)
+  items: ITEM_CATALOG[c.id] || [],
+  events: decorateEconomyEvents(c, buildEvents(c))
 }));
 
 export const STAT_NAMES = stats;
+export const ITEMS_BY_CAMPAIGN = ITEM_CATALOG;

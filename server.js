@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.6.1-flat-art.0';
+const APP_VERSION = '4.9.0-causal-novel.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 25;
@@ -152,8 +152,12 @@ function normalizeLoadedRoom(room) {
   room.storyMemory ||= {};
   room.pathTotals ||= { truth: 0, survival: 0, bond: 0 };
   room.pendingContinue ||= null;
+  room.jobStory ||= {};
   room.failureCount = Number(room.failureCount || 0);
   room.prologue ||= null;
+  room.storyDetour ||= null;
+  room.narrativeState ||= { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
+  room.narrativeLedger ||= { threads: [], routeShifts: [], jobThreads: {} };
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
@@ -206,6 +210,9 @@ async function createRoom(hostName, socketId) {
     threat: 0, story: 0, dcPenalty: 0, monster: null,
     storyFlags: {}, storyMemory: {}, pathTotals: { truth: 0, survival: 0, bond: 0 }, pendingContinue: null, failureCount: 0,
     prologue: null,
+    storyDetour: null,
+    narrativeState: { boon: null, lastRoute: null, routeStreak: 0, detours: 0 },
+    narrativeLedger: { threads: [], routeShifts: [], jobThreads: {} },
     chat: [], lastResolution: null, ending: null,
     revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
   };
@@ -353,10 +360,16 @@ function buildVictoryEnding(room) {
     .map(key => room.storyFlags?.[key])
     .filter(Boolean)
     .map(flag => flag === 'bold' ? '돌파' : flag === 'empathetic' ? '신뢰' : '추적');
+  const jobLegacies = Object.entries(room.jobStory || {})
+    .filter(([name, entry]) => name !== 'last' && Number(entry?.success || 0) >= 2 && entry?.ending)
+    .sort((a, b) => Number(b[1].secrets || 0) - Number(a[1].secrets || 0))
+    .slice(0, 3)
+    .map(([name, entry]) => `${name}: ${entry.ending}`);
+  const legacyText = jobLegacies.length ? ` 직업 전용 선택으로 열린 결말의 흔적도 남았습니다. ${jobLegacies.join(' · ')}.` : '';
   return {
     victory: true,
     title: alias ? `「${alias}」 일행의 ${titles[path]?.[finalBranch] || titles[path]?.careful}` : (titles[path]?.[finalBranch] || titles[path]?.careful),
-    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 장면을 지나 선택의 흔적이 엔딩에 남았습니다. ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
+    text: `${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 장면을 지나 선택의 흔적이 엔딩에 남았습니다.${legacyText} ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
   };
 }
 
@@ -368,48 +381,103 @@ const ROUTE_META = {
 };
 
 const WORLD_ROUTE_WORDS = {
-  ember: { threat:'왕관의 의지와 죽은 기사들', ally:'사제·주민·왕가의 증언자', medium:'재와 봉인의 흔적' },
-  neon: { threat:'도시 감시망과 MOTHER-9의 추적', ally:'시민·기억 거래자·내부 협력자', medium:'삭제 로그와 기억 조각' },
-  abyss: { threat:'심해 신호와 무너지는 기지', ally:'생존자·승무원·탈라스의 반응', medium:'소나·압력·생체 기록' },
-  clock: { threat:'루프와 열세 번째 종의 압박', ally:'루프를 기억하는 시민과 종지기의 흔적', medium:'시간 오차와 사라진 기록' },
-  wild: { threat:'뒤틀린 숲과 별빛의 포식', ally:'부족·야수·숲의 정령', medium:'별가루·뿌리·꿈의 흔적' },
+  ember: { threat:'왕관의 의지와 죽은 기사들', ally:'사제와 주민들', medium:'재와 봉인의 흔적' },
+  neon: { threat:'도시 감시망과 MOTHER-9', ally:'시민과 내부 협력자들', medium:'삭제 로그와 기억 조각' },
+  abyss: { threat:'심해 신호와 무너지는 기지', ally:'생존자와 승무원들', medium:'소나와 생체 기록' },
+  clock: { threat:'열세 번째 종과 뒤틀린 시간', ally:'루프를 기억하는 사람들', medium:'시간 오차와 사라진 기록' },
+  wild: { threat:'뒤틀린 숲과 별빛의 포식', ally:'부족과 야수와 숲의 정령', medium:'별가루와 뿌리의 흔적' },
 };
+
+const WORLD_PROSE = {
+  ember: {
+    carefulSuccess:'재 냄새 사이로 흩어져 있던 흔적들이 하나씩 맞물렸다. 벽면의 긁힌 자국, 반쯤 타버린 인장, 발끝에 밟힌 검은 가루가 모두 같은 방향을 가리켰다.',
+    carefulFail:'단서는 분명해 보였지만 한 조각이 거짓이었다. 뒤늦게 그것을 알아챘을 때는 이미 복도 저편의 쇠사슬 소리가 가까워지고 있었다.',
+    boldSuccess:'망설임 없이 밀어붙인 덕분에 상대가 준비를 끝내기 전에 틈이 열렸다. 무너진 문 너머로 뜨거운 재가 쏟아졌지만 길은 살아 있었다.',
+    boldFail:'문은 열렸지만 그 소리는 성채 전체를 깨웠다. 어둠 속에서 갑옷이 부딪히는 소리가 번졌고, 파티는 더 이상 숨어 움직일 수 없게 되었다.',
+    empatheticSuccess:'경계하던 눈빛이 조금씩 풀렸다. 끝내 누군가가 입을 열었고, 그 한마디가 지도에 없던 길 하나를 드러냈다.',
+    empatheticFail:'상대는 고개를 끄덕였지만 끝까지 중요한 부분을 말하지 않았다. 빈말과 침묵 사이에 남은 틈이 오히려 더 불길했다.',
+  },
+  neon: {
+    carefulSuccess:'잡음투성이 로그를 겹쳐 보자 삭제된 시간대가 하나의 패턴으로 이어졌다. 광고판의 깜빡임조차 우연이 아니었다.',
+    carefulFail:'복구한 로그 하나가 미끼였다. 화면이 붉게 번지는 순간 추적 신호가 역으로 파티의 위치를 찍었다.',
+    boldSuccess:'보안망이 재설정되기 전에 틈을 파고들었다. 경보는 울렸지만 중요한 좌표는 이미 손에 들어와 있었다.',
+    boldFail:'문은 뚫렸지만 도시가 즉시 반응했다. 드론의 붉은 센서가 골목 끝에서 하나둘 켜졌다.',
+    empatheticSuccess:'상대의 표정이 아주 잠깐 무너졌다. 그 짧은 순간에 거짓말보다 진짜 기억이 먼저 튀어나왔다.',
+    empatheticFail:'대화는 이어졌지만 상대는 감정을 팔듯 진실도 조금씩 잘라 말했다. 가장 필요한 부분만 비어 있었다.',
+  },
+  abyss: {
+    carefulSuccess:'소나의 미세한 반향과 압력 기록이 겹쳤다. 보이지 않던 움직임이 지도 위에서 한 줄의 궤적으로 떠올랐다.',
+    carefulFail:'반향 하나를 잘못 읽었다. 기지가 흔들리고 나서야 그 신호가 바깥이 아니라 벽 안쪽에서 왔다는 걸 알았다.',
+    boldSuccess:'침수 구역을 정면으로 가로질러 시간을 벌었다. 물은 허리까지 차올랐지만 필요한 장비와 사람은 놓치지 않았다.',
+    boldFail:'억지로 밀어붙인 순간 배관이 터졌다. 차가운 물과 금속 파편이 쏟아지며 이동 경로가 더 좁아졌다.',
+    empatheticSuccess:'겁에 질린 생존자의 호흡이 조금씩 가라앉았다. 마침내 그가 금지 구역의 이름과 마지막 목격자를 말했다.',
+    empatheticFail:'생존자는 말을 시작했지만 공포가 먼저 목을 막았다. 중요한 이름 하나가 끝내 나오지 않았다.',
+  },
+  clock: {
+    carefulSuccess:'기록의 어긋난 시각들을 다시 맞추자 반복되는 오차가 하나의 규칙으로 보이기 시작했다. 종소리보다 먼저 움직이는 것이 있었다.',
+    carefulFail:'시간표는 맞았지만 기준이 틀렸다. 창밖 풍경이 한 번 접히고 나서야 파티는 자신들이 한 장면 늦었다는 걸 깨달았다.',
+    boldSuccess:'멈춘 순간을 억지로 비집고 들어가며 루프의 틈을 붙잡았다. 한순간뿐이었지만 다음 문이 닫히기 전에 넘어갈 수 있었다.',
+    boldFail:'시간을 억지로 밀어낸 대가로 기억 일부가 흐려졌다. 방금 전까지 분명했던 얼굴 하나가 낯설어졌다.',
+    empatheticSuccess:'서로 다른 기억을 말로 맞춰 보자 사라졌던 부분이 조금씩 돌아왔다. 누군가의 증언이 시간보다 오래 남았다.',
+    empatheticFail:'서로의 기억은 닮았지만 끝내 같은 장면이 아니었다. 작은 불일치가 다음 선택을 더 어렵게 만들었다.',
+  },
+  wild: {
+    carefulSuccess:'별가루의 방향과 뿌리의 움직임을 따라가자 숲이 숨겨 둔 길이 모습을 드러냈다. 나무들은 거짓말하지 않았다.',
+    carefulFail:'별가루는 길처럼 보였지만 포식자가 남긴 흔적이었다. 숲의 침묵이 너무 늦게 경고를 보냈다.',
+    boldSuccess:'가시덤불과 뒤틀린 뿌리를 밀어내며 길을 만들었다. 상처는 남았지만 숲이 닫히기 전에 중심부로 들어갔다.',
+    boldFail:'숲을 억지로 가르자 숲도 반응했다. 뒤에서 길이 닫히고, 앞에서는 짐승의 울음이 가까워졌다.',
+    empatheticSuccess:'경계하던 야수가 먼저 눈을 피했다. 그 뒤를 따라가자 사람이 만들 수 없는 안전한 길이 나타났다.',
+    empatheticFail:'야수는 공격하지 않았지만 끝내 가까이 오지도 않았다. 믿음이 완성되지 않은 채 어둠만 길어졌다.',
+  },
+};
+
+function proseOutcome(campaign, beat, prev) {
+  if (!prev?.branchValue) return '';
+  const p = WORLD_PROSE[campaign?.id] || WORLD_PROSE.ember;
+  const key = `${prev.branchValue}${prev.success === false ? 'Fail' : 'Success'}`;
+  return p[key] || '';
+}
 
 function branchTransitionText(campaign, beat, prev) {
   if (!prev?.branchValue) return null;
-  const route = prev.branchValue;
-  const words = WORLD_ROUTE_WORDS[campaign?.id] || WORLD_ROUTE_WORDS.ember;
-  const choice = prev.declaration || '이전 선택';
-  const success = prev.success !== false;
-  if (route === 'careful') {
-    return success
-      ? `직전 장면에서 “${choice}”를 택한 덕분에 ${words.medium}이 서로 이어졌다. 파티는 남들이 놓친 순서를 붙잡은 채 다음 현장에 도착한다. 이번 장면은 우연히 이어진 것이 아니라, 방금 확보한 단서가 직접 이곳을 가리킨 결과다.`
-      : `직전 장면에서 “${choice}”를 시도했지만 해석이 어긋났다. 잘못 짚은 단서 하나 때문에 파티는 한 번 돌아왔고, 그 사이 ${words.threat}이 먼저 움직였다. 다음 장면은 같은 출발점이 아니다. 부족한 정보를 메우면서 동시에 뒤처진 시간을 되찾아야 한다.`;
-  }
-  if (route === 'bold') {
-    return success
-      ? `직전 장면에서 “${choice}”로 판을 강하게 흔든 결과, ${words.threat}이 예상보다 빨리 반응했다. 대신 파티가 주도권을 쥐었다. 다음 장면은 조용한 조사보다 추격과 대치가 앞서는 흐름으로 바뀐다.`
-      : `직전 장면의 “${choice}”는 길을 열었지만 너무 큰 소리를 냈다. ${words.threat}이 파티의 위치와 방식까지 알아챘고, 다음 장면은 준비된 함정 속에서 시작된다. 성공했을 때와 같은 길이지만 난이도와 분위기는 완전히 달라졌다.`;
-  }
-  return success
-    ? `직전 장면에서 “${choice}”를 통해 ${words.ally}의 마음을 얻었다. 그들이 건넨 정보와 도움 덕분에 원래는 닫혀 있었을 길이 열린다. 다음 장면은 혼자 힘으로 밀어붙이는 이야기가 아니라, 얻어낸 신뢰를 어떻게 사용할지에 달려 있다.`
-    : `직전 장면에서 “${choice}”를 시도했지만 신뢰를 완전히 얻지 못했다. ${words.ally}은(는) 중요한 사실 하나를 감췄고, 그 빈틈이 다음 장면의 위험으로 돌아온다. 이제 파티는 불완전한 협력 속에서 누구를 믿을지 다시 판단해야 한다.`;
+  const consequence = proseOutcome(campaign, beat, prev);
+  const choice = prev.declaration || '그 선택';
+  const tail = prev.success === false
+    ? `그 실패는 끝난 사건이 아니었다. “${choice}”의 대가는 지금 이 장면까지 따라왔다.`
+    : `“${choice}”로 얻은 작은 우위가 자연스럽게 다음 움직임으로 이어졌다.`;
+  return `${consequence} ${tail}`.trim();
 }
 
 function branchCliffhanger(campaign, beat, prev) {
-  const route = prev?.branchValue || 'careful';
+  const world = campaign?.id;
   const phase = beat?.phase || '장면';
   const actEnd = phase === '결단';
-  const world = campaign?.id;
   const hooks = {
-    ember: actEnd ? '그리고 성문 너머에서, 아직 등장하지 않았어야 할 왕의 종이 한 번 울린다.' : '그 순간 재 속에서 금속이 긁히는 소리가 난다. 누군가 파티보다 먼저 다음 봉인을 건드렸다.',
-    neon: actEnd ? '새 좌표가 화면에 뜬다. 문제는 그 좌표의 접속자 이름이 파티 중 한 사람과 같다는 것이다.' : '곧이어 삭제된 로그 한 줄이 복구된다. 발신 시각은 아직 오지 않은 미래다.',
-    abyss: actEnd ? '상승용 통신기에 짧은 목소리가 잡힌다. 구조 요청이 아니라, 파티의 이름을 부르는 음성이다.' : '소나 화면 한쪽에 지금까지 없던 거대한 반향이 천천히 돌아선다.',
-    clock: actEnd ? '종이 멈춘 뒤에도 그림자 하나만 계속 움직인다. 그것은 다음 루프를 이미 알고 있는 사람의 그림자다.' : '벽시계의 초침이 한 칸 역행하고, 방금 사라진 문장이 다른 내용으로 돌아온다.',
-    wild: actEnd ? '숲 위의 마지막 별이 한 번 크게 흔들리고, 전혀 다른 방향의 길이 열리기 시작한다.' : '나무들이 동시에 숨을 멈춘 듯 조용해지고, 멀리서 한 번도 듣지 못한 울음소리가 번진다.',
+    ember: actEnd ? '문이 닫히려는 순간, 안쪽에서 왕의 장례곡이 거꾸로 연주되기 시작했다.' : '재가 잠잠해지자 바닥 아래에서 세 번의 노크 소리가 들렸다.',
+    neon: actEnd ? '화면에 새 좌표가 떠올랐다. 접속자 이름은 파티 중 한 사람의 이름이었다.' : '꺼진 화면 하나가 혼자 켜지더니 아직 오지 않은 시간의 메시지를 띄웠다.',
+    abyss: actEnd ? '무전기에서 낮은 숨소리가 들렸다. 그리고 그것은 분명 파티의 이름을 알고 있었다.' : '소나 화면 끝에서 거대한 점 하나가 천천히 방향을 바꾸었다.',
+    clock: actEnd ? '종은 멈췄지만 그림자 하나만 계속 움직였다. 그것은 다음 반복을 이미 알고 있었다.' : '벽시계의 초침이 한 칸 뒤로 물러나며 방금 사라진 문장이 다른 내용으로 돌아왔다.',
+    wild: actEnd ? '숲 위의 별 하나가 흔들리더니 전혀 다른 방향의 길이 열렸다.' : '나무들이 동시에 숨을 죽였고, 멀리서 처음 듣는 울음소리가 번졌다.',
   };
-  const routeTail = route === 'bold' ? '이번엔 기다릴 시간이 없다.' : route === 'empathetic' ? '누군가가 그 신호에 먼저 답하려 한다.' : '방금 모은 단서가 그 방향과 정확히 겹친다.';
-  return `${hooks[world] || hooks.ember} ${routeTail}`;
+  return hooks[world] || hooks.ember;
+}
+
+function storyResolutionNarrative(campaign, beat, choice, player, success, status) {
+  const world = WORLD_PROSE[campaign?.id] || WORLD_PROSE.ember;
+  const key = `${choice.branchValue}${success ? 'Success' : 'Fail'}`;
+  const scene = world[key] || (success ? choice.success : choice.failure);
+  const actor = player?.name || '파티의 누군가';
+  const job = player?.job?.name || '모험가';
+  const approach = choice.branchValue === 'bold'
+    ? `${actor}는 기다리지 않았다. ${job}답게 가장 위험한 곳으로 먼저 몸을 밀어 넣었다.`
+    : choice.branchValue === 'empathetic'
+      ? `${actor}는 힘으로 밀어붙이기보다 상대와 주변의 반응을 먼저 살폈다. ${job}의 방식으로 닫힌 틈을 열어 보려 했다.`
+      : `${actor}는 한 번 더 숨을 고르고 눈앞의 단서들을 차례로 되짚었다. ${job}으로서 놓쳐서는 안 될 작은 어긋남을 찾았다.`;
+  if (success) {
+    return `${approach} ${scene} 그 변화는 작아 보였지만 분명했다. 파티가 다음에 마주할 장면은 방금 전과 같은 세계가 아니었다.`;
+  }
+  const statusText = status ? `${actor}에게는 ${status.label}의 후유증도 남았다. ${status.desc}` : '';
+  return `${approach} 그러나 결정적인 순간에 상황이 한쪽으로 기울었다. ${scene} ${statusText} 그래도 이야기는 멈추지 않았다. 실패가 새로운 문제를 만들었고, 이제 파티는 그 문제까지 끌어안고 앞으로 나아가야 했다.`.trim();
 }
 
 function applyBranchToChoices(beat, prev) {
@@ -429,34 +497,375 @@ function applyBranchToChoices(beat, prev) {
   });
 }
 
+
+const LIVING_NOVEL = {
+  ember: {
+    detours: {
+      careful: ['거짓 문장', '불탄 장부의 함정'], bold: ['깨어난 경비대', '무너지는 성문'], empathetic: ['배신한 증언자', '공포에 휩싸인 군중'],
+    },
+    opening: {
+      careful: '재와 피 냄새 속에서 흩어진 단서들이 다시 한 줄로 이어졌다.',
+      bold: '성채는 방금 전의 소란을 잊지 않았다. 갑옷 소리와 종소리가 더 가까워졌다.',
+      empathetic: '누군가의 경계가 풀린 자리에는 말보다 오래 남는 약속이 생겼다.',
+    },
+  },
+  neon: {
+    detours: { careful:['역추적된 로그','가짜 백업 노드'], bold:['드론 봉쇄','추격자의 매복'], empathetic:['기억 거래자의 배신','시민 폭동'] },
+    opening: { careful:'삭제된 데이터 사이에서 아까 놓친 한 줄이 다시 떠올랐다.', bold:'경보는 꺼지지 않았다. 네온빛 골목마다 추적 신호가 번지고 있었다.', empathetic:'짧게 얻은 신뢰가 새로운 연락망으로 이어졌다.' },
+  },
+  abyss: {
+    detours: { careful:['잘못 읽은 소나','봉쇄된 관측실'], bold:['압력문 붕괴','침수 역류'], empathetic:['패닉에 빠진 생존자','구조 우선순위 충돌'] },
+    opening: { careful:'소나의 잔향이 다시 겹치며 이전에는 보이지 않던 움직임을 만들었다.', bold:'기지는 이미 다음 충격을 준비하고 있었다. 금속 벽이 낮게 울었다.', empathetic:'두려움에 떨던 목소리 하나가 파티를 믿기 시작했다.' },
+  },
+  clock: {
+    detours: { careful:['뒤바뀐 시간표','사라진 한 시간'], bold:['루프 역류','시간 경비대'], empathetic:['기억 불일치','사라지는 증언자'] },
+    opening: { careful:'조금 전의 기억과 지금의 풍경 사이에 작은 오차가 또 하나 생겼다.', bold:'시간을 억지로 밀어낸 대가가 골목 전체에 금처럼 번져 있었다.', empathetic:'서로의 기억을 맞춘 흔적이 루프보다 오래 남았다.' },
+  },
+  wild: {
+    detours: { careful:['거짓 별가루 길','포식자의 흔적'], bold:['닫히는 숲길','별빛 야수의 습격'], empathetic:['깨진 부족의 약속','도망친 신수'] },
+    opening: { careful:'숲의 흔적은 거짓말하지 않았지만, 읽는 순서가 중요했다.', bold:'강제로 연 길 뒤에서 뿌리들이 다시 맞물리기 시작했다.', empathetic:'경계하던 존재가 한 걸음 물러난 자리에서 새로운 길이 생겼다.' },
+  },
+};
+
+function routeName(route) {
+  return route === 'bold' ? '돌파' : route === 'empathetic' ? '신뢰' : '추적';
+}
+
+function livingContinuity(room, campaign, beat, prev) {
+  if (!prev) return '';
+  const causal=causalThreadText(campaign,beat,prev);
+  const outcome=proseOutcome(campaign,beat,prev);
+  return [outcome,causal].filter(Boolean).join(' ');
+}
+
+function detourChoices(campaign, route, dangerName, room) {
+  const world = campaign?.id;
+  const tables = {
+    ember: [
+      ['주변의 봉인 문양을 빠르게 읽어 가장 안전한 길을 찾는다','지능','careful'],
+      ['무너지는 길을 밀어내고 정면으로 빠져나간다','근력','bold'],
+      ['흩어진 사람들을 진정시켜 함께 움직일 길을 만든다','매력','empathetic'],
+    ],
+    neon: [
+      ['역추적 신호를 분석해 가짜 좌표로 흘려보낸다','지능','careful'],
+      ['봉쇄선이 닫히기 전에 옥상과 골목을 가로질러 탈출한다','민첩','bold'],
+      ['현장 시민과 내부자를 설득해 추적망을 분산시킨다','매력','empathetic'],
+    ],
+    abyss: [
+      ['압력과 산소 수치를 계산해 살아 있는 통로를 골라낸다','지능','careful'],
+      ['닫히는 격벽을 몸으로 버티며 모두를 통과시킨다','체력','bold'],
+      ['패닉에 빠진 생존자들을 진정시켜 질서를 되찾는다','매력','empathetic'],
+    ],
+    clock: [
+      ['변한 시각을 기록해 루프가 덜 뒤틀린 방향을 찾는다','지혜','careful'],
+      ['멈춘 순간의 틈을 타 금지된 통로를 건너간다','민첩','bold'],
+      ['엇갈린 기억을 서로 맞추며 사라지는 사람을 붙잡는다','매력','empathetic'],
+    ],
+    wild: [
+      ['별가루와 뿌리의 방향을 다시 읽어 진짜 길을 찾는다','지혜','careful'],
+      ['닫히는 숲길을 앞질러 위험 지역을 돌파한다','민첩','bold'],
+      ['야수와 숲의 반응을 진정시키며 안전한 길을 연다','매력','empathetic'],
+    ],
+  };
+  const base = tables[world] || tables.ember;
+  return base.map((entry, i) => ({
+    id:`DETOUR-${world}-${route}-${i}`,
+    label:entry[0], stat:entry[1], branchValue:entry[2], branchKey:null,
+    path:statPath(entry[1]), dc:Math.min(18, 11 + Math.floor(Number(room.threat || 0)/2) + i),
+    detail:`예정에 없던 위기 · ${dangerName} · ${entry[1]} 판정`,
+    success:`위기는 완전히 사라지지 않았지만 파티는 흐름을 되찾았다. ${dangerName}은 더 이상 발목을 붙잡지 못했고, 원래 쫓던 사건으로 돌아갈 수 있게 되었다.`,
+    failure:`벗어나기는 했지만 또 하나의 대가를 치렀다. ${dangerName}이 남긴 상처와 소문은 이후 장면에서도 파티를 따라다닌다.`,
+  }));
+}
+
+function buildDetourScene(campaign, room, choice, player, status) {
+  const route = choice?.branchValue || 'careful';
+  const world = LIVING_NOVEL[campaign?.id] || LIVING_NOVEL.ember;
+  const list = world.detours?.[route] || ['예정에 없던 위기'];
+  const name = list[(Number(room.story || 0) + Number(room.failureCount || 0)) % list.length];
+  const nextBase = campaign?.storyBeats?.[Math.min(Number(room.story || 0), TARGET_STORY - 1)];
+  const act = nextBase?.act || Math.ceil((Number(room.story || 0)+1)/5);
+  const chapter = nextBase?.chapter || Number(room.story || 0)+1;
+  const statusText = status ? `${player.name}에게 ${status.label}의 후유증까지 남았다.` : `${player.name}은(는) 간신히 중심을 되찾았다.`;
+  return {
+    id:`${campaign.id.toUpperCase()}-DETOUR-${room.story}-${room.failureCount}`,
+    isDetour:true, chapter, act, actName:nextBase?.actName || campaign.acts?.[Math.max(0,act-1)] || '예정에 없던 밤', phase:'위기',
+    title:`위기 · ${name}`,
+    situation:`파티가 다음 단서를 향해 움직이려는 순간 ${name}이 길을 끊었다. 방금 전 실패가 남긴 소리와 흔적, 망가진 장비와 불안이 한꺼번에 되돌아왔다. ${statusText} 이제 이 위기를 넘기지 못하면 조금 전까지 붙잡고 있던 단서조차 잃을 수 있다.`,
+    text:`파티가 다음 단서를 향해 움직이려는 순간 ${name}이 길을 끊었다. 방금 전 실패가 남긴 소리와 흔적, 망가진 장비와 불안이 한꺼번에 되돌아왔다. ${statusText} 이제 이 위기를 넘기지 못하면 조금 전까지 붙잡고 있던 단서조차 잃을 수 있다.`,
+    objective:`${name}을 넘기고 본래의 목적지로 돌아간다.`,
+    why:`방금 선택의 대가가 눈앞의 위험으로 돌아왔다. 여기서 다시 흔들리면 부상과 추적, 불신이 다음 장면까지 이어진다.`,
+    prompt:`${name}을 어떻게 넘길지 선택하세요.`,
+    visual:`${name} · 직전 선택의 여파`,
+    continuityHook:`위기를 넘긴 뒤에도 조금 전 놓쳤던 단서는 사라지지 않는다. 다만 그것을 다시 붙잡을 때는 이미 누군가 한발 먼저 움직였을 것이다.`,
+    choices:detourChoices(campaign, route, name, room),
+  };
+}
+
+function adaptiveChoiceRewrite(room, beat) {
+  const previousRoute = room.narrativeState?.lastRoute;
+  const boon = room.narrativeState?.boon;
+  for (const choice of beat.choices || []) {
+    if (boon && choice.branchValue === boon) {
+      choice.dc = Math.max(8, Number(choice.dc || 10) - 1);
+      choice.detail += ' · 앞선 대성공의 흐름을 이어가면 DC -1';
+    }
+    if (previousRoute && previousRoute !== choice.branchValue && Number(room.narrativeState?.routeStreak || 0) >= 2) {
+      choice.detail += ` · 기존 ${routeName(previousRoute)} 흐름에서 방향을 바꾸는 선택`;
+    }
+  }
+}
+
+const JOB_STORY_SIGNATURES = {
+  '룬 기사': { route:'bold', motif:'룬과 봉인을 몸으로 받아내며', discovery:'왕가 봉인의 진짜 작동 원리', ally:'성채 경비대', ending:'왕관을 지키는 새로운 수호자' },
+  '재의 마도사': { route:'careful', motif:'재에 남은 기억과 마력의 잔향을 읽으며', discovery:'왕관이 기억을 먹는 방식', ally:'죽은 왕의 잔향', ending:'왕관의 기억을 해방한 자' },
+  '성흔 추적자': { route:'careful', motif:'피와 성흔의 방향을 따라가며', discovery:'배신자가 남긴 진짜 흔적', ally:'추방된 증언자', ending:'왕가의 거짓을 폭로한 추적자' },
+  '왕묘 도굴꾼': { route:'bold', motif:'금지된 틈과 함정을 먼저 건드리며', discovery:'아무도 모르는 왕묘의 샛길', ally:'지하 밀매상', ending:'금단의 보물을 되돌려놓은 도굴꾼' },
+  '백은 사제': { route:'empathetic', motif:'망령과 산 자의 공포를 함께 달래며', discovery:'저주가 아니라 미완의 장례였다는 진실', ally:'왕비의 혼령', ending:'죽은 자에게 마지막 안식을 준 사제' },
+  '검은 숲 사냥꾼': { route:'bold', motif:'짐승의 흔적과 숲의 냄새를 좇으며', discovery:'성채 바깥에서 왕관을 노리는 존재', ally:'검은 숲의 사냥꾼들', ending:'왕국 밖의 위협까지 막아낸 사냥꾼' },
+  '고스트 해커': { route:'careful', motif:'삭제된 로그와 백도어를 역추적하며', discovery:'MOTHER-9의 숨겨진 관리자 권한', ally:'익명 내부자', ending:'도시의 기억을 시민에게 돌려준 해커' },
+  '증강 집행자': { route:'bold', motif:'봉쇄선을 힘으로 밀어내며', discovery:'치안망이 조작된 진짜 이유', ally:'반란한 집행부대', ending:'도시의 무력 시스템을 뒤집은 집행자' },
+  '기억 브로커': { route:'empathetic', motif:'사람들이 숨기고 싶은 기억의 값을 읽으며', discovery:'누가 어떤 기억을 팔았는지', ally:'기억 거래자 네트워크', ending:'기억의 소유권을 다시 정의한 브로커' },
+  '드론 조종사': { route:'careful', motif:'도시를 위에서 내려다보며 사각지대를 찾고', discovery:'감시망이 보지 못하는 유일한 통로', ally:'불법 드론 조종사들', ending:'감시도시의 눈을 멀게 한 조종사' },
+  '스트리트 메딕': { route:'empathetic', motif:'부상자와 시민을 살리며 정보를 모으고', discovery:'기억 조작이 사람의 신경계를 망가뜨리는 방식', ally:'하층 의료망', ending:'도시의 생존자들을 지켜낸 의무관' },
+  '데이터 사냥꾼': { route:'bold', motif:'추적 신호를 역으로 물고 늘어지며', discovery:'도시를 추적하는 진짜 사냥감의 정체', ally:'암시장 정보상', ending:'추적망의 주인을 사냥한 데이터 사냥꾼' },
+  '심해 잠수사': { route:'bold', motif:'압력과 어둠을 몸으로 버티며', discovery:'기지 밖 균열의 실제 규모', ally:'외부 구조 잠수팀', ending:'심연에서 마지막 생존자를 끌어낸 잠수사' },
+  '해양 생물학자': { route:'careful', motif:'생체 반응과 표본의 변화를 분석하며', discovery:'탈라스가 공격자가 아니라는 증거', ally:'탈라스의 생체 신호', ending:'인간과 심해 생명을 함께 살린 연구자' },
+  '잠수정 기관사': { route:'bold', motif:'망가진 장비와 잠수정을 즉석에서 되살리며', discovery:'금지 구역으로 가는 폐쇄 도킹 라인', ally:'정비반 생존자', ending:'침몰 직전의 기지를 움직인 기관사' },
+  '소나 관측관': { route:'careful', motif:'반향과 침묵 사이의 패턴을 읽으며', discovery:'구조 신호 속에 숨은 두 번째 목소리', ally:'실종 관측관의 기록', ending:'심연의 언어를 해독한 관측관' },
+  '해군 구조요원': { route:'empathetic', motif:'누구를 먼저 살릴지 결정하며', discovery:'실종자들이 향한 공통 지점', ally:'구조 대기 생존자', ending:'한 사람도 포기하지 않은 구조요원' },
+  '심해 의무관': { route:'empathetic', motif:'공포와 부상을 진정시키며', discovery:'승무원들의 이상 행동이 감염이 아니었다는 진실', ally:'격리 병동 생존자', ending:'광기 속에서도 사람을 지킨 의무관' },
+  '시간 감식관': { route:'careful', motif:'반복마다 달라지는 작은 차이를 기록하며', discovery:'루프가 시작되는 정확한 순간', ally:'이전 루프의 잔상', ending:'시간의 증거를 끝까지 보존한 감식관' },
+  '기계 시계공': { route:'careful', motif:'톱니와 축의 오차를 맞추며', discovery:'열세 번째 종을 움직이는 숨은 기어', ally:'시계공 조합', ending:'멈춘 시간을 다시 움직인 시계공' },
+  '역행 검사': { route:'bold', motif:'되감기는 순간을 힘으로 거슬러 올라가며', discovery:'루프를 지키는 경비대의 약점', ally:'과거의 자신이 남긴 흔적', ending:'시간을 베어 내일을 연 검사' },
+  '예언 기록자': { route:'empathetic', motif:'바뀌는 문장과 사람들의 선택을 기록하며', discovery:'예언이 미래가 아니라 선택의 기록이라는 사실', ally:'사라진 예언자', ending:'미래를 기록이 아니라 선택으로 바꾼 기록자' },
+  '시간 밀수꾼': { route:'bold', motif:'사라지는 물건과 시간을 숨겨 옮기며', discovery:'루프 밖에 물건을 보존하는 방법', ally:'시간 암시장', ending:'내일로 금지된 시간을 운반한 밀수꾼' },
+  '종소리 파수꾼': { route:'empathetic', motif:'종이 울릴 때마다 사람들을 지키며', discovery:'종지기가 루프를 멈추지 않는 진짜 이유', ally:'종지기의 후계자', ending:'마지막 종을 스스로 울린 파수꾼' },
+  '별사냥꾼': { route:'bold', motif:'별가루 발자국과 야수의 흔적을 쫓으며', discovery:'별을 먹는 존재의 실제 이동 경로', ally:'숲 가장자리 사냥꾼들', ending:'별을 사냥하지 않고 지켜낸 사냥꾼' },
+  '숲의 주술사': { route:'careful', motif:'나무와 뿌리의 속삭임을 들으며', discovery:'숲의 심장이 병든 이유', ally:'말하는 고목', ending:'숲의 기억을 되살린 주술사' },
+  '야수 길잡이': { route:'empathetic', motif:'야수의 공포를 이해하고 길을 묻으며', discovery:'신수들이 인간을 공격하는 진짜 이유', ally:'별빛 신수', ending:'인간과 야수 사이에 길을 만든 길잡이' },
+  '유성 대장장이': { route:'bold', motif:'별철의 떨림을 두드려 응답을 끌어내며', discovery:'별핵을 안전하게 다룰 수 있는 방법', ally:'유성 대장간', ending:'마지막 별을 새롭게 벼린 대장장이' },
+  '꿈의 방랑자': { route:'careful', motif:'꿈과 현실이 겹치는 틈을 걸으며', discovery:'숲이 꾸고 있는 악몽의 근원', ally:'꿈속의 아이', ending:'숲의 악몽을 끝낸 방랑자' },
+  '별빛 치유사': { route:'empathetic', motif:'병든 생명과 별빛을 함께 치유하며', discovery:'별빛 오염을 되돌릴 수 있는 의식', ally:'두 부족의 치유사들', ending:'별과 숲을 함께 회복시킨 치유사' },
+};
+
+const CAUSAL_WORLD = {
+  ember: {
+    careful:{gain:'봉인 문양의 모순과 왕가 기록의 빈칸', cost:'조사가 길어지는 동안 성채의 경계가 촘촘해진다'},
+    bold:{gain:'남들이 닿지 못한 구역과 적의 즉각적인 반응', cost:'소음과 파손 때문에 숨을 곳이 줄어든다'},
+    empathetic:{gain:'사람과 망령이 감추고 있던 이름과 증언', cost:'누군가를 믿은 만큼 그 사람의 위험까지 함께 떠안게 된다'},
+  },
+  neon: {
+    careful:{gain:'삭제 로그의 연결점과 감시망의 사각', cost:'역추적 시간이 길어져 추적자가 가까워진다'},
+    bold:{gain:'봉쇄 전에 확보한 물리적 접근권과 원본 데이터', cost:'보안망이 파티의 행동 패턴을 학습한다'},
+    empathetic:{gain:'시민·브로커·내부자의 증언과 은신처', cost:'도움을 준 사람들까지 추적 위험에 노출된다'},
+  },
+  abyss: {
+    careful:{gain:'소나·생체·압력 기록 사이의 일치점', cost:'분석하는 동안 산소와 시간이 줄어든다'},
+    bold:{gain:'폐쇄 구역에 먼저 닿아 얻은 현장 증거', cost:'압력 균형과 장비 상태가 더 나빠진다'},
+    empathetic:{gain:'생존자의 기억과 구조 우선순위에 관한 진실', cost:'구조해야 할 사람이 늘어나 이동이 느려진다'},
+  },
+  clock: {
+    careful:{gain:'루프마다 변하는 미세한 오차와 시간의 규칙', cost:'기록을 남길수록 루프가 파티의 존재를 더 선명히 인식한다'},
+    bold:{gain:'정상 시간에는 닿을 수 없는 장소와 순간', cost:'시간 균열이 커져 다음 반복이 더 불안정해진다'},
+    empathetic:{gain:'사라지지 않는 기억과 사람 사이의 연결', cost:'구하려는 사람이 늘수록 선택해야 할 순간도 많아진다'},
+  },
+  wild: {
+    careful:{gain:'별가루·뿌리·꿈의 흔적이 가리키는 진짜 방향', cost:'흔적을 읽는 동안 숲의 포식자도 파티를 따라잡는다'},
+    bold:{gain:'숲 중심부로 가는 빠른 길과 별핵의 반응', cost:'숲이 파티를 침입자로 인식해 길을 닫기 시작한다'},
+    empathetic:{gain:'야수와 부족, 숲의 존재가 건네는 도움', cost:'서로 적대하던 존재들 사이의 약속까지 책임져야 한다'},
+  },
+};
+
+const JOB_PHASE_ACTIONS = {
+  도입:['현장의 첫 이상을 직업의 감각으로 확인한다','남들이 지나친 작은 흔적을 전문 지식으로 붙잡는다'],
+  대면:['눈앞의 존재와 사건을 직업의 방식으로 정면 해석한다','현장의 핵심 장애물에 전문 기술을 직접 적용한다'],
+  진실:['드러난 사실들 사이에서 직업만 알아볼 수 있는 모순을 파고든다','이미 모은 단서를 전문 지식으로 다시 엮어 숨은 의미를 찾는다'],
+  위기:['무너지는 상황 속에서 직업의 장점을 이용해 피해와 진실을 동시에 붙잡는다','시간이 사라지기 전에 전문 기술로 가장 위험한 지점을 건드린다'],
+  결단:['지금까지 쌓인 직업 전용 단서를 최종 선택과 연결한다','이 직업만 가능한 방식으로 사건의 결말에 개입한다'],
+};
+
+function causalThreadText(campaign, beat, prev) {
+  if (!prev) return '';
+  const route=prev.branchValue || 'careful';
+  const world=CAUSAL_WORLD[campaign?.id]?.[route];
+  if(!world) return '';
+  if(prev.success){
+    return `${prev.playerName || '파티'}의 선택으로 ${world.gain}을 손에 넣었다. 그래서 ${beat.title || '다음 장면'}에서는 처음부터 전과 다른 것을 볼 수 있었다. 다만 ${world.cost}`;
+  }
+  return `${prev.playerName || '파티'}는 원하는 결과를 완전히 얻지 못했다. 대신 실패 과정에서 ${world.gain}의 일부가 예상치 못한 형태로 드러났다. 문제는 ${world.cost} 그 여파가 ${beat.title || '다음 장면'}의 시작 조건을 바꾸었다.`;
+}
+
+function routeShiftBridge(campaign, history) {
+  if (!Array.isArray(history) || history.length < 2) return '';
+  const a=history[history.length-2];
+  const b=history[history.length-1];
+  if(!a?.branchValue || !b?.branchValue || a.branchValue===b.branchValue) return '';
+  const world=campaign?.id;
+  const bridges={
+    ember:'성채는 한 가지 답만 허락하지 않았다. 앞서 얻은 흔적이 사람의 증언과 맞물리고, 힘으로 열었던 문 뒤에서 오히려 오래된 기록이 발견되면서 파티의 판단 기준도 달라졌다.',
+    neon:'도시는 한 방향으로만 추적할 수 있는 상대가 아니었다. 훔친 로그가 사람의 기억과 겹치고, 강제로 뚫은 봉쇄선 뒤에서 새로운 거래자가 나타나면서 다음 선택의 이유가 바뀌었다.',
+    abyss:'심해에서는 한 번 얻은 답도 곧 다른 의미를 가졌다. 장비 기록과 생존자의 증언, 압력 변화가 서로 맞물리며 파티가 믿어야 할 정보의 우선순위가 달라졌다.',
+    clock:'루프는 같은 방법을 반복할수록 더 교묘하게 비틀렸다. 이전 반복에서 통했던 방식이 이번에는 다른 결과를 낳았고, 남겨 둔 기억과 사람의 반응이 새로운 길을 요구했다.',
+    wild:'숲은 선택을 기억했다. 억지로 연 길에는 상처가 남았고, 조심스럽게 읽은 흔적에는 누군가의 발자국이 겹쳤다. 파티는 그 변화에 맞춰 다음 걸음을 바꿀 수밖에 없었다.',
+  };
+  const why=b.success
+    ? `${b.playerName || '파티'}가 방금 얻은 성과가 앞서 놓친 부분을 보완해 주었다.`
+    : `${b.playerName || '파티'}의 시도가 뜻대로 풀리지 않으면서, 같은 방법을 고집할 수 없다는 사실이 분명해졌다.`;
+  return `${bridges[world] || '앞선 선택이 새로운 사실을 드러내면서 파티의 다음 판단도 달라졌다.'} ${why} 하지만 이전에 얻은 단서와 관계가 사라진 것은 아니었다. 그것들은 다른 방식으로 다음 장면에 쓰이기 시작했다.`;
+}
+
+function rememberNarrativeThread(room, campaign, beat, choice, player, success, margin, status) {
+  room.narrativeLedger ||= {threads:[],routeShifts:[],jobThreads:{}};
+  const route=choice.branchValue || 'careful';
+  const world=CAUSAL_WORLD[campaign?.id]?.[route] || {};
+  const entry={chapter:beat.chapter,act:beat.act,beatId:beat.id,playerId:player.id,playerName:player.name,job:player.job?.name || '',route,success,critical:success&&margin>=5,severeFailure:!success&&margin<=-5,gain:world.gain||'',cost:world.cost||'',status:status?.label||'',choice:choice.label};
+  room.narrativeLedger.threads.push(entry);
+  if(room.narrativeLedger.threads.length>20) room.narrativeLedger.threads.splice(0,room.narrativeLedger.threads.length-20);
+  if(choice.jobSpecial && player.job?.name){
+    const list=room.narrativeLedger.jobThreads[player.job.name] ||= [];
+    list.push(entry); if(list.length>8) list.splice(0,list.length-8);
+  }
+  return entry;
+}
+
+function jobThreadCarry(room, jobName) {
+  const list=room.narrativeLedger?.jobThreads?.[jobName] || [];
+  const last=list[list.length-1];
+  if(!last) return '';
+  if(last.success) return `${jobName}의 이전 선택에서 얻은 ${last.gain || '전문 단서'}가 아직 유효하다. 그 단서는 이번 장면의 평범한 풍경 속에서 다시 의미를 드러낸다.`;
+  return `${jobName}의 이전 시도에서 생긴 문제는 끝나지 않았다. ${last.status ? `${last.status}의 후유증과 함께 ` : ''}${last.cost || '그때의 대가'}가 이번 장면의 판단을 더 어렵게 만든다.`;
+}
+
+function jobStoryChoice(campaign, beat, job, room) {
+  if (!job?.name) return null;
+  const sig = JOB_STORY_SIGNATURES[job.name];
+  if (!sig) return null;
+  const phase=beat?.phase || '도입';
+  const progress=Number(room.jobStory?.[job.name]?.success || 0);
+  const failures=Number(room.jobStory?.[job.name]?.failure || 0);
+  const tier=progress>=4?'결말':progress>=2?'심화':'발견';
+  const skill=job.skillDef?.name || String(job.skill || '').split(':')[0] || '전문 기술';
+  const phaseActions=JOB_PHASE_ACTIONS[phase] || JOB_PHASE_ACTIONS.도입;
+  const seed=(Number(beat?.chapter||1)+job.name.length+progress)%phaseActions.length;
+  const action=phaseActions[seed];
+  const carry=jobThreadCarry(room,job.name);
+  const sceneTarget=beat?.objective || beat?.title || '현재 사건';
+  const tierGoal=tier==='결말'
+    ? `${sig.discovery}과 ${sig.ally}를 하나의 증거로 묶어 ${sig.ending}으로 이어질 마지막 가능성을 만든다`
+    : tier==='심화'
+      ? `${sig.ally}와 이미 얻은 단서를 연결해 ${sig.discovery}의 원인까지 파고든다`
+      : `${sig.discovery}에 처음 손을 뻗어 다른 직업은 볼 수 없는 첫 단서를 확보한다`;
+  const dc=Math.max(9,Number(beat?.act||1)+9+(phase==='위기'?1:0)+(failures>=2?1:0)-Math.min(1,Math.floor(progress/3)));
+  return {
+    id:`${beat.id}-JOB-${job.name}`,
+    label:`${job.name} — ${action}`,
+    detail:`직업 전용 · ${job.prime} DC ${dc} · ${skill}. ${sceneTarget}과 직접 연결된 ${tier} 단계 선택. ${carry || `성공하면 ${sig.ally} 또는 ${sig.discovery}에 관한 직업 전용 서사가 열린다.`}`,
+    stat:job.prime, dc, path:statPath(job.prime), branchValue:sig.route, branchKey:`job:${job.name}`,
+    requiredJob:job.name, jobSpecial:true, jobEnding:sig.ending,
+    success:`${sig.motif} ${tierGoal}. ${sig.ally}와 이어진 흔적은 사라지지 않았고, 이후 누군가의 태도와 숨겨진 단서의 위치까지 달라지기 시작했다.`,
+    failure:`${sig.motif} ${sceneTarget}에 손을 뻗었지만, 이미 누군가 한발 먼저 흔적을 뒤틀어 놓았다. ${sig.discovery}의 일부는 드러났으나 그 순간 ${sig.ally}와 이어진 위험도 함께 깨어났다. 얻은 정보는 남았고, 대가 역시 다음 장면까지 따라온다.`,
+  };
+}
+
+function injectJobStoryChoices(room, campaign, beat) {
+  if (!beat || !Array.isArray(beat.choices)) return beat;
+  const actor=currentTurnPlayer(room);
+  const job=actor?.job;
+  if(!job?.name) return beat;
+  beat.choices=beat.choices.filter(choice=>!choice.requiredJob || choice.requiredJob===job.name);
+  if(!beat.choices.some(choice=>choice.requiredJob===job.name)){
+    const special=jobStoryChoice(campaign,beat,job,room);
+    if(special) beat.choices.push(special);
+  }
+  return beat;
+}
+
+function routeSceneVariant(campaign, beat, room, prev) {
+  if (!prev?.branchValue) return '';
+  const route = prev.branchValue;
+  const world = campaign?.id;
+  const phase = beat?.phase || '장면';
+  const tables = {
+    ember: {
+      careful:'앞선 조사에서 확보한 문양과 기록이 맞물리며, 성채의 복도 하나가 평범한 돌벽이 아니라 봉인의 일부였다는 사실이 드러난다.',
+      bold:'앞선 돌파의 소음 때문에 성채는 이미 깨어 있다. 멀리서 갑옷이 부딪히는 소리가 따라오고, 이번 장면은 숨어 조사하기보다 먼저 움직여야 하는 상황이 된다.',
+      empathetic:'앞서 얻은 신뢰 덕분에 닫혀 있던 문 하나가 사람의 손으로 열린다. 누군가는 파티에게 말하지 않으려 했던 이름을 조심스럽게 꺼낸다.',
+    },
+    neon: {
+      careful:'복구한 로그의 시간표가 새 장면의 네온 간판과 정확히 겹친다. 파티는 추적자보다 먼저 데이터 흐름의 목적지를 짐작한다.',
+      bold:'보안망은 앞선 침입 방식을 학습했다. 이번 구역은 이미 봉쇄 모드이며, 파티가 움직이는 순간 도시 전체가 반응할 준비를 한다.',
+      empathetic:'앞서 도움을 받은 시민과 거래자들이 작은 연락망을 만들었다. 공식 지도에는 없는 안전한 길과 새로운 증언이 동시에 열린다.',
+    },
+    abyss: {
+      careful:'소나와 생체 기록이 한 점에서 겹치며, 지금까지 괴물의 흔적으로 보였던 신호가 사실 구조 요청의 반복일 가능성이 생긴다.',
+      bold:'앞선 강행 돌파로 기지의 압력 균형이 깨졌다. 이번 장면에서는 단서뿐 아니라 언제 닫힐지 모르는 격벽과 침수까지 함께 상대해야 한다.',
+      empathetic:'살려 둔 생존자가 이번 장면에서 먼저 입을 연다. 그가 본 것은 로그에 남지 않은 금지 구역의 진실이었다.',
+    },
+    clock: {
+      careful:'기록한 시간 오차가 이번 반복에서도 다시 나타난다. 작은 차이 하나가 루프의 규칙이 무너지기 시작했음을 보여 준다.',
+      bold:'앞선 역행의 충격 때문에 이번 반복은 처음부터 어긋나 있다. 원래 있어야 할 문이 사라지고, 대신 한 번도 본 적 없는 계단이 열린다.',
+      empathetic:'서로의 기억을 맞춘 사람들이 이번 반복에서도 파티를 알아본다. 루프가 지운 관계가 완전히 사라지지 않았다는 증거다.',
+    },
+    wild: {
+      careful:'별가루와 뿌리의 방향이 이번 장면에서 하나의 원을 그린다. 숲이 길을 숨기는 것이 아니라 무언가를 피해 길을 바꾸고 있다는 사실이 보인다.',
+      bold:'앞서 억지로 연 길 때문에 숲이 거칠게 반응한다. 나무와 야수가 파티를 경계하지만, 대신 누구보다 빨리 중심부에 가까워졌다.',
+      empathetic:'앞서 도움을 준 야수와 숲의 존재들이 멀리서 모습을 드러낸다. 그들이 도망치지 않는다는 사실만으로도 이번 장면의 의미가 달라진다.',
+    },
+  };
+  const line = tables[world]?.[route] || '';
+  if (!line) return '';
+  return phase === '결단' ? `${line} 이제 이 흐름을 유지할지, 완전히 다른 길로 꺾을지 결정해야 한다.` : line;
+}
+
+function jobStoryContinuity(room, playerName) {
+  const last = room.jobStory?.last;
+  if (!last) return '';
+  const status = last.success
+    ? `${last.jobName}의 전문성이 남긴 단서 때문에 원래는 보이지 않던 길이 열려 있다.`
+    : `${last.jobName}의 전문적인 시도가 실패한 여파가 아직 현장에 남아 있다.`;
+  return `${status} ${last.narrative || ''}`.trim();
+}
+
 function renderedStoryBeat(room, campaign) {
+  if (room.storyDetour) {
+    const detour = JSON.parse(JSON.stringify(room.storyDetour));
+    adaptiveChoiceRewrite(room, detour);
+    injectJobStoryChoices(room, campaign, detour);
+    return detour;
+  }
   const base = campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)];
   if (!base) return null;
   const beat = JSON.parse(JSON.stringify(base));
   const history = room.storyHistory || [];
   const prev = history[history.length - 1];
-  const route = prev?.branchValue || room.storyFlags?.[`act${beat.act}`] || 'careful';
-  const routeMeta = ROUTE_META[route] || ROUTE_META.careful;
-  const transition = branchTransitionText(campaign, beat, prev);
-  const lingering = room.players.flatMap(member => activeStatuses(room, member).map(status => `${member.name}: ${status.label}`));
-
+  const continuity = livingContinuity(room, campaign, beat, prev);
+  const shiftBridge = routeShiftBridge(campaign, history);
+  const lingering = room.players.flatMap(member => activeStatuses(room, member).map(status => `${member.name}의 ${status.label}`));
   const paragraphs = [];
-  if (beat.chapter === 1 && room.storyMemory?.prologueMeeting) paragraphs.push(room.storyMemory.prologueMeeting);
-  if (transition) paragraphs.push(transition);
-  paragraphs.push(beat.situation || beat.text || '');
-  if (lingering.length) paragraphs.push(`이전 선택의 상처도 사라지지 않았다. ${lingering.slice(0, 3).join(', ')}${lingering.length > 3 ? ' 외' : ''}. 이 상태는 이번 판정과 전투에도 실제 영향을 준다.`);
 
-  beat.route = { key:route, ...routeMeta, previousSuccess: prev?.success ?? null };
-  beat.title = `${beat.title} · ${routeMeta.name}`;
+  if (beat.chapter === 1 && room.storyMemory?.prologueMeeting) paragraphs.push(room.storyMemory.prologueMeeting);
+  if (continuity) paragraphs.push(continuity);
+  if (shiftBridge) paragraphs.push(shiftBridge);
+  const routeVariant = routeSceneVariant(campaign, beat, room, prev);
+  if (routeVariant) paragraphs.push(routeVariant);
+  const actorJob=currentTurnPlayer(room)?.job?.name;
+  const jobContinuity=actorJob ? jobThreadCarry(room,actorJob) : '';
+  if (jobContinuity) paragraphs.push(jobContinuity);
+  paragraphs.push(beat.situation || beat.text || '');
+
+  if (lingering.length) {
+    paragraphs.push(`${lingering.slice(0,3).join(', ')}${lingering.length > 3 ? ' 같은 후유증' : ''}도 아직 사라지지 않았다. 몸과 판단에 남은 상처 때문에 이번 선택은 이전보다 조금 더 무겁다.`);
+  }
+
+  const currentRoute = prev?.branchValue || room.narrativeState?.lastRoute || 'careful';
+  beat.route = { key:currentRoute, ...(ROUTE_META[currentRoute] || ROUTE_META.careful), previousSuccess:prev?.success ?? null };
   beat.situation = paragraphs.filter(Boolean).join('\n\n');
   beat.text = beat.situation;
-  beat.objective = `${beat.objective} 현재는 ${routeMeta.short} 흐름으로 이야기가 진행 중이다.`;
-  beat.why = prev?.success === false
-    ? `${beat.why} 직전 실패 때문에 같은 장면이라도 더 불리한 조건과 새로운 후유증을 안고 시작한다.`
-    : `${beat.why} 직전 선택에서 얻은 이점이 이번 장면의 접근법과 난이도를 바꾼다.`;
   beat.continuityHook = branchCliffhanger(campaign, beat, prev);
-  beat.visual = `${beat.visual} · ${routeMeta.name}${prev?.success === false ? ' · 실패 여파' : ''}`;
-  applyBranchToChoices(beat, prev);
+  beat.visual = `${beat.visual} · ${routeName(currentRoute)}의 흔적`;
+  adaptiveChoiceRewrite(room, beat);
+  injectJobStoryChoices(room, campaign, beat);
   return beat;
 }
 
@@ -603,6 +1012,7 @@ function publicRoom(room) {
     lastStoryAction: room.lastStoryAction || null,
     storyHistory: (room.storyHistory || []).slice(-8),
     storyMemory: room.storyMemory || {},
+    jobStory: room.jobStory || {},
     abandonVote: room.abandonVote || null,
     targetStory: TARGET_STORY,
     maxThreat: MAX_THREAT,
@@ -1268,8 +1678,12 @@ io.on('connection', socket => {
     room.storyFlags = {};
     room.storyMemory = {};
     room.pathTotals = { truth: 0, survival: 0, bond: 0 };
+    room.storyDetour = null;
+    room.narrativeState = { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
+    room.narrativeLedger = { threads: [], routeShifts: [], jobThreads: {} };
     room.pendingContinue = null;
     room.failureCount = 0;
+    room.jobStory = {};
     room.prologue = buildCampaignPrologue(room, campaign);
     for (const member of room.players) {
       member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
@@ -1316,12 +1730,15 @@ io.on('connection', socket => {
     if (!rateLimit(socket, 'storyAdvance', 700)) return ack?.({ ok: false, error: '잠시 후 다시 시도하세요.' });
 
     const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
-    const beat = campaign?.storyBeats?.[Math.min(Math.max(0, Number(room.story || 0)), TARGET_STORY - 1)];
+    const beat = renderedStoryBeat(room, campaign);
     if (!beat) return ack?.({ ok:false, error:'더 이상 진행할 스토리 장면이 없습니다.' });
 
     room.storyFlags ||= {};
     room.storyMemory ||= {};
     room.pathTotals ||= { truth: 0, survival: 0, bond: 0 };
+    room.narrativeState ||= { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
+  room.narrativeLedger ||= { threads: [], routeShifts: [], jobThreads: {} };
+    const isDetour = Boolean(beat.isDetour);
 
     if (beat.roleplayPrompt) {
       const declaration = sanitize(payload?.declaration, 60);
@@ -1353,7 +1770,7 @@ io.on('connection', socket => {
         continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
       };
       room.phase = 'resolution';
-      room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0 };
+      room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0, clearDetour: isDetour };
       pushChat(room, { type:'action', author:player.name, text:`짧은 대답: ${declaration}` });
       pushChat(room, { type:'narration', author:'GM', text: room.lastStoryAction.narrative });
       if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
@@ -1365,6 +1782,7 @@ io.on('connection', socket => {
     const choiceIndex = Number(payload?.choiceIndex);
     const choice = beat.choices?.[choiceIndex];
     if (!choice) return ack?.({ ok:false, error:'이 장면에서는 주어진 선택지 중 하나를 골라야 합니다.' });
+    if (choice.requiredJob && player.job?.name !== choice.requiredJob) return ack?.({ ok:false, error:`${choice.requiredJob}만 선택할 수 있는 직업 전용 선택지입니다.` });
     const ability = player.abilities?.[choice.stat];
     if (!ability) return ack?.({ ok:false, error:'캐릭터 능력치를 찾을 수 없습니다.' });
 
@@ -1381,6 +1799,9 @@ io.on('connection', socket => {
     room.nextCheckDcReduction = 0;
     room.pathTotals[choice.path] = Number(room.pathTotals[choice.path] || 0) + 1;
     if (choice.branchKey) room.storyFlags[choice.branchKey] = choice.branchValue;
+    if (room.narrativeState.lastRoute === choice.branchValue) room.narrativeState.routeStreak = Number(room.narrativeState.routeStreak || 0) + 1;
+    else room.narrativeState.routeStreak = 1;
+    room.narrativeState.lastRoute = choice.branchValue;
 
     emitRoll(room, player, {
       sides:20, result:roll, purpose:`메인 스토리 · ${choice.stat} 판정 · DC ${dc}`,
@@ -1403,22 +1824,48 @@ io.on('connection', socket => {
       consequence = `불상사: ${status.label} 상태이상 적용 · HP -1 · 위협 +1 · 다음 장면 판정 불리`;
     }
 
-    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative:success ? choice.success : choice.failure, beatId:beat.id };
-    room.storyHistory ||= [];
-    room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title });
-    if (room.storyHistory.length > 12) room.storyHistory.splice(0, room.storyHistory.length - 12);
+    if (success && margin >= 5) room.narrativeState.boon = choice.branchValue;
+    else if (!success) room.narrativeState.boon = null;
 
-    room.story += 1;
+    let narrative = storyResolutionNarrative(campaign, beat, choice, player, success, status);
+    if (choice.jobSpecial) {
+      room.jobStory ||= {};
+      const jobName = player.job?.name || choice.requiredJob;
+      const entry = room.jobStory[jobName] ||= { success:0, failure:0, secrets:0, ending:null };
+      if (success) {
+        entry.success += 1;
+        entry.secrets += margin >= 5 ? 2 : 1;
+        entry.ending = choice.jobEnding || entry.ending;
+      } else entry.failure += 1;
+      narrative = `${player.name}에게는 다른 이들이 보지 못하는 것이 보였다. ${success ? choice.success : choice.failure}`;
+      room.jobStory.last = { jobName, success, narrative, chapter:beat.chapter, ending:choice.jobEnding || null };
+    }
+    rememberNarrativeThread(room, campaign, beat, choice, player, success, margin, status);
+    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative, beatId:beat.id };
+    room.storyHistory ||= [];
+    room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title, isDetour });
+    if (room.storyHistory.length > 16) room.storyHistory.splice(0, room.storyHistory.length - 16);
+
+    if (isDetour) {
+      room.narrativeState.detours = Number(room.narrativeState.detours || 0) + 1;
+    } else {
+      room.story += 1;
+      if (!success && (margin <= -5 || roll === 1) && room.story < TARGET_STORY) {
+        room.storyDetour = buildDetourScene(campaign, room, choice, player, status);
+      }
+    }
     room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0) + 1;
     room.lastResolution = {
       source:'story', ok:success, result:roll, total, dc,
-      text: success ? choice.success : choice.failure,
+      text: narrative,
       consequence,
       status: status ? { label: status.label, desc: status.desc, remainingScenes: Math.max(0, Number(status.expiresAtStory || 0) - Number(room.story || 0)) } : null,
       playerId: player.id,
       playerName: player.name,
       choiceLabel: choice.label,
       route: ROUTE_META[choice.branchValue] || null,
+      isDetour,
+      detourCreated: !isDetour && Boolean(room.storyDetour),
       continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
     };
     room.phase = 'resolution';
@@ -1426,7 +1873,7 @@ io.on('connection', socket => {
 
     pushChat(room, { type:'action', author:player.name, text:`메인 선택: ${choice.label}` });
     pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${choice.stat} 판정 ${roll}${abilityMod>=0?'+':''}${abilityMod}${skillBonus?`+스킬${skillBonus}`:''}${statusPenalty?`${statusPenalty}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
-    pushChat(room, { type:'narration', author:'GM', text: success ? choice.success : `${choice.failure} ${consequence}` });
+    pushChat(room, { type:'narration', author:'GM', text: narrative });
 
     if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
     sync(room);
@@ -1541,6 +1988,7 @@ io.on('connection', socket => {
     room.pendingContinue = null;
     room.phase = 'story';
     if (pending.source === 'story') {
+      if (pending.clearDetour) room.storyDetour = null;
       advanceSkillClock(room, 1);
       if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true }); }
       if (pending.drawEvent && room.deck.length) {

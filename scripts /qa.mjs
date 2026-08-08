@@ -59,7 +59,8 @@ assert(app.includes('renderMainStoryChoices') && app.includes("socket.emit('stor
 
 
 assert(server.includes('const MIN_PLAYERS = 1'), 'SOLO 1인 시작 설정이 누락되었습니다.');
-assert(server.includes('soloVoteDurationMs: 5000'), 'SOLO 빠른 이벤트 선택 설정이 누락되었습니다.');
+assert(server.includes('SOLO_VOTE_DURATION_MS = 12_000'), 'SOLO 이벤트 투표 시간이 12초로 설정되어 있지 않습니다.');
+assert(server.includes('ALL_VOTED_COUNTDOWN_MS = 3_000'), '전원 투표 완료 후 3초 확정 카운트다운이 누락되었습니다.');
 for (const campaign of CAMPAIGNS) {
   for (const beat of campaign.storyBeats) {
     assert(beat.text?.length >= 80, `${campaign.title} ${beat.id}: 소설형 본문이 너무 짧습니다.`);
@@ -84,10 +85,12 @@ assert(app.includes('resetTransientUi') && app.includes('pageshow'), '페이지 
 assert(server.includes('choice.requiredJob') && server.includes('player.job?.name !== choice.requiredJob'), '직업 전용 선택 서버 검증 누락');
 
 assert(server.includes('EVENT_EVERY_TURNS = 3'), '이벤트 주기가 3 메인 턴으로 고정되어 있지 않습니다.');
-assert(server.includes('VOTE_DURATION_MS = 20_000'), '이벤트 투표 시간이 20초로 설정되어 있지 않습니다.');
+assert(server.includes('VOTE_DURATION_MS = 45_000'), '이벤트 투표 시간이 45초로 설정되어 있지 않습니다.');
 assert(server.includes("socket.on('story:advance'"), '메인 스토리 턴 진행 이벤트가 없습니다.');
 assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공개 로직이 없습니다.');
-assert(server.includes("event:finalizeChoice") && server.includes('20초 제한시간 종료 후 서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
+assert(server.includes("event:finalizeChoice") && server.includes('서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
+assert(server.includes('beginAllVotedCountdown(room)'), '전원 투표 완료 시 조기 확정 카운트다운 호출이 누락되었습니다.');
+assert(server.includes('clearDetour: isDetour'), '우회 위기 장면 해결 후 제거 플래그가 누락되었습니다.');
 assert(!index.includes('id="finalizeChoiceBtn"'), '호스트 투표 조기 확정 버튼이 남아 있습니다.');
 assert(index.includes('id="voteTimer"') && index.includes('id="advanceStoryBtn"'), '메인 스토리 진행/투표 타이머 UI가 없습니다.');
 assert(css.includes('object-fit:contain!important'), '스토리 이미지 잘림 방지 contain 규칙이 없습니다.');
@@ -130,3 +133,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log('\nALL STATIC QA CHECKS PASSED');
+
+assert(server.includes('Math.floor(room.story / 6)'), '30장 구조의 이벤트 ACT 계산이 6장 단위가 아닙니다.');

@@ -348,14 +348,22 @@ function storyArt(c, scene) {
   const visual = scene?.visual || sceneWord(c?.id, actIndex);
   const subtitle = scene?.monster ? `${visual} · ${scene.monster}의 위협` : `${visual} · ${isStory ? '메인 스토리' : '이벤트 사건'}`;
 
-  if (isStory && phase === '도입') return coverArt(c);
-  if (artSet && isStory && (phase === '위기' || phase === '결단' || act >= 4)) return artSet.late;
-  if (artSet && isStory && phase === '대면') return artSvg(c, title, subtitle, `ACT ${act} · ${scene?.actName || ''}`, visual, scene?.monster || '');
-  if (artSet && isStory) return artSet.early;
+  if (artSet && isStory) {
+    if (act >= 4 || phase === '위기' || phase === '결단') return artSet.late;
+    return artSet.early;
+  }
   if (artSet && !isStory) return (phase === '위기' || phase === '결단' || act >= 4) ? artSet.late : artSet.early;
   return artSvg(c, title, subtitle, scene ? `ACT ${scene.act} · ${scene.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'), visual, scene?.monster || '');
 }
 
+function storyDetailArt(c, beat) {
+  const artSet = STORY_ART_FILES[c?.id];
+  if (!artSet) return storyArt(c, beat);
+  const act = Number(beat?.act || 1);
+  const phase = String(beat?.phase || '도입');
+  if (act >= 4) return phase === '도입' || phase === '대면' ? artSet.early : artSet.late;
+  return phase === '위기' || phase === '결단' ? artSet.late : artSet.early;
+}
 
 function storyArtMeta(c, beat) {
   const src = storyArt(c, beat);
@@ -384,10 +392,14 @@ function storyNarrationHTML(c, beat, player, hints = []) {
   const paragraphs = proseParagraphs(beat?.text || c?.intro || '');
   const first = paragraphs[0] || '';
   const rest = paragraphs.slice(1);
+  const detailSrc = storyDetailArt(c, beat);
+  const showDetail = !!beat && Number(beat.chapter || 1) > 1;
   return `
     <div class="narration-rich clean-narration">
       ${first ? `<p>${esc(first)}</p>` : ''}
+      ${showDetail ? `<figure class="story-detail-image"><img src="${detailSrc}" alt="${esc(beat?.title || c?.title || '스토리 장면')}"><figcaption>${esc(beat?.visual || beat?.actName || '장면의 인상')}</figcaption></figure>` : ''}
       ${rest.map(p => `<p>${esc(p)}</p>`).join('')}
+      ${beat?.continuityHook ? `<p class="continuity-hook">${esc(beat.continuityHook)}</p>` : ''}
     </div>`;
 }
 
@@ -617,7 +629,6 @@ function renderStory() {
   const p = me();
   const isMyTurn = state.turnPlayerId === playerToken;
   const inResolution = state.phase === 'resolution';
-  const roleplay = !ev && !!beat?.roleplayPrompt;
 
   $('#deckCount').textContent = state.deckCount;
   $('#eventCadence').textContent = `${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴`;
@@ -636,8 +647,8 @@ function renderStory() {
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
   $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';
   $('#actionSuggestions').innerHTML = '';
-  $('#storyActionInput').placeholder = roleplay ? (beat?.roleplayPrompt?.placeholder || '짧은 대답을 입력하세요.') : '메인 스토리는 선택지를 골라 진행합니다.';
-  $('#storyActionInput').maxLength = roleplay ? 60 : 180;
+  $('#storyActionInput').placeholder = '메인 스토리는 장면별 선택지를 골라 진행합니다.';
+  $('#storyActionInput').maxLength = 180;
   $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${$('#storyActionInput').maxLength || 180}`;
 
   const lastResolution = state.lastResolution?.source === 'story' ? state.lastResolution : null;
@@ -706,29 +717,18 @@ function renderStory() {
     $('#storySituation').textContent = beat?.situation || beat?.text || c?.intro || '';
     $('#storyObjective').textContent = beat?.objective || '장면에 맞는 선택지 중 하나를 고르세요.';
     $('#storyWhy').textContent = beat?.why || beat?.stakes || '';
-    $('#storyPrompt').innerHTML = roleplay
-      ? `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '짧은 대사를 입력하세요.')}`
-      : `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '아래 장면 선택지 중 하나를 고르세요.')}`;
+    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '아래 장면 선택지 중 하나를 고르세요.')}`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
 
-    if (roleplay) {
-      $('#storyActionBox').style.display = 'grid';
-      $('#storyActionInput').disabled = !isMyTurn || inResolution;
-      $('#storyActionBox').classList.toggle('disabled', !isMyTurn || inResolution);
-      $('#actionSuggestions').innerHTML = beat?.roleplayPrompt?.help ? `<div class="story-inline-help">${esc(beat.roleplayPrompt.help)}</div>` : '';
-      $('#choiceArea').innerHTML = `<div class="vote-strip"><div><span class="eyebrow">ROLEPLAY SCENE</span><b>짧은 대답을 적으면 다음 이야기 문장에 반영됩니다.</b></div><div>${esc(beat?.roleplayPrompt?.help || '중요한 전투 판정이 아닌 짧은 이야기 장면입니다.')}</div></div>`;
-    } else {
-      $('#storyActionBox').style.display = 'none';
-      $('#storyActionInput').disabled = true;
-      $('#storyActionBox').classList.add('disabled');
-      renderMainStoryChoices(beat);
-    }
+    $('#storyActionBox').style.display = 'none';
+    $('#storyActionInput').disabled = true;
+    $('#storyActionBox').classList.add('disabled');
+    renderMainStoryChoices(beat);
   }
 
   $('#gmBar').style.display = 'flex';
-  $('#advanceStoryBtn').style.display = (!ev && roleplay && state.phase === 'story') ? 'inline-flex' : 'none';
-  $('#advanceStoryBtn').disabled = !!ev || !roleplay || state.phase !== 'story' || !isMyTurn;
-  $('#advanceStoryBtn').textContent = isMyTurn ? '대사 보내기' : `${state.turnPlayerName || '다른 플레이어'}의 차례`;
+  $('#advanceStoryBtn').style.display = state.phase === 'prologue' ? 'inline-flex' : 'none';
+  if (state.phase !== 'prologue') $('#advanceStoryBtn').disabled = true;
   $('#continueBtn').style.display = state.phase === 'resolution' ? 'inline-flex' : 'none';
   $('#continueBtn').disabled = state.phase !== 'resolution';
   $('#continueBtn').textContent = state.lastResolution?.continueLabel || '결과를 읽고 다음으로';

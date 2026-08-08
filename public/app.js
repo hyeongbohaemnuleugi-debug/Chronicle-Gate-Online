@@ -770,7 +770,7 @@ function renderMainStoryChoices(beat) {
     .filter(({ choice }) => !choice.requiredJob || choice.requiredJob === myJob);
   box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">SCENE CHOICES</span><b>공통 선택지와 현재 직업만 사용할 수 있는 전용 선택지가 함께 표시됩니다.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 선택과 주사위 결과가 다음 장면과 엔딩 후보를 바꿉니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
     <button class="choice-card story-choice ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
-      <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${esc(choice.requiredJob)} 전용</span>` : ''}</div>
+      <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${choice.rareJobMoment ? '희귀 기회 · ' : ''}${esc(choice.requiredJob)} 전용</span>` : ''}</div>
       <small>${esc(choice.detail || '')}</small>
       <div class="story-choice-meta"><span>${choice.branchValue === 'careful' ? '추적' : choice.branchValue === 'bold' ? '돌파' : '신뢰'} · ${esc(choice.stat)} 판정</span><span>DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
     </button>
@@ -801,7 +801,7 @@ function renderChoices(ev) {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
-    const specialBadge = c.requiredJob ? `<span class="job-choice-badge">${esc(c.requiredJob)} 전용</span>` : '';
+    const specialBadge = c.requiredJob ? `<span class="job-choice-badge">${c.rareJobMoment ? '희귀 기회 · ' : ''}${esc(c.requiredJob)} 전용</span>` : '';
     const lockText = jobLocked ? `<div class="job-choice-lock">🔒 ${esc(c.requiredJob)}만 이 상황의 전문 선택을 사용할 수 있습니다.</div>` : '';
     return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><div class="choice-title-line"><b>${i + 1}. ${esc(c.label)}</b>${specialBadge}</div><small>${c.stat} · DC ${c.dc + (state.dcPenalty || 0)}</small>${lockText}<div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
   }).join('');

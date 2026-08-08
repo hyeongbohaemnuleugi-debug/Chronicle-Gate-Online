@@ -21,6 +21,8 @@ for (const campaign of CAMPAIGNS) {
   assert(new Set(campaign.events.map(e => e.id)).size === 30, `${campaign.title}: 이벤트 ID가 중복됩니다.`);
   assert(campaign.acts.length === 5, `${campaign.title}: 5막이어야 합니다.`);
   assert(campaign.storyBeats?.length === 30, `${campaign.title}: 메인 스토리 장면이 30개여야 합니다.`);
+  assert(new Set(campaign.storyBeats.map(beat => beat.id)).size === 30, `${campaign.title}: 메인 스토리 ID가 중복됩니다.`);
+  assert(new Set(campaign.storyBeats.map(beat => (beat.text || '').slice(0, 120))).size === 30, `${campaign.title}: 메인 스토리 시작 문장이 반복됩니다.`);
   for (const event of campaign.events) {
     assert(!globalEventIds.has(event.id), `전체 캠페인에서 이벤트 ID 중복: ${event.id}`);
     globalEventIds.add(event.id);
@@ -91,6 +93,7 @@ assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공
 assert(server.includes("event:finalizeChoice") && server.includes('서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
 assert(server.includes('beginAllVotedCountdown(room)'), '전원 투표 완료 시 조기 확정 카운트다운 호출이 누락되었습니다.');
 assert(server.includes('clearDetour: isDetour'), '우회 위기 장면 해결 후 제거 플래그가 누락되었습니다.');
+assert(server.includes('nextUnseenStoryIndex') && server.includes('consumeStoryBeat') && server.includes('storySeenIds'), '메인 스토리 1회 소비 보장 장치가 누락되었습니다.');
 assert(!index.includes('id="finalizeChoiceBtn"'), '호스트 투표 조기 확정 버튼이 남아 있습니다.');
 assert(index.includes('id="voteTimer"') && index.includes('id="advanceStoryBtn"'), '메인 스토리 진행/투표 타이머 UI가 없습니다.');
 assert(css.includes('object-fit:contain!important'), '스토리 이미지 잘림 방지 contain 규칙이 없습니다.');
@@ -110,6 +113,14 @@ assert(sql.includes('revision bigint'), 'Supabase revision 컬럼이 없습니�
 assert(renderYaml.includes('SUPABASE_SECRET_KEY') && renderYaml.includes('sync: false'), 'Render secret env 설정 오류');
 assert(!('SUPABASE_SECRET_KEY' in (pkg.dependencies || {})), 'package dependencies 설정 오류');
 assert(!JSON.stringify(pkg).includes('@supabase/supabase-js'), 'package.json에 Supabase SDK가 남아 있습니다.');
+
+const requiredAudio = [
+  'bgm_ember.wav','bgm_neon.wav','bgm_abyss.wav','bgm_clock.wav','bgm_wild.wav','bgm_combat.wav',
+  'dice_roll.wav','success.wav','failure.wav','scene_next.wav','hp_loss.wav','attack.wav','hit.wav','boss_warning.wav','vote_lock.wav'
+];
+for (const name of requiredAudio) assert(fs.existsSync(path.join(root,'public/audio',name)), `오디오 파일 누락: ${name}`);
+assert(app.includes('class AudioManager') && app.includes("./audio/bgm_ember.wav"), '오디오 매니저 또는 BGM 연결이 누락되었습니다.');
+assert(index.includes('id="audioVolumeRange"') && index.includes('id="audioMuteBtn"'), '오디오 설정 UI가 누락되었습니다.');
 
 for (const publicFile of ['public/index.html','public/app.js','public/dice3d.js','public/styles.css']) {
   const text = read(publicFile);

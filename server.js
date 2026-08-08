@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.9.1-lobby-fix.0';
+const APP_VERSION = '4.9.2-rare-job-moments.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 25;
@@ -678,6 +678,28 @@ const CAUSAL_WORLD = {
   },
 };
 
+const JOB_SPECIAL_CHAPTERS = {
+  // 각 직업은 전체 25장 중 4개의 장면에서만 전용 선택지가 열린다.
+  // 같은 캠페인을 다시 플레이해도 직업/턴 순서에 따라 실제로 보게 되는 특수 장면이 달라진다.
+  '룬 기사':[3,8,18,24], '재의 마도사':[4,12,17,23], '성흔 추적자':[2,9,13,22],
+  '왕묘 도굴꾼':[5,7,16,24], '백은 사제':[3,10,14,23], '검은 숲 사냥꾼':[4,8,19,25],
+  '고스트 해커':[3,8,18,24], '증강 집행자':[4,12,17,23], '기억 브로커':[2,9,13,22],
+  '드론 조종사':[5,7,16,24], '스트리트 메딕':[3,10,14,23], '데이터 사냥꾼':[4,8,19,25],
+  '심해 잠수사':[3,8,18,24], '해양 생물학자':[4,12,17,23], '잠수정 기관사':[2,9,13,22],
+  '소나 관측관':[5,7,16,24], '해군 구조요원':[3,10,14,23], '심해 의무관':[4,8,19,25],
+  '시간 감식관':[3,8,18,24], '기계 시계공':[4,12,17,23], '역행 검사':[2,9,13,22],
+  '예언 기록자':[5,7,16,24], '시간 밀수꾼':[3,10,14,23], '종소리 파수꾼':[4,8,19,25],
+  '별사냥꾼':[3,8,18,24], '숲의 주술사':[4,12,17,23], '야수 길잡이':[2,9,13,22],
+  '유성 대장장이':[5,7,16,24], '꿈의 방랑자':[3,10,14,23], '별빛 치유사':[4,8,19,25],
+};
+
+function isJobSpecialMoment(beat, job) {
+  if (!beat || !job?.name) return false;
+  if (String(beat.id || '').includes('DETOUR')) return false;
+  const chapter = Number(beat.chapter || 0);
+  return (JOB_SPECIAL_CHAPTERS[job.name] || []).includes(chapter);
+}
+
 const JOB_PHASE_ACTIONS = {
   도입:['현장의 첫 이상을 직업의 감각으로 확인한다','남들이 지나친 작은 흔적을 전문 지식으로 붙잡는다'],
   대면:['눈앞의 존재와 사건을 직업의 방식으로 정면 해석한다','현장의 핵심 장애물에 전문 기술을 직접 적용한다'],
@@ -773,11 +795,16 @@ function injectJobStoryChoices(room, campaign, beat) {
   if (!beat || !Array.isArray(beat.choices)) return beat;
   const actor=currentTurnPlayer(room);
   const job=actor?.job;
-  if(!job?.name) return beat;
-  beat.choices=beat.choices.filter(choice=>!choice.requiredJob || choice.requiredJob===job.name);
-  if(!beat.choices.some(choice=>choice.requiredJob===job.name)){
-    const special=jobStoryChoice(campaign,beat,job,room);
-    if(special) beat.choices.push(special);
+
+  // 기본 장면은 공통 선택지만 유지한다. 직업 전용 선택은 정해진 희귀 장면에서만 추가한다.
+  beat.choices=beat.choices.filter(choice=>!choice.requiredJob);
+  if(!job?.name || !isJobSpecialMoment(beat, job)) return beat;
+
+  const special=jobStoryChoice(campaign,beat,job,room);
+  if(special) {
+    special.detail = `희귀 직업 기회 · ${special.detail.replace('직업 전용 · ', '')}`;
+    special.rareJobMoment = true;
+    beat.choices.push(special);
   }
   return beat;
 }

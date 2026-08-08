@@ -124,6 +124,14 @@ const WORLD_META = {
   wild: { motif: 'STAR-EATEN WOODS', scene: ['별가루 숲길', '말하는 고목', '유성 대장간', '숲의 심장', '마지막 별이 뜬 밤하늘'], boss: '별빛을 삼킨 거대한 신수와 숲의 오오라' },
 };
 
+const STORY_ART_FILES = {
+  ember: { early: './art/ember_early.png', late: './art/ember_late.png' },
+  neon: { early: './art/neon_early.png', late: './art/neon_late.png' },
+  abyss: { early: './art/abyss_early.png', late: './art/abyss_late.png' },
+  clock: { early: './art/clock_early.png', late: './art/clock_late.png' },
+  wild: { early: './art/wild_early.png', late: './art/wild_late.png' },
+};
+
 function toast(msg) {
   const el = $('#toast');
   el.textContent = msg;
@@ -145,19 +153,59 @@ function setWorld(c) { if (!c) return; app.dataset.world = c.id; document.docume
 function makeParticles() { const box = $('#particles'); for (let i = 0; i < 38; i++) { const p = document.createElement('i'); p.className = 'p'; p.style.left = Math.random() * 100 + '%'; p.style.animationDuration = (9 + Math.random() * 18) + 's'; p.style.animationDelay = (-Math.random() * 20) + 's'; p.style.opacity = .25 + Math.random() * .6; p.style.transform = `scale(${.5 + Math.random() * 1.7})`; box.appendChild(p); } }
 function currentCampaign() { return state?.campaign || campaigns.find(x => x.id === state?.campaignId) || campaigns[0] || null; }
 
+function uniqueHints(list = []) {
+  const seen = new Set();
+  return list.filter(item => {
+    const key = String(item || '').trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function contextualStoryPrompts(beat) {
+  const text = `${beat?.title || ''} ${beat?.situation || beat?.text || ''} ${beat?.objective || ''} ${beat?.why || ''} ${beat?.prompt || ''}`;
+  const rules = [
+    [/시체|죽은|익사체|망령|유령|관|장례|장송/, ['시신·관·상처를 조사해 무엇이 잘못되었는지 밝힌다', '장례를 지켜보는 사람들에게 말을 걸어 숨기고 있는 사실을 끌어낸다', '의식이 끝나기 전에 수상한 물건이나 흔적을 먼저 확보한다']],
+    [/문장|암호|로그|기록|신문|편지|데이터|백업|유언|코드/, ['기록의 시간표식과 내용이 서로 맞는지 대조한다', '로그를 남긴 사람의 의도와 빠진 부분을 읽어낸다', '사라지기 전에 원본이나 사본을 먼저 확보한다']],
+    [/문|성문|압력문|봉쇄|잠긴|닫히|균열/, ['잠금 장치의 구조를 살펴 가장 안전한 개방 순서를 찾는다', '문이 완전히 닫히기 전에 틈을 이용해 빠르게 진입한다', '강제로 열어야 한다면 어떤 위험이 터지는지 먼저 확인한다']],
+    [/발자국|추적|흔적|사라진|실종/, ['남은 흔적의 방향과 간격을 읽어 이동 경로를 복원한다', '상대가 일부러 남긴 가짜 흔적이 있는지 걸러낸다', '다음 흔적이 나타날 만한 지점을 먼저 선점한다']],
+    [/식탁|연회|시장|상인|경매|투표|결투|부족|전쟁|협상|거래/, ['상대가 지금 가장 원하는 대가를 짚어 협상을 주도한다', '말과 표정의 모순을 읽어 누가 거짓말하는지 가려낸다', '혼란이 커지기 전에 핵심 증거나 물건을 선점한다']],
+    [/검|갑옷|왕관 조각|진주|별핵|뿔|알|유물|제단|장치/, ['물건에 남은 힘과 제작 흔적을 분석해 정체를 파악한다', '저주나 함정이 터지기 전에 안전하게 분리하거나 봉인한다', '직접 반응을 시험해 지금 무엇이 연결되어 있는지 확인한다']],
+    [/드론|감시카메라|광고판|AI|MOTHER|로그인|백도어|삭제 버튼|감시망|해킹/, ['감시망의 눈을 잠깐 멀게 하거나 다른 곳을 보게 만든다', '센서가 비는 타이밍에 움직여 핵심 위치에 접근한다', '가짜 신호나 계정을 흘려 시스템이 엉뚱한 목표를 쫓게 만든다']],
+    [/산소|잠수정|수심|해저|소나|케이블|부력|관측창|압력/, ['압력·산소·전력 수치를 따져 가장 안전한 절차를 고른다', '소나와 진동을 읽어 보이지 않는 위험의 위치를 파악한다', '장비가 완전히 망가지기 전에 직접 붙잡고 응급 조치를 한다']],
+    [/시간|시계|자정|오후|역행|루프|미래|과거|내일|어제|종/, ['이전 장면과 지금의 차이를 비교해 루프의 규칙을 좁힌다', '시간이 뒤틀리기 직전 반복되는 징후를 찾아낸다', '멈춘 순간의 틈을 이용해 사건 중심으로 먼저 뛰어든다']],
+    [/별|숲|나무|뿌리|꽃밭|호수|꿈|성운|유성/, ['주변 자연과 별빛의 반응을 읽어 안전한 길을 고른다', '마력의 흐름을 분석해 위험한 빛과 안전한 빛을 구분한다', '변하는 지형과 뿌리 사이를 재빨리 지나 유리한 위치를 잡는다']],
+    [/곰|사슴|올빼미|키메라|하운드|맹견|포식자|신수|촉수|승무원|괴물/, ['움직임과 습성을 살펴 공격 직전의 신호를 읽는다', '주의를 다른 곳으로 돌려 동료가 움직일 틈을 만든다', '정면에서 버티며 다른 사람이 단서를 챙길 시간을 번다']],
+  ];
+  for (const [pattern, prompts] of rules) if (pattern.test(text)) return prompts;
+  return ['지금 장면에서 가장 수상한 대상 하나를 정해 먼저 확인한다', '단서·인물·위험 중 무엇이 가장 급한지 정하고 거기에 집중한다', '다음 막으로 넘어가기 전에 반드시 얻고 싶은 정보 하나를 노린다'];
+}
+
 function actionHintsFor(player, beat) {
   const job = player?.job;
   if (!job) return [];
   const objective = beat?.objective || '현재 목표를 진행한다';
   const byStat = {
-    '근력': [`장애물을 힘으로 치우고 ${objective}`, '위험한 대상을 붙잡거나 제압해 길을 만든다', '무너지는 구조물을 버티거나 강제로 연다'],
-    '민첩': [`눈에 띄지 않게 접근해 ${objective}`, '위험 구역을 빠르게 우회해 먼저 위치를 잡는다', '장치나 함정을 손대기 전에 안전하게 접근한다'],
+    '근력': [`장애물을 힘으로 치우고 ${objective}`, '위험한 대상을 붙잡거나 제압해 길을 만든다', '무너지는 구조물이나 동료를 버티며 시간을 번다'],
+    '민첩': [`눈에 띄지 않게 접근해 ${objective}`, '위험 구역을 우회해 먼저 좋은 위치를 선점한다', '누군가 눈치채기 전에 물건·문서·통로를 확보한다'],
     '지능': [`기록·장치·단서를 분석해 ${objective}`, '현재 현상의 원리나 규칙을 찾아 약점을 찾는다', '서로 모순되는 정보를 비교해 진짜 단서를 고른다'],
-    '지혜': [`주변의 흔적과 기척을 관찰해 ${objective}`, '보이지 않는 위험의 위치를 먼저 파악한다', '앞선 장면의 흔적과 현재 상황을 연결한다'],
+    '지혜': [`주변의 흔적과 기척을 관찰해 ${objective}`, '보이지 않는 위험의 위치와 타이밍을 먼저 읽어낸다', '앞선 장면의 징후와 지금 상황을 연결해 의미를 찾는다'],
     '매력': [`상대와 대화하거나 협상해 ${objective}`, '상대가 숨기는 의도나 욕망을 끌어낸다', '동료나 NPC를 안심시키고 협력을 얻는다'],
-    '체력': [`위험을 버티며 직접 ${objective}`, '다른 동료가 행동할 시간을 벌기 위해 몸으로 버틴다', '환경 피해를 감수하고 가장 위험한 위치를 맡는다'],
+    '체력': [`위험을 버티며 직접 ${objective}`, '다른 동료가 행동할 시간을 벌기 위해 몸으로 막아선다', '환경의 압박을 견디며 가장 위험한 위치를 맡는다'],
   };
-  return byStat[job.prime] || byStat['지능'];
+  return uniqueHints([...(byStat[job.prime] || byStat['지능']).slice(0, 1), ...contextualStoryPrompts(beat), ...(byStat[job.prime] || byStat['지능']).slice(1)]).slice(0, 3);
+}
+
+function sceneDecisionGuide(beat, player) {
+  const phaseGuide = {
+    '도입': '우선 무엇을 먼저 확인할지 정하는 장면입니다.',
+    '진실': '방금 드러난 사실이 맞는지 검증하거나, 그 사실을 이용해 다음 실마리를 잡는 장면입니다.',
+    '위기': '당장 닥친 위험을 넘기면서도 핵심 단서나 동료를 놓치지 않는 장면입니다.',
+    '결단': '이번 막의 진실을 바탕으로 다음 장소나 다음 행동의 방향을 고르는 장면입니다.',
+  };
+  const prime = player?.job?.prime ? `${player.job.prime} 중심의 접근을 먼저 떠올려보세요.` : '직업이 있다면 그 직업답게 접근해도 좋습니다.';
+  return `${phaseGuide[beat?.phase] || '이 장면에서 무엇을 할지 한 문장으로 정하는 장면입니다.'} 완벽한 정답을 찾기보다, 지금 가장 먼저 시도할 행동 하나를 선명하게 말하면 됩니다. ${prime}`;
 }
 
 function canUseMySkill(p) {
@@ -290,12 +338,50 @@ function coverArt(c) {
   return artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
 function storyArt(c, scene) {
+  const artSet = STORY_ART_FILES[c?.id];
+  if (artSet) {
+    const act = Number(scene?.act || 1);
+    const phase = String(scene?.phase || '도입');
+    return (act >= 4 || (act === 3 && (phase === '위기' || phase === '결단'))) ? artSet.late : artSet.early;
+  }
   const actIndex = Math.max(0, (scene?.act || 1) - 1);
   const title = scene?.title || c?.title || '다음 장면';
   const visual = scene?.visual || sceneWord(c?.id, actIndex);
   const subtitle = scene?.monster ? `${visual} · ${scene.monster}의 위협` : `${visual} · ${scene?.id?.includes('STORY') ? '메인 스토리' : '이벤트 사건'}`;
   return artSvg(c, title, subtitle, scene ? `ACT ${scene.act} · ${scene.actName}` : (WORLD_META[c?.id]?.motif || 'SCENE'), visual, scene?.monster || '');
 }
+
+function storyArtMeta(c, beat) {
+  const src = storyArt(c, beat);
+  const world = WORLD_META[c?.id]?.motif || 'CHRONICLE';
+  const visual = beat?.visual || beat?.actName || c?.title || '장면';
+  const caption = `${c?.title || 'Chronicle Gate'} · ACT ${beat?.act || 1} ${beat?.actName || ''} · ${beat?.phase || '장면'}`.trim();
+  const focus = beat?.objective || '지금 장면의 핵심 목표를 확인한다.';
+  const accent = beat?.reveal || beat?.why || beat?.stakes || '';
+  return { src, world, visual, caption, focus, accent };
+}
+
+function proseParagraphs(text = '') {
+  const cleaned = String(text || '').trim();
+  if (!cleaned) return [];
+  const sentences = cleaned.split(/(?<=[.!?])\s+/).map(v => v.trim()).filter(Boolean);
+  if (sentences.length <= 2) return [cleaned];
+  const out = [];
+  for (let i = 0; i < sentences.length; i += 2) out.push(sentences.slice(i, i + 2).join(' '));
+  return out;
+}
+
+function storyNarrationHTML(c, beat, player, hints = []) {
+  const paragraphs = proseParagraphs(beat?.text || c?.intro || '');
+  const first = paragraphs[0] || '';
+  const rest = paragraphs.slice(1);
+  return `
+    <div class="narration-rich clean-narration">
+      ${first ? `<p>${esc(first)}</p>` : ''}
+      ${rest.map(p => `<p>${esc(p)}</p>`).join('')}
+    </div>`;
+}
+
 function monsterArt(c, monster) {
   return artSvg(c, monster || 'UNKNOWN', `${WORLD_META[c?.id]?.boss || '보스 전투'} · 동료 전원이 한 번씩 행동합니다.`, 'BOSS ENCOUNTER', `${monster}와의 전투`, monster || '');
 }
@@ -530,12 +616,14 @@ function renderStory() {
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => `<div class="stat-line"><span>${k}</span><b>${v.total} <i>${signedMod(v.total)}</i></b></div>`).join('') : '';
   const roleBeat = beat || ev;
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
-  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}의 시점</span><b>${esc(roleHook || roleBeat?.objective || '현재 목표')}</b><small>주 능력치 ${esc(p.job.prime)} · 추천 행동은 힌트일 뿐입니다. 상황을 읽고 완전히 다른 행동을 직접 입력해도 됩니다.</small>` : '';
+  $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}</span><b>${esc(roleHook || roleBeat?.objective || '현재 목표')}</b>` : '';
   const hints = actionHintsFor(p, beat);
   $('#actionSuggestions').innerHTML = (!ev && hints.length) ? hints.map(h => `<button class="action-suggestion" type="button">${esc(h)}</button>`).join('') : '';
   $('#actionSuggestions').querySelectorAll('button').forEach(btn => btn.onclick = () => { if (!$('#storyActionInput').disabled) { $('#storyActionInput').value = btn.textContent; $('#storyActionCount').textContent = `${btn.textContent.length}/180`; } });
+  $('#storyActionInput').placeholder = hints[0] ? `예: ${hints[0]}` : '예: 숨겨진 통로가 있는지 조사한다.';
+  const sceneGuide = sceneDecisionGuide(beat, p);
   const last = state.lastStoryAction;
-  $('#lastActionResult').innerHTML = last ? `<div class="eyebrow">PREVIOUS CHAPTER CONSEQUENCE</div><span class="${last.success ? 'success' : 'failure'}">${last.success ? 'SUCCESS' : 'FAILURE'} · ${esc(last.mode)} · ${esc(last.stat)} ${last.total}/${last.dc}</span><p>${esc(last.narrative || '')}</p>` : '<div class="eyebrow">YOUR STORY BEGINS HERE</div><p>첫 행동부터 이후 장면의 로그와 위험도에 영향을 줍니다.</p>'; 
+  $('#lastActionResult').innerHTML = last ? `<div class="eyebrow">이전 행동의 결과</div><span class="${last.success ? 'success' : 'failure'}">${last.success ? '성공' : '실패'} · ${esc(last.stat)} ${last.total}/${last.dc}</span><p>${esc(last.narrative || '')}</p>` : ''; 
 
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
@@ -545,10 +633,11 @@ function renderStory() {
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
     $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
+    $('#storyClarity').classList.remove('clean-main');
     $('#storySituation').textContent = ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.';
     $('#storyObjective').textContent = ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.';
     $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
-    $('#storyPrompt').innerHTML = state.soloMode ? `<b>짧은 돌발 사건입니다.</b> 대응 하나를 고르면 5초 후 자동 확정됩니다. <span>${esc(ev.stakes || '')}</span>` : `<b>테이블에서 먼저 이야기해보세요.</b> 각자 왜 그 선택이 좋은지 짧게 말한 뒤 투표하세요. <span>${esc(ev.stakes || '')}</span>`;
+    $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> 대응 하나를 고르면 5초 후 자동 확정됩니다.` : `<b>짧게 의견을 나눈 뒤 투표하세요.</b>`;
     $('#eventText').textContent = ev.text;
     renderChoices(ev);
   } else {
@@ -557,12 +646,13 @@ function renderStory() {
     $('#storySceneCaption').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.actName} · ${beat.visual} · 메인 소설 장면` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
     $('#actLabel').textContent = beat ? `MAIN STORY · ACT ${beat.act}` : 'MAIN STORY';
     $('#eventTitle').textContent = beat ? `CHAPTER ${beat.chapter || (state.story + 1)} · ${beat.title}` : '연대기가 이어집니다.';
+    $('#storyClarity').classList.add('clean-main');
     $('#storySituation').textContent = beat?.situation || beat?.text || c?.intro || '';
-    $('#storyObjective').textContent = beat?.objective || '현재 차례 플레이어가 다음 행동을 선언합니다.';
-    $('#storyWhy').textContent = beat?.why || beat?.stakes || '이 장면은 다음 막으로 이어지는 단서를 만듭니다.';
-    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}에게 질문:</b> ${esc(beat?.prompt || '지금 무엇을 할지 한 문장으로 선언하세요.')} <span>다른 플레이어는 채팅이나 음성으로 의견을 보태도 됩니다.</span>`;
-    $('#eventText').textContent = beat?.text || c?.intro || '';
-    $('#choiceArea').innerHTML = `<div class="main-story-note"><div class="eyebrow">NOVEL MODE · MAIN CHRONICLE</div><b>${esc(state.turnPlayerName || '현재 플레이어')}의 자유 행동이 다음 장면으로 이어집니다.</b><p>본문을 읽은 뒤 ‘내 직업이라면 지금 무엇을 할 것인가’를 직접 입력하세요. 성공과 실패 모두 이야기를 계속 전진시킵니다. 이벤트 카드는 3턴마다 잠깐 끼어드는 변수일 뿐, 메인 스토리 진행도에는 포함되지 않습니다.</p></div>`;
+    $('#storyObjective').textContent = beat?.objective || '지금 가장 먼저 할 행동 하나를 정하세요.';
+    $('#storyWhy').textContent = beat?.why || beat?.stakes || '';
+    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}:</b> ${esc(beat?.prompt || '지금 가장 먼저 할 행동 하나를 선언하세요.')}`;
+    $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, hints);
+    $('#choiceArea').innerHTML = '';
   }
 
   $('#gmBar').style.display = 'flex';

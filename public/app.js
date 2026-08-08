@@ -78,13 +78,13 @@ function saveUiPrefs() {
 // QA compatibility marker only: ./audio/bgm_ember.wav
 const AUDIO_FILES = {
   music: {
-    ember: '/audio/bgm_ember.wav', neon: '/audio/bgm_neon.wav', abyss: '/audio/bgm_abyss.wav',
-    clock: '/audio/bgm_clock.wav', wild: '/audio/bgm_wild.wav', combat: '/audio/bgm_combat.wav',
+    ember: '/audio/bgm_ember.wav?v=4121c', neon: '/audio/bgm_neon.wav?v=4121c', abyss: '/audio/bgm_abyss.wav?v=4121c',
+    clock: '/audio/bgm_clock.wav?v=4121c', wild: '/audio/bgm_wild.wav?v=4121c', combat: '/audio/bgm_combat.wav?v=4121c',
   },
   fx: {
-    dice:'/audio/dice_roll.wav', success:'/audio/success.wav', failure:'/audio/failure.wav',
-    next:'/audio/scene_next.wav', hp:'/audio/hp_loss.wav', attack:'/audio/attack.wav',
-    hit:'/audio/hit.wav', boss:'/audio/boss_warning.wav', vote:'/audio/vote_lock.wav',
+    dice:'/audio/dice_roll.wav?v=4121c', success:'/audio/success.wav?v=4121c', failure:'/audio/failure.wav?v=4121c',
+    next:'/audio/scene_next.wav?v=4121c', hp:'/audio/hp_loss.wav?v=4121c', attack:'/audio/attack.wav?v=4121c',
+    hit:'/audio/hit.wav?v=4121c', boss:'/audio/boss_warning.wav?v=4121c', vote:'/audio/vote_lock.wav?v=4121c',
   },
 };
 
@@ -144,6 +144,44 @@ class AudioManager {
       osc.start(start); osc.stop(start+.15);
     });
     return true;
+  }
+  async playNativeWavProbe(){
+    try{
+      const sampleRate=44100;
+      const duration=0.72;
+      const samples=Math.floor(sampleRate*duration);
+      const buffer=new ArrayBuffer(44+samples*2);
+      const view=new DataView(buffer);
+      const write=(offset,value)=>{ for(let i=0;i<value.length;i++) view.setUint8(offset+i,value.charCodeAt(i)); };
+      write(0,'RIFF'); view.setUint32(4,36+samples*2,true); write(8,'WAVE'); write(12,'fmt ');
+      view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
+      view.setUint32(24,sampleRate,true); view.setUint32(28,sampleRate*2,true); view.setUint16(32,2,true); view.setUint16(34,16,true);
+      write(36,'data'); view.setUint32(40,samples*2,true);
+      for(let i=0;i<samples;i++){
+        const t=i/sampleRate;
+        const env=Math.min(1,t/.02)*Math.min(1,(duration-t)/.08);
+        const tone=(Math.sin(2*Math.PI*660*t)*.65 + Math.sin(2*Math.PI*990*t)*.24)*env;
+        view.setInt16(44+i*2,Math.max(-1,Math.min(1,tone))*32767,true);
+      }
+      const url=URL.createObjectURL(new Blob([buffer],{type:'audio/wav'}));
+      const audio=document.createElement('audio');
+      audio.src=url; audio.preload='auto'; audio.volume=1; audio.muted=false; audio.defaultMuted=false; audio.playsInline=true;
+      audio.setAttribute('aria-hidden','true');
+      audio.style.cssText='position:fixed;width:1px;height:1px;opacity:.001;pointer-events:none;left:-20px;bottom:0';
+      document.body.appendChild(audio);
+      await audio.play();
+      setTimeout(()=>{ try{audio.pause();audio.remove();URL.revokeObjectURL(url);}catch{} },1100);
+      return {ok:true};
+    }catch(err){
+      this.lastError=`HTMLAudio 테스트 실패: ${String(err?.message||err)}`;
+      return {ok:false,error:this.lastError};
+    }
+  }
+  async probeAudioAsset(){
+    try{
+      const res=await fetch(`/audio/success.wav?v=4121c-${Date.now()}`,{cache:'no-store'});
+      return {ok:res.ok,status:res.status,type:res.headers.get('content-type')||''};
+    }catch(err){ return {ok:false,status:0,error:String(err?.message||err)}; }
   }
   makeTone(freq=440,duration=.16,volume=.12,type='sine',delay=0){
     const ctx=this.ensureContext();
@@ -226,7 +264,7 @@ class AudioManager {
     freqs.forEach((freq,i)=>{
       const osc=ctx.createOscillator(); const gain=ctx.createGain(); const lfo=ctx.createOscillator(); const lfoGain=ctx.createGain();
       osc.type=i%2?'triangle':'sine'; osc.frequency.value=freq;
-      const base=(key==='combat'?.048:.030)*(1-i*.10)*Math.max(.45,uiPrefs.audioVolume);
+      const base=(key==='combat'?.085:.060)*(1-i*.10)*Math.max(.55,uiPrefs.audioVolume);
       gain.gain.value=base;
       lfo.type='sine'; lfo.frequency.value=.05+i*.03; lfoGain.gain.value=base*.35;
       lfo.connect(lfoGain); lfoGain.connect(gain.gain); osc.connect(gain); gain.connect(ctx.destination);
@@ -256,21 +294,23 @@ class AudioManager {
     }catch(err){ this.lastError=String(err?.message||err); }
   }
   async test(){
-    if(uiPrefs.audioMuted){ uiPrefs.audioMuted=false; saveUiPrefs(); }
-    if(uiPrefs.audioVolume<.55){ uiPrefs.audioVolume=.8; saveUiPrefs(); }
+    uiPrefs.audioMuted=false;
+    uiPrefs.audioVolume=1;
+    saveUiPrefs();
     this.lastError='';
     const ctx=await this.unlock();
     const status=ctx?.state || 'unsupported';
-    if(status!=='running'){
-      this.lastError=`AudioContext가 ${status} 상태입니다. Chrome 주소창 왼쪽 사이트 설정에서 '소리'가 허용인지 확인하세요.`;
-      return {ok:false,status,error:this.lastError};
+    const native=await this.playNativeWavProbe();
+    const asset=await this.probeAudioAsset();
+    const pulse=status==='running' ? this.forceTestPulse() : false;
+    if(status==='running'){
+      setTimeout(()=>this.fx('success',1.25),760);
+      setTimeout(()=>this.fx('dice',1.25),1120);
+      setTimeout(()=>this.fx('boss',1.15),1500);
+      this.syncMusic(state);
     }
-    // 파일과 관계없이 같은 클릭 제스처 안에서 직접 큰 테스트음을 재생한다.
-    const pulse=this.forceTestPulse();
-    setTimeout(()=>this.fx('dice',1.15),560);
-    setTimeout(()=>this.fx('boss',1.0),950);
-    this.syncMusic(state);
-    return {ok:pulse,status,error:this.lastError};
+    if(status!=='running') this.lastError=`AudioContext가 ${status} 상태입니다.`;
+    return {ok:Boolean(native.ok||pulse),status,nativeOk:native.ok,assetOk:asset.ok,assetStatus:asset.status,error:this.lastError};
   }
   onState(prev,next){
     this.syncMusic(next);
@@ -585,18 +625,29 @@ function chapterArtCandidates(c, scene) {
 function chapterArt(c, scene) {
   return chapterArtCandidates(c, scene)[0] || null;
 }
+function representativeStoryArtCandidates(c, scene) {
+  if (!c?.id) return [];
+  const chapter=Number(scene?.artChapter || scene?.chapter || 0);
+  const isEvent=Boolean(scene?.id && !String(scene.id).includes('STORY'));
+  const milestone=[1,6,11,16,21,26,30].includes(chapter);
+  const eventSample=isEvent && Math.abs(String(scene?.id||'').split('').reduce((sum,ch)=>sum+ch.charCodeAt(0),0))%4===0;
+  if(!milestone && !eventSample) return [];
+  const late=chapter>=21 || ['위기','결단'].includes(String(scene?.phase||''));
+  const stem=`${c.id}_${late?'late':'early'}`;
+  return [`/art/${stem}.webp?v=4121c`,`/art/${stem}.png?v=4121c`,`./art/${stem}.webp?v=4121c`,`./art/${stem}.png?v=4121c`];
+}
 function setSceneImage(img, c, scene) {
   if (!img) return;
-  const candidates = chapterArtCandidates(c, scene);
-  // Story artwork is optional. Show it only when a real uploaded image succeeds.
+  const exact=chapterArtCandidates(c, scene).map(src=>`${src}${src.includes('?')?'&':'?'}v=4121c`);
+  const candidates=[...exact,...representativeStoryArtCandidates(c,scene)];
   if (!candidates.length) { img.style.display = 'none'; img.removeAttribute('src'); return; }
   let index = 0;
   img.style.display = 'none';
-  img.onload = () => { img.style.display = ''; };
+  img.onload = () => { img.style.display = ''; img.dataset.artLoaded='1'; };
   img.onerror = () => {
     index += 1;
     if (index < candidates.length) img.src = candidates[index];
-    else { img.style.display = 'none'; img.removeAttribute('src'); img.onerror = null; }
+    else { img.style.display = 'none'; img.removeAttribute('src'); img.dataset.artLoaded='0'; img.onerror = null; }
   };
   img.src = candidates[index];
 }
@@ -669,9 +720,9 @@ function bossArtCandidates(c, monster='') {
   const world = c?.id || 'chronicle';
   const slug = String(monster || '').toLowerCase().replace(/[^a-z0-9가-힣]+/g, '_').replace(/^_+|_+$/g, '');
   return [
-    `/art/${world}_boss.webp`, `/art/${world}_boss.png`,
-    slug ? `/art/${world}_boss_${slug}.webp` : '', slug ? `/art/${world}_boss_${slug}.png` : '',
-    slug ? `/art/${world}_${slug}.webp` : '', slug ? `/art/${world}_${slug}.png` : ''
+    `/art/${world}_boss.webp?v=4121c`, `/art/${world}_boss.png?v=4121c`,
+    slug ? `/art/${world}_boss_${slug}.webp?v=4121c` : '', slug ? `/art/${world}_boss_${slug}.png?v=4121c` : '',
+    slug ? `/art/${world}_${slug}.webp?v=4121c` : '', slug ? `/art/${world}_${slug}.png?v=4121c` : ''
   ].filter(Boolean);
 }
 function monsterArt(c, monster) {
@@ -689,12 +740,21 @@ function monsterArt(c, monster) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 function setBossSceneImage(img,c,monster){
+  if(!img) return;
   const candidates=bossArtCandidates(c,monster);
+  const fallback=monsterArt(c,monster);
   let index=0;
   img.style.display='';
-  img.onload=()=>{ img.style.display=''; };
-  img.onerror=()=>{ index+=1; if(index<candidates.length) img.src=candidates[index]; else { img.onerror=null; img.src=monsterArt(c,monster); } };
-  img.src=candidates[0]||monsterArt(c,monster);
+  img.onload=()=>{ img.style.display=''; img.dataset.bossArtLoaded='1'; };
+  img.onerror=()=>{
+    index+=1;
+    if(index<candidates.length){ img.src=candidates[index]; return; }
+    img.onerror=null;
+    img.dataset.bossArtLoaded='fallback';
+    img.src=fallback;
+  };
+  // If no custom boss image exists, the built-in boss illustration is guaranteed to render.
+  img.src=candidates[0]||fallback;
 }
 
 function sendChat(inputSelector) {
@@ -1344,8 +1404,10 @@ $('#audioVolumeRange').oninput = e => { uiPrefs.audioVolume = Math.max(0, Math.m
 $('#audioMuteBtn').onclick = () => { uiPrefs.audioMuted = !uiPrefs.audioMuted; saveUiPrefs(); audioManager.unlock(); audioManager.syncMusic(state); toast(uiPrefs.audioMuted ? '게임 사운드를 껐습니다.' : '게임 사운드를 켰습니다.'); };
 $('#audioTestBtn').onclick = async () => {
   const result=await audioManager.test();
-  if(result?.ok) toast(`🔊 오디오 활성화 성공 · AudioContext: ${result.status} · 테스트음이 들려야 정상입니다.`);
-  else toast(`🔇 오디오 활성화 실패 · ${result?.error || '알 수 없는 오류'}`);
+  const fileText=result?.assetOk ? `WAV ${result.assetStatus} OK` : `WAV ${result?.assetStatus||'ERR'}`;
+  const nativeText=result?.nativeOk ? 'HTMLAudio OK' : 'HTMLAudio BLOCKED';
+  if(result?.ok) toast(`🔊 ${nativeText} · WebAudio ${result.status} · ${fileText}`);
+  else toast(`🔇 ${nativeText} · WebAudio ${result?.status||'unknown'} · ${fileText}`);
 };
 $('#uiResetBtn').onclick = () => { uiPrefs = { ...UI_DEFAULTS }; saveUiPrefs(); toast('화면 설정을 기본값으로 되돌렸습니다.'); };
 $('#abandonRequestBtn').onclick = () => socket.emit('game:abandonRequest', { roomCode, playerToken }, r => { if (!r?.ok) toast(r.error); else toast('포기 투표를 시작했습니다.'); });

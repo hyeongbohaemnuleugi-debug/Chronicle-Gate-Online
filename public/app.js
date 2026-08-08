@@ -635,7 +635,10 @@ function updateVoteCountdown() {
   }
   const left = voteSecondsLeft();
   el.classList.remove('hidden');
-  el.innerHTML = `<span>TABLE VOTE</span><b>${left}</b><small>초 후 서버가 자동 집계합니다. 제한시간 동안 표를 바꿀 수 있습니다.</small>`;
+  const early = Boolean(state.voteAllVotedCountdown);
+  el.innerHTML = early
+    ? `<span>ALL VOTED</span><b>${left}</b><small>전원이 투표했습니다. ${left}초 뒤 선택을 확정합니다.</small>`
+    : `<span>TABLE VOTE</span><b>${left}</b><small>초 후 서버가 자동 집계합니다. 전원이 투표하면 3초 카운트다운 후 바로 확정됩니다.</small>`;
   el.classList.toggle('urgent', left <= 5);
 }
 
@@ -643,7 +646,7 @@ function renderStory() {
   if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
   const c = currentCampaign();
   const ev = state.currentEvent;
-  const beat = state.storyBeat || c?.storyBeats?.[Math.min(state.story || 0, 19)];
+  const beat = state.storyBeat || c?.storyBeats?.[Math.min(state.story || 0, Math.max(0, Number(state.targetStory || 30) - 1))];
   const p = me();
   const isMyTurn = state.turnPlayerId === playerToken;
   const inResolution = state.phase === 'resolution';
@@ -712,7 +715,7 @@ function renderStory() {
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
       ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
-      : `SIDE EVENT · ${state.soloMode ? 'SOLO 5초 선택' : '20초 자동 투표'} · 메인 스토리 사이에 잠깐 발생한 돌발 사건입니다.`;
+      : `SIDE EVENT · ${state.soloMode ? 'SOLO 12초 선택' : '45초 테이블 투표'} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
     $('#storySceneImg').src = storyArt(c, ev);
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
     $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
@@ -721,7 +724,7 @@ function renderStory() {
     $('#storySituation').textContent = ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.';
     $('#storyObjective').textContent = ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.';
     $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
-    $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> 대응 하나를 고르면 5초 후 자동 확정됩니다.` : `<b>짧게 의견을 나눈 뒤 투표하세요.</b>`;
+    $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> 12초 안에 대응을 고르세요. 투표 즉시 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
     $('#eventText').textContent = ev.text;
     $('#storyActionBox').style.display = 'none';
     renderChoices(ev);
@@ -797,7 +800,7 @@ function renderChoices(ev) {
   const votes = state.choiceVotes || {};
   const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
   const highest = Math.max(0, ...counts);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO QUICK CHOICE' : '20 SECOND TABLE VOTE'}</span><b>호스트 확정 없음 · 서버 자동 집계</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO QUICK CHOICE' : '45 SECOND TABLE VOTE'}</span><b>${state.soloMode ? '12초 선택' : '45초 투표'} · 전원 완료 시 3초 뒤 자동 확정</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;

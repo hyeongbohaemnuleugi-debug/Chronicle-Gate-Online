@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { CAMPAIGNS, STAT_NAMES } from '../campaign-data.js';
 
 test('campaign catalog is complete and unique', () => {
-  assert.equal(CAMPAIGNS.length, 5);
-  assert.equal(new Set(CAMPAIGNS.map(c => c.id)).size, 5);
+  assert.equal(CAMPAIGNS.length, 8);
+  assert.equal(new Set(CAMPAIGNS.map(c => c.id)).size, 8);
   assert.equal(STAT_NAMES.length, 6);
 });
 

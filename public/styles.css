@@ -336,3 +336,7 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
   .right-rail>.stat-card{max-height:none;overflow:visible}
   .right-rail>.chat-card{min-height:280px}
 }
+
+/* v4.14 narrative economy */
+.facility-story-lead{font-family:var(--serif);font-size:15px;line-height:1.8;color:var(--text);border-left:2px solid var(--accent);padding-left:12px;margin:10px 0 12px}
+.gear-stat{color:#f2c0a8!important;font-size:11px!important}

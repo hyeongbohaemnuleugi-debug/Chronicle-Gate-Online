@@ -515,7 +515,8 @@ function itemCatalog() { return currentCampaign()?.items || []; }
 function itemById(id) { return itemCatalog().find(item => item.id === id) || null; }
 function equippedItemIds(player) { return new Set(Object.values(player?.equipment || {}).filter(Boolean)); }
 function equipmentBonusFor(player, stat) { return Number(player?.equipmentBonuses?.[stat] || 0); }
-function effectiveStatTotal(player, stat, ability) { return Number(ability?.total || 10) + equipmentBonusFor(player, stat); }
+function effectiveStatTotal(_player, _stat, ability) { return Number(ability?.total || 10); }
+function effectiveStatMod(player, stat, ability) { return rawMod(Number(ability?.total || 10)) + equipmentBonusFor(player, stat); }
 function slotLabel(slot) { return ({weapon:'무기',armor:'방어구',charm:'부적',tool:'도구'})[slot] || slot; }
 
 function renderEconomyPanel(player) {
@@ -527,12 +528,12 @@ function renderEconomyPanel(player) {
   const inventory = (player.inventory || []).map(itemById).filter(Boolean);
   const equipment = ['weapon','armor','charm','tool'].map(slot => {
     const item = itemById(player.equipment?.[slot]);
-    return `<div class="equip-slot ${item ? 'filled' : ''}"><span>${slotLabel(slot)}</span><b>${item ? esc(item.name) : '비어 있음'}</b>${item ? `<small>${esc(item.stat)} +${item.bonus}</small>` : ''}</div>`;
+    return `<div class="equip-slot ${item ? 'filled' : ''}"><span>${slotLabel(slot)}</span><b>${item ? esc(item.name) : '비어 있음'}</b>${item ? `<small>${esc(item.stat)} 판정 +${item.bonus}</small>` : ''}</div>`;
   }).join('');
   const inventoryHtml = inventory.length ? inventory.map(item => `
     <button class="inventory-item ${equipped.has(item.id) ? 'equipped' : ''}" type="button" data-equip-item="${esc(item.id)}">
       <span><b>${esc(item.name)}</b><small>${esc(slotLabel(item.slot))} · ${esc(item.rarity || '장비')}</small></span>
-      <em>${esc(item.stat)} +${item.bonus}</em>
+      <em>${esc(item.stat)} 판정 +${item.bonus}</em>
       <small>${esc(item.passive || '')}</small>
       <strong>${equipped.has(item.id) ? '장착 해제' : '장착'}</strong>
     </button>`).join('') : '<div class="inventory-empty">아직 획득한 장비가 없습니다.</div>';
@@ -561,10 +562,10 @@ function renderFacilityPanel(event, player) {
   let actions = '';
   if (facility.type === 'shop') {
     const owned = new Set(player.inventory || []);
-    actions = `<div class="shop-grid">${itemCatalog().map(item => `
+    actions = `<div class="shop-grid">${itemCatalog().filter(item => (facility.stock || []).includes(item.id)).map(item => `
       <button class="shop-item" type="button" data-shop-item="${esc(item.id)}" ${owned.has(item.id) || Number(player.coins || 0) < Number(item.price || 0) ? 'disabled' : ''}>
         <span><b>${esc(item.name)}</b><small>${esc(slotLabel(item.slot))} · ${esc(item.rarity)}</small></span>
-        <em>${esc(item.stat)} +${item.bonus}</em>
+        <em>${esc(item.stat)} 판정 +${item.bonus}</em>
         <small>${esc(item.passive || '')}</small>
         <strong>${owned.has(item.id) ? '보유 중' : `◈ ${item.price}`}</strong>
       </button>`).join('')}</div>`;
@@ -576,7 +577,7 @@ function renderFacilityPanel(event, player) {
     actions = `<button class="primary facility-action" type="button" data-facility-action="${esc(facility.type)}" ${used ? 'disabled' : ''}>${used ? '이번 이벤트에서 이용 완료' : label}</button>`;
   }
   panel.innerHTML = `
-    <div class="facility-copy"><span class="eyebrow">OPTIONAL STOP · ${esc(facility.type.toUpperCase())}</span><h3>${esc(facility.label)}</h3><p>${esc(facility.description || '')}</p><div class="coin-chip">보유 코인 ◈ ${Number(player.coins || 0)}</div></div>
+    <div class="facility-copy"><span class="eyebrow">장면 사이의 짧은 숨</span><h3>${esc(facility.label)}</h3>${facility.storyLead ? `<p class="facility-story-lead">${esc(facility.storyLead)}</p>` : ''}<p>${esc(facility.description || '')}</p><div class="coin-chip">보유 코인 ◈ ${Number(player.coins || 0)}</div></div>
     <div class="facility-actions">${actions}</div>`;
   panel.querySelectorAll('[data-facility-action]').forEach(button => button.onclick = () => {
     button.disabled = true;
@@ -1184,7 +1185,9 @@ function renderStory() {
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => {
     const gear = equipmentBonusFor(p, k);
     const total = effectiveStatTotal(p, k, v);
-    return `<div class="stat-line"><span>${k}</span><b>${total} <i>${signedMod(total)}</i></b>${gear ? `<small class="gear-stat">기본 ${v.total} + 장비 ${gear}</small>` : ''}</div>`;
+    const baseMod = rawMod(total);
+    const finalMod = effectiveStatMod(p, k, v);
+    return `<div class="stat-line"><span>${k}</span><b>${total} <i>${finalMod >= 0 ? '+' : ''}${finalMod}</i></b>${gear ? `<small class="gear-stat">기본 보정 ${baseMod >= 0 ? '+' : ''}${baseMod} · 장비 +${gear}</small>` : ''}</div>`;
   }).join('') : '';
   renderEconomyPanel(p);
   renderFacilityPanel(ev, p);

@@ -10,7 +10,7 @@ const notes = [];
 const assert = (condition, message) => { if (!condition) failures.push(message); };
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
-assert(CAMPAIGNS.length === 5, `캠페인 수: 기대 5, 실제 ${CAMPAIGNS.length}`);
+assert(CAMPAIGNS.length === 8, `캠페인 수: 기대 8, 실제 ${CAMPAIGNS.length}`);
 assert(STAT_NAMES.length === 6 && new Set(STAT_NAMES).size === 6, '능력치 6종이 유일해야 합니다.');
 const globalEventIds = new Set();
 for (const campaign of CAMPAIGNS) {

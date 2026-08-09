@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { CAMPAIGNS, STAT_NAMES } from '../campaign-data.js';
+import { CAMPAIGNS, STAT_NAMES, ECONOMY_FACILITY_TEMPLATES, ECONOMY_FACILITY_THEMES } from '../campaign-data.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
@@ -132,10 +132,13 @@ assert(server.includes("socket.on('facility:action'") && server.includes("socket
 assert(server.includes('effectiveAbilityTotal') && server.includes('equipmentStatBonus'), '장비 능력치 반영 로직이 누락되었습니다.');
 for (const campaign of CAMPAIGNS) {
   assert((campaign.items || []).length === 6, `${campaign.title}: 장비 6종이 필요합니다.`);
-  assert(campaign.events.some(event => event.facility?.type === 'shop'), `${campaign.title}: 상점 이벤트가 필요합니다.`);
-  assert(campaign.events.some(event => event.facility?.type === 'inn'), `${campaign.title}: 여관 이벤트가 필요합니다.`);
-  assert(campaign.events.some(event => event.facility?.type === 'gamble'), `${campaign.title}: 도박 이벤트가 필요합니다.`);
+  assert(campaign.events.some(event => event.facilityEligible), `${campaign.title}: 확률 시설이 등장할 수 있는 이벤트가 필요합니다.`);
+  assert(campaign.events.some(event => event.lootItemId), `${campaign.title}: 상황 한정 아이템 보상 이벤트가 필요합니다.`);
+  assert(ECONOMY_FACILITY_THEMES[campaign.id]?.shop?.storyLead, `${campaign.title}: 소설형 상점 도입문이 필요합니다.`);
 }
+for (const kind of ['restaurant','inn','shop','quest','gamble']) assert(ECONOMY_FACILITY_TEMPLATES[kind], `시설 템플릿 누락: ${kind}`);
+assert(server.includes('maybeAttachFacility') && server.includes('crypto.randomInt(0, 100) >= 34'), '확률 시설 등장 로직이 누락되었습니다.');
+assert(server.includes('function effectiveAbilityMod') && server.includes('equipmentStatBonus(room, player, stat)'), '장비가 능력치 보정치에 직접 반영되지 않습니다.');
 
 for (const publicFile of ['public/index.html','public/app.js','public/dice3d.js','public/styles.css']) {
   const text = read(publicFile);

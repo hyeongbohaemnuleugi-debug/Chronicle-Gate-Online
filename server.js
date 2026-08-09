@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.14.0-rare-economy.0';
+const APP_VERSION = '4.16.0-guardian-trilogy.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -465,7 +465,29 @@ const CAMPAIGN_ENDING_VARIANTS = {
     careful:{title:'별을 돌려보낸 숲', text:'별과 숲의 순환을 이해해 마지막 별을 하늘로 되돌릴 방법을 찾아냈습니다. 숲은 힘을 잃는 대신 스스로 살아가는 법을 다시 배웁니다.'},
     bold:{title:'새로운 별자리', text:'별핵의 힘을 직접 다루어 기존 질서를 깨고 새로운 별자리를 만들었습니다. 숲과 하늘은 이전과 다른 규칙으로 이어지지만 멸망은 피했습니다.'},
     empathetic:{title:'숲과 맺은 마지막 약속', text:'부족과 야수, 숲의 의지를 모두 듣고 누구도 완전히 승리하지 않는 합의를 만들었습니다. 마지막 별은 사라지지 않고 숲과 하늘 사이의 약속이 됩니다.'},
+  },  guardian: {
+    careful:{title:'유적의 진실을 품은 수호자', text:'챔피언 소드의 시험을 힘보다 판단과 기록으로 풀어내며, 캔터베리가 왜 이 검을 남겼는지 끝까지 이해했습니다. 검은 파티를 받아들였고, 공주는 다음 여정을 단순한 도주가 아니라 왕국을 되찾기 위한 첫 걸음으로 선택합니다.'},
+    bold:{title:'숲을 가른 첫 번째 수호자', text:'고블린과 용병, 침략자의 잔당과 유적 수호 시험을 정면으로 돌파했습니다. 많은 상처를 남겼지만 마지막 순간 검을 먼저 쥐기보다 동료를 지키는 선택으로 챔피언 소드의 인정을 얻었습니다.'},
+    empathetic:{title:'공주가 기억한 이름들', text:'숲에서 만난 주민, 하얀 짐승, 로레인과 공주의 관계를 끝까지 놓지 않았습니다. 챔피언 소드는 한 사람의 힘이 아니라 지켜낸 관계에 반응했고, 파티는 더 많은 동료와 약속을 안고 다음 세계를 향합니다.'},
   },
+
+};
+
+
+CAMPAIGN_ENDING_VARIANTS.guardian1 = {
+  careful:{title:'첫 연대기의 기록자',text:'캔터베리에서 광기의 사막까지 이어진 사건을 단서와 판단으로 엮어, 침략이 세계마다 다른 얼굴을 하고 있다는 사실을 밝혔습니다.'},
+  bold:{title:'네 세계를 돌파한 수호자',text:'숲과 기계도시, 학교와 사막을 정면으로 헤쳐 나가며 다음 챔피언을 향한 길을 열었습니다.'},
+  empathetic:{title:'공주가 모은 첫 번째 동료들',text:'월드 1~4에서 만난 사람을 가능한 한 지키며, 다음 여행에서 다시 손을 내밀 동료와 약속을 남겼습니다.'}
+};
+CAMPAIGN_ENDING_VARIANTS.guardian2 = {
+  careful:{title:'갈라진 세계의 진실',text:'셴의 수련, 작은 여관, 던전, 설산의 사건을 관통하는 모순을 밝혀 라 제국으로 이어지는 위험을 먼저 알아챘습니다.'},
+  bold:{title:'챔피언들의 전진',text:'월드 5~8의 위기와 시험을 돌파하며 흩어진 챔피언들의 힘을 하나의 원정대로 모았습니다.'},
+  empathetic:{title:'눈 속에서도 남은 약속',text:'경쟁자와 작은 존재, 모험가와 누명 쓴 사람들을 외면하지 않았고 그 관계가 라 제국으로 향하는 길의 버팀목이 되었습니다.'}
+};
+CAMPAIGN_ENDING_VARIANTS.guardian3 = {
+  careful:{title:'기록되지 않은 세계의 증언',text:'라 제국과 10년 뒤 미래의 기록을 끝까지 확인해, 기사의 부재와 침략자의 계획이 만든 시간을 이해한 채 마지막 문 앞에 섰습니다.'},
+  bold:{title:'헤븐홀드 탈환',text:'저항군과 동맹을 이끌고 점령된 헤븐홀드를 정면으로 되찾아, 미래가 반드시 패배로 끝나는 것은 아니라는 사실을 증명했습니다.'},
+  empathetic:{title:'두 공주에게 남긴 약속',text:'작은 공주와 미래 공주, 과거와 미래 어느 한쪽도 단순한 정답으로 취급하지 않고 마지막 선택의 대가를 스스로 짊어졌습니다.'}
 };
 
 function buildVictoryEnding(room) {
@@ -519,7 +541,8 @@ const WORLD_ROUTE_WORDS = {
   neon: { threat:'도시 감시망과 MOTHER-9', ally:'시민과 내부 협력자들', medium:'삭제 로그와 기억 조각' },
   abyss: { threat:'심해 신호와 무너지는 기지', ally:'생존자와 승무원들', medium:'소나와 생체 기록' },
   clock: { threat:'열세 번째 종과 뒤틀린 시간', ally:'루프를 기억하는 사람들', medium:'시간 오차와 사라진 기록' },
-  wild: { threat:'뒤틀린 숲과 별빛의 포식', ally:'부족과 야수와 숲의 정령', medium:'별가루와 뿌리의 흔적' },
+  wild: { threat:'뒤틀린 숲과 별빛의 포식', ally:'부족과 야수와 숲의 정령', medium:'별가루와 뿌리의 흔적' },  guardian: { threat:'침략자 잔당과 숲의 혼란', ally:'작은 공주·로레인·숲의 생존자', medium:'왕실 표식과 고대 유적의 룬' },
+
 };
 
 const WORLD_PROSE = {
@@ -565,6 +588,14 @@ const WORLD_PROSE = {
   },
 };
 
+
+WORLD_ROUTE_WORDS.guardian1 = { threat:'침략자와 각 세계의 혼란', ally:'작은 공주와 첫 챔피언들', medium:'챔피언 소드와 세계별 단서' };
+WORLD_ROUTE_WORDS.guardian2 = { threat:'갈라진 세계의 시험과 침략자의 영향', ally:'셴·여관·던전·설산의 동료들', medium:'수련 기록과 모험가들의 증언' };
+WORLD_ROUTE_WORDS.guardian3 = { threat:'침략자 13군단과 무너진 미래', ally:'미래 공주·저항군·라 제국 협력자', medium:'10년의 기록과 차원 흔적' };
+WORLD_PROSE.guardian1 = WORLD_PROSE.guardian || WORLD_PROSE.ember;
+WORLD_PROSE.guardian2 = WORLD_PROSE.guardian || WORLD_PROSE.clock;
+WORLD_PROSE.guardian3 = WORLD_PROSE.guardian || WORLD_PROSE.clock;
+
 function proseOutcome(campaign, beat, prev) {
   if (!prev?.branchValue) return '';
   const p = WORLD_PROSE[campaign?.id] || WORLD_PROSE.ember;
@@ -583,7 +614,8 @@ function branchTransitionText(campaign, beat, prev) {
 }
 
 function branchCliffhanger(campaign, beat, prev) {
-  const world = campaign?.id;
+  const rawWorld = campaign?.id;
+  const world = String(rawWorld||'').startsWith('guardian') ? 'guardian' : rawWorld;
   const phase = beat?.phase || '장면';
   const actEnd = phase === '결단';
   const hooks = {
@@ -780,7 +812,13 @@ const JOB_STORY_SIGNATURES = {
   '야수 길잡이': { route:'empathetic', motif:'야수의 공포를 이해하고 길을 묻으며', discovery:'신수들이 인간을 공격하는 진짜 이유', ally:'별빛 신수', ending:'인간과 야수 사이에 길을 만든 길잡이' },
   '유성 대장장이': { route:'bold', motif:'별철의 떨림을 두드려 응답을 끌어내며', discovery:'별핵을 안전하게 다룰 수 있는 방법', ally:'유성 대장간', ending:'마지막 별을 새롭게 벼린 대장장이' },
   '꿈의 방랑자': { route:'careful', motif:'꿈과 현실이 겹치는 틈을 걸으며', discovery:'숲이 꾸고 있는 악몽의 근원', ally:'꿈속의 아이', ending:'숲의 악몽을 끝낸 방랑자' },
-  '별빛 치유사': { route:'empathetic', motif:'병든 생명과 별빛을 함께 치유하며', discovery:'별빛 오염을 되돌릴 수 있는 의식', ally:'두 부족의 치유사들', ending:'별과 숲을 함께 회복시킨 치유사' },
+  '별빛 치유사': { route:'empathetic', motif:'병든 생명과 별빛을 함께 치유하며', discovery:'별빛 오염을 되돌릴 수 있는 의식', ally:'두 부족의 치유사들', ending:'별과 숲을 함께 회복시킨 치유사' },  '캔터베리 수호기사': { route:'bold', motif:'무너진 왕국의 수호자로서 가장 위험한 길을 먼저 막으며', discovery:'챔피언 소드가 힘보다 수호의 선택에 반응한다는 사실', ally:'작은 공주와 흩어진 수호자들', ending:'공주가 가장 먼저 기억한 수호기사' },
+  '왕실 정찰병': { route:'careful', motif:'숲길과 적의 이동 흔적을 한발 먼저 읽으며', discovery:'침략자와 고블린 사이에 생긴 비어 있는 이동로', ally:'숲의 생존자와 정찰대', ending:'캔터베리의 다음 길을 먼저 연 정찰병' },
+  '고대유적 연구원': { route:'careful', motif:'유적의 룬과 수호자의 기록을 해독하며', discovery:'챔피언 소드 수호 시험의 진짜 규칙', ally:'고대 유적의 기록과 수호 장치', ending:'챔피언 소드의 의미를 해독한 연구원' },
+  '숲의 길잡이': { route:'empathetic', motif:'짐승과 숲 주민의 기척을 따라 길을 만들며', discovery:'하얀 짐승과 숲의 생명들이 두려워한 공통 위협', ally:'하얀 짐승과 숲의 주민들', ending:'숲과 수호자 사이에 길을 만든 길잡이' },
+  '왕실 외교관': { route:'empathetic', motif:'공주의 이름과 캔터베리의 약속을 사람들에게 전하며', discovery:'로레인이 공주에게 접근한 진짜 이유와 숨은 계산', ally:'로레인과 왕국 생존자들', ending:'무너진 왕국의 첫 동맹을 만든 외교관' },
+  '야전 의무병': { route:'empathetic', motif:'상처 입은 수호자와 주민을 살리며', discovery:'숲의 여러 사건이 같은 침공의 여파로 이어진다는 사실', ally:'부상자와 여관의 피난민들', ending:'한 사람도 버리지 않은 캔터베리 의무병' },
+
 };
 
 const CAUSAL_WORLD = {
@@ -808,7 +846,12 @@ const CAUSAL_WORLD = {
     careful:{gain:'별가루·뿌리·꿈의 흔적이 가리키는 진짜 방향', cost:'흔적을 읽는 동안 숲의 포식자도 파티를 따라잡는다'},
     bold:{gain:'숲 중심부로 가는 빠른 길과 별핵의 반응', cost:'숲이 파티를 침입자로 인식해 길을 닫기 시작한다'},
     empathetic:{gain:'야수와 부족, 숲의 존재가 건네는 도움', cost:'서로 적대하던 존재들 사이의 약속까지 책임져야 한다'},
+  },  guardian: {
+    careful:{gain:'숲의 흔적과 고대 유적 기록 사이의 연결', cost:'조사하는 동안 침략자와 고블린이 파티의 위치를 좁혀 온다'},
+    bold:{gain:'막힌 길을 먼저 열어 확보한 왕실 흔적과 전투 우위', cost:'소음과 파손이 남아 뒤따르는 적에게 이동 경로가 드러난다'},
+    empathetic:{gain:'공주·로레인·숲 주민과 하얀 짐승이 건넨 신뢰와 증언', cost:'지켜야 할 사람과 약속이 늘어나 이동과 선택의 부담이 커진다'},
   },
+
 };
 
 const JOB_SPECIAL_CHAPTERS = {
@@ -821,7 +864,9 @@ const JOB_SPECIAL_CHAPTERS = {
   '시간 감식관':[3,10,21,29], '기계 시계공':[4,14,20,28], '역행 검사':[2,11,16,27],
   '예언 기록자':[5,9,19,29], '시간 밀수꾼':[3,12,17,28], '종소리 파수꾼':[4,10,22,29],
   '별사냥꾼':[3,10,21,29], '숲의 주술사':[4,14,20,28], '야수 길잡이':[2,11,16,27],
-  '유성 대장장이':[5,9,19,29], '꿈의 방랑자':[3,12,17,28], '별빛 치유사':[4,10,22,29],
+  '유성 대장장이':[5,9,19,29], '꿈의 방랑자':[3,12,17,28], '별빛 치유사':[4,10,22,29],  '캔터베리 수호기사':[3,10,21,29], '왕실 정찰병':[4,14,20,28], '고대유적 연구원':[2,11,16,27],
+  '숲의 길잡이':[5,9,19,29], '왕실 외교관':[3,12,17,28], '야전 의무병':[4,10,22,29],
+
 };
 
 function isJobSpecialMoment(beat, job) {
@@ -863,6 +908,7 @@ function routeShiftBridge(campaign, history) {
     abyss:'심해에서는 한 번 얻은 답도 곧 다른 의미를 가졌다. 장비 기록과 생존자의 증언, 압력 변화가 서로 맞물리며 파티가 믿어야 할 정보의 우선순위가 달라졌다.',
     clock:'루프는 같은 방법을 반복할수록 더 교묘하게 비틀렸다. 이전 반복에서 통했던 방식이 이번에는 다른 결과를 낳았고, 남겨 둔 기억과 사람의 반응이 새로운 길을 요구했다.',
     wild:'숲은 선택을 기억했다. 억지로 연 길에는 상처가 남았고, 조심스럽게 읽은 흔적에는 누군가의 발자국이 겹쳤다. 파티는 그 변화에 맞춰 다음 걸음을 바꿀 수밖에 없었다.',
+    guardian:'캔터베리 숲에서는 누구를 도왔고 무엇을 먼저 지켰는지가 다음 길을 바꿨다. 고블린을 쫓던 길이 유적의 단서로 이어지고, 여관에서 만든 신뢰가 숲 깊은 곳의 도움으로 돌아오면서 파티는 같은 방법만 고집할 수 없었다.',
   };
   const why=b.success
     ? `${b.playerName || '파티'}가 방금 얻은 성과가 앞서 놓친 부분을 보완해 주었다.`
@@ -948,7 +994,8 @@ function injectJobStoryChoices(room, campaign, beat) {
 function routeSceneVariant(campaign, beat, room, prev) {
   if (!prev?.branchValue) return '';
   const route = prev.branchValue;
-  const world = campaign?.id;
+  const rawWorld = campaign?.id;
+  const world = String(rawWorld||'').startsWith('guardian') ? 'guardian' : rawWorld;
   const phase = beat?.phase || '장면';
   const tables = {
     ember: {
@@ -1141,7 +1188,33 @@ const PROLOGUE_META = {
       체력:'운석 파편의 독한 기운을 버텨 내며 숲을 삼키는 병이 어디서 시작됐는지 찾는다.',
     },
     meet: '숲 한가운데 별빛이 스며든 제단에서, 서로 다른 징조를 따라온 이들이 결국 한 원을 그리며 만난다. 각자의 목격담이 합쳐지는 순간, 숲 전체의 상처가 모습을 드러낸다.',
+  },  guardian: {
+    opening:'캔터베리 성이 침략자들의 공격으로 무너진 뒤, 숲 곳곳에는 왕실 수호자와 피난민의 흔적이 흩어져 있었다.',
+    places:{ 근력:'무너진 왕실 수송로', 지능:'숲 가장자리의 고대 표식 앞', 지혜:'짐승의 발자국이 겹친 숲길', 민첩:'고블린 정찰대가 지나는 협곡', 매력:'피난민이 숨어 있는 작은 초소', 체력:'전투 직후의 야전 치료 지점' },
+    hooks:{
+      근력:'무너진 잔해 아래에서 사람을 끌어내다 작은 공주가 숲 안쪽으로 달려갔다는 말을 듣는다.',
+      지능:'왕실 문양과 고대 룬이 같은 방향을 가리킨다는 사실을 발견한다.',
+      지혜:'고블린의 추격 흔적 사이에서 누군가 일부러 적을 다른 방향으로 끌었다는 흔적을 읽는다.',
+      민첩:'정찰대를 피해 숲을 가로지르며 작은 왕실 리본 조각을 먼저 발견한다.',
+      매력:'겁먹은 피난민들을 진정시키며 낡은 여관과 수상한 여관지기에 대한 소문을 듣는다.',
+      체력:'부상자를 치료하며 공주가 수호자를 살리려고 혼자 고블린을 유인했다는 증언을 듣는다.',
+    },
+    meet:'서로 다른 흔적을 쫓던 수호자들은 낡은 여관으로 이어지는 숲길에서 마주친다. 각자가 찾은 단서는 모두 작은 공주와 같은 방향을 가리키고 있었다.',
   },
+
+};
+
+
+PROLOGUE_META.guardian1 = PROLOGUE_META.guardian || PROLOGUE_META.ember;
+PROLOGUE_META.guardian2 = {
+  ...(PROLOGUE_META.guardian || PROLOGUE_META.ember),
+  opening:'첫 원정을 마친 수호자들은 셴 시티와 그 너머의 세계로 흩어져 다음 챔피언의 흔적을 쫓고 있었다.',
+  meet:'서로 다른 사건을 겪은 수호자들이 셴 시티의 수련장 앞에서 다시 모인다. 첫 여정의 상처와 약속은 그대로 남아 있었다.'
+};
+PROLOGUE_META.guardian3 = {
+  ...(PROLOGUE_META.guardian || PROLOGUE_META.ember),
+  opening:'라 제국의 국경에서 시작된 긴장은 곧 시간 자체를 찢는 사건으로 이어질 준비를 하고 있었다.',
+  meet:'라 제국의 어두운 검문소에서 다시 모인 수호자들은 자신들이 곧 10년이라는 시간을 건너게 될 줄 아직 알지 못했다.'
 };
 
 function buildPlayerPrologue(campaign, player) {

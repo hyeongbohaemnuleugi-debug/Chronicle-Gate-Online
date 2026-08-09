@@ -79,7 +79,7 @@ function saveUiPrefs() {
 const AUDIO_FILES = {
   music: {
     ember: '/audio/bgm_ember.wav?v=4121d', neon: '/audio/bgm_neon.wav?v=4121d', abyss: '/audio/bgm_abyss.wav?v=4121d',
-    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', combat: '/audio/bgm_combat.wav?v=4121d',
+    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', guardian: '/audio/bgm_guardian.wav?v=4150', guardian1: '/audio/bgm_guardian.wav?v=4160', guardian2: '/audio/bgm_guardian.wav?v=4160', guardian3: '/audio/bgm_guardian.wav?v=4160', combat: '/audio/bgm_combat.wav?v=4121d',
   },
   fx: {
     dice:'/audio/dice_roll.wav?v=4121d', success:'/audio/success.wav?v=4121d', failure:'/audio/failure.wav?v=4121d',
@@ -412,6 +412,10 @@ const WORLD_META = {
   abyss: { motif: 'LAST LIGHTHOUSE', scene: ['침수 통로', '관측창 심연', '해저 균열', '압력문 격납고', '상승용 잠수정 갑판'], boss: '깊은 바다의 거대한 촉수와 푸른 눈을 지닌 심연체' },
   clock: { motif: 'THIRTEENTH BELL', scene: ['시계광장', '사라지는 거리', '시간 밀수 시장', '열세 번째 탑', '루프가 끝나는 새벽'], boss: '금빛 톱니와 검은 망토로 된 시간의 파수꾼' },
   wild: { motif: 'STAR-EATEN WOODS', scene: ['별가루 숲길', '말하는 고목', '유성 대장간', '숲의 심장', '마지막 별이 뜬 밤하늘'], boss: '별빛을 삼킨 거대한 신수와 숲의 오오라' },
+  guardian: { motif: 'KANTERBURY FOREST', scene: ['추락한 숲길', '로레인의 여관', '왕실 초소와 숲 경계', '고대 유적 회랑', '챔피언 소드 제단'], boss: '고대 수호 시험과 침략자 잔당이 뒤엉킨 캔터베리의 마지막 시련' },
+  guardian1: { motif:'GUARDIAN TALES I', scene:['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길'], boss:'월드 1~4의 인연과 침략의 흔적이 겹쳐진 첫 연대기의 마지막 시련' },
+  guardian2: { motif:'GUARDIAN TALES II', scene:['셴 시티','작아진 여관','던전 왕국','쉬버링 산','라 제국 국경'], boss:'월드 5~8의 챔피언과 진실을 시험하는 두 번째 연대기의 마지막 시련' },
+  guardian3: { motif:'GUARDIAN TALES III', scene:['라 제국','10년 뒤의 폐허','저항군 기지','점령된 헤븐홀드','차원의 문'], boss:'미래 공주와 저항군이 맞서는 기록되지 않은 세계의 최종 결전' },
 };
 
 const STORY_ART_FILES = {
@@ -420,6 +424,10 @@ const STORY_ART_FILES = {
   abyss: { early: './art/abyss_early.png', late: './art/abyss_late.png' },
   clock: { early: './art/clock_early.png', late: './art/clock_late.png' },
   wild: { early: './art/wild_early.png', late: './art/wild_late.png' },
+  guardian: { early: './art/guardian_early.png', late: './art/guardian_late.png' },
+  guardian1: { profile:'./art/guardian_part1_profile.png', early:'./art/guardian_part1_profile.png', late:'./art/guardian_part1_profile.png' },
+  guardian2: { profile:'./art/guardian_part2_profile.png', early:'./art/guardian_part2_profile.png', late:'./art/guardian_part2_profile.png' },
+  guardian3: { profile:'./art/guardian_part3_profile.png', early:'./art/guardian_part3_profile.png', late:'./art/guardian_part3_profile.png' },
 };
 
 function toast(msg) {
@@ -713,7 +721,7 @@ function artSvg(c, title, subtitle, kicker, visual = '', monster = '') {
 
 function coverArt(c) {
   const artSet = STORY_ART_FILES[c?.id];
-  return artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
+  return artSet?.profile || artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
 function chapterArtCandidates(c, scene) {
   if (!c?.id) return [];
@@ -745,7 +753,7 @@ function representativeStoryArtCandidates(c, scene) {
 function builtInStoryArt(c,scene){
   const world=c?.id||'ember';
   const chapter=Number(scene?.artChapter||scene?.chapter||1);
-  const accent={ember:'#ff7654',neon:'#3fe8ff',abyss:'#68d7ff',clock:'#ffd47c',wild:'#8df4a8'}[world]||'#ff7654';
+  const accent={ember:'#ff7654',neon:'#3fe8ff',abyss:'#68d7ff',clock:'#ffd47c',wild:'#8df4a8',guardian1:'#63d67c',guardian2:'#62c8ff',guardian3:'#a78bff'}[world]||'#ff7654';
   const title=esc(scene?.title||scene?.actName||c?.title||'Chronicle Gate');
   const visual=esc(scene?.visual||scene?.phase||'중요 장면');
   const motif={

@@ -6,9 +6,9 @@ import { CAMPAIGNS } from '../campaign-data.js';
 
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 
-test('all 30 jobs have active skill definitions with diverse mechanics', () => {
+test('all 48 jobs have active skill definitions with diverse mechanics', () => {
   const jobs = CAMPAIGNS.flatMap(c => c.jobs);
-  assert.equal(jobs.length, 30);
+  assert.equal(jobs.length, 48);
   for (const job of jobs) {
     assert.ok(job.skillDef?.name, `${job.name} skill name`);
     assert.ok(job.skillDef?.kind, `${job.name} skill kind`);
@@ -27,7 +27,7 @@ test('healer/priest jobs provide real party recovery or cleansing', () => {
 });
 
 test('all required audio assets exist and are non-empty', () => {
-  const names = ['dice_roll.wav','success.wav','failure.wav','scene_next.wav','attack.wav','hit.wav','hp_loss.wav','boss_warning.wav','vote_lock.wav','bgm_ember.wav','bgm_neon.wav','bgm_abyss.wav','bgm_clock.wav','bgm_wild.wav','bgm_combat.wav'];
+  const names = ['dice_roll.wav','success.wav','failure.wav','scene_next.wav','attack.wav','hit.wav','hp_loss.wav','boss_warning.wav','vote_lock.wav','bgm_ember.wav','bgm_neon.wav','bgm_abyss.wav','bgm_clock.wav','bgm_wild.wav','bgm_guardian.wav','bgm_combat.wav'];
   for (const name of names) {
     const file = path.join(root, 'public', 'audio', name);
     assert.ok(fs.existsSync(file), `${name} exists`);

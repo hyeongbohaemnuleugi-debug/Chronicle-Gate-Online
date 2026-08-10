@@ -134,6 +134,31 @@
       </div>
     </section>
 
+
+    <section class="view" id="exploreView">
+      <div class="explore-shell">
+        <aside class="explore-party ornate" id="exploreParty"></aside>
+        <section class="explore-stage ornate">
+          <div class="explore-head">
+            <div><div class="eyebrow">FREE EXPLORATION</div><h2 id="exploreMapName">자유 탐험</h2><p id="exploreMapSubtitle">WASD / 방향키 또는 인접 타일을 눌러 자유롭게 이동하세요.</p></div>
+            <div class="explore-route-badge"><span>가능한 진행 조합</span><b id="exploreRouteDiversity">36+</b><small>메인 목표는 모든 핵심 퀘스트를 해결해야 완료</small></div>
+          </div>
+          <div class="explore-objective" id="exploreObjective"></div>
+          <div class="world-map-wrap"><div class="world-map" id="worldMap" role="grid" aria-label="자유 탐험 맵"></div></div>
+          <div class="explore-controls">
+            <div class="move-pad" aria-label="이동 패드"><button data-move="0,-1">▲</button><div><button data-move="-1,0">◀</button><button data-move="0,1">▼</button><button data-move="1,0">▶</button></div></div>
+            <div class="explore-free-box"><label>무엇이든 시도하기</label><div><input id="exploreFreeInput" maxlength="180" placeholder="예: 상인의 뒤를 따라가 장부를 어디에 두는지 확인한다."><button class="primary" id="exploreFreeBtn" type="button">시도</button></div><small>주변 대상과 환경을 상대로 자유롭게 행동할 수 있습니다. 낮은 위험 행동은 굳이 주사위를 굴리지 않습니다.</small></div>
+          </div>
+          <div class="explore-log" id="exploreLog"></div>
+        </section>
+        <aside class="explore-right">
+          <section class="ornate interact-card"><div class="panel-title"><span>INTERACT</span><small id="exploreFocusHint">가까이 가서 상호작용</small></div><div id="exploreInteraction"></div></section>
+          <section class="ornate quest-card"><div class="panel-title"><span>QUEST JOURNAL</span><small>메인 + 서브</small></div><div id="questJournal"></div></section>
+          <section class="ornate chat-card explore-chat-card"><div id="exploreChatLog" class="chat-log"></div><form id="exploreChatForm"><input id="exploreChatInput" maxlength="240" placeholder="동료에게 말하기…"><button type="submit">↗</button></form></section>
+        </aside>
+      </div>
+    </section>
+
     <section class="view" id="combatView">
       <div class="combat-shell">
         <div class="combat-title"><div class="eyebrow">ENCOUNTER</div><h1 id="monsterName">UNKNOWN</h1><p>내 차례에는 공격·방어·직업 스킬 중 하나만 고르면 됩니다. 모두 행동하면 보스가 한 번 공격합니다.</p></div>

@@ -1,6 +1,6 @@
 {
   "name": "chronicle-gate-online",
-  "version": "5.0.2",
+  "version": "5.2.0",
   "private": true,
   "type": "module",
   "description": "1-4 player server-authoritative free-roam cinematic TRPG with systemic NPC interaction",

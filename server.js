@@ -33,12 +33,27 @@ const BASE_WORLDS = {
   guardian3: { name:'라 제국과 미래', ground:'폐허와 저항군의 길', main:'헤븐홀드 진입로', merchant:'저항군 보급상', inn:'임시 피난처', scholar:'미래 기록관', rogue:'폐허의 정보상', guard:'저항군 경비', shrine:'시간 균열', board:'저항군 작전판' },
 };
 
-const WALLS = new Set([
-  '0,0','1,0','2,0','3,0','4,0','5,0','6,0','7,0','8,0','9,0','10,0','11,0','12,0','13,0','14,0',
-  '0,8','1,8','2,8','3,8','4,8','5,8','6,8','7,8','8,8','9,8','10,8','11,8','12,8','13,8','14,8',
-  '0,1','0,2','0,3','0,4','0,5','0,6','0,7','14,1','14,2','14,3','14,4','14,5','14,6','14,7',
-  '5,2','5,3','9,5','9,6','11,3','3,5'
-]);
+const EXPLORE_MAP_WIDTH = 45;
+const EXPLORE_MAP_HEIGHT = 27;
+
+function buildLargeWorldWalls() {
+  const walls = new Set();
+  for (let x = 0; x < EXPLORE_MAP_WIDTH; x += 1) { walls.add(`${x},0`); walls.add(`${x},${EXPLORE_MAP_HEIGHT-1}`); }
+  for (let y = 0; y < EXPLORE_MAP_HEIGHT; y += 1) { walls.add(`0,${y}`); walls.add(`${EXPLORE_MAP_WIDTH-1},${y}`); }
+  const addV=(x,y1,y2,gaps=[])=>{for(let y=y1;y<=y2;y+=1) if(!gaps.includes(y)) walls.add(`${x},${y}`);};
+  const addH=(y,x1,x2,gaps=[])=>{for(let x=x1;x<=x2;x+=1) if(!gaps.includes(x)) walls.add(`${x},${y}`);};
+  // 거대한 지역을 구분하는 절벽/성벽. 통로를 여러 곳 남겨 우회 탐험이 가능하다.
+  addV(14,1,11,[5,6,9]); addV(14,16,25,[20,21,23]);
+  addV(30,2,14,[6,8,12]); addV(30,18,25,[20,22,24]);
+  addH(12,2,13,[5,8,11]); addH(12,17,28,[20,23,26]);
+  addH(17,2,12,[4,7,10]); addH(17,32,43,[35,38,41]);
+  // 작은 폐허/숲/건물 블록. 완전 폐쇄가 아니라 장애물 역할만 한다.
+  const blocks=[[10,3],[18,4],[24,8],[7,14],[18,19],[26,21],[35,10],[39,18]];
+  for(const [bx,by] of blocks) for(let dy=0;dy<2;dy+=1) for(let dx=0;dx<2;dx+=1) walls.add(`${bx+dx},${by+dy}`);
+  return walls;
+}
+
+const LARGE_WORLD_WALLS = buildLargeWorldWalls();
 
 const EXPLORATION_APPROACHES = [
   { id:'investigate', label:'조사해서 길을 만든다', stat:'지능', route:'careful', icon:'⌕' },
@@ -52,23 +67,49 @@ const EXPLORATION_APPROACHES = [
 function explorationTemplate(campaignId) {
   const w = BASE_WORLDS[campaignId] || BASE_WORLDS.ember;
   const npcs = [
-    { id:'merchant', name:w.merchant, role:'상인', x:3,y:2, icon:'◈', critical:false, traits:['greedy','connected'], actions:['talk','trade','steal','threaten','fight','bribe','inspect','askQuest','follow'] },
-    { id:'innkeeper', name:w.inn, role:'숙박업자', x:3,y:6, icon:'⌂', critical:false, traits:['local','cautious'], actions:['talk','rest','work','steal','threaten','fight','askRumor','askQuest','inspect'] },
-    { id:'scholar', name:w.scholar, role:'기록자', x:7,y:2, icon:'▤', critical:false, traits:['educated','nervous'], actions:['talk','askQuest','inspect','persuade','stealNotes','threaten','fight','follow'] },
-    { id:'rogue', name:w.rogue, role:'정보상', x:11,y:6, icon:'☗', critical:false, traits:['shady','alert'], actions:['talk','gamble','buyInfo','steal','threaten','fight','askQuest','follow'] },
-    { id:'guard', name:w.guard, role:'경비', x:7,y:6, icon:'♜', critical:false, traits:['law','armed'], actions:['talk','report','bribe','persuade','sneakPast','threaten','fight','inspect'] },
-    { id:'main', name:w.main, role:'메인 퀘스트', x:12,y:2, icon:'✦', critical:true, traits:['main'], actions:['talk','mainQuest','investigate','observe','infiltrate','force','negotiate','endure','inspect'] },
-    { id:'civilian1', name:`${w.name}의 여행자`, role:'일반 NPC', x:2,y:2, icon:'•', critical:false, traits:['civilian'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','askRumor'] },
-    { id:'civilian2', name:`${w.name}의 짐꾼`, role:'일반 NPC', x:5,y:6, icon:'•', critical:false, traits:['civilian','worker'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','work'] },
-    { id:'civilian3', name:`${w.name}의 떠돌이`, role:'일반 NPC', x:10,y:2, icon:'•', critical:false, traits:['civilian','traveler'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','askRumor'] },
-    { id:'civilian4', name:`${w.name}의 부상자`, role:'일반 NPC', x:12,y:5, icon:'•', critical:false, traits:['civilian','wounded'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow'] },
+    { id:'merchant', name:w.merchant, role:'상인', x:7,y:22, icon:'◈', critical:false, traits:['greedy','connected'], actions:['talk','trade','steal','threaten','fight','bribe','inspect','askQuest','follow'] },
+    { id:'innkeeper', name:w.inn, role:'숙박업자', x:4,y:20, icon:'⌂', critical:false, traits:['local','cautious'], actions:['talk','rest','work','steal','threaten','fight','askRumor','askQuest','inspect'] },
+    { id:'scholar', name:w.scholar, role:'기록자', x:20,y:21, icon:'▤', critical:false, traits:['educated','nervous'], actions:['talk','askQuest','inspect','persuade','stealNotes','threaten','fight','follow'] },
+    { id:'rogue', name:w.rogue, role:'정보상', x:34,y:22, icon:'☗', critical:false, traits:['shady','alert'], actions:['talk','gamble','buyInfo','steal','threaten','fight','askQuest','follow'] },
+    { id:'guard', name:w.guard, role:'경비', x:37,y:15, icon:'♜', critical:false, traits:['law','armed'], actions:['talk','report','bribe','persuade','sneakPast','threaten','fight','inspect'] },
+    { id:'main', name:w.main, role:'메인 퀘스트', x:40,y:3, icon:'✦', critical:true, traits:['main'], actions:['talk','mainQuest','investigate','observe','infiltrate','force','negotiate','endure','inspect'] },
+    { id:'civilian1', name:`${w.name}의 여행자`, role:'일반 NPC', x:10,y:16, icon:'•', critical:false, traits:['civilian'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','askRumor'] },
+    { id:'civilian2', name:`${w.name}의 짐꾼`, role:'일반 NPC', x:18,y:14, icon:'•', critical:false, traits:['civilian','worker'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','work'] },
+    { id:'civilian3', name:`${w.name}의 떠돌이`, role:'일반 NPC', x:28,y:9, icon:'•', critical:false, traits:['civilian','traveler'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','askRumor'] },
+    { id:'civilian4', name:`${w.name}의 부상자`, role:'일반 NPC', x:39,y:7, icon:'•', critical:false, traits:['civilian','wounded'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow'] },
+    { id:'civilian5', name:`${w.name}의 순례자`, role:'일반 NPC', x:6,y:8, icon:'•', critical:false, traits:['civilian','traveler'], actions:['talk','help','inspect','bribe','follow','askRumor'] },
+    { id:'civilian6', name:`${w.name}의 수색꾼`, role:'일반 NPC', x:22,y:6, icon:'•', critical:false, traits:['civilian','worker'], actions:['talk','help','inspect','follow','askRumor','work'] },
+    { id:'civilian7', name:`${w.name}의 경계병`, role:'일반 NPC', x:32,y:15, icon:'•', critical:false, traits:['civilian','armed'], actions:['talk','help','inspect','persuade','fight','askRumor'] },
+    { id:'civilian8', name:`${w.name}의 피난민`, role:'일반 NPC', x:41,y:21, icon:'•', critical:false, traits:['civilian','wounded'], actions:['talk','help','inspect','askRumor'] },
   ];
   const pois = [
-    { id:'shrine', name:w.shrine, x:12,y:6, icon:'✧', actions:['inspect','pray','search','break','leaveOffering'] },
-    { id:'board', name:w.board, x:2,y:4, icon:'▣', actions:['inspect','takeQuest'] },
-    { id:'cache', name:'수상한 보관함', x:13,y:4, icon:'▥', hidden:true, actions:['inspect','pickLock','break','leave'] },
+    { id:'shrine', name:w.shrine, x:38,y:8, icon:'✧', actions:['inspect','pray','search','break','leaveOffering'] },
+    { id:'board', name:w.board, x:6,y:23, icon:'▣', actions:['inspect','takeQuest'] },
+    { id:'cache', name:'수상한 보관함', x:25,y:3, icon:'▥', hidden:true, actions:['inspect','pickLock','break','leave'] },
+    { id:'ruins', name:'무너진 옛길', x:14,y:14, icon:'⌘', actions:['inspect','search','break'] },
+    { id:'well', name:'오래된 우물', x:23,y:16, icon:'◌', actions:['inspect','search','leaveOffering'] },
+    { id:'camp', name:'버려진 야영지', x:31,y:21, icon:'△', actions:['inspect','search','pray'] },
+    { id:'watchtower', name:'낡은 감시탑', x:35,y:4, icon:'⌖', actions:['inspect','search','break'] },
+    { id:'secretGrove', name:'숨겨진 샛길', x:42,y:12, icon:'✥', hidden:true, actions:['inspect','search','pray'] },
   ];
-  return { id:`${campaignId}-field`, name:w.name, subtitle:w.ground, width:15, height:9, start:{x:7,y:4}, walls:[...WALLS], npcs, pois };
+  const protectedPoints=[{x:4,y:22},...npcs,...pois];
+  const walls=new Set(LARGE_WORLD_WALLS);
+  // 중요한 대상 주변은 반드시 접근 가능하도록 3x3을 비운다.
+  for(const p of protectedPoints) for(let dy=-1;dy<=1;dy+=1) for(let dx=-1;dx<=1;dx+=1){
+    const x=p.x+dx,y=p.y+dy; if(x>0&&y>0&&x<EXPLORE_MAP_WIDTH-1&&y<EXPLORE_MAP_HEIGHT-1) walls.delete(`${x},${y}`);
+  }
+  const regions = [
+    {id:'southwest',name:`${w.name} · 출발 거점`,x0:1,y0:18,x1:14,y1:25},
+    {id:'south',name:`${w.name} · 남부 길목`,x0:15,y0:18,x1:29,y1:25},
+    {id:'southeast',name:`${w.name} · 동남 변두리`,x0:30,y0:18,x1:43,y1:25},
+    {id:'west',name:`${w.name} · 서쪽 외곽`,x0:1,y0:9,x1:14,y1:17},
+    {id:'center',name:`${w.name} · 중앙 교차로`,x0:15,y0:9,x1:29,y1:17},
+    {id:'east',name:`${w.name} · 동쪽 경계`,x0:30,y0:9,x1:43,y1:17},
+    {id:'northwest',name:`${w.name} · 북서 폐허`,x0:1,y0:1,x1:14,y1:8},
+    {id:'north',name:`${w.name} · 북부 고지`,x0:15,y0:1,x1:29,y1:8},
+    {id:'northeast',name:`${w.name} · 핵심 지역`,x0:30,y0:1,x1:43,y1:8},
+  ];
+  return { id:`${campaignId}-field`, name:w.name, subtitle:w.ground, width:EXPLORE_MAP_WIDTH, height:EXPLORE_MAP_HEIGHT, start:{x:4,y:22}, walls:[...walls], npcs, pois, regions };
 }
 
 const SIDE_QUESTS = [
@@ -89,7 +130,7 @@ function interactionActionLabel(action) {
 }
 
 
-const APP_VERSION = '5.0.2-inline-exploration.0';
+const APP_VERSION = '5.2.0-expanded-world.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -539,6 +580,7 @@ function initExploration(room, campaign) {
   room.exploration.template = template;
   room.exploration.positions ||= {};
   room.exploration.focusByPlayer ||= {};
+  room.exploration.dialogueByPlayer ||= {};
   room.exploration.discoveredByPlayer ||= {};
   room.exploration.npcState ||= {};
   room.exploration.sideQuests ||= {};
@@ -652,13 +694,33 @@ function explorePublic(room) {
   const campaign=CAMPAIGNS.find(c=>c.id===room.campaignId);
   const ex=initExploration(room,campaign);
   return {
-    mapId:ex.mapId, name:ex.template.name, subtitle:ex.template.subtitle, width:ex.template.width, height:ex.template.height, walls:ex.template.walls,
+    mapId:ex.mapId, name:ex.template.name, subtitle:ex.template.subtitle, width:ex.template.width, height:ex.template.height, walls:ex.template.walls, regions:ex.template.regions||[],
     positions:{...ex.positions}, discoveredByPlayer:{...ex.discoveredByPlayer}, npcState:ex.npcState, routeSignature:[...ex.routeSignature], mainLaunches:ex.mainLaunches, routeDiversity:routeDiversity(room), worldMoves:ex.worldMoves,
     npcs:ex.template.npcs.map(n=>({...n,actions:undefined})), pois:ex.template.pois.map(p=>({...p,actions:undefined})), focusByPlayer:{...ex.focusByPlayer},
     approaches:EXPLORATION_APPROACHES, actionHistory:(ex.actionHistory||[]).slice(-12),
     interactions:Object.fromEntries((room.players||[]).map(p=>[p.id, explorationInteractionPublic(room,p)])),
     sideQuests:Object.fromEntries((room.players||[]).map(p=>[p.id, sideQuestPublic(room,p)])),
   };
+}
+function explorationOpeningDialogue(room, player, object, state) {
+  if (!object) return { speaker:'주변', text:'주변을 살펴보자.' };
+  if (state?.hostile) return { speaker:object.name, text:'다가오는 당신을 보자 상대의 표정이 굳었다. 더 가까이 가기 전에 손부터 움직일 것 같은 분위기다.' };
+  if (state?.defeated) return { speaker:object.name, text:'상대는 더 이상 맞서려 하지 않는다. 그래도 남겨진 물건과 흔적은 조사할 수 있다.' };
+  if (object.id === 'merchant') return { speaker:object.name, text:'상인은 당신을 위아래로 한 번 훑더니 진열대 아래의 상자를 발끝으로 밀어 넣었다. “살 거면 보고, 물을 거면 빨리 물어.”' };
+  if (object.id === 'innkeeper') return { speaker:object.name, text:'문을 열자 따뜻한 공기와 오래된 음식 냄새가 먼저 밀려왔다. 주인은 닦던 잔을 내려놓고 당신을 바라본다.' };
+  if (object.id === 'scholar') return { speaker:object.name, text:'기록자는 종이 위에서 손을 멈추지 않은 채 눈만 들어 당신을 본다. 책상에는 일부러 뒤집어 둔 문서 한 장이 보인다.' };
+  if (object.id === 'rogue') return { speaker:object.name, text:'정보상은 웃지도 않은 채 빈 의자를 발로 밀어 준다. “앉든가. 서서 할 이야기는 비싸.”' };
+  if (object.id === 'guard') return { speaker:object.name, text:'경비는 길을 완전히 막지는 않았지만 손을 무기 가까이에 둔 채 당신의 움직임을 지켜본다.' };
+  if (object.id === 'main') return { speaker:object.name, text:'지금 연대기의 핵심 사건이 바로 앞에 있다. 정답은 하나가 아니다. 어떻게 들어갈지는 당신이 정한다.' };
+  if (object.id === 'shrine') return { speaker:object.name, text:'가까이 다가가자 오래된 흔적 사이에서 미세한 온기가 느껴진다. 누군가 최근에도 이곳을 찾았던 것 같다.' };
+  if (object.id === 'board') return { speaker:object.name, text:'낡은 게시판에는 오래된 종이 사이로 비교적 새것처럼 보이는 의뢰서 몇 장이 끼워져 있다.' };
+  if (object.id === 'cache') return { speaker:object.name, text:'겉보기에는 평범하지만 손잡이와 바닥의 먼지 자국이 이상하다. 누군가 자주 열어 본 흔적이다.' };
+  if (String(object.role||'').includes('부상')) return { speaker:object.name, text:'상대는 벽에 기대어 거칠게 숨을 고른다. 당신을 발견하고도 도움을 청할지 경계할지 망설이는 눈치다.' };
+  return { speaker:object.name, text:`${object.name}은(는) 당신을 알아차리고 잠시 행동을 멈췄다. 먼저 말을 걸 수도 있고, 전혀 다른 방법을 시도할 수도 있다.` };
+}
+function setExploreDialogue(room, player, object, text, speaker=null) {
+  room.exploration.dialogueByPlayer ||= {};
+  room.exploration.dialogueByPlayer[player.id] = { targetId:object?.id||null, speaker:speaker||object?.name||'주변', text:String(text||'').slice(0,520), ts:Date.now() };
 }
 function explorationInteractionPublic(room, player) {
   const focusId=room.exploration?.focusByPlayer?.[player.id];
@@ -673,7 +735,9 @@ function explorationInteractionPublic(room, player) {
     const rule=EXPLORE_ACTION_RULES[id];
     return {id,label:interactionActionLabel(id), preview:intScore>=14&&rule?.risky?`${rule.stat} · DC ${rule.dc}`:null, warning:wisScore>=14&&['steal','fight','threaten','pickLock','break'].includes(id)?'실패 시 관계·수배·부상 위험':null};
   });
-  return { object:{...object,actions:undefined}, state:wisScore>=14?state:(state?{met:state.met,defeated:state.defeated,hostile:state.hostile}:null), actions, sideQuests:sideQuestPublic(room,player), shopItems:object.id==='merchant'?(campaign?.items||[]):[] };
+  const savedDialogue=room.exploration?.dialogueByPlayer?.[player.id];
+  const dialogue=(savedDialogue?.targetId===object.id)?savedDialogue:explorationOpeningDialogue(room,player,object,state);
+  return { object:{...object,actions:undefined}, state:wisScore>=14?state:(state?{met:state.met,defeated:state.defeated,hostile:state.hostile}:null), dialogue, actions, sideQuests:sideQuestPublic(room,player), shopItems:object.id==='merchant'?(campaign?.items||[]):[] };
 }
 function startMainQuestFromExplore(room, player, approachId) {
   const campaign=CAMPAIGNS.find(c=>c.id===room.campaignId);
@@ -2664,7 +2728,13 @@ io.on('connection', socket => {
     room.exploration.positions[player.id]={x:nx,y:ny}; room.exploration.worldMoves += 1; room.exploration.focusByPlayer[player.id]=null;
     const found=discoverNearbyHidden(room,player);
     if(found.length) pushChat(room,{type:'success',author:player.name,text:`주변을 살피다 ${found.map(x=>x.name).join(', ')}을(를) 발견했습니다.`});
-    sync(room); ack?.({ok:true,position:room.exploration.positions[player.id]});
+    const nearby=nearbyExploreObjects(room,player).sort((a,b)=>Number(Boolean(b.critical))-Number(Boolean(a.critical)) || manhattan(room.exploration.positions[player.id],a)-manhattan(room.exploration.positions[player.id],b));
+    if(nearby[0]){
+      room.exploration.focusByPlayer[player.id]=nearby[0].id;
+      const ns=room.exploration.npcState?.[nearby[0].id]||null;
+      setExploreDialogue(room,player,nearby[0],explorationOpeningDialogue(room,player,nearby[0],ns).text);
+    }
+    sync(room); ack?.({ok:true,position:room.exploration.positions[player.id],nearby:nearby[0]?.id||null});
   });
 
   socket.on('explore:interact', (payload, ack) => {
@@ -2674,6 +2744,8 @@ io.on('connection', socket => {
     if(!target || !nearbyExploreObjects(room,player).some(o=>o.id===target.id)) return ack?.({ok:false,error:'상호작용하려면 대상 가까이 이동하세요.'});
     room.exploration.focusByPlayer[player.id]=target.id;
     if(room.exploration.npcState[target.id]) room.exploration.npcState[target.id].met=true;
+    const ns=room.exploration.npcState?.[target.id]||null;
+    setExploreDialogue(room,player,target,explorationOpeningDialogue(room,player,target,ns).text);
     completeQuestTargetIfNeeded(room,player,target.id);
     sync(room); ack?.({ok:true,interaction:explorationInteractionPublic(room,player)});
   });
@@ -2698,7 +2770,7 @@ io.on('connection', socket => {
     else if(action==='askQuest' || action==='takeQuest') { const q=questForGiver(target.id) || SIDE_QUESTS.find(q=>!room.exploration.sideQuests?.[`${player.id}:${q.id}`]); if(!q){summary='지금 받을 수 있는 새로운 의뢰는 없다.';} else {const key=`${player.id}:${q.id}`; const st=room.exploration.sideQuests[key]||'available'; if(st==='available'){room.exploration.sideQuests[key]='active';summary=`서브 퀘스트 「${q.title}」을 받았다. ${q.description}`;} else summary=`「${q.title}」 의뢰는 이미 진행 중이다.`;} }
     else if(action==='turnInQuest') { const q=questForGiver(target.id); const key=q?`${player.id}:${q.id}`:''; if(!q||room.exploration.sideQuests[key]!=='ready') return ack?.({ok:false,error:'완료 보고할 의뢰가 없습니다.'}); room.exploration.sideQuests[key]='done'; if(q.reward.coins) grantCoins(player,q.reward.coins); room.agencyMemory.clues+=Number(q.reward.clues||0); room.agencyMemory.rapport+=Number(q.reward.rapport||0); room.agencyMemory.position+=Number(q.reward.position||0); summary=`「${q.title}」 완료. ${q.reward.coins?`코인 +${q.reward.coins}. `:''}당신의 행동이 세계에 작은 흔적을 남겼다.`; }
     else if(action==='mainQuest') { summary=`현재 메인 목표는 「${renderedStoryBeat(room,CAMPAIGNS.find(c=>c.id===room.campaignId))?.title||'다음 사건'}」이다. 조사·관찰·잠입·돌파·협상·버티기 중 어느 방식으로 접근할지 직접 정할 수 있다.`; }
-    else if(EXPLORATION_APPROACHES.some(a=>a.id===action) && target.id==='main') { const started=startMainQuestFromExplore(room,player,action); if(!started.ok) return ack?.(started); summary=`${started.approach.label}. 이 접근법의 준비 덕분에 첫 판정 DC가 1 낮아진다.`; recordExploreAction(room,player,target,action,{tier:'success'},summary); sync(room); return ack?.({ok:true,summary,startedStory:true}); }
+    else if(EXPLORATION_APPROACHES.some(a=>a.id===action) && target.id==='main') { const started=startMainQuestFromExplore(room,player,action); if(!started.ok) return ack?.(started); summary=`${started.approach.label}. 이 접근법의 준비 덕분에 첫 판정 DC가 1 낮아진다.`; recordExploreAction(room,player,target,action,{tier:'success'},summary); setExploreDialogue(room,player,target,summary); sync(room); return ack?.({ok:true,summary,startedStory:true}); }
     else if(action==='gamble') { if(!spendCoins(player,1)) return ack?.({ok:false,error:'내기에 걸 1코인이 없습니다.'}); const d=rand(6); const win=d===6?4:d===5?2:0; if(win) grantCoins(player,win); result={tier:win?'success':'failure',roll:d,total:d,dc:5,stat:'운'}; emitRoll(room,player,{sides:6,result:d,purpose:'거리의 내기',kind:'explore-gamble',total:d,dc:5,success:!!win,modifiers:[]}); summary=`1코인을 걸었다. D6=${d}. ${win?`${win}코인을 받았다.`:'판돈을 잃었다.'}`; }
     else if(action==='buyInfo') { if(!spendCoins(player,1)) return ack?.({ok:false,error:'정보값 1코인이 없습니다.'}); room.agencyMemory.clues+=1; summary='1코인을 건네고 다른 사람은 모르는 단서 하나를 샀다. 다음 조사에 남는다.'; }
     else if(action==='work') { result=exploreRoll(room,player,action); if(['critical','success'].includes(result.tier)){grantCoins(player,1);summary='힘든 일을 끝내고 1코인을 받았다.';} else if(result.tier==='cost'){summary='일은 끝냈지만 실수 때문에 보수는 받지 못했다.';} else {player.hp=Math.max(0,player.hp-1);summary='일을 망치고 몸까지 상했다. HP -1.';} }
@@ -2711,6 +2783,7 @@ io.on('connection', socket => {
     else if(action==='askRumor' || action==='report') { room.agencyMemory.clues+=1; if(npcState)npcState.relation+=1; summary=`${target.name}에게서 지금 상황과 연결되는 이야기를 들었다. 단서 +1.`; }
     else summary=`${interactionActionLabel(action)} 행동을 시도했다. 상황은 당신의 행동을 기억한다.`;
 
+    setExploreDialogue(room,player,target,summary);
     completeQuestTargetIfNeeded(room,player,target.id);
     recordExploreAction(room,player,target,action,result,summary);
     pushChat(room,{type:['critical','success'].includes(result.tier)?'success':result.tier==='cost'?'action':'failure',author:player.name,text:`${target.name} · ${interactionActionLabel(action)} — ${summary}`});
@@ -2733,6 +2806,7 @@ io.on('connection', socket => {
     if(!spendCoins(player,price)) return ack?.({ok:false,error:`코인이 부족합니다. 필요 ${price} 코인`});
     player.inventory.push(item.id);
     const summary=`${item.name} 구매 · -${price} 코인 · ${item.stat} 판정 보정 +${item.bonus}`;
+    setExploreDialogue(room,player,target,`상인은 물건을 건네며 짧게 고개를 끄덕였다. ${summary}`);
     recordExploreAction(room,player,target,'trade',{tier:'success'},summary);
     pushChat(room,{type:'success',author:player.name,text:summary}); sync(room); ack?.({ok:true,summary});
   });
@@ -2765,6 +2839,7 @@ io.on('connection', socket => {
     } else if(['critical','success'].includes(result.tier)){summary+='의도가 통했고, 그 결과는 이후 관계와 사건에 남는다.'; if(ns)ns.relation+=1;}
     else if(result.tier==='cost'){summary+='원하는 일부는 얻었지만 상대가 당신을 경계하게 됐다.'; if(ns)ns.relation-=1;}
     else {summary+='뜻대로 풀리지는 않았다. 다른 접근을 시도할 수 있다.';}
+    setExploreDialogue(room,player,target,summary);
     recordExploreAction(room,player,target,mapped,result,summary); sync(room); ack?.({ok:true,summary,result});
   });
 

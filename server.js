@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '5.6.0-dialogue-continue.0';
+const APP_VERSION = '5.7.0-causal-freedom.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -210,6 +210,58 @@ const SCENE_IMPORTANCE = {
   important: { label:'중요 장면', dcMin:10, dcMax:13, choiceTarget:5, freeAction:false, consequence:'선택한 접근 방식과 판정 결과가 다음 사건의 조건을 크게 바꿉니다.' },
   pivotal: { label:'결정적 장면', dcMin:12, dcMax:15, choiceTarget:4, freeAction:false, consequence:'이 장면의 선택은 큰 분기나 엔딩 후보를 바꿀 수 있습니다.' },
 };
+
+function approachPressure(room, player, choice) {
+  room.approachRhythm ||= {};
+  const prev = room.approachRhythm[player?.id] || { stat:null, action:null, streak:0 };
+  const sameStat = prev.stat === choice?.stat;
+  const sameAction = prev.action === choice?.actionType;
+  if (sameStat) {
+    const nextStreak = Math.max(1, Number(prev.streak || 0));
+    return { dc:Math.min(2, Math.max(0, nextStreak - 1) + (sameAction && nextStreak >= 2 ? 1 : 0)), label:'같은 방식이 읽히고 있다' };
+  }
+  if (Number(prev.streak || 0) >= 3) return { dc:-1, label:'예상 밖의 방식으로 전환' };
+  return { dc:0, label:'' };
+}
+function rememberApproach(room, player, choice) {
+  room.approachRhythm ||= {};
+  const prev = room.approachRhythm[player?.id] || { stat:null, action:null, streak:0 };
+  const same = prev.stat === choice?.stat;
+  room.approachRhythm[player.id] = {
+    stat:choice?.stat || null,
+    action:choice?.actionType || null,
+    streak:same ? Math.min(6, Number(prev.streak || 0) + 1) : 1,
+  };
+}
+function fatalFailureReason(campaign, choice) {
+  const world = campaign?.id;
+  const action = String(choice?.actionType || '');
+  const byAction = {
+    fight:'치명상을 입고 끝내 다시 일어나지 못했다.',
+    sneak:'들키지 않으려던 마지막 한 걸음이 함정과 낭떠러지, 혹은 적의 칼끝으로 이어졌다.',
+    steal:'훔치려던 순간 퇴로가 막혔고, 그 대가는 물건 하나보다 훨씬 컸다.',
+    threaten:'협박은 상대를 꺾지 못했다. 오히려 먼저 칼을 뽑게 만들었다.',
+    'travel-a':'선택한 길은 돌아올 수 없는 위험 구역으로 이어졌다.',
+    'travel-b':'우회로라고 믿었던 길이 가장 위험한 곳으로 파티를 끌고 갔다.',
+  };
+  const worldLine = {
+    ember:'잿빛 성채는 쓰러진 이름을 오래 기억했다.', neon:'도시는 죽음을 기록했지만 기억은 곧 편집되기 시작했다.',
+    abyss:'심해는 시신조차 쉽게 돌려주지 않았다.', clock:'다음 반복에도 그 자리는 비어 있었다.', wild:'숲은 한 사람의 발자국을 조용히 덮었다.',
+    guardian1:'모험은 계속됐지만 한 자리만은 끝내 비어 있었다.', guardian2:'일행은 떠났고, 남겨진 이름 하나가 다음 길의 의미를 바꿨다.', guardian3:'폐허의 미래는 또 하나의 이름을 잃었다.'
+  }[world] || '연대기는 그 죽음을 다음 장면까지 품고 갔다.';
+  return `${byAction[action] || '무리한 선택의 대가가 치명적인 결과로 돌아왔다.'} ${worldLine}`;
+}
+function maybeFatalStoryFailure(room, campaign, player, choice, roll, margin) {
+  if (!choice?.fatalRisk) return null;
+  const severe = Number(roll) === 1 || Number(margin) <= -8;
+  if (!severe) return null;
+  const injuryStacks = (player?.statuses || []).reduce((sum,s)=>sum + Number(s.stack || s.stacks || 1),0);
+  if (Number(player.hp || 0) > 2 && injuryStacks < 3 && Number(margin) > -10) return null;
+  player.hp = 0;
+  player.dead = true;
+  player.deathReason = fatalFailureReason(campaign, choice);
+  return player.deathReason;
+}
 
 function rawAbility(player, stat) {
   return Number(player?.abilities?.[stat]?.total || 10);
@@ -713,6 +765,37 @@ CAMPAIGN_ENDING_VARIANTS.guardian3 = {
   empathetic:{title:'두 공주에게 남긴 약속',text:'작은 공주와 미래 공주, 과거와 미래 어느 한쪽도 단순한 정답으로 취급하지 않고 마지막 선택의 대가를 스스로 짊어졌습니다.'}
 };
 
+function actionLegacy(room) {
+  const history = room.storyHistory || [];
+  const counts = {};
+  for (const h of history) {
+    const key = String(h.choiceId || h.declaration || '').toLowerCase();
+    const type = key.includes('FIGHT') || /싸운/.test(h.declaration||'') ? 'fight'
+      : key.includes('STEAL') || /훔친/.test(h.declaration||'') ? 'steal'
+      : key.includes('PERSUADE') || /설득/.test(h.declaration||'') ? 'persuade'
+      : key.includes('TAIL') || /미행/.test(h.declaration||'') ? 'tail'
+      : key.includes('HELP') || /돕/.test(h.declaration||'') ? 'help'
+      : key.includes('INVESTIGATE') || /조사/.test(h.declaration||'') ? 'investigate' : 'other';
+    counts[type] = Number(counts[type] || 0) + 1;
+  }
+  const ranked = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const top = ranked[0]?.[0] || 'other';
+  return ({fight:['피로 길을 연 자들','힘으로 길을 만든 선택이 가장 오래 남았습니다.'],steal:['금지된 것을 손에 넣은 자들','남의 문과 주머니를 열어 얻은 비밀이 결말의 모양을 바꿨습니다.'],persuade:['말로 전쟁을 늦춘 자들','칼보다 대화가 더 많은 문을 열었습니다.'],tail:['그림자를 끝까지 좇은 자들','누군가의 뒤를 놓치지 않은 집요함이 숨은 진실을 끌어냈습니다.'],help:['끝까지 사람을 놓지 않은 자들','살려 둔 사람과 지켜 낸 약속이 마지막 순간 돌아왔습니다.'],investigate:['모순을 끝까지 파고든 자들','작은 흔적을 버리지 않은 선택이 거대한 거짓을 무너뜨렸습니다.'],other:['예측할 수 없는 자들','한 가지 방식에 갇히지 않은 선택들이 전혀 다른 결말을 만들었습니다.']})[top];
+}
+function tragicEnding(room) {
+  const dead = room.players.filter(p=>Number(p.hp||0)<=0);
+  const reasons = dead.map(p=>p.deathReason).filter(Boolean);
+  const world = room.campaignId;
+  const titles = {
+    ember:['재가 이름을 덮은 밤','왕관보다 먼저 끝난 연대기'], neon:['삭제된 마지막 사용자','도시가 기억하지 못한 죽음'], abyss:['수면에 닿지 못한 이름들','심연이 돌려주지 않은 사람들'],
+    clock:['다음 반복에 없는 사람들','열세 번째 종 뒤의 빈자리'], wild:['숲이 삼킨 발자국','별빛 아래 남은 마지막 흔적'], guardian1:['모험이 끝난 자리','캔터베리로 돌아오지 못한 사람들'], guardian2:['다음 세계에 닿지 못한 동료들','여정에서 사라진 이름'], guardian3:['미래가 되돌려주지 않은 사람들','헤븐홀드에 남은 빈자리']
+  }[world] || ['끝나 버린 연대기','돌아오지 못한 사람들'];
+  const seed=(dead.length + Number(room.failureCount||0) + Number(room.threat||0))%titles.length;
+  return {
+    victory:false,title:titles[seed],
+    text: reasons.length ? `${reasons.join(' ')} 살아남은 기록은 이 죽음을 지우지 않는다. 이 결말 역시 플레이어들의 선택이 만든 하나의 연대기다.` : '파티는 더 이상 앞으로 나아갈 수 없었다. 그러나 어디에서 무엇을 선택했는지가 이 패배의 모양을 만들었다.'
+  };
+}
 function buildVictoryEnding(room) {
   const alias = room.storyMemory?.alias;
   const motive = room.storyMemory?.motive;
@@ -745,10 +828,14 @@ function buildVictoryEnding(room) {
     .slice(0, 3)
     .map(([name, entry]) => `${name}: ${entry.ending}`);
   const legacyText = jobLegacies.length ? ` 직업 전용 선택으로 열린 결말의 흔적도 남았습니다. ${jobLegacies.join(' · ')}.` : '';
+  const [legacyTitle, legacySentence] = actionLegacy(room);
+  const deadNames = room.players.filter(p=>p.dead).map(p=>p.name);
+  const casualtyText = deadNames.length ? ` 하지만 ${deadNames.join(', ')}의 죽음은 승리 속에서도 지워지지 않았다.` : '';
+  const routeCode = routeTrail.map(x=>x==='돌파'?'B':x==='신뢰'?'E':'C').join('');
   return {
     victory: true,
-    title: alias ? `「${alias}」 일행의 ${campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful}` : (campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful),
-    text: `${campaignEnding?.text ? `${campaignEnding.text} ` : ''}${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 실제 분기 장면을 지나 선택의 흔적이 엔딩에 남았습니다.${legacyText} ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
+    title: alias ? `「${alias}」 · ${campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful} — ${legacyTitle}` : `${campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful} — ${legacyTitle}`,
+    text: `${campaignEnding?.text ? `${campaignEnding.text} ` : ''}${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 실제 분기 장면을 지나 선택의 흔적이 엔딩에 남았습니다. ${legacySentence} 루트 기록 ${routeCode || 'NONE'}.${legacyText}${casualtyText} ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
   };
 }
 
@@ -1266,7 +1353,11 @@ function jobStoryContinuity(room, playerName) {
 
 function storyNodeById(campaign, nodeId) {
   if (!campaign?.storyBeats?.length || !nodeId) return null;
-  return campaign.storyBeats.find(beat => beat.id === nodeId) || null;
+  if (!campaign._storyNodeIndex || campaign._storyNodeIndexSize !== campaign.storyBeats.length) {
+    Object.defineProperty(campaign, '_storyNodeIndex', { value:new Map(campaign.storyBeats.map(beat=>[beat.id, beat])), writable:true, configurable:true, enumerable:false });
+    Object.defineProperty(campaign, '_storyNodeIndexSize', { value:campaign.storyBeats.length, writable:true, configurable:true, enumerable:false });
+  }
+  return campaign._storyNodeIndex.get(nodeId) || null;
 }
 
 function resolveNextStoryNode(campaign, beat, choice, success) {
@@ -1888,12 +1979,10 @@ function evaluateEnding(room) {
   const living = room.players.some(player => player.hp > 0);
   if (!living || room.threat >= MAX_THREAT) {
     room.phase = 'ending';
-    room.ending = {
-      victory: false,
-      title: '연대기는 검은 잉크로 닫혔다.',
-      text: !living
-        ? '모든 영웅이 쓰러졌습니다. 하지만 실패 역시 다음 세션의 전설이 됩니다.'
-        : '세계의 위협이 한계를 넘어섰습니다. 여러분의 선택이 만든 비극적인 결말입니다.',
+    room.ending = !living ? tragicEnding(room) : {
+      victory:false,
+      title:'세계가 파티보다 먼저 무너졌다.',
+      text:`위협 수치가 한계를 넘었다. 전투에서 진 것이 아니라, 지금까지 쌓인 소음·불신·부상·실패가 한꺼번에 돌아온 결말이다. 마지막까지 살아 있던 ${room.players.filter(p=>p.hp>0).map(p=>p.name).join(', ') || '사람들'}도 더 이상 사건을 통제할 수 없었다.`
     };
     clearSceneState(room);
     return true;
@@ -2693,10 +2782,12 @@ io.on('connection', socket => {
     const statusPenalty = statusPenaltyForCheck(room, player, choice.stat);
     const traitBonus = traitCheckBonus(player, choice.stat);
     const dcReduction = Number(room.nextCheckDcReduction || 0);
-    const dc = Math.max(8, Number(choice.dc || 10) + Number(room.dcPenalty || 0) - dcReduction);
+    const approach = approachPressure(room, player, choice);
+    const dc = Math.max(8, Number(choice.dc || 10) + Number(room.dcPenalty || 0) - dcReduction + Number(approach.dc || 0));
     const total = roll + abilityMod + skillBonus + statusPenalty + traitBonus;
     const success = roll === 20 || (roll !== 1 && total >= dc);
     const margin = total - dc;
+    rememberApproach(room, player, choice);
     player.skillState.checkBonus = 0;
     room.nextCheckDcReduction = 0;
     room.pathTotals[choice.path] = Number(room.pathTotals[choice.path] || 0) + 1;
@@ -2707,7 +2798,7 @@ io.on('connection', socket => {
 
     emitRoll(room, player, {
       sides:20, result:roll, purpose:`메인 스토리 · ${choice.stat} 판정 · DC ${dc}`,
-      kind:'story-choice', stat:choice.stat, total, dc, success, modifiers:[{label:`${choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty},{label:'능력치 특성',value:traitBonus}].filter(m=>m.value),
+      kind:'story-choice', stat:choice.stat, total, dc, success, modifiers:[{label:`${choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty},{label:'능력치 특성',value:traitBonus},{label:approach.label || '접근 변화',value:Number(approach.dc||0) ? -Number(approach.dc||0) : 0}].filter(m=>m.value),
     });
 
     let consequence = '';
@@ -2725,7 +2816,8 @@ io.on('connection', socket => {
       room.dcPenalty = Math.min(2, Number(room.dcPenalty || 0) + 1);
       status = applyStatus(player, storyFailureStatus(choice, room, player));
       room.failureCount = Number(room.failureCount || 0) + 1;
-      consequence = `불상사: ${status.label} 상태이상 적용 · HP -1 · 위협 +1 · 다음 장면 판정 불리`;
+      const deathReason = maybeFatalStoryFailure(room, campaign, player, choice, roll, margin);
+      consequence = deathReason ? `사망 · ${deathReason}` : `불상사: ${status.label} 상태이상 적용 · HP -1 · 위협 +1`;
     }
 
     if (success && margin >= 5) room.narrativeState.boon = choice.branchValue;
@@ -2734,6 +2826,7 @@ io.on('connection', socket => {
     let narrative = choice.freeAction
       ? actionNarrative({ success, declaration:choice.label, player, beat, interpretation:freeActionInterpretation || interpretFreeAction(choice.label, player, beat, room), margin })
       : storyResolutionNarrative(campaign, beat, choice, player, success, status);
+    if (player.dead && player.deathReason) narrative = `${narrative}\n\n${player.name}의 이야기는 여기서 끝났다. ${player.deathReason}`;
     if (choice.jobSpecial) {
       room.jobStory ||= {};
       const jobName = player.job?.name || choice.requiredJob;
@@ -2748,7 +2841,7 @@ io.on('connection', socket => {
     }
     rememberNarrativeThread(room, campaign, beat, choice, player, success, margin, status);
     applyAgencyMemory(room, player, choice, success, margin, choice.freeAction ? choice.label : '');
-    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, choiceId:choice.id, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative, beatId:beat.id };
+    room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, choiceId:choice.id, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative, beatId:beat.id, opportunity:choice.opportunity || null, risk:choice.risk || null, approachShift:approach.label || null, death:Boolean(player.dead) };
     room.storyHistory ||= [];
     room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title, isDetour });
     if (room.storyHistory.length > 16) room.storyHistory.splice(0, room.storyHistory.length - 16);

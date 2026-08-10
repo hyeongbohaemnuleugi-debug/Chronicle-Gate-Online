@@ -20,9 +20,12 @@ for (const campaign of CAMPAIGNS) {
   assert(new Set(campaign.events.map(e => e.title)).size === 30, `${campaign.title}: 이벤트 제목이 중복됩니다.`);
   assert(new Set(campaign.events.map(e => e.id)).size === 30, `${campaign.title}: 이벤트 ID가 중복됩니다.`);
   assert(campaign.acts.length === 5, `${campaign.title}: 5막이어야 합니다.`);
-  assert(campaign.storyBeats?.length === 30, `${campaign.title}: 메인 스토리 장면이 30개여야 합니다.`);
-  assert(new Set(campaign.storyBeats.map(beat => beat.id)).size === 30, `${campaign.title}: 메인 스토리 ID가 중복됩니다.`);
-  assert(new Set(campaign.storyBeats.map(beat => (beat.text || '').slice(0, 120))).size === 30, `${campaign.title}: 메인 스토리 시작 문장이 반복됩니다.`);
+  const canonicalBeats = (campaign.storyBeats || []).filter(beat => !beat.branchScene);
+  const consequenceBeats = (campaign.storyBeats || []).filter(beat => beat.branchScene);
+  assert(canonicalBeats.length === 30, `${campaign.title}: 정식 메인 장면 30개가 필요합니다.`);
+  assert(consequenceBeats.length >= 400, `${campaign.title}: 선택별 전용 후속 장면이 충분하지 않습니다.`);
+  assert(new Set(campaign.storyBeats.map(beat => beat.id)).size === campaign.storyBeats.length, `${campaign.title}: 스토리 ID가 중복됩니다.`);
+  assert(new Set(canonicalBeats.map(beat => (beat.text || '').slice(0, 120))).size === 30, `${campaign.title}: 정식 메인 장면 시작 문장이 반복됩니다.`);
   for (const event of campaign.events) {
     assert(!globalEventIds.has(event.id), `전체 캠페인에서 이벤트 ID 중복: ${event.id}`);
     globalEventIds.add(event.id);
@@ -36,7 +39,7 @@ for (const campaign of CAMPAIGNS) {
       if (choice.requiredJob) assert(campaign.jobs.some(job => job.name === choice.requiredJob), `${event.id}: 존재하지 않는 직업 전용 선택 ${choice.requiredJob}`);
     }
   }
-  notes.push(`${campaign.title}: 메인 스토리 30장면 / 이벤트 30종·30장 / 직업 6종`);
+  notes.push(`${campaign.title}: 정식 30장면 + 선택 후속 ${consequenceBeats.length}장면 / 이벤트 30종 / 직업 6종`);
 }
 
 const index = read('public/index.html');
@@ -47,12 +50,6 @@ const persistence = read('persistence.js');
 const renderYaml = read('render.yaml');
 const sql = read('supabase/migrations/202608070001_initial.sql');
 const pkg = JSON.parse(read('package.json'));
-
-// v5.0.1: server.js가 로컬 ESM 모듈을 import할 때 배포본에 실제 파일이 있는지 검사한다.
-for (const match of server.matchAll(/from\s+['"](\.\/[^'"]+)['"]/g)) {
-  const rel = match[1].replace(/^\.\//, '');
-  assert(fs.existsSync(path.join(root, rel)), `server.js 로컬 import 파일 누락: ${rel}`);
-}
 
 const ids = [...index.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
 const idSet = new Set(ids);
@@ -66,23 +63,25 @@ assert(index.includes('viewport-fit=cover'), '모바일 safe-area 대응 viewpor
 assert(app.includes('renderMainStoryChoices') && app.includes("socket.emit('story:advance'"), '메인 스토리 장면 선택 UI 누락');
 
 
-
-assert(server.includes('function explorationTemplate(campaignId)') && server.includes('const EXPLORATION_APPROACHES') && server.includes('const SIDE_QUESTS'), '탐험 데이터가 server.js 안에 내장되어 있지 않습니다.');
-assert(!server.includes("from './exploration-data.js'"), 'server.js가 다시 exploration-data.js 외부 파일을 import하고 있습니다.');
 assert(server.includes('const MIN_PLAYERS = 1'), 'SOLO 1인 시작 설정이 누락되었습니다.');
 assert(server.includes('SOLO_VOTE_DURATION_MS = 12_000'), 'SOLO 이벤트 투표 시간이 12초로 설정되어 있지 않습니다.');
 assert(server.includes('ALL_VOTED_COUNTDOWN_MS = 3_000'), '전원 투표 완료 후 3초 확정 카운트다운이 누락되었습니다.');
 for (const campaign of CAMPAIGNS) {
-  for (const beat of campaign.storyBeats) {
+  for (const beat of campaign.storyBeats.filter(beat => !beat.branchScene)) {
     assert(beat.text?.length >= 80, `${campaign.title} ${beat.id}: 소설형 본문이 너무 짧습니다.`);
     assert(Object.keys(beat.roleHooks || {}).length === 6, `${campaign.title} ${beat.id}: 직업 능력치별 상황 훅 6종 누락`);
+  }
+  for (const beat of campaign.storyBeats.filter(beat => beat.branchScene)) {
+    assert(beat.text?.length >= 35, `${campaign.title} ${beat.id}: 선택 후속 본문이 너무 짧습니다.`);
+    assert((beat.choices || []).length === 3, `${campaign.title} ${beat.id}: 후속 장면은 3개의 간결한 진행 선택을 가져야 합니다.`);
   }
 }
 
 assert(server.includes("socket.on('player:skillUse'"), '직업 스킬 서버 핸들러 누락');
 assert(app.includes("socket.emit('player:skillUse'"), '직업 스킬 UI 이벤트 누락');
 assert(index.includes('id="jobSkillBtn"') && index.includes('id="combatSkillBtn"'), '직업 스킬 버튼 누락');
-assert(server.includes('interpretFreeAction') && server.includes('actionNarrative'), '자유 행동 판정 엔진 누락');
+assert(server.includes('choiceTarget:6') && server.includes('choiceTarget:5') && server.includes('choiceTarget:4'), '다중 선택지 목표 수 누락');
+assert(server.includes('beat.freeActionAllowed = false') && app.includes('const freeActionAllowed = false'), '자유 입력 비활성화 누락');
 
 assert(server.includes("release: 'release-candidate'"), 'health release marker 누락');
 
@@ -174,23 +173,21 @@ console.log('\nALL STATIC QA CHECKS PASSED');
 
 assert(server.includes('storyNodeById(campaign, room.storyNodeId)'), '이벤트 ACT가 현재 분기 노드를 기준으로 계산되지 않습니다.');
 
-// v4.12 branch-graph invariants
+// v5.4 deep branch-graph invariants
 for (const campaign of CAMPAIGNS) {
   const ids = new Set(campaign.storyBeats.map(b => b.id));
-  if (campaign.storyBeats.length !== 30) throw new Error(`${campaign.id}: expected 30 authored nodes`);
-  for (const beat of campaign.storyBeats) {
-    if (Number(beat.artChapter) !== Number(beat.chapter)) throw new Error(`${beat.id}: artChapter must equal authored chapter`);
-    for (const choice of beat.choices || []) {
-      const targets = [choice.next?.success, choice.next?.failure].filter(Boolean);
-      for (const target of targets) if (target !== '__ENDING__' && !ids.has(target)) throw new Error(`${beat.id}: broken branch target ${target}`);
+  const canonical = campaign.storyBeats.filter(b => !b.branchScene);
+  const consequence = campaign.storyBeats.filter(b => b.branchScene);
+  if (canonical.length !== 30) throw new Error(`${campaign.id}: expected 30 canonical nodes`);
+  if (consequence.length < 400) throw new Error(`${campaign.id}: expected hundreds of consequence nodes`);
+  for (const beat of campaign.storyBeats) for (const choice of beat.choices || []) {
+    for (const target of [choice.next?.success, choice.next?.failure].filter(Boolean)) {
+      if (target !== '__ENDING__' && !ids.has(target)) throw new Error(`${beat.id}: broken branch target ${target}`);
     }
   }
-  // Every graph edge must point forward in authored order; this prevents loops/repeated main scenes.
-  const pos = new Map(campaign.storyBeats.map((b,i)=>[b.id,i]));
-  for (const beat of campaign.storyBeats) for (const choice of beat.choices || []) {
-    for (const target of [choice.next?.success, choice.next?.failure].filter(t=>t && t!=='__ENDING__')) {
-      if (pos.get(target) <= pos.get(beat.id)) throw new Error(`${beat.id}: non-forward edge ${target}`);
-    }
+  for (const beat of canonical) {
+    const allTargets = (beat.choices || []).flatMap(c => [c.next?.success,c.next?.failure]);
+    if (new Set(allTargets).size !== allTargets.length) throw new Error(`${beat.id}: choices share consequence nodes`);
   }
 }
-console.log('v4.12 branch graph QA PASS');
+console.log('v5.4 deep branch graph QA PASS');

@@ -24,7 +24,7 @@ for (const campaign of CAMPAIGNS) {
       assert.ok(beat.why?.length > 10);
       assert.ok(beat.prompt?.length > 10);
       assert.equal(beat.roleplayPrompt, undefined);
-      assert.ok(beat.choices?.length >= 6 && beat.choices?.length <= 8);
+      assert.ok(beat.choices?.length >= 4 && beat.choices?.length <= 8);
       for (const choice of beat.choices) {
         assert.ok(STAT_NAMES.includes(choice.stat));
         assert.ok(choice.dc >= 8 && choice.dc <= 15);

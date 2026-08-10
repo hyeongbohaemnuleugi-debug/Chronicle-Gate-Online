@@ -37,6 +37,8 @@ let roomCode = localStorage.getItem('cg_room') || '';
 let playerToken = localStorage.getItem('cg_token') || '';
 let diceQueue = Promise.resolve();
 let resumeInFlight = false;
+let shownEncounterId = '';
+let encounterIntroTimer = null;
 const app = $('#app');
 
 const UI_DEFAULTS = { theme: 'dark', chatSize: 300, audioVolume: 0.65, audioMuted: false };
@@ -1208,7 +1210,8 @@ function renderStory() {
       d.shopDiscount ? `매력 → 상점/휴식 ${d.shopDiscount}코인 할인` : '',
       d.statusResistance ? `체력 → 상태이상 ${d.statusResistance}장면 단축` : '',
     ].filter(Boolean);
-    return `<div class="ability-impact"><span>ABILITY IMPACT</span>${traits.map(t=>`<small>${esc(t)}</small>`).join('')}</div>`;
+    const passives = Array.isArray(d.passives) ? d.passives : [];
+    return `<div class="ability-impact"><span>ABILITY IMPACT</span>${traits.map(t=>`<small>${esc(t)}</small>`).join('')}${passives.length ? `<div class="passive-traits">${passives.map(t=>`<b class="passive-trait ${t.key || ''}" title="${esc(t.effect || '')}">${esc(t.label)}<i>${esc(t.effect || '')}</i></b>`).join('')}</div>` : ''}</div>`;
   })() : '';
   renderEconomyPanel(p);
   renderFacilityPanel(ev, p);
@@ -1415,12 +1418,51 @@ function showResolution(r) {
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');
 
+function ensureEncounterIntroLayer() {
+  let layer = document.getElementById('encounterIntroLayer');
+  if (layer) return layer;
+  layer = document.createElement('div');
+  layer.id = 'encounterIntroLayer';
+  layer.className = 'encounter-intro-layer';
+  layer.innerHTML = `
+    <div class="encounter-intro-backdrop"></div>
+    <div class="encounter-intro-card">
+      <div class="encounter-intro-kicker"></div>
+      <div class="encounter-intro-name"></div>
+      <div class="encounter-intro-art-wrap"><img class="encounter-intro-art" alt="전투 상대"></div>
+      <div class="encounter-intro-line"></div>
+      <small class="encounter-intro-hint">전투 준비</small>
+    </div>`;
+  document.body.appendChild(layer);
+  return layer;
+}
+function showEncounterIntro(monster, campaign) {
+  if (!monster?.encounterId || shownEncounterId === monster.encounterId) return;
+  shownEncounterId = monster.encounterId;
+  const layer = ensureEncounterIntroLayer();
+  const isBoss = Boolean(monster.isBoss);
+  layer.classList.toggle('boss', isBoss);
+  layer.querySelector('.encounter-intro-kicker').textContent = isBoss ? 'BOSS ENCOUNTER' : 'ENCOUNTER';
+  layer.querySelector('.encounter-intro-name').textContent = monster.name || 'UNKNOWN';
+  layer.querySelector('.encounter-intro-line').textContent = monster.introLine || '“여기서 멈춰.”';
+  layer.querySelector('.encounter-intro-hint').textContent = isBoss ? '보스 전투가 시작됩니다' : '전투가 시작됩니다';
+  const img = layer.querySelector('.encounter-intro-art');
+  setBossSceneImage(img, campaign, monster.name);
+  layer.classList.remove('show','enter');
+  void layer.offsetWidth;
+  layer.classList.add('show','enter');
+  audioManager.fx(isBoss ? 'boss' : 'attack', isBoss ? 1.2 : .9);
+  if (encounterIntroTimer) clearTimeout(encounterIntroTimer);
+  encounterIntroTimer = setTimeout(() => layer.classList.remove('show','enter'), isBoss ? 3400 : 2200);
+}
+
 function renderCombat() {
   if (!state || state.phase !== 'combat' || !state.monster) return;
   renderSkillUi();
   const m = state.monster;
   const c = currentCampaign();
   const phase = m.turnPhase || 'players';
+  showEncounterIntro(m, c);
   const living = state.players.filter(player => player.connected && player.hp > 0);
   const acted = new Set(m.acted || []);
   const remaining = living.filter(player => !acted.has(player.id));
@@ -1436,13 +1478,13 @@ function renderCombat() {
   $('#combatTurnPanel').classList.toggle('boss-active', phase === 'boss');
 
   $('#combatTimeline').innerHTML = phase === 'boss'
-    ? `<div class="simple-combat-step boss"><b>보스 행동 중</b><small>${esc(m.name)}의 공격 한 번이 해결되면 바로 다음 라운드입니다.</small></div>`
+    ? `<div class="simple-combat-step boss"><b>적 행동 중</b><small>${esc(m.name)}의 공격 한 번이 끝나면 바로 다음 라운드입니다.</small></div>`
     : `<div class="simple-combat-step"><b>${esc(nextPlayer?.name || '플레이어')}의 행동</b><small>공격 · 방어 · 직업 스킬 중 하나만 선택하세요. 남은 행동 ${remaining.length}명</small></div>`;
 
   if (phase === 'boss') {
     $('#bossTurnWarning').innerHTML = `<strong>⚠ ENEMY TURN</strong> · ${esc(m.name)}이(가) 공격을 준비합니다. 잠시 기다리세요.`;
   } else if (remaining.length === 1) {
-    $('#bossTurnWarning').innerHTML = `<strong>다음은 ENEMY TURN</strong> · ${esc(remaining[0].name)} 님이 행동하면 곧바로 보스 차례가 시작됩니다.`;
+    $('#bossTurnWarning').innerHTML = `<strong>다음은 ENEMY TURN</strong> · ${esc(remaining[0].name)} 님이 행동하면 곧바로 적 차례가 시작됩니다.`;
   } else {
     $('#bossTurnWarning').textContent = `플레이어 ${remaining.length}명 행동이 남았습니다. 모두 행동하면 ENEMY TURN이 시작됩니다.`;
   }
@@ -1457,8 +1499,8 @@ function renderCombat() {
   $('#defendBtn').textContent = phase === 'boss' ? '방어 대기' : myActed ? '행동 완료' : `방어 · 피해 흡수`;
   const atkStat = p?.job?.prime || '근력';
   $('#combatLog').innerHTML = phase === 'boss'
-    ? `<span class="combat-round">ROUND ${m.round || 1}</span> · 보스가 한 번 공격합니다.`
-    : `<span class="combat-round">ROUND ${m.round || 1}</span> · 공격은 ${atkStat} 판정, 방어는 체력에 따라 흡수량이 커집니다.`;
+    ? `<span class="combat-round">ROUND ${m.round || 1}</span> · 적이 한 번 공격합니다.`
+    : `<span class="combat-round">ROUND ${m.round || 1}</span> · <b>${esc(m.isBoss ? '보스전' : '전투')}</b> · 공격은 ${atkStat}, 방어는 체력의 영향을 받습니다.`;
 }
 $('#attackBtn').onclick = () => { audioManager.fx('attack', .9); socket.emit('combat:attack', { roomCode, playerToken }, r => !r?.ok && toast(r.error)); };
 $('#defendBtn').onclick = () => { audioManager.fx('select', .9); socket.emit('combat:defend', { roomCode, playerToken }, r => { if(!r?.ok) return toast(r?.error || '방어 실패'); toast(`방어 태세 · 다음 피해 ${r.guard} 흡수`); }); };

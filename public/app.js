@@ -11,7 +11,7 @@ const REQUIRED_IDS = [
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
   'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
   'myJobMini', 'myStatsMini', 'economyPanel', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
-  'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'attackBtn', 'combatLog',
+  'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'defendBtn', 'attackBtn', 'combatLog',
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceBreakdown', 'diceSub',
@@ -567,19 +567,20 @@ function renderFacilityPanel(event, player) {
   if (!facility || !['story','resolution'].includes(state?.phase) || !player) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
   panel.classList.remove('hidden');
   const used = facilityUsed(event.id, player.id, facility.type);
+  const charismaDiscount = Number(player?.derived?.shopDiscount || 0);
   let actions = '';
   if (facility.type === 'shop') {
     const owned = new Set(player.inventory || []);
     actions = `<div class="shop-grid">${itemCatalog().filter(item => (facility.stock || []).includes(item.id)).map(item => `
-      <button class="shop-item" type="button" data-shop-item="${esc(item.id)}" ${owned.has(item.id) || Number(player.coins || 0) < Number(item.price || 0) ? 'disabled' : ''}>
+      <button class="shop-item" type="button" data-shop-item="${esc(item.id)}" ${owned.has(item.id) || Number(player.coins || 0) < Math.max(1, Number(item.price || 0) - charismaDiscount) ? 'disabled' : ''}>
         <span><b>${esc(item.name)}</b><small>${esc(slotLabel(item.slot))} · ${esc(item.rarity)}</small></span>
         <em>${esc(item.stat)} 판정 +${item.bonus}</em>
         <small>${esc(item.passive || '')}</small>
-        <strong>${owned.has(item.id) ? '보유 중' : `◈ ${item.price}`}</strong>
+        <strong>${owned.has(item.id) ? '보유 중' : `◈ ${Math.max(1, Number(item.price || 0) - charismaDiscount)}${charismaDiscount ? ` <small>(매력 할인 -${charismaDiscount})</small>` : ''}`}</strong>
       </button>`).join('')}</div>`;
   } else {
-    const label = facility.type === 'inn' ? `숙박하기 · ◈ ${facility.cost}`
-      : facility.type === 'restaurant' ? `식사하기 · ◈ ${facility.cost}`
+    const label = facility.type === 'inn' ? `숙박하기 · ◈ ${Math.max(0, Number(facility.cost || 0) - charismaDiscount)}`
+      : facility.type === 'restaurant' ? `식사하기 · ◈ ${Math.max(0, Number(facility.cost || 0) - charismaDiscount)}`
       : facility.type === 'gamble' ? `D6 내기 · ◈ ${facility.cost}`
       : facility.type === 'quest' ? '의뢰 맡기 · 성공 시 코인' : '이용하기';
     actions = `<button class="primary facility-action" type="button" data-facility-action="${esc(facility.type)}" ${used ? 'disabled' : ''}>${used ? '이번 이벤트에서 이용 완료' : label}</button>`;
@@ -1196,7 +1197,19 @@ function renderStory() {
     const baseMod = rawMod(total);
     const finalMod = effectiveStatMod(p, k, v);
     return `<div class="stat-line"><span>${k}</span><b>${total} <i>${finalMod >= 0 ? '+' : ''}${finalMod}</i></b>${gear ? `<small class="gear-stat">기본 보정 ${baseMod >= 0 ? '+' : ''}${baseMod} · 장비 +${gear}</small>` : ''}</div>`;
-  }).join('') : '';
+  }).join('') + (() => {
+    const d = p?.derived || {};
+    const traits = [
+      `체력 → 최대 HP ${p.maxHp}`,
+      `민첩 → 방어 ${Number(d.defense || 10) + equipmentBonusFor(p,'민첩')}`,
+      Number(d.strengthDamage || 0) ? `근력 → 공격 피해 +${d.strengthDamage}` : '',
+      d.insight ? '지능 → 선택 결과 추론' : '',
+      d.dangerSense ? '지혜 → 위험 여파 감지' : '',
+      d.shopDiscount ? `매력 → 상점/휴식 ${d.shopDiscount}코인 할인` : '',
+      d.statusResistance ? `체력 → 상태이상 ${d.statusResistance}장면 단축` : '',
+    ].filter(Boolean);
+    return `<div class="ability-impact"><span>ABILITY IMPACT</span>${traits.map(t=>`<small>${esc(t)}</small>`).join('')}</div>`;
+  })() : '';
   renderEconomyPanel(p);
   renderFacilityPanel(ev, p);
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
@@ -1276,15 +1289,34 @@ function renderStory() {
     $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}의 선택.</b> ${esc(beat?.prompt || '아래 행동 중 하나를 고르세요.')}`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
 
-    $('#storyActionBox').style.display = 'none';
-    $('#storyActionInput').disabled = true;
-    $('#storyActionBox').classList.add('disabled');
+    const freeActionAllowed = Boolean(beat?.freeActionAllowed && state.phase === 'story');
+    const myTurn = state.turnPlayerId === playerToken;
+    $('#storyActionBox').style.display = freeActionAllowed ? 'block' : 'none';
+    $('#storyActionInput').disabled = !(freeActionAllowed && myTurn);
+    $('#storyActionBox').classList.toggle('disabled', !(freeActionAllowed && myTurn));
+    $('#storyActionInput').placeholder = freeActionAllowed
+      ? '직접 행동을 적어도 됩니다. 예: 경비에게 돈 대신 정보를 거래하자고 제안한다.'
+      : '결정적인 장면에서는 제시된 선택 중 하나를 골라야 합니다.';
+    $('#storyRoleContext').innerHTML = `<span>${esc(beat?.importance?.label || '장면')}</span><b>${esc(beat?.importance?.consequence || beat?.objective || '')}</b>${beat?.statInsight?.text ? `<small>${esc(beat.statInsight.text)}</small>` : ''}`;
+    $('#actionSuggestions').innerHTML = freeActionAllowed ? [
+      ['관찰하고 빈틈을 찾는다','지혜'],['주변 인물과 직접 협상한다','매력'],['환경을 이용해 우회한다','민첩']
+    ].map(([label,stat])=>`<button class="action-suggestion" type="button" data-free-suggestion="${esc(label)}"><b>${esc(label)}</b><small>${stat} 계열 자유 행동 예시</small></button>`).join('') : '';
+    $('#actionSuggestions').querySelectorAll?.('[data-free-suggestion]').forEach(btn => btn.onclick = () => {
+      if ($('#storyActionInput').disabled) return;
+      $('#storyActionInput').value = btn.dataset.freeSuggestion;
+      $('#storyActionInput').dispatchEvent(new Event('input'));
+      $('#storyActionInput').focus();
+    });
     renderMainStoryChoices(beat);
   }
 
   $('#gmBar').style.display = 'flex';
-  $('#advanceStoryBtn').style.display = state.phase === 'prologue' ? 'inline-flex' : 'none';
-  if (state.phase !== 'prologue') $('#advanceStoryBtn').disabled = true;
+  const freeActionSubmit = Boolean(!ev && beat?.freeActionAllowed && state.phase === 'story');
+  $('#advanceStoryBtn').style.display = state.phase === 'prologue' || freeActionSubmit ? 'inline-flex' : 'none';
+  if (state.phase !== 'prologue') {
+    $('#advanceStoryBtn').disabled = !(freeActionSubmit && state.turnPlayerId === playerToken);
+    $('#advanceStoryBtn').textContent = freeActionSubmit ? '직접 적은 행동으로 판정하기' : '메인 스토리 진행';
+  }
   $('#continueBtn').style.display = state.phase === 'resolution' ? 'inline-flex' : 'none';
   $('#continueBtn').disabled = state.phase !== 'resolution';
   $('#continueBtn').textContent = state.lastResolution?.continueLabel || '결과를 읽고 다음으로';
@@ -1310,7 +1342,8 @@ function renderMainStoryChoices(beat) {
     <button class="choice-card story-choice ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
       <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${choice.rareJobMoment ? '희귀 기회 · ' : ''}${esc(choice.requiredJob)} 전용</span>` : ''}</div>
       <small>${esc(choice.detail || '')}</small>
-      <div class="story-choice-meta"><span>${choice.branchValue === 'careful' ? '추적' : choice.branchValue === 'bold' ? '돌파' : '신뢰'} · ${esc(choice.stat)} 판정</span><span>DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
+      <div class="story-choice-meta"><span>${choice.branchValue === 'careful' ? '추적' : choice.branchValue === 'bold' ? '돌파' : '신뢰'} · ${esc(choice.stat)} 판정</span><span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
+      ${(beat?.statInsight?.insight || beat?.statInsight?.dangerSense) && choice.consequenceHint ? `<div class="choice-forecast">${beat.statInsight.insight ? `성공 시 ${esc(choice.consequenceHint.success)}` : ''}${beat.statInsight.insight && beat.statInsight.dangerSense ? ' · ' : ''}${beat.statInsight.dangerSense ? `실패 시 ${esc(choice.consequenceHint.failure)}` : ''}</div>` : ''}
     </button>
   `).join('');
   box.querySelectorAll('.story-choice').forEach(button => button.onclick = () => {
@@ -1341,7 +1374,7 @@ function renderChoices(ev) {
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
     const specialBadge = c.requiredJob ? `<span class="job-choice-badge">${c.rareJobMoment ? '희귀 기회 · ' : ''}${esc(c.requiredJob)} 전용</span>` : '';
     const lockText = jobLocked ? `<div class="job-choice-lock">🔒 ${esc(c.requiredJob)}만 이 상황의 전문 선택을 사용할 수 있습니다.</div>` : '';
-    return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><div class="choice-title-line"><b>${i + 1}. ${esc(c.label)}</b>${specialBadge}</div><small>${c.stat} · DC ${c.dc + (state.dcPenalty || 0)}</small>${lockText}<div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
+    return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><div class="choice-title-line"><b>${i + 1}. ${esc(c.label)}</b>${specialBadge}</div><small>${c.stat} · ${esc(c.difficulty || '')}${c.difficulty ? ' · ' : ''}DC ${c.dc + (state.dcPenalty || 0)}</small>${lockText}<div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
   }).join('');
   box.querySelectorAll('.choice-card').forEach((b, i) => b.onclick = () => {
     if (b.disabled) return;
@@ -1361,6 +1394,7 @@ $('#advanceStoryBtn').onclick = () => {
     return;
   }
   const declaration = $('#storyActionInput').value.trim();
+  if (state?.phase === 'story' && !declaration) return toast('직접 행동을 한 문장으로 적어주세요.');
   socket.emit('story:advance', { roomCode, playerToken, declaration }, r => {
     if (!r?.ok) return toast(r.error);
     $('#storyActionInput').value = '';
@@ -1402,13 +1436,9 @@ function renderCombat() {
   $('#combatTurnPhase').textContent = phase === 'boss' ? 'BOSS TURN' : 'PLAYER TURN';
   $('#combatTurnPanel').classList.toggle('boss-active', phase === 'boss');
 
-  const playerSteps = living.map(player => {
-    const done = acted.has(player.id);
-    const active = phase === 'players' && !done && nextPlayer?.id === player.id;
-    return `<div class="turn-step player-step ${done ? 'done' : ''} ${active ? 'active' : ''}"><span>${done ? '✓' : active ? '▶' : '○'}</span><b>${esc(player.name)}</b><small>${done ? '행동 완료' : active ? '행동 가능' : '대기'}</small></div>`;
-  }).join('');
-  const bossStep = `<div class="turn-arrow">→</div><div class="turn-step boss-step ${phase === 'boss' ? 'active' : ''}"><span>☠</span><b>BOSS</b><small>${phase === 'boss' ? '공격 중' : '플레이어 전원 행동 후'}</small></div>`;
-  $('#combatTimeline').innerHTML = playerSteps + bossStep;
+  $('#combatTimeline').innerHTML = phase === 'boss'
+    ? `<div class="simple-combat-step boss"><b>보스 행동 중</b><small>${esc(m.name)}의 공격 한 번이 해결되면 바로 다음 라운드입니다.</small></div>`
+    : `<div class="simple-combat-step"><b>${esc(nextPlayer?.name || '플레이어')}의 행동</b><small>공격 · 방어 · 직업 스킬 중 하나만 선택하세요. 남은 행동 ${remaining.length}명</small></div>`;
 
   if (phase === 'boss') {
     $('#bossTurnWarning').innerHTML = `<strong>⚠ BOSS TURN</strong> · ${esc(m.name)}이(가) 공격을 준비합니다. 잠시 기다리세요.`;
@@ -1421,14 +1451,18 @@ function renderCombat() {
   $('#combatParty').innerHTML = state.players.map(p => `<div class="combat-member ${acted.has(p.id) ? 'acted' : ''} ${p.connected ? '' : 'offline'}"><b>${esc(p.name)}</b><div>${esc(p.job?.name || '')}</div><small>HP ${p.hp}/${p.maxHp}${acted.has(p.id) ? ' · 행동 완료' : ''}</small></div>`).join('');
   const p = me();
   const myActed = acted.has(playerToken);
-  $('#attackBtn').disabled = phase === 'boss' || !p || p.hp <= 0 || myActed || !p.connected;
-  $('#attackBtn').textContent = phase === 'boss' ? 'BOSS TURN · 공격 대기' : myActed ? '이번 라운드 행동 완료' : 'PLAYER TURN · D20 공격';
+  const cannotAct = phase === 'boss' || !p || p.hp <= 0 || myActed || !p.connected;
+  $('#attackBtn').disabled = cannotAct;
+  $('#defendBtn').disabled = cannotAct;
+  $('#attackBtn').textContent = phase === 'boss' ? '보스 행동 대기' : myActed ? '행동 완료' : '공격 · D20';
+  $('#defendBtn').textContent = phase === 'boss' ? '방어 대기' : myActed ? '행동 완료' : `방어 · 피해 흡수`;
   const atkStat = p?.job?.prime || '근력';
   $('#combatLog').innerHTML = phase === 'boss'
-    ? `<span class="combat-round">ROUND ${m.round || 1}</span> · <strong>BOSS TURN</strong> · ${esc(m.name)}의 공격이 곧 실행됩니다.`
-    : `<span class="combat-round">ROUND ${m.round || 1}</span> · <strong>PLAYER TURN</strong> · ${atkStat} 수정치(${signedMod(p?.abilities?.[atkStat]?.total || 10)})로 공격 · D20 vs AC ${m.ac}`;
+    ? `<span class="combat-round">ROUND ${m.round || 1}</span> · 보스가 한 번 공격합니다.`
+    : `<span class="combat-round">ROUND ${m.round || 1}</span> · 공격은 ${atkStat} 판정, 방어는 체력에 따라 흡수량이 커집니다.`;
 }
 $('#attackBtn').onclick = () => { audioManager.fx('attack', .9); socket.emit('combat:attack', { roomCode, playerToken }, r => !r?.ok && toast(r.error)); };
+$('#defendBtn').onclick = () => { audioManager.fx('select', .9); socket.emit('combat:defend', { roomCode, playerToken }, r => { if(!r?.ok) return toast(r?.error || '방어 실패'); toast(`방어 태세 · 다음 피해 ${r.guard} 흡수`); }); };
 
 function renderEnding() {
   if (!state || state.phase !== 'ending') return;
@@ -1482,9 +1516,9 @@ function renderHelp() {
       title: '기본 진행 순서',
       items: [
         '로비에서 스토리를 고른 뒤 각 플레이어는 D6 직업 배정과 4D6 능력치 생성을 각 스토리마다 1번씩만 진행합니다.',
-        '메인 스토리 화면에서는 항상 ‘지금 무슨 상황 / 지금 해야 할 일 / 왜 중요한가’를 먼저 확인하세요. 현재 차례 플레이어가 행동을 한 문장으로 선언한 뒤 진행합니다.',
+        '일반 장면은 3~4개의 서로 다른 해결법이 나오며, 원한다면 자유 행동을 직접 적어도 됩니다. 중요한 장면은 선택 수가 줄고 화면에 중요도가 표시됩니다.',
         `가장 많은 표를 받은 선택지가 확정되며, 현재 차례 플레이어(${esc(state?.turnPlayerName || '미정')})가 실제 판정을 굴립니다.`,
-        '메인 소설 장면 3개를 진행할 때마다 짧은 이벤트 카드가 끼어듭니다. 멀티플레이는 20초 투표, SOLO는 빠른 5초 선택입니다. 이벤트는 메인 스토리 진행도를 올리지 않습니다.',
+        '메인 소설 장면 3개를 진행할 때마다 짧은 이벤트 카드가 끼어듭니다. 일반 사건의 DC는 낮고, 위험한 사건일수록 난이도와 중요도가 화면에 표시됩니다.',
       ],
     },
     {
@@ -1492,7 +1526,7 @@ function renderHelp() {
       text: phase === 'lobby'
         ? `현재는 로비입니다. ${c ? `선택된 연대기: ${c.title}.` : '아직 연대기를 선택하지 않았습니다.'} 게임 시작 전에도 채팅이 가능합니다.`
         : phase === 'combat'
-          ? '현재는 전투 중입니다. 자신의 공격 버튼이 비활성화되어 있다면 이미 이번 라운드에 행동했거나 쓰러진 상태입니다.'
+          ? '현재는 전투 중입니다. 내 차례에는 공격·방어·직업 스킬 중 하나만 고르면 됩니다. 모든 생존 플레이어가 한 번 행동하면 보스가 한 번 공격합니다.'
           : phase === 'ending'
             ? '현재는 엔딩 화면입니다. 새 연대기를 시작하려면 버튼을 눌러 메인으로 돌아가세요.'
             : '현재는 소설형 메인 스토리 진행 중입니다. 장면 본문과 직업 시점을 읽고 자유 행동을 선언하세요. 3턴마다 짧은 사이드 이벤트만 발생합니다.',
@@ -1501,8 +1535,9 @@ function renderHelp() {
       title: '주사위 읽는 법',
       items: [
         '주사위 애니메이션이 끝나면 빛나는 면이 실제 결과입니다.',
-        'D20 판정은 결과값 + 해당 능력치 수정치를 더해 DC 이상이면 성공합니다.',
-        'NATURAL 20은 대성공, NATURAL 1은 치명적 실패로 표시됩니다.',
+        'D20 판정은 결과값 + 능력치 보정 + 장비/스킬 효과를 더해 DC 이상이면 성공합니다. 일반 장면은 대체로 DC 8~11, 중요 장면 10~13, 결정적 장면 12~15입니다.',
+        'NATURAL 20은 무조건 성공, NATURAL 1은 무조건 실패입니다. 그 외에는 능력치와 장비, 이전 선택의 누적 결과가 판정을 바꿉니다.',
+        '능력치는 판정 외에도 체력=최대 HP/상태회복, 민첩=방어, 근력=피해, 지능=선택 결과 추론, 지혜=위험 감지, 매력=가격 할인/의뢰 보상에 직접 영향을 줍니다.',
       ],
     },
   ];

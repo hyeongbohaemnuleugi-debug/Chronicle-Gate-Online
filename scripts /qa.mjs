@@ -94,7 +94,7 @@ assert(index.includes('id="helpModal"') && index.includes('hidden'), 'ESC 모달
 assert(app.includes('resetTransientUi') && app.includes('pageshow'), '페이지 복원 시 임시 UI 초기화 로직 누락');
 assert(server.includes('choice.requiredJob') && server.includes('player.job?.name !== choice.requiredJob'), '직업 전용 선택 서버 검증 누락');
 
-assert(server.includes('EVENT_EVERY_TURNS = 3'), '이벤트 주기가 3 메인 턴으로 고정되어 있지 않습니다.');
+assert(server.includes('function dynamicEventChance') && server.includes('function shouldDrawDynamicEvent'), '상황/운 기반 동적 이벤트 로직이 누락되었습니다.');
 assert(server.includes('VOTE_DURATION_MS = 45_000'), '이벤트 투표 시간이 45초로 설정되어 있지 않습니다.');
 assert(server.includes("socket.on('story:advance'"), '메인 스토리 턴 진행 이벤트가 없습니다.');
 assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공개 로직이 없습니다.');
@@ -103,7 +103,7 @@ assert(server.includes('beginAllVotedCountdown(room)'), '전원 투표 완료 �
 assert(server.includes('clearDetour: isDetour'), '우회 위기 장면 해결 후 제거 플래그가 누락되었습니다.');
 assert(server.includes('storyNodeById') && server.includes('resolveNextStoryNode') && server.includes('consumeStoryBeat') && server.includes('storySeenIds'), '메인 스토리 분기 그래프/1회 소비 장치가 누락되었습니다.');
 assert(!server.includes('findIndex(beat => beat?.id && !seen.has(beat.id))'), '스토리 커서 오류 시 임의의 미소비 장면으로 점프하는 복구 로직이 남아 있습니다.');
-assert(server.includes('lastResolvedStoryBeat') && server.includes("room.phase === 'resolution' && room.lastResolvedStoryBeat"), '결과 화면에서 다음 챕터를 미리 노출하지 않는 스냅샷 장치가 누락되었습니다.');
+assert(app.includes("payload.kind === 'story-choice'") && app.includes("r.source === 'story'"), '메인 스토리 주사위 결과를 한 번만 보여주고 다음 장면으로 넘기는 장치가 누락되었습니다.');
 assert(!server.includes("type:'narration', author:'GM'") && !server.includes("type: 'narration', author: 'GM'") && !server.includes("type: 'narration', text: campaign.intro, author: 'GM'"), 'GM이 채팅창에 스토리 서술을 다시 기록하는 코드가 남아 있습니다.');
 assert(app.includes("m.author === 'GM' && m.type === 'narration'"), '기존 방의 GM 스토리 서술을 채팅에서 숨기는 호환 필터가 없습니다.');
 assert(app.includes('story-key') && css.includes('.story-key'), '스토리 중요 문장 강조 스타일이 누락되었습니다.');
@@ -145,7 +145,7 @@ for (const campaign of CAMPAIGNS) {
   assert(ECONOMY_FACILITY_THEMES[campaign.id]?.shop?.storyLead, `${campaign.title}: 소설형 상점 도입문이 필요합니다.`);
 }
 for (const kind of ['restaurant','inn','shop','quest','gamble']) assert(ECONOMY_FACILITY_TEMPLATES[kind], `시설 템플릿 누락: ${kind}`);
-assert(server.includes('maybeAttachFacility') && server.includes('crypto.randomInt(0, 100) >= 34'), '확률 시설 등장 로직이 누락되었습니다.');
+assert(server.includes('maybeAttachFacility') && server.includes('crypto.randomInt(0, 100) >= 27'), '확률 시설 등장 로직이 누락되었습니다.');
 assert(server.includes('function effectiveAbilityMod') && server.includes('equipmentStatBonus(room, player, stat)'), '장비가 능력치 보정치에 직접 반영되지 않습니다.');
 
 for (const publicFile of ['public/index.html','public/app.js','public/dice3d.js','public/styles.css']) {

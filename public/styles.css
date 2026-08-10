@@ -340,3 +340,8 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 /* v4.14 narrative economy */
 .facility-story-lead{font-family:var(--serif);font-size:15px;line-height:1.8;color:var(--text);border-left:2px solid var(--accent);padding-left:12px;margin:10px 0 12px}
 .gear-stat{color:#f2c0a8!important;font-size:11px!important}
+
+
+/* v4.17 player-agency readability */
+.ability-impact{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:grid;gap:5px}.ability-impact>span{font:700 9px Orbitron,sans-serif;letter-spacing:.12em;color:var(--accent)}.ability-impact small{color:var(--muted);font-size:10px;line-height:1.35}
+.choice-forecast{margin-top:8px;padding:7px 9px;border-radius:8px;background:rgba(255,255,255,.035);color:#ddd7d2;font-size:10px;line-height:1.4}.difficulty{font-weight:800}.difficulty.쉬움{color:#87e8b0}.difficulty.보통{color:#d8dfef}.difficulty.어려움{color:#ffc06e}.difficulty.극한{color:#ff7d7d}.story-action-box:not(.disabled){border-color:rgba(255,126,86,.45);box-shadow:0 0 22px rgba(255,94,52,.06)}.story-action-box .role-context small{display:block;margin-top:6px;line-height:1.5}.simple-combat-step{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;display:flex;justify-content:space-between;gap:14px;align-items:center}.simple-combat-step b{color:#8ff3bd}.simple-combat-step small{color:var(--muted)}.simple-combat-step.boss b{color:#ff717b}.combat-actions{grid-template-columns:repeat(3,minmax(0,1fr));max-width:900px}.combat-actions .hidden{display:none}.combat-actions .hidden~.combat-attack{grid-column:auto}@media(max-width:720px){.combat-actions{grid-template-columns:1fr}.simple-combat-step{align-items:flex-start;flex-direction:column;gap:5px}}

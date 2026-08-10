@@ -48,6 +48,12 @@ const renderYaml = read('render.yaml');
 const sql = read('supabase/migrations/202608070001_initial.sql');
 const pkg = JSON.parse(read('package.json'));
 
+// v5.0.1: server.js가 로컬 ESM 모듈을 import할 때 배포본에 실제 파일이 있는지 검사한다.
+for (const match of server.matchAll(/from\s+['"](\.\/[^'"]+)['"]/g)) {
+  const rel = match[1].replace(/^\.\//, '');
+  assert(fs.existsSync(path.join(root, rel)), `server.js 로컬 import 파일 누락: ${rel}`);
+}
+
 const ids = [...index.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
 const idSet = new Set(ids);
 for (const id of new Set(ids)) assert(ids.filter(x => x === id).length === 1, `HTML id 중복: ${id}`);
@@ -60,6 +66,9 @@ assert(index.includes('viewport-fit=cover'), '모바일 safe-area 대응 viewpor
 assert(app.includes('renderMainStoryChoices') && app.includes("socket.emit('story:advance'"), '메인 스토리 장면 선택 UI 누락');
 
 
+
+assert(server.includes('function explorationTemplate(campaignId)') && server.includes('const EXPLORATION_APPROACHES') && server.includes('const SIDE_QUESTS'), '탐험 데이터가 server.js 안에 내장되어 있지 않습니다.');
+assert(!server.includes("from './exploration-data.js'"), 'server.js가 다시 exploration-data.js 외부 파일을 import하고 있습니다.');
 assert(server.includes('const MIN_PLAYERS = 1'), 'SOLO 1인 시작 설정이 누락되었습니다.');
 assert(server.includes('SOLO_VOTE_DURATION_MS = 12_000'), 'SOLO 이벤트 투표 시간이 12초로 설정되어 있지 않습니다.');
 assert(server.includes('ALL_VOTED_COUNTDOWN_MS = 3_000'), '전원 투표 완료 후 3초 확정 카운트다운이 누락되었습니다.');

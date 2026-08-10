@@ -5,10 +5,11 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 const REQUIRED_IDS = [
-  'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'combatView', 'endingView',
+  'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'exploreView', 'combatView', 'endingView',
   'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'entryError',
   'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
+  'exploreParty','exploreMapName','exploreMapSubtitle','exploreRouteDiversity','exploreObjective','worldMap','exploreFreeInput','exploreFreeBtn','exploreLog','exploreFocusHint','exploreInteraction','questJournal','exploreChatLog','exploreChatForm','exploreChatInput',
   'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
   'myJobMini', 'myStatsMini', 'economyPanel', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
   'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'defendBtn', 'attackBtn', 'combatLog',
@@ -1040,11 +1041,13 @@ function renderState() {
   $('#roomCodeLobby').textContent = state.code;
   if (state.campaign) setWorld(state.campaign);
   if (state.phase === 'lobby') view('lobbyView');
+  else if (state.phase === 'explore') view('exploreView');
   else if (state.phase === 'combat') view('combatView');
   else if (state.phase === 'ending') view('endingView');
   else view('storyView');
   renderLobby();
   renderStory();
+  renderExploration();
   renderCombat();
   renderEnding();
   renderChat();
@@ -1416,6 +1419,68 @@ function showResolution(r) {
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');
 
+
+function exploreMove(dx,dy){
+  if(state?.phase!=='explore') return;
+  socket.emit('explore:move',{roomCode,playerToken,dx,dy},r=>{ if(!r?.ok && r?.error) toast(r.error); });
+}
+function renderExploration(){
+  const ex=state?.exploration;
+  if(!ex) return;
+  const player=me();
+  const pos=ex.positions?.[playerToken] || {x:0,y:0};
+  $('#exploreMapName').textContent=ex.name || '자유 탐험';
+  $('#exploreMapSubtitle').textContent=`${ex.subtitle||''} · WASD/방향키 또는 인접 타일 클릭으로 이동`;
+  $('#exploreRouteDiversity').textContent=`${Number(ex.routeDiversity||36).toLocaleString()}+`;
+  const beat=state.storyBeat;
+  $('#exploreObjective').innerHTML=`<b>메인 퀘스트</b><span>${esc(beat?.title || (state.storyComplete?'완료됨':'다음 목표를 찾는 중'))}</span><small>${state.storyComplete?'모든 핵심 퀘스트를 해결했습니다.':`✦ 표식까지 직접 이동한 뒤, 여섯 접근 방식 중 원하는 방법으로 시작하세요. 현재 메인 진행 ${state.storySeenCount||0}/${state.targetStory||30}`}</small>`;
+
+  $('#exploreParty').innerHTML=(state.players||[]).map(m=>{ const p=ex.positions?.[m.id]||{}; return `<div class="explore-party-member ${m.id===playerToken?'me':''}"><b>${esc(m.name)}</b><small>${esc(m.job?.name||'')}</small><span>HP ${m.hp}/${m.maxHp} · (${p.x??'?'},${p.y??'?'})</span></div>`; }).join('');
+
+  const walls=new Set(ex.walls||[]);
+  const discovered=new Set(ex.discoveredByPlayer?.[playerToken]||[]);
+  const objectAt=(x,y)=>[...(ex.npcs||[]),...(ex.pois||[])].find(o=>o.x===x&&o.y===y&&(!o.hidden||discovered.has(o.id)));
+  const playersAt=(x,y)=>(state.players||[]).filter(m=>ex.positions?.[m.id]?.x===x&&ex.positions?.[m.id]?.y===y);
+  const cells=[];
+  for(let y=0;y<ex.height;y++) for(let x=0;x<ex.width;x++){
+    const wall=walls.has(`${x},${y}`); const obj=objectAt(x,y); const ps=playersAt(x,y);
+    const dist=Math.abs(pos.x-x)+Math.abs(pos.y-y); const reachable=dist===1&&!wall;
+    const cls=['map-cell',wall?'wall':'floor',reachable?'reachable':'',obj?'has-object':'',ps.length?'has-player':''].filter(Boolean).join(' ');
+    const labels=[];
+    if(obj) labels.push(`<button class="map-object" data-interact="${esc(obj.id)}" title="${esc(obj.name)}"><i>${esc(obj.icon||'•')}</i><small>${esc(obj.role||obj.name)}</small></button>`);
+    if(ps.length) labels.push(`<div class="map-players">${ps.map(m=>`<span class="map-player ${m.id===playerToken?'me':''}" title="${esc(m.name)}">${m.id===playerToken?'◆':'●'}</span>`).join('')}</div>`);
+    cells.push(`<div class="${cls}" data-x="${x}" data-y="${y}">${wall?'<span class="wall-mark">▦</span>':labels.join('')}</div>`);
+  }
+  const map=$('#worldMap'); map.style.setProperty('--map-w',ex.width); map.innerHTML=cells.join('');
+  map.querySelectorAll('.map-cell.reachable').forEach(cell=>cell.onclick=e=>{ if(e.target.closest('[data-interact]')) return; const x=Number(cell.dataset.x),y=Number(cell.dataset.y); exploreMove(x-pos.x,y-pos.y); });
+  map.querySelectorAll('[data-interact]').forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); socket.emit('explore:interact',{roomCode,playerToken,targetId:btn.dataset.interact},r=>!r?.ok&&toast(r.error)); });
+
+  const interaction=ex.interactions?.[playerToken] || null;
+  const ib=$('#exploreInteraction');
+  if(!interaction){ $('#exploreFocusHint').textContent='NPC/장소 옆에서 아이콘을 누르세요'; ib.innerHTML='<div class="empty-interaction">맵을 자유롭게 돌아다니세요. 일반 NPC라도 대화·도둑질·협박·싸움·미행·의뢰 등 다양한 행동이 가능합니다.</div>'; }
+  else {
+    const o=interaction.object; const ns=interaction.state;
+    $('#exploreFocusHint').textContent=o.name;
+    const rel=ns?`관계 ${ns.relation>=0?'+':''}${ns.relation}${ns.hostile?' · 적대':''}${ns.defeated?' · 제압됨':''}`:'';
+    const shop=(interaction.shopItems||[]).length?`<div class="explore-shop"><div class="eyebrow">SHOP STOCK</div>${interaction.shopItems.map(item=>`<div class="explore-shop-item"><div><b>${esc(item.name)}</b><small>${esc(item.stat)} 판정 보정 +${item.bonus}</small></div><button type="button" data-explore-buy="${esc(item.id)}">◈ ${item.price}</button></div>`).join('')}</div>`:'';
+    ib.innerHTML=`<div class="focus-object"><div class="focus-icon">${esc(o.icon||'•')}</div><div><b>${esc(o.name)}</b><small>${esc(o.role||'장소')} ${rel?`· ${esc(rel)}`:''}</small></div></div><div class="interaction-actions">${(interaction.actions||[]).map(a=>`<button type="button" data-explore-act="${esc(a.id)}"><b>${esc(a.label)}</b>${a.preview?`<small>${esc(a.preview)}</small>`:''}${a.warning?`<em>${esc(a.warning)}</em>`:''}</button>`).join('')}</div>${shop}`;
+    ib.querySelectorAll('[data-explore-act]').forEach(btn=>btn.onclick=()=>socket.emit('explore:act',{roomCode,playerToken,targetId:o.id,action:btn.dataset.exploreAct},r=>{if(!r?.ok)toast(r.error);else if(r.summary)toast(r.summary.slice(0,100));}));
+    ib.querySelectorAll('[data-explore-buy]').forEach(btn=>btn.onclick=()=>socket.emit('explore:buy',{roomCode,playerToken,itemId:btn.dataset.exploreBuy},r=>{if(!r?.ok)toast(r.error);else toast(r.summary);}));
+  }
+  const quests=ex.sideQuests?.[playerToken]||[];
+  $('#questJournal').innerHTML=`<div class="main-quest-card"><b>MAIN · ${esc(beat?.title||'연대기 완료')}</b><small>${state.storyComplete?'완료':'✦ 목표 지점에서 원하는 방식으로 다음 사건을 진행'}</small></div>${quests.filter(q=>q.state!=='available').map(q=>`<div class="side-quest ${q.state}"><b>${esc(q.title)}</b><small>${q.state==='active'?'진행 중':q.state==='ready'?'완료 보고 가능':'완료'} · ${esc(q.description)}</small></div>`).join('')||'<div class="empty-quest">NPC에게 일거리를 물어보면 서브 퀘스트가 이곳에 기록됩니다.</div>'}`;
+  $('#exploreLog').innerHTML=(ex.actionHistory||[]).slice(-6).reverse().map(a=>`<div><b>${esc(a.playerName)}</b><span>${esc(a.targetName)} · ${esc(a.text)}</span></div>`).join('');
+}
+
+$$('[data-move]').forEach(btn=>btn.onclick=()=>{ const [dx,dy]=btn.dataset.move.split(',').map(Number); exploreMove(dx,dy); });
+$('#exploreFreeBtn').onclick=()=>{ const input=$('#exploreFreeInput'); const text=input.value.trim(); if(!text)return; const interaction=state?.exploration?.interactions?.[playerToken]; socket.emit('explore:freeAction',{roomCode,playerToken,text,targetId:interaction?.object?.id||null},r=>{if(!r?.ok)return toast(r.error); input.value=''; if(r.summary)toast(r.summary.slice(0,120));}); };
+$('#exploreFreeInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();$('#exploreFreeBtn').click();} });
+document.addEventListener('keydown',e=>{
+  if(state?.phase!=='explore'||['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  const key=e.key.toLowerCase(); const move=key==='w'||key==='arrowup'?[0,-1]:key==='s'||key==='arrowdown'?[0,1]:key==='a'||key==='arrowleft'?[-1,0]:key==='d'||key==='arrowright'?[1,0]:null;
+  if(move){e.preventDefault();exploreMove(...move);}
+});
+
 function renderCombat() {
   if (!state || state.phase !== 'combat' || !state.monster) return;
   renderSkillUi();
@@ -1502,11 +1567,14 @@ function renderChat() {
   const markup = visibleChat.map(m => `<div class="chat-msg ${m.type || ''}">${m.author ? `<b>${esc(m.author)}</b>` : ''}${esc(m.text)}</div>`).join('');
   const storyLog = $('#chatLog');
   const lobbyLog = $('#lobbyChatLog');
+  const exploreLog = $('#exploreChatLog');
   if (storyLog) { storyLog.innerHTML = markup; storyLog.scrollTop = storyLog.scrollHeight; }
   if (lobbyLog) { lobbyLog.innerHTML = markup; lobbyLog.scrollTop = lobbyLog.scrollHeight; }
+  if (exploreLog) { exploreLog.innerHTML = markup; exploreLog.scrollTop = exploreLog.scrollHeight; }
 }
 $('#chatForm').onsubmit = e => { e.preventDefault(); sendChat('#chatInput'); };
 $('#lobbyChatForm').onsubmit = e => { e.preventDefault(); sendChat('#lobbyChatInput'); };
+$('#exploreChatForm').onsubmit = e => { e.preventDefault(); sendChat('#exploreChatInput'); };
 
 function renderHelp() {
   const phase = state?.phase || 'home';
@@ -1525,7 +1593,9 @@ function renderHelp() {
       title: '현재 상태 안내',
       text: phase === 'lobby'
         ? `현재는 로비입니다. ${c ? `선택된 연대기: ${c.title}.` : '아직 연대기를 선택하지 않았습니다.'} 게임 시작 전에도 채팅이 가능합니다.`
-        : phase === 'combat'
+        : phase === 'explore'
+          ? '현재는 자유 탐험 중입니다. WASD/방향키로 직접 맵을 이동하고 NPC와 장소에 상호작용하세요. 메인 퀘스트 표식 외에도 상점, 여관, 정보상, 경비, 숨은 장소와 서브 퀘스트가 존재합니다.'
+          : phase === 'combat'
           ? '현재는 전투 중입니다. 내 차례에는 공격·방어·직업 스킬 중 하나만 고르면 됩니다. 모든 생존 플레이어가 한 번 행동하면 보스가 한 번 공격합니다.'
           : phase === 'ending'
             ? '현재는 엔딩 화면입니다. 새 연대기를 시작하려면 버튼을 눌러 메인으로 돌아가세요.'

@@ -22,12 +22,12 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '5.7.0-causal-freedom.0';
+const APP_VERSION = '5.8.0-contextual-roll-guild.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
 const MAX_THREAT = 8;
-const EVENT_EVERY_TURNS = 3;
+const EVENT_EVERY_TURNS = 0; // v5.8: fixed cadence removed; side events are probability/choice driven
 const VOTE_DURATION_MS = 45_000;
 const SOLO_VOTE_DURATION_MS = 12_000;
 const ALL_VOTED_COUNTDOWN_MS = 3_000;
@@ -139,6 +139,7 @@ function blankPlayerRuntime(player) {
   player.coins = 1;
   player.inventory = [];
   player.equipment = { weapon: null, armor: null, charm: null, tool: null };
+  player.guild = { joined:false, reputation:0, completed:0 };
 }
 
 function normalizeEconomyPlayer(player) {
@@ -482,6 +483,7 @@ function normalizeLoadedRoom(room) {
     player.skillState ||= { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
     player.statuses ||= [];
     normalizeEconomyPlayer(player);
+    player.guild ||= { joined:false, reputation:0, completed:0 };
     if (player.job && player.abilities && Number(player.derivedVitalsVersion || 0) < AGENCY_VERSION) recomputeDerivedVitals(player, { preserveRatio:true });
   }
   room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
@@ -506,6 +508,8 @@ function normalizeLoadedRoom(room) {
   room.facilityUses ||= {};
   room.facilityEncounterCount = Number(room.facilityEncounterCount || 0);
   room.lastFacilityEventSerial = Number(room.lastFacilityEventSerial ?? -99);
+  room.turnTransferRequest ||= null;
+  room.eventRolls = Number(room.eventRolls || 0);
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   if (!campaign || room.phase === 'lobby') {
     room.schemaVersion = APP_VERSION;
@@ -568,7 +572,7 @@ async function createRoom(hostName, socketId) {
   const roomCode = await reserveRoomCode();
   const player = {
     id: token(), socketId, name: hostName, host: true, connected: true,
-    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
+    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null }, guild:{ joined:false, reputation:0, completed:0 },
   };
   const room = {
     code: roomCode,
@@ -590,7 +594,7 @@ async function createRoom(hostName, socketId) {
     storyNodeId: null, storyComplete: false, storyGraphVersion: 1,
     lastResolvedStoryBeat: null,
     chat: [], lastResolution: null, ending: null, facilityUses: {},
-    revision: 1, turnIndex: 0, abandonVote: null, schemaVersion: APP_VERSION,
+    revision: 1, turnIndex: 0, abandonVote: null, turnTransferRequest:null, eventRolls:0, schemaVersion: APP_VERSION,
   };
   rooms.set(roomCode, room);
   return { room, player };
@@ -1583,6 +1587,7 @@ function publicRoom(room) {
       coins: Number(p.coins || 0), inventory: [...(p.inventory || [])], equipment: { ...(p.equipment || {}) },
       equipmentBonuses: Object.fromEntries(STAT_NAMES.map(stat => [stat, equipmentStatBonus(room, p, stat)])),
       derived: derivedAbilityImpact(p),
+      guild: { ...(p.guild || { joined:false, reputation:0, completed:0 }) },
       statuses: activeStatuses(room, p),
       skillState: { ...(p.skillState || {}), cooldownRemaining: Math.max(0, Number(p.skillState?.readyAtTurn || 0) - Number(room.turnSerial || 0)) },
     })),
@@ -1600,11 +1605,13 @@ function publicRoom(room) {
     mainTurnsSinceEvent: Number(room.mainTurnsSinceEvent || 0),
     turnSerial: Number(room.turnSerial || 0),
     nextCheckDcReduction: Number(room.nextCheckDcReduction || 0),
-    eventEveryTurns: EVENT_EVERY_TURNS,
-    storyBeat: room.phase === 'resolution' && room.lastResolvedStoryBeat ? JSON.parse(JSON.stringify(room.lastResolvedStoryBeat)) : ((room.phase === 'story' || room.phase === 'resolution') ? renderedStoryBeat(room, campaign) : null),
+    eventEveryTurns: 0,
+    eventMode: 'dynamic',
+    storyBeat: (room.phase === 'story' || room.phase === 'resolution') ? renderedStoryBeat(room, campaign) : null,
     turnIndex: room.turnIndex || 0,
     turnPlayerId: turnPlayer?.id || null,
     turnPlayerName: turnPlayer?.name || null,
+    turnTransferRequest: room.turnTransferRequest ? { ...room.turnTransferRequest } : null,
     threat: room.threat,
     story: room.story,
     storyNodeId: room.storyNodeId || null,
@@ -1655,6 +1662,7 @@ function emitRoll(room, roller, roll) {
     rollerId: roller.id,
     rollerName: roller.name,
     ts: Date.now(),
+    revealAt: Date.now() + 650,
     ...roll,
   });
 }
@@ -2296,12 +2304,41 @@ function armVoteTimer(room) {
   voteTimers.set(room.code, timer);
 }
 
+
+function dynamicEventChance(room) {
+  // No pity timer: 매우 운이 좋거나 나쁘면 한 세션에서 이벤트를 거의/전혀 못 볼 수도 있다.
+  const turns = Math.max(0, Number(room.mainTurnsSinceEvent || 0));
+  const threat = Math.max(0, Number(room.threat || 0));
+  const action = String(room.lastStoryAction?.choiceId || room.lastStoryAction?.declaration || '').toLowerCase();
+  let chance = 10 + Math.min(18, turns * 3) + Math.min(10, threat * 2);
+  if (/fight|steal|threat|break|싸|훔|협박|부순/.test(action)) chance += 8;
+  if (/wait|hide|observe|기다|숨|살펴/.test(action)) chance -= 3;
+  if (room.lastStoryAction?.success === false) chance += 4;
+  return Math.max(4, Math.min(46, chance));
+}
+function shouldDrawDynamicEvent(room) {
+  if (!room?.deck?.length || room.currentEvent || room.storyComplete) return false;
+  room.eventRolls = Number(room.eventRolls || 0) + 1;
+  return crypto.randomInt(0,100) < dynamicEventChance(room);
+}
+function guildTheme(campaignId) {
+  return ({
+    ember:['잿빛 용병 길드','장례 행렬 밖에서 위험한 의뢰를 중개하는 작은 길드다.'],
+    neon:['루멘 프리랜서 조합','기업 기록에 남기기 곤란한 일을 코인으로 중개한다.'],
+    abyss:['세이렌 구조 조합','폐쇄 구역과 심해 구조 작업을 서로 나눠 맡는 생존자 조직이다.'],
+    clock:['자정 해결사 길드','루프가 바뀔 때마다 남겨진 문제를 대신 처리하는 사람들이다.'],
+    wild:['별길 사냥꾼 조합','숲의 길과 괴물의 흔적을 아는 이들이 의뢰를 나눈다.'],
+    guardian1:['캔터베리 모험가 길드','왕국 곳곳의 문제를 해결하고 작은 보수를 받는 모험가들의 거점이다.'],
+    guardian2:['대륙 모험가 길드','도시와 던전 사이의 위험한 부탁을 중개한다.'],
+    guardian3:['저항군 의뢰소','미래의 전선에서 필요한 일감을 코인과 물자로 보상한다.'],
+  })[campaignId] || ['모험가 길드','위험한 일을 해결할 사람을 찾는 작은 길드다.'];
+}
 function facilityPoolForAct(act) {
-  if (act <= 1) return ['restaurant','quest'];
-  if (act === 2) return ['inn','shop','quest'];
-  if (act === 3) return ['shop','quest','gamble'];
-  if (act === 4) return ['inn','shop','quest'];
-  return ['shop','restaurant','quest'];
+  if (act <= 1) return ['restaurant','quest','guild'];
+  if (act === 2) return ['inn','shop','quest','guild'];
+  if (act === 3) return ['shop','quest','gamble','guild'];
+  if (act === 4) return ['inn','shop','quest','guild'];
+  return ['shop','restaurant','quest','guild'];
 }
 function maybeAttachFacility(room, event) {
   if (!event?.facilityEligible || event.monster) return event;
@@ -2309,10 +2346,13 @@ function maybeAttachFacility(room, event) {
   room.lastFacilityEventSerial = Number(room.lastFacilityEventSerial || -99);
   if (room.facilityEncounterCount >= 4 || Number(room.turnSerial || 0) - room.lastFacilityEventSerial < 2) return event;
   // About one in three eligible side events becomes a natural rest/shop/commission interlude.
-  if (crypto.randomInt(0, 100) >= 34) return event;
+  if (crypto.randomInt(0, 100) >= 27) return event;
   const pool = facilityPoolForAct(Number(event.act || 1));
   const type = pool[crypto.randomInt(0, pool.length)];
-  const base = ECONOMY_FACILITY_TEMPLATES[type] || {type};
+  const guild = guildTheme(room.campaignId);
+  const base = type === 'guild'
+    ? { type:'guild', label:guild[0], description:guild[1], storyLead:'길가의 게시판에는 지워지지 않은 의뢰서 몇 장이 겹쳐 붙어 있었다.' }
+    : (ECONOMY_FACILITY_TEMPLATES[type] || {type});
   const theme = ECONOMY_FACILITY_THEMES[room.campaignId]?.[type] || {};
   const facility = {...base, ...theme};
   if (type === 'shop') {
@@ -2351,8 +2391,10 @@ function drawEventForRoom(room) {
   room.choiceVotes = {};
   room.voteAllVotedCountdown = false;
   room.lastResolution = null;
+  const noTimeFacility = ['shop','inn','guild'].includes(room.currentEvent?.facility?.type);
+  room.currentEvent.noTimeLimit = noTimeFacility;
   const voteDuration = connectedPlayers(room).length <= 1 ? SOLO_VOTE_DURATION_MS : VOTE_DURATION_MS;
-  room.voteEndsAt = Date.now() + voteDuration;
+  room.voteEndsAt = noTimeFacility ? null : Date.now() + voteDuration;
   room.mainTurnsSinceEvent = 0;
   void appendSessionEvent(room.code, 'event_drawn', { eventId: room.currentEvent.id, title: room.currentEvent.title });
   armVoteTimer(room);
@@ -2529,7 +2571,7 @@ io.on('connection', socket => {
     const name = sanitize(payload.name || `플레이어 ${room.players.length + 1}`, 18) || `플레이어 ${room.players.length + 1}`;
     const player = {
       id: token(), socketId: socket.id, name, host: room.players.length === 0, connected: true,
-      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
+      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null }, guild:{ joined:false, reputation:0, completed:0 },
     };
     room.players.push(player);
     socket.join(room.code);
@@ -2676,6 +2718,8 @@ io.on('connection', socket => {
     room.lastResolution = null;
     room.ending = null;
     room.abandonVote = null;
+    room.turnTransferRequest = null;
+    room.eventRolls = 0;
     room.turnIndex = 0;
     currentTurnPlayer(room);
     room.storyMemory.prologueMeeting = room.prologue.meetingText;
@@ -2752,7 +2796,7 @@ io.on('connection', socket => {
         continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
       };
       room.phase = 'resolution';
-      room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0, clearDetour: isDetour };
+      room.pendingContinue = { source:'story', drawEvent: false, clearDetour: isDetour };
     if (choice.startsCombat && !isDetour) {
       room.monster = monsterForStoryChoice(room, beat, choice);
       room.pendingStoryCombat = true;
@@ -2871,7 +2915,7 @@ io.on('connection', socket => {
       continueLabel: '이 내용을 읽고 다음 장면으로 넘어간다',
     };
     room.phase = 'resolution';
-    room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0, clearDetour: isDetour };
+    room.pendingContinue = { source:'story', drawEvent: false, clearDetour: isDetour };
 
     pushChat(room, { type:'action', author:player.name, text:choice.freeAction ? `자유 행동: ${choice.label}` : `메인 선택: ${choice.label}` });
     pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${choice.stat} 판정 ${roll}${abilityMod>=0?'+':''}${abilityMod}${skillBonus?`+스킬${skillBonus}`:''}${statusPenalty?`${statusPenalty}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
@@ -2901,6 +2945,34 @@ io.on('connection', socket => {
     ack?.({ ok:true, equipment:player.equipment });
   });
 
+  socket.on('turn:transferRequest', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !player) return;
+    if (resumeBlocked(room, ack)) return;
+    if (room.phase !== 'story' || room.currentEvent || room.activeChoice || room.lastResolution) return ack?.({ok:false,error:'지금은 차례를 넘길 수 없습니다.'});
+    const actor=currentTurnPlayer(room);
+    if (!actor || actor.id!==player.id) return ack?.({ok:false,error:'현재 차례인 플레이어만 변경을 요청할 수 있습니다.'});
+    const target=getPlayer(room,String(payload?.targetPlayerId||''));
+    if(!target || target.id===player.id || !target.connected || target.hp<=0) return ack?.({ok:false,error:'차례를 넘길 수 없는 대상입니다.'});
+    room.turnTransferRequest={id:token(),fromId:player.id,fromName:player.name,toId:target.id,toName:target.name,createdAt:Date.now()};
+    pushChat(room,{type:'system',text:`${player.name} 님이 ${target.name} 님에게 차례 변경을 요청했습니다.`});
+    sync(room); ack?.({ok:true});
+  });
+  socket.on('turn:transferRespond', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !player) return;
+    const req=room.turnTransferRequest;
+    if(!req || req.toId!==player.id || req.id!==payload?.requestId) return ack?.({ok:false,error:'유효한 차례 변경 요청이 없습니다.'});
+    const accept=Boolean(payload?.accept);
+    if(accept){
+      const idx=room.players.findIndex(p=>p.id===player.id);
+      if(idx>=0) room.turnIndex=idx;
+      pushChat(room,{type:'success',text:`${player.name} 님이 동의해 차례가 변경되었습니다.`});
+    } else pushChat(room,{type:'system',text:`${player.name} 님이 차례 변경 요청을 거절했습니다.`});
+    room.turnTransferRequest=null;
+    sync(room); ack?.({ok:true,accepted:accept});
+  });
+
   socket.on('facility:action', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !player) return;
@@ -2911,7 +2983,7 @@ io.on('connection', socket => {
     const action = String(payload?.action || facility.type);
     const itemId = String(payload?.itemId || '');
     const useKey = `${room.currentEvent.id}:${player.id}:${action}`;
-    const oneUseKinds = new Set(['inn','restaurant','gamble','quest']);
+    const oneUseKinds = new Set(['inn','restaurant','gamble','quest','guildQuest']);
     if (oneUseKinds.has(action) && room.facilityUses[useKey]) return ack?.({ ok:false, error:'이 이벤트에서는 이미 이용했습니다.' });
     let summary = '';
     if (action === 'inn') {
@@ -2937,6 +3009,28 @@ io.on('connection', socket => {
       if (!spendCoins(player, price)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${price} 코인` });
       player.inventory.push(item.id);
       summary = `${item.name} 구매 · -${price} 코인`;
+    } else if (action === 'guildJoin') {
+      player.guild ||= { joined:false, reputation:0, completed:0 };
+      if (player.guild.joined) return ack?.({ ok:false, error:'이미 이 캠페인의 길드에 가입했습니다.' });
+      player.guild.joined = true;
+      player.guild.reputation = Math.max(0, Number(player.guild.reputation || 0));
+      summary = `길드 가입 완료 · 이제 길드 의뢰를 받을 수 있습니다.`;
+    } else if (action === 'guildQuest') {
+      player.guild ||= { joined:false, reputation:0, completed:0 };
+      if (!player.guild.joined) return ack?.({ ok:false, error:'먼저 길드에 가입해야 합니다.' });
+      const stat = player.job?.prime || '지혜';
+      const result = rand(20);
+      const baseBonus = mod(effectiveAbilityTotal(room, player, stat));
+      const gearBonus = equipmentStatBonus(room, player, stat);
+      const traitBonus = traitCheckBonus(player, stat);
+      const total = result + baseBonus + gearBonus + traitBonus;
+      const dc = 11 + Math.min(2, Math.floor(Number(player.guild.reputation || 0)/3));
+      const success = result === 20 || (result !== 1 && total >= dc);
+      const coins = success ? (result===20 || total>=dc+5 ? 3 : 2) : 0;
+      if (coins) grantCoins(player, coins);
+      if (success) { player.guild.reputation = Number(player.guild.reputation || 0)+1; player.guild.completed = Number(player.guild.completed || 0)+1; }
+      summary = `${stat} 길드 의뢰 ${result}${baseBonus+gearBonus+traitBonus>=0?'+':''}${baseBonus+gearBonus+traitBonus}=${total} / DC ${dc} · ${success?`성공, 코인 +${coins}`:'실패, 보상 없음'}`;
+      emitRoll(room, player, { sides:20, result, purpose:`길드 의뢰 · ${stat} 판정`, kind:'guild-quest', stat, total, dc, success, modifiers:[{label:`${stat} 기본 보정`,value:baseBonus},{label:'장비 보정',value:gearBonus},{label:'능력치 특성',value:traitBonus}].filter(m=>m.value) });
     } else if (action === 'gamble') {
       const cost = Number(facility.cost || 1);
       if (!spendCoins(player, cost)) return ack?.({ ok:false, error:`내기에는 ${cost} 코인이 필요합니다.` });
@@ -2962,6 +3056,20 @@ io.on('connection', socket => {
     pushChat(room, { type:'success', author:player.name, text:`${facility.label} · ${summary}` });
     sync(room);
     ack?.({ ok:true, summary });
+  });
+
+  socket.on('facility:leave', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !player || !room.currentEvent?.facility) return ack?.({ ok:false, error:'떠날 시설이 없습니다.' });
+    if (!room.currentEvent.noTimeLimit) return ack?.({ ok:false, error:'이 사건은 일반 이벤트 투표로 해결됩니다.' });
+    const actor = currentTurnPlayer(room);
+    if (!actor || actor.id !== player.id) return ack?.({ ok:false, error:`현재 차례인 ${actor?.name || '플레이어'}가 장소를 떠날 수 있습니다.` });
+    room.discard.push(room.currentEvent);
+    room.currentEvent = null; room.activeChoice=null; room.choiceVotes={}; room.voteEndsAt=null; room.voteAllVotedCountdown=false;
+    room.mainTurnsSinceEvent = 0;
+    advanceTurn(room);
+    pushChat(room,{type:'system',text:`${player.name}의 결정으로 파티가 충분히 머문 뒤 다시 길을 나섰습니다.`});
+    sync(room); ack?.({ok:true});
   });
 
   socket.on('player:skillUse', (payload, ack) => {
@@ -2992,7 +3100,7 @@ io.on('connection', socket => {
   });
 
   // v3.6 compatibility guards: event timing is server-controlled, not host-controlled.
-  socket.on('event:draw', (_payload, ack) => ack?.({ ok: false, error: 'v3.6부터 이벤트 카드는 3개의 메인 턴마다 서버가 자동으로 공개합니다.' }));
+  socket.on('event:draw', (_payload, ack) => ack?.({ ok: false, error: '이벤트는 현재 선택과 상황, 운에 따라 서버가 자연스럽게 발생시킵니다.' }));
   socket.on('event:finalizeChoice', (_payload, ack) => ack?.({ ok: false, error: '투표는 20초 제한시간 종료 후 서버가 자동 집계합니다.' }));
   socket.on('event:release', (_payload, ack) => ack?.({ ok: false, error: '투표는 제한시간 동안 자유롭게 변경할 수 있으며 호스트가 초기화할 수 없습니다.' }));
 
@@ -3002,7 +3110,8 @@ io.on('connection', socket => {
     if (!room || !requirePhase(room, 'story', ack, '현재 이벤트는 선택할 수 없는 상태입니다.')) return;
     if (!room.currentEvent) return ack?.({ ok: false, error: '진행 중인 이벤트가 없습니다.' });
     if (room.activeChoice) return ack?.({ ok: false, error: '이미 행동이 확정되었습니다.' });
-    if (!room.voteEndsAt || Date.now() >= Number(room.voteEndsAt)) {
+    if (!room.voteEndsAt) return ack?.({ ok:false, error:'이 장소에는 투표 제한시간이 없습니다. 시설을 이용한 뒤 떠나기를 선택하세요.' });
+    if (Date.now() >= Number(room.voteEndsAt)) {
       if (finalizeChoiceSelection(room)) sync(room);
       return ack?.({ ok: false, error: '투표 시간이 종료되었습니다.' });
     }
@@ -3104,9 +3213,10 @@ io.on('connection', socket => {
       if (pending.clearDetour) room.storyDetour = null;
       advanceSkillClock(room, 1);
       if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true }); }
-      if (pending.drawEvent && room.deck.length) {
+      if (shouldDrawDynamicEvent(room)) {
         drawEventForRoom(room);
-        pushChat(room, { type:'system', text:`${EVENT_EVERY_TURNS}개의 메인 턴이 지나 이벤트 카드가 자동으로 공개되었습니다. 투표는 ${Math.round((connectedPlayers(room).length <= 1 ? SOLO_VOTE_DURATION_MS : VOTE_DURATION_MS)/1000)}초 동안 진행됩니다.` });
+        const timed = Boolean(room.voteEndsAt);
+        pushChat(room, { type:'system', text: timed ? `이전 선택의 여파 속에서 예상하지 못한 사건이 발생했습니다.` : `길을 이어가던 중 오래 머물 수 있는 장소를 발견했습니다. 서두를 필요는 없습니다.` });
       } else advanceTurn(room);
       sync(room);
       return ack?.({ ok: true });

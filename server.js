@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '5.4.0-deep-choice-branching.0';
+const APP_VERSION = '5.5.0-encounter-traits.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -216,6 +216,28 @@ function rawAbility(player, stat) {
 function rawAbilityMod(player, stat) {
   return mod(rawAbility(player, stat));
 }
+function abilityTraitFor(stat, score) {
+  const tables = {
+    '근력': { low:['허약','근력 공격 피해 -1'], high:['강골','근력 공격 피해 +1'], elite:['괴력','근력 공격 피해 +2'] },
+    '민첩': { low:['굼뜸','방어 -1'], high:['날렵함','방어 +1'], elite:['번개반사','방어 +2 · 공격 명중 +1'] },
+    '지능': { low:['멍청이','지능 판정 특성 -1'], high:['영리함','중요한 조사 선택의 의도를 읽음'], elite:['천재','지능 판정 특성 +1 · 선택 의도 심층 표시'] },
+    '지혜': { low:['눈치 없음','지혜 판정 특성 -1'], high:['예리한 감각','실패 위험을 미리 감지'], elite:['직감','지혜 판정 특성 +1 · 실패 위험 심층 표시'] },
+    '매력': { low:['비호감','매력 판정 특성 -1'], high:['호감형','상점/휴식 1코인 할인'], elite:['타고난 협상가','매력 판정 특성 +1 · 상점/휴식 2코인 할인'] },
+    '체력': { low:['병약','최대 HP 감소 · 방어 태세 -1'], high:['튼튼함','상태이상 지속 감소 · 방어 태세 +1'], elite:['강인함','상태이상 지속 크게 감소 · 방어 태세 +2'] },
+  };
+  const row = tables[stat];
+  if (!row) return null;
+  if (score <= 5) return { stat, key:'low', label:row.low[0], effect:row.low[1] };
+  if (score >= 18) return { stat, key:'elite', label:row.elite[0], effect:row.elite[1] };
+  if (score >= 15) return { stat, key:'high', label:row.high[0], effect:row.high[1] };
+  return null;
+}
+function traitCheckBonus(player, stat) {
+  const score = rawAbility(player, stat);
+  if (score <= 5 && ['지능','지혜','매력'].includes(stat)) return -1;
+  if (score >= 18 && ['지능','지혜','매력'].includes(stat)) return 1;
+  return 0;
+}
 function derivedAbilityImpact(player) {
   const str = rawAbility(player, '근력');
   const dex = rawAbility(player, '민첩');
@@ -223,18 +245,25 @@ function derivedAbilityImpact(player) {
   const wis = rawAbility(player, '지혜');
   const cha = rawAbility(player, '매력');
   const con = rawAbility(player, '체력');
+  const dexTraitDefense = dex <= 5 ? -1 : dex >= 18 ? 2 : dex >= 15 ? 1 : 0;
+  const strengthTraitDamage = str <= 5 ? -1 : str >= 18 ? 2 : str >= 15 ? 1 : 0;
+  const guardTrait = con <= 5 ? -1 : con >= 18 ? 2 : con >= 15 ? 1 : 0;
+  const passives = STAT_NAMES.map(stat => abilityTraitFor(stat, rawAbility(player, stat))).filter(Boolean);
   return {
-    strengthDamage: Math.max(0, mod(str)),
-    defense: 10 + mod(dex),
+    strengthDamage: Math.max(-1, mod(str)) + strengthTraitDamage,
+    defense: 10 + mod(dex) + dexTraitDefense,
     initiative: mod(dex),
-    insight: int >= 14,
-    insightDeep: int >= 16,
-    dangerSense: wis >= 14,
-    dangerSenseDeep: wis >= 16,
-    shopDiscount: cha >= 16 ? 2 : cha >= 14 ? 1 : 0,
-    questCoinBonus: cha >= 16 ? 1 : 0,
-    statusResistance: con >= 16 ? 2 : con >= 14 ? 1 : 0,
+    combatHitBonus: dex >= 18 ? 1 : 0,
+    guardBonus: guardTrait,
+    insight: int >= 15,
+    insightDeep: int >= 18,
+    dangerSense: wis >= 15,
+    dangerSenseDeep: wis >= 18,
+    shopDiscount: cha >= 18 ? 2 : cha >= 15 ? 1 : 0,
+    questCoinBonus: cha >= 18 ? 1 : 0,
+    statusResistance: con >= 18 ? 2 : con >= 15 ? 1 : 0,
     maxHpBonus: Math.max(-2, mod(con) * 2),
+    passives,
   };
 }
 function recomputeDerivedVitals(player, { preserveRatio = false } = {}) {
@@ -1885,6 +1914,67 @@ function promoteHostIfNeeded(room) {
   pushChat(room, { type: 'system', text: `${next.name} 님이 새 방장이 되었습니다.` });
 }
 
+const BOSS_INTRO_LINES = {
+  ember: {
+    '불멸왕 아르켄':'“왕관을 찾으러 왔느냐. 좋다. 네 이름부터 재로 만들어 주마.”',
+    '왕관의 망령':'“죽은 왕의 이름을 입에 올린 대가를 치러라.”',
+  },
+  neon: {
+    'MOTHER-9':'“접속자를 확인했습니다. 당신의 기억은 이제 도시의 자산입니다.”',
+    '합성인간 추적자':'“도주 경로 예측 완료. 생존 확률을 재계산합니다.”',
+  },
+  abyss: {
+    '탈라스':'“너희는 너무 깊이 내려왔다. 이제 바다는 너희를 기억한다.”',
+    '압력 유령':'“문을 열었구나. 그럼 이제 안쪽에서 잠겨라.”',
+  },
+  clock: {
+    '열세 번째 종지기':'“열두 번은 실수였다. 열세 번째에는 너희를 남기지 않겠다.”',
+    '거울 속 미래인':'“나는 네가 여기서 무엇을 선택할지 이미 후회했다.”',
+  },
+  wild: {
+    '별먹는 신수 오르바':'“별은 하늘의 것이 아니다. 오늘부터 너희의 기억도 숲의 것이다.”',
+    '꿈먹는 올빼미':'“눈을 감아라. 깨어 있는 동안보다 덜 아플 테니.”',
+  },
+  guardian1: {
+    '수호자의 첫 시험':'“검을 들었다면 증명해. 네가 누구를 지키려는지.”',
+    '침략자 지휘관':'“캔터베리의 마지막 희망이라더니, 겨우 이 정도인가.”',
+  },
+  guardian2: {
+    '얼어붙은 챔피언 시험':'“앞으로 가려면 힘이 아니라 이유를 보여라.”',
+    '설산의 수호자':'“산은 거짓말을 기억한다. 네 발자국도 마찬가지다.”',
+  },
+  guardian3: {
+    '최후의 침략자 지휘관':'“십 년을 버틴 세계다. 네가 돌아왔다고 역사가 바뀔 것 같나?”',
+    '차원 파괴자':'“돌아갈 세계와 남을 세계, 둘 다 가질 수는 없다.”',
+  },
+};
+const REGULAR_ENCOUNTER_LINES = {
+  ember:['“멈춰. 한 발만 더 오면 검부터 묻는다.”','“왕관 이야기를 들었다면 여기서 돌아가.”'],
+  neon:['“신원 불일치. 손을 보이는 곳에 두십시오.”','“도망칠 생각이면 지금 해. 추적은 이미 시작됐으니까.”'],
+  abyss:['“소리를 내지 마. 저 아래에서 듣고 있어.”','“살아 있는 사람이 맞나? 확인부터 하겠다.”'],
+  clock:['“이번 반복에서는 네가 먼저 왔군.”','“시간을 훔친 값은 몸으로 갚아.”'],
+  wild:['“숲이 너희를 들였다 해서 우리도 허락한 건 아니다.”','“발을 멈춰. 다음 발자국은 사냥의 시작이다.”'],
+  guardian1:['“짐을 내려놓고 돌아가. 오늘은 경고로 끝내 주지.”','“공주를 찾는 자라면 더더욱 지나갈 수 없다.”'],
+  guardian2:['“여긴 힘없는 자가 지나가는 길이 아니다.”','“한 번 물러서면 쫓지 않겠다. 두 번 말하게 하지 마.”'],
+  guardian3:['“저항군인가? 그렇다면 이야기는 짧겠군.”','“신분증은 됐다. 살아남을 자격부터 보여.”'],
+};
+function encounterIntro(room, name, { isBoss = false } = {}) {
+  const bossLine = BOSS_INTRO_LINES[room.campaignId]?.[name];
+  if (isBoss && bossLine) return bossLine;
+  if (isBoss) return `“여기까지 온 건 인정하지. 하지만 ${name}을(를) 넘어갈 수 있을지는 다른 이야기다.”`;
+  const pool = REGULAR_ENCOUNTER_LINES[room.campaignId] || ['“거기서 멈춰.”'];
+  let hash = 0;
+  for (const ch of String(name)) hash = (hash + ch.charCodeAt(0)) % 997;
+  return pool[hash % pool.length];
+}
+function decorateEncounter(room, monster, { isBoss = false } = {}) {
+  monster.isBoss = Boolean(isBoss);
+  monster.encounterId = crypto.randomUUID();
+  monster.introLine = encounterIntro(room, monster.name, { isBoss:monster.isBoss });
+  monster.introLabel = monster.isBoss ? 'BOSS ENCOUNTER' : 'ENCOUNTER';
+  return monster;
+}
+
 function monsterForStoryChoice(room, beat, choice) {
   const campaign=CAMPAIGNS.find(c=>c.id===room.campaignId);
   const generic={
@@ -1894,25 +1984,27 @@ function monsterForStoryChoice(room, beat, choice) {
   const name=pool[(Number(beat?.chapter||1)+Number(room.story||0))%pool.length];
   const scale=Math.max(0,room.players.length-1);
   const hp=6+Math.floor(Number(beat?.act||1)/2)*2+scale*2;
-  return {name,ac:10+Math.min(3,Number(beat?.act||1)-1),hp,maxHp:hp,attackBonus:1+Math.floor(Number(beat?.act||1)/2),round:1,acted:[],turnPhase:'players',bossTurnStartedAt:null,isBoss:false,source:'story-choice'};
+  return decorateEncounter(room, {name,ac:9+Math.min(2,Number(beat?.act||1)-1),hp,maxHp:hp,attackBonus:1+Math.floor(Number(beat?.act||1)/2),round:1,acted:[],turnPhase:'players',bossTurnStartedAt:null,source:'story-choice'}, { isBoss:false });
 }
 
 function monsterForEvent(room, event) {
   const campaign = CAMPAIGNS.find(c => c.id === room.campaignId);
   const index = Math.max(0, campaign.monsters.indexOf(event.monster));
   const scale = Math.max(0, room.players.length - 2);
-  const hp = 9 + index * 4 + scale * 3;
-  return {
+  const isBoss = Boolean(event?.boss) || index === campaign.monsters.length - 1 || /최후|보스|왕|종지기|오르바|탈라스|MOTHER-9|수호 시험|지휘관/.test(String(event?.monster || ''));
+  const hp = (isBoss ? 14 : 8) + index * (isBoss ? 2 : 1) + scale * 2;
+  return decorateEncounter(room, {
     name: event.monster,
-    ac: Math.min(15, 10 + index),
+    ac: Math.min(isBoss ? 13 : 11, 9 + Math.floor(index / 2)),
     hp,
     maxHp: hp,
-    attackBonus: 2 + Math.floor(index / 2),
+    attackBonus: 1 + Math.floor(index / 2),
     round: 1,
     acted: [],
     turnPhase: 'players',
     bossTurnStartedAt: null,
-  };
+    source:'event',
+  }, { isBoss });
 }
 
 function clearBossTurnTimer(roomCode) {
@@ -1938,7 +2030,7 @@ function monsterTurn(room) {
   }
   const target = living[crypto.randomInt(0, living.length)];
   const roll = rand(20);
-  const armor = 10 + effectiveAbilityMod(room, target, '민첩');
+  const armor = Number(derivedAbilityImpact(target).defense || 10) + equipmentStatBonus(room, target, '민첩');
   const total = roll + room.monster.attackBonus;
   const hit = roll === 20 || (roll !== 1 && total >= armor);
   let damage = hit ? rand(4) + 1 : 0;
@@ -1975,7 +2067,7 @@ function scheduleMonsterTurn(room, delayMs = 1500) {
   if (room.monster.turnPhase === 'boss' && bossTurnTimers.has(room.code)) return;
   room.monster.turnPhase = 'boss';
   room.monster.bossTurnStartedAt = Date.now();
-  pushChat(room, { type: 'danger', author: 'GM', text: `ENEMY TURN · ${room.monster.name}이(가) 공격을 준비합니다.` });
+  pushChat(room, { type: 'danger', author: 'GM', text: `ENEMY TURN · ${room.monster.name}: ${room.monster.isBoss ? '“이번에는 내가 움직인다.”' : '“비켜. 이제 내 차례다.”'}` });
   sync(room);
   clearBossTurnTimer(room.code);
   const timer = setTimeout(() => {
@@ -2478,7 +2570,7 @@ io.on('connection', socket => {
       room.monster = monsterForStoryChoice(room, beat, choice);
       room.pendingStoryCombat = true;
       room.phase = 'combat';
-      pushChat(room, { type:'danger', author:'GM', text:`${room.monster.name}과(와)의 전투가 시작됩니다.` });
+      pushChat(room, { type:'danger', author:room.monster.name, text:room.monster.introLine || `${room.monster.name}이(가) 길을 막아섰다.` });
     }
       pushChat(room, { type:'action', author:player.name, text:`짧은 대답: ${declaration}` });
       if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
@@ -2501,9 +2593,10 @@ io.on('connection', socket => {
     const abilityMod = baseAbilityMod + gearBonus;
     const skillBonus = Number(player.skillState?.checkBonus || 0);
     const statusPenalty = statusPenaltyForCheck(room, player, choice.stat);
+    const traitBonus = traitCheckBonus(player, choice.stat);
     const dcReduction = Number(room.nextCheckDcReduction || 0);
     const dc = Math.max(8, Number(choice.dc || 10) + Number(room.dcPenalty || 0) - dcReduction);
-    const total = roll + abilityMod + skillBonus + statusPenalty;
+    const total = roll + abilityMod + skillBonus + statusPenalty + traitBonus;
     const success = roll === 20 || (roll !== 1 && total >= dc);
     const margin = total - dc;
     player.skillState.checkBonus = 0;
@@ -2516,7 +2609,7 @@ io.on('connection', socket => {
 
     emitRoll(room, player, {
       sides:20, result:roll, purpose:`메인 스토리 · ${choice.stat} 판정 · DC ${dc}`,
-      kind:'story-choice', stat:choice.stat, total, dc, success, modifiers:[{label:`${choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty}].filter(m=>m.value),
+      kind:'story-choice', stat:choice.stat, total, dc, success, modifiers:[{label:`${choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty},{label:'능력치 특성',value:traitBonus}].filter(m=>m.value),
     });
 
     let consequence = '';
@@ -2749,8 +2842,9 @@ io.on('connection', socket => {
     const abilityMod = baseAbilityMod + gearBonus;
     const skillBonus = Number(player.skillState?.checkBonus || 0);
     const statusPenalty = statusPenaltyForCheck(room, player, active.choice.stat);
+    const traitBonus = traitCheckBonus(player, active.choice.stat);
     const dcReduction = Number(room.nextCheckDcReduction || 0);
-    const total = result + abilityMod + skillBonus + statusPenalty;
+    const total = result + abilityMod + skillBonus + statusPenalty + traitBonus;
     const dc = Math.max(8, active.choice.dc + room.dcPenalty - dcReduction);
     player.skillState.checkBonus = 0;
     room.nextCheckDcReduction = 0;
@@ -2758,7 +2852,7 @@ io.on('connection', socket => {
     const margin = total - dc;
     emitRoll(room, player, {
       sides: 20, result, purpose: `${active.choice.stat} 판정 · DC ${dc}`,
-      kind: 'check', stat: active.choice.stat, total, dc, success, modifiers:[{label:`${active.choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty}].filter(m=>m.value),
+      kind: 'check', stat: active.choice.stat, total, dc, success, modifiers:[{label:`${active.choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty},{label:'능력치 특성',value:traitBonus}].filter(m=>m.value),
     });
 
     const effect = success ? active.choice.successEffect : active.choice.failureEffect;
@@ -2826,7 +2920,7 @@ io.on('connection', socket => {
       room.monster = monsterForEvent(room, event);
       room.pendingTurnAdvance = true;
       room.phase = 'combat';
-      pushChat(room, { type: 'danger', author: 'GM', text: `${event.monster} 등장! 이벤트가 전투로 이어집니다.` });
+      pushChat(room, { type: 'danger', author:room.monster.name, text:room.monster.introLine || `${event.monster}이(가) 모습을 드러냈다.` });
     } else {
       advanceTurn(room);
     }
@@ -2838,10 +2932,10 @@ io.on('connection', socket => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'combat', ack, '전투 중이 아닙니다.') || !room.monster) return;
     if (player.hp <= 0) return ack?.({ ok:false, error:'쓰러진 캐릭터는 방어할 수 없습니다.' });
-    if (room.monster.turnPhase === 'boss') return ack?.({ ok:false, error:'지금은 보스의 행동 중입니다.' });
+    if (room.monster.turnPhase === 'boss') return ack?.({ ok:false, error:'지금은 적의 행동 중입니다.' });
     if (room.monster.acted?.includes(player.id)) return ack?.({ ok:false, error:'이번 라운드에는 이미 행동했습니다.' });
     const con = rawAbilityMod(player, '체력');
-    const guard = Math.max(2, 2 + Math.max(0, con));
+    const guard = Math.max(1, 2 + Math.max(0, con) + Number(derivedAbilityImpact(player).guardBonus || 0));
     player.skillState ||= {};
     player.skillState.guard = Math.max(Number(player.skillState.guard || 0), guard);
     room.monster.acted ||= [];
@@ -2869,13 +2963,14 @@ io.on('connection', socket => {
     const skillAttackBonus = Number(player.skillState?.attackBonus || 0);
     const skillDamageBonus = Number(player.skillState?.damageBonus || 0);
     const statusAttackPenalty = statusPenaltyForAttack(room, player, stat);
+    const passiveHitBonus = Number(derivedAbilityImpact(player).combatHitBonus || 0);
     const result = rand(20);
-    const total = result + bonus + skillAttackBonus + statusAttackPenalty;
+    const total = result + bonus + skillAttackBonus + statusAttackPenalty + passiveHitBonus;
     const hit = result === 20 || (result !== 1 && total >= room.monster.ac);
     let damage = 0;
     if (hit) {
       const strengthDamage = derivedAbilityImpact(player).strengthDamage;
-      damage = rand(6) + Math.max(0, bonus) + strengthDamage + skillDamageBonus;
+      damage = Math.max(1, rand(6) + Math.max(0, bonus) + strengthDamage + skillDamageBonus);
       if (result === 20) damage += rand(6);
       room.monster.hp = Math.max(0, room.monster.hp - damage);
     }
@@ -2886,7 +2981,7 @@ io.on('connection', socket => {
 
     emitRoll(room, player, {
       sides: 20, result, purpose: `${room.monster.name} 공격 · AC ${room.monster.ac}`,
-      kind: 'attack', total, dc: room.monster.ac, success: hit, damage, modifiers:[{label:`${player.job?.prime || '공격'} 기본 보정`,value:baseBonus},{label:'장비 보정',value:gearBonus},{label:'스킬 명중',value:skillAttackBonus},{label:'상태 효과',value:statusAttackPenalty}].filter(m=>m.value),
+      kind: 'attack', total, dc: room.monster.ac, success: hit, damage, modifiers:[{label:`${player.job?.prime || '공격'} 기본 보정`,value:baseBonus},{label:'장비 보정',value:gearBonus},{label:'스킬 명중',value:skillAttackBonus},{label:'상태 효과',value:statusAttackPenalty},{label:'능력치 특성',value:passiveHitBonus}].filter(m=>m.value),
     });
     pushChat(room, {
       type: hit ? 'success' : 'failure', author: player.name,

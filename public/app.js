@@ -5,11 +5,10 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 const REQUIRED_IDS = [
-  'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'exploreView', 'combatView', 'endingView',
+  'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'combatView', 'endingView',
   'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'entryError',
   'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
-  'exploreParty','exploreMapName','exploreMapSubtitle','exploreRouteDiversity','exploreObjective','worldMap','exploreFreeInput','exploreFreeBtn','exploreFreeBox','exploreLog','exploreFocusHint','exploreInteraction','exploreDialogue','explorePortrait','exploreSpeaker','exploreRelation','exploreDialogueText','questJournal','exploreChatLog','exploreChatForm','exploreChatInput',
   'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
   'myJobMini', 'myStatsMini', 'economyPanel', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
   'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'defendBtn', 'attackBtn', 'combatLog',
@@ -882,7 +881,7 @@ function monsterArt(c, monster) {
     clock:`<circle cx="760" cy="325" r="150" fill="rgba(17,16,30,.9)" stroke="${accent}" stroke-width="12"/><circle cx="760" cy="325" r="82" fill="none" stroke="rgba(255,225,155,.6)" stroke-width="8"/><path d="M760 325 L760 245 M760 325 L830 358" stroke="${accent}" stroke-width="12" stroke-linecap="round"/><path d="M630 500 C665 410 855 410 890 500" fill="rgba(8,8,16,.9)" stroke="${accent}" stroke-width="8"/>`,
     wild:`<path d="M610 510 C625 340 675 225 760 210 C845 225 895 340 910 510 C850 470 805 445 760 445 C715 445 670 470 610 510 Z" fill="rgba(8,32,22,.9)" stroke="${accent}" stroke-width="10"/><path d="M680 255 C610 205 575 135 560 95 C625 115 680 155 716 205 M840 255 C910 205 945 135 960 95 C895 115 840 155 804 205" fill="none" stroke="${accent}" stroke-width="14"/><circle cx="715" cy="350" r="15" fill="#efffd2"/><circle cx="805" cy="350" r="15" fill="#efffd2"/>`
   }[world]||'';
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760"><defs><radialGradient id="bg"><stop offset="0" stop-color="#2a1720"/><stop offset="1" stop-color="#07080e"/></radialGradient></defs><rect width="1400" height="760" fill="url(#bg)"/><circle cx="1130" cy="140" r="55" fill="${accent}" opacity=".18"/><g>${shape}</g><rect x="75" y="70" width="480" height="170" rx="18" fill="rgba(4,5,10,.64)"/><text x="105" y="113" fill="${accent}" font-family="sans-serif" font-size="20" font-weight="700" letter-spacing="3">BOSS ENCOUNTER</text><text x="105" y="165" fill="#fff" font-family="sans-serif" font-size="45" font-weight="800">${esc(monster||'UNKNOWN')}</text><text x="105" y="207" fill="#ddd" font-family="sans-serif" font-size="20">${esc(names[world]||'강대한 적')}</text></svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760"><defs><radialGradient id="bg"><stop offset="0" stop-color="#2a1720"/><stop offset="1" stop-color="#07080e"/></radialGradient></defs><rect width="1400" height="760" fill="url(#bg)"/><circle cx="1130" cy="140" r="55" fill="${accent}" opacity=".18"/><g>${shape}</g><rect x="75" y="70" width="480" height="170" rx="18" fill="rgba(4,5,10,.64)"/><text x="105" y="113" fill="${accent}" font-family="sans-serif" font-size="20" font-weight="700" letter-spacing="3">COMBAT ENCOUNTER</text><text x="105" y="165" fill="#fff" font-family="sans-serif" font-size="45" font-weight="800">${esc(monster||'UNKNOWN')}</text><text x="105" y="207" fill="#ddd" font-family="sans-serif" font-size="20">${esc(names[world]||'강대한 적')}</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 function setBossSceneImage(img,c,monster){
@@ -1041,13 +1040,11 @@ function renderState() {
   $('#roomCodeLobby').textContent = state.code;
   if (state.campaign) setWorld(state.campaign);
   if (state.phase === 'lobby') view('lobbyView');
-  else if (state.phase === 'explore') view('exploreView');
   else if (state.phase === 'combat') view('combatView');
   else if (state.phase === 'ending') view('endingView');
   else view('storyView');
   renderLobby();
   renderStory();
-  renderExploration();
   renderCombat();
   renderEnding();
   renderChat();
@@ -1189,7 +1186,7 @@ function renderStory() {
   $('#storyFill').style.width = Math.max(4, Math.min(100, actProgress + 8)) + '%';
   $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(member => {
     const statuses = member.statuses?.length
-      ? `<div class="status-strip">${member.statuses.map(status => `<span class="status-pill" title="${esc(status.desc || '')}">${esc(status.label)} · ${status.remainingScenes}장면</span>`).join('')}</div>`
+      ? `<div class="status-strip">${(() => { const injuryCount = member.statuses.reduce((n,s)=>n+Math.max(1,Number(s.stacks||1)),0); return `<span class="status-pill" title="누적 실패로 인한 부상">부상 ${injuryCount}</span>`; })()}</div>`
       : `<div class="status-strip"><span class="status-pill ok">정상</span></div>`;
     return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '')}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}</div>`;
   }).join('');
@@ -1292,7 +1289,7 @@ function renderStory() {
     $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}의 선택.</b> ${esc(beat?.prompt || '아래 행동 중 하나를 고르세요.')}`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
 
-    const freeActionAllowed = Boolean(beat?.freeActionAllowed && state.phase === 'story');
+    const freeActionAllowed = false;
     const myTurn = state.turnPlayerId === playerToken;
     $('#storyActionBox').style.display = freeActionAllowed ? 'block' : 'none';
     $('#storyActionInput').disabled = !(freeActionAllowed && myTurn);
@@ -1314,7 +1311,7 @@ function renderStory() {
   }
 
   $('#gmBar').style.display = 'flex';
-  const freeActionSubmit = Boolean(!ev && beat?.freeActionAllowed && state.phase === 'story');
+  const freeActionSubmit = false;
   $('#advanceStoryBtn').style.display = state.phase === 'prologue' || freeActionSubmit ? 'inline-flex' : 'none';
   if (state.phase !== 'prologue') {
     $('#advanceStoryBtn').disabled = !(freeActionSubmit && state.turnPlayerId === playerToken);
@@ -1341,11 +1338,10 @@ function renderMainStoryChoices(beat) {
   const visibleChoices = beat.choices
     .map((choice, originalIndex) => ({ choice, originalIndex }))
     .filter(({ choice }) => !choice.requiredJob || choice.requiredJob === myJob);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">SCENE CHOICES</span><b>공통 선택지와 현재 직업만 사용할 수 있는 전용 선택지가 함께 표시됩니다.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 선택과 주사위 결과가 다음 장면과 엔딩 후보를 바꿉니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>짧게 고르세요. 선택마다 다른 후속 장면과 결과가 이어집니다.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 선택과 주사위 결과가 다음 장면과 엔딩 후보를 바꿉니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
     <button class="choice-card story-choice ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
       <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${choice.rareJobMoment ? '희귀 기회 · ' : ''}${esc(choice.requiredJob)} 전용</span>` : ''}</div>
-      <small>${esc(choice.detail || '')}</small>
-      <div class="story-choice-meta"><span>${choice.branchValue === 'careful' ? '추적' : choice.branchValue === 'bold' ? '돌파' : '신뢰'} · ${esc(choice.stat)} 판정</span><span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
+      <div class="story-choice-meta"><span>${esc(choice.stat)}</span><span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
       ${(beat?.statInsight?.insight || beat?.statInsight?.dangerSense) && choice.consequenceHint ? `<div class="choice-forecast">${beat.statInsight.insight ? `성공 시 ${esc(choice.consequenceHint.success)}` : ''}${beat.statInsight.insight && beat.statInsight.dangerSense ? ' · ' : ''}${beat.statInsight.dangerSense ? `실패 시 ${esc(choice.consequenceHint.failure)}` : ''}</div>` : ''}
     </button>
   `).join('');
@@ -1419,156 +1415,6 @@ function showResolution(r) {
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');
 
-
-let exploreFreeExpanded = false;
-let exploreShopTarget = '';
-function npcPortraitData(object = {}) {
-  const role = String(object.role || 'NPC');
-  const palette = role.includes('상인') ? ['#9b643f','#e7b56a','#34211a']
-    : role.includes('경비') ? ['#546b7c','#cfd8de','#18232c']
-    : role.includes('기록') ? ['#695d89','#d9c8ff','#211a33']
-    : role.includes('정보') ? ['#7d435b','#ef9fb5','#28141f']
-    : role.includes('숙박') ? ['#7c5e41','#f1cf9b','#2a1d13']
-    : role.includes('메인') ? ['#a96537','#ffd18b','#271711']
-    : ['#556f5b','#c8e0bb','#18251b'];
-  const icon = esc(object.icon || '•');
-  const name = esc(String(object.name || 'NPC').slice(0,12));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${palette[0]}"/><stop offset="1" stop-color="${palette[2]}"/></linearGradient></defs>
-    <rect width="180" height="180" fill="#11131a"/><rect x="8" y="8" width="164" height="164" rx="10" fill="url(#g)" stroke="${palette[1]}" stroke-width="4"/>
-    <circle cx="90" cy="78" r="42" fill="#e8c2a2"/><path d="M47 72q10-55 44-55 42 0 48 56-20-20-48-19-25 0-44 18z" fill="${palette[2]}"/>
-    <circle cx="74" cy="80" r="5" fill="#18151a"/><circle cx="106" cy="80" r="5" fill="#18151a"/><path d="M77 102q13 9 26 0" fill="none" stroke="#7f473a" stroke-width="4" stroke-linecap="round"/>
-    <path d="M38 166q8-48 52-48 45 0 53 48" fill="${palette[0]}" stroke="${palette[1]}" stroke-width="3"/>
-    <text x="144" y="40" fill="${palette[1]}" font-size="28" text-anchor="middle">${icon}</text>
-    <rect x="18" y="136" width="144" height="28" rx="5" fill="rgba(5,6,10,.72)"/><text x="90" y="155" fill="#fff" font-size="11" text-anchor="middle" font-family="sans-serif">${name}</text>
-  </svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-function compactExploreActions(interaction) {
-  const o = interaction?.object || {};
-  const actions = interaction?.actions || [];
-  const byId = new Map(actions.map(a => [a.id,a]));
-  let ids = [];
-  if (o.id === 'main') ids = ['investigate','infiltrate','negotiate','force'];
-  else if (o.id === 'merchant') ids = ['talk','trade','askQuest'];
-  else if (o.id === 'innkeeper') ids = ['talk','rest','askQuest'];
-  else if (o.id === 'scholar') ids = ['talk','inspect','askQuest'];
-  else if (o.id === 'rogue') ids = ['talk','buyInfo','askQuest'];
-  else if (o.id === 'guard') ids = ['talk','report','persuade'];
-  else if (o.id === 'shrine') ids = ['inspect','pray','search'];
-  else if (o.id === 'board') ids = ['inspect','takeQuest'];
-  else if (o.id === 'cache') ids = ['inspect','pickLock','leave'];
-  else ids = ['talk','help','askRumor','inspect'];
-  if (byId.has('turnInQuest')) ids.unshift('turnInQuest');
-  const primary = [];
-  for (const id of ids) {
-    const action = byId.get(id);
-    if (action && !primary.some(x => x.id === id)) primary.push(action);
-    if (primary.length >= (o.id === 'main' ? 4 : 3)) break;
-  }
-  return primary;
-}
-function renderExploreDialogueIdle() {
-  $('#exploreDialogue').classList.remove('active');
-  $('#exploreSpeaker').textContent = '주변';
-  $('#exploreRelation').textContent = '';
-  $('#exploreDialogueText').textContent = '맵을 자유롭게 돌아다니세요. NPC나 장소 가까이 가면 상호작용할 수 있습니다.';
-  $('#explorePortrait').src = npcPortraitData({name:'탐험',role:'주변',icon:'◆'});
-  $('#exploreInteraction').innerHTML = '<div class="rpg-dialogue-hint">WASD / 방향키 이동 · 가까운 대상에서 E 또는 아이콘 클릭</div><button type="button" class="rpg-choice-btn more-action idle-other-action" id="exploreIdleOtherAction"><b>주변에 다른 행동…</b><small>수색, 기다리기, 환경 이용 등</small></button>';
-  $('#exploreFreeBox').classList.add('collapsed');
-  exploreFreeExpanded = false;
-}
-function exploreMove(dx,dy){
-  if(state?.phase!=='explore') return;
-  socket.emit('explore:move',{roomCode,playerToken,dx,dy},r=>{ if(!r?.ok && r?.error) toast(r.error); });
-}
-function renderExploration(){
-  const ex=state?.exploration;
-  if(!ex) return;
-  const player=me();
-  const pos=ex.positions?.[playerToken] || {x:0,y:0};
-  $('#exploreMapName').textContent=ex.name || '자유 탐험';
-  const currentRegion=(ex.regions||[]).find(r=>pos.x>=r.x0&&pos.x<=r.x1&&pos.y>=r.y0&&pos.y<=r.y1);
-  $('#exploreMapSubtitle').textContent=`${ex.subtitle||''} · ${currentRegion?.name||'미지의 지역'} · 좌표 ${pos.x},${pos.y} · 월드 ${ex.width}×${ex.height}`;
-  $('#exploreRouteDiversity').textContent=`${Number(ex.routeDiversity||36).toLocaleString()}+`;
-  const beat=state.storyBeat;
-  $('#exploreObjective').innerHTML=`<b>MAIN</b><span>${esc(beat?.title || (state.storyComplete?'완료됨':'다음 목표를 찾는 중'))}</span><small>${state.storyComplete?'모든 핵심 퀘스트를 해결했습니다.':`✦ 표식까지 직접 이동하세요. 메인 진행 ${state.storySeenCount||0}/${state.targetStory||30}`}</small>`;
-
-  $('#exploreParty').innerHTML=(state.players||[]).map(m=>{ const p=ex.positions?.[m.id]||{}; return `<div class="explore-party-member ${m.id===playerToken?'me':''}"><b>${esc(m.name)}</b><small>${esc(m.job?.name||'')}</small><span>HP ${m.hp}/${m.maxHp} · (${p.x??'?'},${p.y??'?'})</span></div>`; }).join('');
-
-  const walls=new Set(ex.walls||[]);
-  const discovered=new Set(ex.discoveredByPlayer?.[playerToken]||[]);
-  const objectAt=(x,y)=>[...(ex.npcs||[]),...(ex.pois||[])].find(o=>o.x===x&&o.y===y&&(!o.hidden||discovered.has(o.id)));
-  const playersAt=(x,y)=>(state.players||[]).filter(m=>ex.positions?.[m.id]?.x===x&&ex.positions?.[m.id]?.y===y);
-  // 실제 월드는 45x27이지만 화면에는 플레이어 주변만 카메라처럼 보여준다.
-  // 맵 전체를 한 번에 축소하지 않아 캐릭터/오브젝트가 작아지지 않고, 이동할수록 새로운 지역이 드러난다.
-  const VIEW_W=Math.min(17,ex.width), VIEW_H=Math.min(11,ex.height);
-  const camX=Math.max(0,Math.min(ex.width-VIEW_W,pos.x-Math.floor(VIEW_W/2)));
-  const camY=Math.max(0,Math.min(ex.height-VIEW_H,pos.y-Math.floor(VIEW_H/2)));
-  const cells=[];
-  for(let vy=0;vy<VIEW_H;vy++) for(let vx=0;vx<VIEW_W;vx++){
-    const x=camX+vx,y=camY+vy;
-    const wall=walls.has(`${x},${y}`); const obj=objectAt(x,y); const ps=playersAt(x,y);
-    const dist=Math.abs(pos.x-x)+Math.abs(pos.y-y); const reachable=dist===1&&!wall; const nearby=dist<=1;
-    const region=(ex.regions||[]).find(r=>x>=r.x0&&x<=r.x1&&y>=r.y0&&y<=r.y1);
-    const cls=['map-cell',wall?'wall':'floor',reachable?'reachable':'',obj?'has-object':'',nearby&&obj?'near-object':'',ps.length?'has-player':''].filter(Boolean).join(' ');
-    const labels=[];
-    if(obj) labels.push(`<button class="map-object" data-interact="${esc(obj.id)}" title="${esc(obj.name)}"><i>${esc(obj.icon||'•')}</i><small>${esc(obj.name)}</small>${nearby?'<em>말걸기</em>':''}</button>`);
-    if(ps.length) labels.push(`<div class="map-players">${ps.map(m=>`<span class="map-player ${m.id===playerToken?'me':''}" title="${esc(m.name)}">${m.id===playerToken?'◆':'●'}</span>`).join('')}</div>`);
-    cells.push(`<div class="${cls}" data-x="${x}" data-y="${y}" title="${esc(region?.name||'')} · ${x},${y}">${wall?'<span class="wall-mark">▦</span>':labels.join('')}</div>`);
-  }
-  const map=$('#worldMap');
-  map.style.setProperty('--map-w',VIEW_W);
-  map.style.setProperty('--map-h',VIEW_H);
-  map.dataset.camera=`${camX},${camY}`;
-  map.innerHTML=cells.join('');
-  map.querySelectorAll('.map-cell.reachable').forEach(cell=>cell.onclick=e=>{ if(e.target.closest('[data-interact]')) return; const x=Number(cell.dataset.x),y=Number(cell.dataset.y); exploreMove(x-pos.x,y-pos.y); });
-  map.querySelectorAll('[data-interact]').forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); socket.emit('explore:interact',{roomCode,playerToken,targetId:btn.dataset.interact},r=>!r?.ok&&toast(r.error)); });
-
-  const interaction=ex.interactions?.[playerToken] || null;
-  const ib=$('#exploreInteraction');
-  if(!interaction){
-    $('#exploreFocusHint').textContent='가까운 대상에서 E 또는 아이콘 클릭';
-    renderExploreDialogueIdle();
-    const idleOther=document.querySelector('#exploreIdleOtherAction'); if(idleOther) idleOther.onclick=()=>{exploreFreeExpanded=true;$('#exploreFreeBox').classList.remove('collapsed');$('#exploreFreeInput').focus();};
-  } else {
-    const o=interaction.object; const ns=interaction.state;
-    const rel=ns?(Number.isFinite(Number(ns.relation))?`관계 ${Number(ns.relation)>=0?'+':''}${Number(ns.relation)}${ns.hostile?' · 적대':''}${ns.defeated?' · 제압됨':''}`:`${ns.hostile?'적대':''}${ns.defeated?' · 제압됨':''}`.replace(/^ · /,'')):'';
-    $('#exploreDialogue').classList.add('active');
-    $('#exploreFocusHint').textContent=`${o.name} · 상호작용 중`;
-    $('#exploreSpeaker').textContent=o.name;
-    $('#exploreRelation').textContent=[o.role,rel].filter(Boolean).join(' · ');
-    $('#explorePortrait').src=npcPortraitData(o);
-    $('#exploreDialogueText').textContent=interaction.dialogue?.text || `${o.name}이(가) 당신을 바라본다. 무엇을 할까?`;
-    const primary=compactExploreActions(interaction);
-    const buttons=primary.map(a=>`<button type="button" class="rpg-choice-btn" data-explore-act="${esc(a.id)}"><b>${esc(a.label)}</b>${a.preview?`<small>${esc(a.preview)}</small>`:''}${a.warning?`<em>${esc(a.warning)}</em>`:''}</button>`).join('');
-    const shop=(o.id==='merchant'&&exploreShopTarget===o.id&&(interaction.shopItems||[]).length)?`<div class="rpg-shop-drawer"><div class="rpg-shop-title">상인이 내민 물건</div>${interaction.shopItems.slice(0,4).map(item=>`<div class="rpg-shop-item"><div><b>${esc(item.name)}</b><small>${esc(item.stat)} 판정 +${item.bonus}</small></div><button type="button" data-explore-buy="${esc(item.id)}">◈ ${item.price}</button></div>`).join('')}</div>`:'';
-    ib.innerHTML=`<div class="rpg-choice-row">${buttons}<button type="button" class="rpg-choice-btn more-action" id="exploreOtherAction"><b>다른 행동…</b><small>직접 입력</small></button></div>${shop}`;
-    ib.querySelectorAll('[data-explore-act]').forEach(btn=>btn.onclick=()=>socket.emit('explore:act',{roomCode,playerToken,targetId:o.id,action:btn.dataset.exploreAct},r=>{if(!r?.ok)toast(r.error);else if(btn.dataset.exploreAct==='trade'){exploreShopTarget=o.id;renderExploration();}}));
-    ib.querySelectorAll('[data-explore-buy]').forEach(btn=>btn.onclick=()=>socket.emit('explore:buy',{roomCode,playerToken,itemId:btn.dataset.exploreBuy},r=>{if(!r?.ok)toast(r.error);else toast(r.summary);}));
-    document.querySelector('#exploreOtherAction').onclick=()=>{ exploreFreeExpanded=!exploreFreeExpanded; $('#exploreFreeBox').classList.toggle('collapsed',!exploreFreeExpanded); if(exploreFreeExpanded) $('#exploreFreeInput').focus(); };
-    $('#exploreFreeBox').classList.toggle('collapsed',!exploreFreeExpanded);
-  }
-  const quests=ex.sideQuests?.[playerToken]||[];
-  $('#questJournal').innerHTML=`<div class="main-quest-card"><b>MAIN · ${esc(beat?.title||'연대기 완료')}</b><small>${state.storyComplete?'완료':'✦ 맵의 목표 지점으로 직접 이동'}</small></div>${quests.filter(q=>q.state!=='available').map(q=>`<div class="side-quest ${q.state}"><b>${esc(q.title)}</b><small>${q.state==='active'?'진행 중':q.state==='ready'?'완료 보고 가능':'완료'} · ${esc(q.description)}</small></div>`).join('')||'<div class="empty-quest">NPC와 대화하다 의뢰를 받으면 여기에 기록됩니다.</div>'}`;
-  $('#exploreLog').innerHTML=(ex.actionHistory||[]).slice(-4).reverse().map(a=>`<div><b>${esc(a.playerName)}</b><span>${esc(a.targetName)} · ${esc(a.text)}</span></div>`).join('');
-}
-$$('[data-move]').forEach(btn=>btn.onclick=()=>{ const [dx,dy]=btn.dataset.move.split(',').map(Number); exploreMove(dx,dy); });
-$('#exploreFreeBtn').onclick=()=>{ const input=$('#exploreFreeInput'); const text=input.value.trim(); if(!text)return; const interaction=state?.exploration?.interactions?.[playerToken]; socket.emit('explore:freeAction',{roomCode,playerToken,text,targetId:interaction?.object?.id||null},r=>{if(!r?.ok)return toast(r.error); input.value=''; if(r.summary)toast(r.summary.slice(0,120));}); };
-$('#exploreFreeInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();$('#exploreFreeBtn').click();} });
-document.addEventListener('keydown',e=>{
-  if(state?.phase!=='explore'||['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
-  const key=e.key.toLowerCase(); const move=key==='w'||key==='arrowup'?[0,-1]:key==='s'||key==='arrowdown'?[0,1]:key==='a'||key==='arrowleft'?[-1,0]:key==='d'||key==='arrowright'?[1,0]:null;
-  if(move){e.preventDefault();exploreMove(...move);return;}
-  if(key==='e'){
-    const ex=state?.exploration; const pos=ex?.positions?.[playerToken];
-    if(!ex||!pos)return;
-    const discovered=new Set(ex.discoveredByPlayer?.[playerToken]||[]);
-    const nearest=[...(ex.npcs||[]),...(ex.pois||[])].filter(o=>(!o.hidden||discovered.has(o.id))&&(Math.abs(o.x-pos.x)+Math.abs(o.y-pos.y)<=1))[0];
-    if(nearest){e.preventDefault();socket.emit('explore:interact',{roomCode,playerToken,targetId:nearest.id},r=>!r?.ok&&toast(r.error));}
-  }
-});
-
 function renderCombat() {
   if (!state || state.phase !== 'combat' || !state.monster) return;
   renderSkillUi();
@@ -1586,7 +1432,7 @@ function renderCombat() {
   $('#monsterHpFill').style.width = Math.max(0, m.hp / m.maxHp * 100) + '%';
   $('#monsterHpText').textContent = `${m.hp} / ${m.maxHp}`;
   $('#combatRoundLabel').textContent = `ROUND ${m.round || 1}`;
-  $('#combatTurnPhase').textContent = phase === 'boss' ? 'BOSS TURN' : 'PLAYER TURN';
+  $('#combatTurnPhase').textContent = phase === 'boss' ? 'ENEMY TURN' : 'PLAYER TURN';
   $('#combatTurnPanel').classList.toggle('boss-active', phase === 'boss');
 
   $('#combatTimeline').innerHTML = phase === 'boss'
@@ -1594,11 +1440,11 @@ function renderCombat() {
     : `<div class="simple-combat-step"><b>${esc(nextPlayer?.name || '플레이어')}의 행동</b><small>공격 · 방어 · 직업 스킬 중 하나만 선택하세요. 남은 행동 ${remaining.length}명</small></div>`;
 
   if (phase === 'boss') {
-    $('#bossTurnWarning').innerHTML = `<strong>⚠ BOSS TURN</strong> · ${esc(m.name)}이(가) 공격을 준비합니다. 잠시 기다리세요.`;
+    $('#bossTurnWarning').innerHTML = `<strong>⚠ ENEMY TURN</strong> · ${esc(m.name)}이(가) 공격을 준비합니다. 잠시 기다리세요.`;
   } else if (remaining.length === 1) {
-    $('#bossTurnWarning').innerHTML = `<strong>다음은 BOSS TURN</strong> · ${esc(remaining[0].name)} 님이 행동하면 곧바로 보스 차례가 시작됩니다.`;
+    $('#bossTurnWarning').innerHTML = `<strong>다음은 ENEMY TURN</strong> · ${esc(remaining[0].name)} 님이 행동하면 곧바로 보스 차례가 시작됩니다.`;
   } else {
-    $('#bossTurnWarning').textContent = `플레이어 ${remaining.length}명 행동이 남았습니다. 모두 행동하면 BOSS TURN이 시작됩니다.`;
+    $('#bossTurnWarning').textContent = `플레이어 ${remaining.length}명 행동이 남았습니다. 모두 행동하면 ENEMY TURN이 시작됩니다.`;
   }
 
   $('#combatParty').innerHTML = state.players.map(p => `<div class="combat-member ${acted.has(p.id) ? 'acted' : ''} ${p.connected ? '' : 'offline'}"><b>${esc(p.name)}</b><div>${esc(p.job?.name || '')}</div><small>HP ${p.hp}/${p.maxHp}${acted.has(p.id) ? ' · 행동 완료' : ''}</small></div>`).join('');
@@ -1655,14 +1501,11 @@ function renderChat() {
   const markup = visibleChat.map(m => `<div class="chat-msg ${m.type || ''}">${m.author ? `<b>${esc(m.author)}</b>` : ''}${esc(m.text)}</div>`).join('');
   const storyLog = $('#chatLog');
   const lobbyLog = $('#lobbyChatLog');
-  const exploreLog = $('#exploreChatLog');
   if (storyLog) { storyLog.innerHTML = markup; storyLog.scrollTop = storyLog.scrollHeight; }
   if (lobbyLog) { lobbyLog.innerHTML = markup; lobbyLog.scrollTop = lobbyLog.scrollHeight; }
-  if (exploreLog) { exploreLog.innerHTML = markup; exploreLog.scrollTop = exploreLog.scrollHeight; }
 }
 $('#chatForm').onsubmit = e => { e.preventDefault(); sendChat('#chatInput'); };
 $('#lobbyChatForm').onsubmit = e => { e.preventDefault(); sendChat('#lobbyChatInput'); };
-$('#exploreChatForm').onsubmit = e => { e.preventDefault(); sendChat('#exploreChatInput'); };
 
 function renderHelp() {
   const phase = state?.phase || 'home';
@@ -1672,7 +1515,7 @@ function renderHelp() {
       title: '기본 진행 순서',
       items: [
         '로비에서 스토리를 고른 뒤 각 플레이어는 D6 직업 배정과 4D6 능력치 생성을 각 스토리마다 1번씩만 진행합니다.',
-        '일반 장면은 3~4개의 서로 다른 해결법이 나오며, 원한다면 자유 행동을 직접 적어도 됩니다. 중요한 장면은 선택 수가 줄고 화면에 중요도가 표시됩니다.',
+        '일반 장면은 보통 6개, 중요한 장면은 5개, 결정적 장면은 4개 안팎의 해결법이 나옵니다. 자유 입력 없이도 조사·분석·잠입·돌파·협상·보호 등 서로 다른 방식으로 진행할 수 있습니다.',
         `가장 많은 표를 받은 선택지가 확정되며, 현재 차례 플레이어(${esc(state?.turnPlayerName || '미정')})가 실제 판정을 굴립니다.`,
         '메인 소설 장면 3개를 진행할 때마다 짧은 이벤트 카드가 끼어듭니다. 일반 사건의 DC는 낮고, 위험한 사건일수록 난이도와 중요도가 화면에 표시됩니다.',
       ],
@@ -1681,13 +1524,11 @@ function renderHelp() {
       title: '현재 상태 안내',
       text: phase === 'lobby'
         ? `현재는 로비입니다. ${c ? `선택된 연대기: ${c.title}.` : '아직 연대기를 선택하지 않았습니다.'} 게임 시작 전에도 채팅이 가능합니다.`
-        : phase === 'explore'
-          ? '현재는 자유 탐험 중입니다. WASD/방향키로 직접 맵을 이동하고 NPC와 장소에 상호작용하세요. 메인 퀘스트 표식 외에도 상점, 여관, 정보상, 경비, 숨은 장소와 서브 퀘스트가 존재합니다.'
-          : phase === 'combat'
+        : phase === 'combat'
           ? '현재는 전투 중입니다. 내 차례에는 공격·방어·직업 스킬 중 하나만 고르면 됩니다. 모든 생존 플레이어가 한 번 행동하면 보스가 한 번 공격합니다.'
           : phase === 'ending'
             ? '현재는 엔딩 화면입니다. 새 연대기를 시작하려면 버튼을 눌러 메인으로 돌아가세요.'
-            : '현재는 소설형 메인 스토리 진행 중입니다. 장면 본문과 직업 시점을 읽고 자유 행동을 선언하세요. 3턴마다 짧은 사이드 이벤트만 발생합니다.',
+            : '현재는 소설형 메인 스토리 진행 중입니다. 장면을 읽고 준비된 다양한 선택 중 하나를 고르세요. 선택과 판정 결과는 이후 장면과 엔딩에 누적됩니다.',
     },
     {
       title: '주사위 읽는 법',

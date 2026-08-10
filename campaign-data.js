@@ -520,79 +520,77 @@ function enrichStoryProse(c, guide, baseText, act, step) {
   return [baseText, textureLine, connective, pressure].filter(Boolean).join('\n\n');
 }
 function buildStoryChoices(c, guide, beat, act, step, index) {
+  const phase = beat.phase || '장면';
   const actNo = act + 1;
-  const phase = beat.phase || ['도입','탐색','대면','진실','위기','결단'][step] || '장면';
-  const anchor = sceneAnchor(guide.place || beat.situation || beat.text || c.title);
-  const goal = storyPhrase(guide.goal || beat.objective || '목표');
-  const reveal = storyPhrase(guide.reveal || beat.reveal || '진실');
-  const stakes = storyPhrase(guide.stakes || beat.stakes || c.intro);
-  const flavor = {
-    ember: {
-      careful:['봉인 흔적과 왕가 문장을 서로 대조한다','왕묘와 성채의 기록에서 누락된 이름을 찾는다','왕관의 마력이 남긴 방향을 추적한다'],
-      bold:['봉인된 길을 강제로 열고 가장 먼저 안쪽으로 들어간다','죽은 기사들의 행렬을 따라 위험 지역을 정면 돌파한다','왕관에 반응하는 물건을 직접 건드려 판을 흔든다'],
-      empathetic:['마을 사람·사제·귀족에게 말을 걸어 숨긴 증언을 끌어낸다','망령이 공격하지 않는 이유를 관찰하고 대화를 시도한다','서로 의심하는 사람들을 진정시켜 협력을 만든다'],
-    },
-    neon: {
-      careful:['로그 시간표와 삭제 흔적을 맞춰 진짜 기록을 복구한다','도시 감시망의 사각지대를 계산해 원본 데이터를 좁힌다','서로 다른 기억 조각의 불일치를 비교한다'],
-      bold:['추적망이 닫히기 전에 보안 노드를 뚫고 안으로 침투한다','도망치는 거래자나 드론을 끝까지 추격해 증거를 빼앗는다','위험한 백도어를 직접 열어 숨겨진 시스템을 깨운다'],
-      empathetic:['기억을 잃은 시민과 거래자에게 신뢰를 얻어 증언을 모은다','상대가 원하는 대가를 짚어 협상을 유리하게 이끈다','파티를 의심하는 사람들을 설득해 안전한 협력선을 만든다'],
-    },
-    abyss: {
-      careful:['산소·압력·소나 기록을 함께 비교해 이상 발생 지점을 찾는다','기지 로그와 생체 반응을 대조해 누가 먼저 움직였는지 추적한다','관측창과 균열의 신호 패턴을 분석한다'],
-      bold:['잠긴 압력문을 열고 가장 위험한 구역부터 직접 확인한다','산소가 떨어지기 전에 침수 통로를 빠르게 돌파한다','고장 난 장비를 현장에서 강제로 복구해 길을 만든다'],
-      empathetic:['겁에 질린 생존자를 안정시키고 숨겨 둔 증언을 듣는다','심해 신호에 즉시 적대하지 않고 반응을 관찰한다','서로 다른 구조 우선순위를 조율해 동료를 잃지 않는다'],
-    },
-    clock: {
-      careful:['이전 루프와 지금의 차이를 기록해 바뀐 한 지점을 찾는다','시계 장치와 예언 기록의 시간 오차를 비교한다','사라진 거리와 사람의 공통 규칙을 좁혀 간다'],
-      bold:['시간이 멈춘 틈을 이용해 금지된 구역으로 먼저 뛰어든다','루프가 닫히기 전에 문제의 장치를 강제로 멈춘다','역행하는 길을 정면으로 타고 사건 중심으로 들어간다'],
-      empathetic:['루프를 기억하는 사람들을 찾아 서로의 기억을 맞춘다','공포에 질린 시민을 설득해 사라진 사람의 흔적을 모은다','종지기와 밀수꾼의 이유를 먼저 듣고 진짜 목적을 확인한다'],
-    },
-    wild: {
-      careful:['별가루·뿌리·짐승 흔적을 읽어 숲이 바뀌는 규칙을 찾는다','두 부족의 기록과 별빛 반응을 비교한다','숲의 심장이 끌어당기는 마력 흐름을 추적한다'],
-      bold:['움직이는 숲길이 닫히기 전에 앞질러 중심부로 들어간다','오염된 야수의 길을 뚫고 위험 지역을 정면 돌파한다','별철과 신수의 힘을 직접 시험해 길을 연다'],
-      empathetic:['말하는 고목과 야수에게 해를 끼치지 않고 의사를 묻는다','두 부족의 두려움과 요구를 듣고 충돌을 중재한다','오르바와 숲을 적으로 단정하지 않고 행동의 이유를 살핀다'],
-    },
-  }[c.id] || {};
-  const branchOrder=['careful','bold','empathetic'];
-  const phaseLead={
-    '도입':['첫 단서를 잡기 위해','사건이 커지기 전에','현장에 있는 이들의 경계를 풀기 위해'],
-    '탐색':['눈앞의 단서가 어디로 이어지는지 확인하려','상대보다 먼저 현장의 숨은 길을 찾기 위해','주변 인물과 흔적에서 놓친 연결점을 찾기 위해'],
-    '대면':['눈앞의 장면을 정확히 이해하려','주도권을 빼앗기지 않기 위해','상대의 반응에서 진짜 이유를 끌어내기 위해'],
-    '진실':['방금 드러난 사실을 검증하려','결정적 증거가 사라지기 전에','엇갈린 증언을 하나의 흐름으로 묶기 위해'],
-    '위기':['혼란 속에서도 핵심 단서를 지키려','지금 당장 위험을 뚫고 나가기 위해','동료와 협력자를 잃지 않기 위해'],
-    '결단':['다음 막의 방향을 정하려','망설임을 끝내고 길을 열기 위해','누구와 무엇을 지킬지 분명히 하기 위해'],
-  }[phase] || ['','',''];
-  const statMap={
-    careful:{ember:'지능',neon:'지능',abyss:'지혜',clock:'지혜',wild:'지혜'},
-    bold:{ember:'근력',neon:'민첩',abyss:'체력',clock:'민첩',wild:'민첩'},
-    empathetic:{ember:'매력',neon:'매력',abyss:'매력',clock:'매력',wild:'매력'},
+  const actionDefs = [
+    { type:'investigate', label:'조사한다', stat:'지능', route:'careful', path:'truth' },
+    { type:'observe', label:'살펴본다', stat:'지혜', route:'careful', path:'truth' },
+    { type:'fight', label:'싸운다', stat:'근력', route:'bold', path:'survival', startsCombat:true },
+    { type:'sneak', label:'잠입한다', stat:'민첩', route:'bold', path:'survival' },
+    { type:'persuade', label:'설득한다', stat:'매력', route:'empathetic', path:'bond' },
+    { type:'steal', label:'훔친다', stat:'민첩', route:'bold', path:'survival' },
+    { type:'tail', label:'미행한다', stat:'지혜', route:'careful', path:'truth' },
+    { type:'help', label:'돕는다', stat:'체력', route:'empathetic', path:'bond' },
+    { type:'threaten', label:'협박한다', stat:'매력', route:'bold', path:'survival' },
+    { type:'trade', label:'거래한다', stat:'매력', route:'empathetic', path:'bond' },
+  ];
+  const travelByWorld = {
+    ember:['왕묘로 간다','성벽으로 간다','검은 숲으로 간다'],
+    neon:['하층가로 간다','기억 시장으로 간다','봉쇄구역으로 간다'],
+    abyss:['의무실로 간다','기관실로 간다','관측실로 간다'],
+    clock:['광장으로 간다','기록소로 간다','시계탑으로 간다'],
+    wild:['부족 마을로 간다','별가루 숲으로 간다','숲의 심장으로 간다'],
+    guardian1:['여관으로 간다','왕국 쪽으로 간다','유적으로 간다'],
+    guardian2:['도시로 간다','던전으로 간다','설산으로 간다'],
+    guardian3:['난민 구역으로 간다','저항군 기지로 간다','헤븐홀드로 간다'],
   };
-  const dcBase=10+actNo+(phase==='위기'?2:phase==='결단'?1:0);
-  return branchOrder.map((branchValue,i)=>{
-    const pool=flavor[branchValue] || ['현재 장면의 핵심을 확인한다'];
-    const action=pool[(act+step+i)%pool.length];
-    const stat=statMap[branchValue]?.[c.id] || ['지능','민첩','매력'][i];
-    const success=branchValue==='careful'
-      ? `처음에는 서로 상관없어 보였던 흔적들이 하나의 흐름으로 이어진다. ${anchor}에서 놓쳤던 작은 모순이 방금 드러난 진실과 맞물리며, 파티는 다음에 확인해야 할 지점을 정확히 짚어 낸다. 누군가 먼저 이 길을 지나갔다는 흔적까지 남아 있어, 앞으로의 선택은 더 구체적인 목표를 갖게 된다.`
-      : branchValue==='bold'
-        ? `망설일 시간이 없었다. 파티가 먼저 움직이자 상대가 준비를 끝내기 전에 장면의 주도권이 넘어온다. 위험은 사라지지 않았지만 ${anchor}의 가장 중요한 지점까지 도달했고, 그 과정에서 사건의 핵심 진실과 이어지는 단서가 모습을 드러낸다. 다만 크게 움직인 만큼 누군가 파티의 존재를 알아차렸을 가능성도 남는다.`
-        : `처음에는 입을 닫고 있던 이들이 조금씩 경계를 푼다. 말 사이의 침묵과 망설임까지 이어 붙이자, 혼자서는 알 수 없었던 사정이 드러나고 사건의 핵심에 가까운 증언이 확보된다. 도움의 길이 열렸지만, 그 신뢰는 다음 선택에서 실제로 지켜 내야 하는 약속이 된다.`;
-    const failure=branchValue==='careful'
-      ? `단서의 방향은 맞았지만 한 조각을 너무 빨리 믿었다. 그 잘못된 전제가 파티를 몇 걸음 옆길로 끌고 가고, 그 사이 눈앞의 위험은 한층 더 가까워진다. 그래도 완전한 헛수고는 아니다. 틀린 단서가 왜 놓여 있었는지를 역으로 살피면 누군가 의도적으로 파티의 판단을 흐리고 있다는 사실을 알 수 있다.`
-      : branchValue==='bold'
-        ? `길은 열렸다. 문제는 너무 크게 열렸다는 것이다. 충격과 소음, 급하게 남긴 흔적 때문에 파티보다 먼저 위험이 움직이기 시작한다. 원하는 위치에는 도달했지만, 다음 장면은 이미 경계가 올라간 상태에서 시작될 것이다. 그 와중에도 ${reveal}과 닿는 짧은 단서 하나는 놓치지 않는다.`
-        : `상대는 완전히 마음을 열지 않았다. 질문 하나가 너무 빨랐고, 침묵 하나를 잘못 읽었다. 중요한 말은 끝내 나오지 않았지만 대화가 끊기는 순간 보인 표정과 행동이 오히려 거짓말의 방향을 알려 준다. 신뢰는 흔들렸고, 다음 장면에서는 그 불신을 안고 다시 접근해야 한다.`;
+  const travel = travelByWorld[c.id] || ['앞길로 간다','우회로로 간다','사람들이 모인 곳으로 간다'];
+  let defs = [...actionDefs];
+  if (step === 1 || step === 3 || phase === '도입') {
+    defs = defs.filter(d => !['trade','threaten'].includes(d.type));
+    defs.splice(5, 0,
+      { type:'travel-a', label:travel[(act + step) % travel.length], stat:'지혜', route:'careful', path:'truth', isTravel:true },
+      { type:'travel-b', label:travel[(act + step + 1) % travel.length], stat:'민첩', route:'bold', path:'survival', isTravel:true }
+    );
+  }
+  if (phase === '위기') defs = defs.filter(d => !['trade','tail'].includes(d.type));
+  if (phase === '결단') defs = defs.filter(d => !['steal','tail','trade'].includes(d.type));
+  const targetCount = phase === '결단' ? 6 : phase === '위기' ? 7 : 8;
+  defs = defs.slice(0, targetCount);
+  const actionProse = {
+    investigate:['기록과 흔적을 차례로 맞추며 숨겨진 원인을 찾았다.','잘못 짚은 단서 하나 때문에 의도적으로 감춰진 흔적이 드러났다.'],
+    observe:['주변의 작은 반응을 끝까지 지켜본 덕분에 먼저 움직이는 쪽을 알아냈다.','관찰은 늦었지만 누가 거짓말하고 있는지는 분명해졌다.'],
+    fight:['정면 충돌로 상대의 준비를 무너뜨리고 길을 열었다.','싸움은 길어졌고 주변까지 적대적으로 변했지만 물러설 수 없는 선이 드러났다.'],
+    sneak:['들키지 않고 안쪽까지 파고들어 남들이 보지 못한 장면을 먼저 확인했다.','잠입 도중 흔적을 남겨 경계가 높아졌지만 내부 구조와 경비의 허점은 알아냈다.'],
+    persuade:['상대가 원하는 것과 두려워하는 것을 짚어 협조를 끌어냈다.','완전히 설득하진 못했지만 상대가 끝까지 숨기려는 주제가 무엇인지는 알게 됐다.'],
+    steal:['필요한 물건을 손에 넣었고, 그 안에서 예상하지 못한 단서까지 발견했다.','훔치려던 시도는 들켰지만 그 과정에서 보관 장소와 감시 방식이 드러났다.'],
+    tail:['거리를 두고 뒤를 밟아 목적지와 접선 상대를 알아냈다.','미행을 눈치챈 상대가 동선을 바꾸었지만 그 반응 자체가 새로운 목적지를 가리켰다.'],
+    help:['위험을 나눠 맡자 상대는 처음으로 경계를 풀고 자신이 아는 것을 건넸다.','도움을 주는 동안 시간이 지체됐지만 구조한 사람이 뒤늦게 중요한 사실을 떠올렸다.'],
+    threaten:['압박이 먹혀 즉시 필요한 정보를 받아냈다. 대신 관계는 분명히 악화됐다.','상대는 굴복하지 않았고 주변까지 적으로 돌렸다. 다만 무엇을 지키려는지는 선명해졌다.'],
+    trade:['서로 필요한 것을 맞바꾸며 싸우지 않고 필요한 정보와 통로를 얻었다.','거래 조건은 불리했지만 상대가 무엇을 가치 있게 여기는지 알게 됐다.'],
+  };
+  return defs.map((d,i)=>{
+    const base = 9 + act + (phase === '위기' ? 2 : phase === '결단' ? 2 : 0);
+    const dc = Math.max(8, Math.min(15, base + ((i + step) % 2)));
+    const prose = actionProse[d.type] || [
+      `${d.label}는 선택이 새로운 길을 열었다.`,
+      `${d.label}는 기대만큼 풀리지 않았지만 다른 단서를 남겼다.`
+    ];
     return {
-      id:`${beat.id}-CHOICE-${i+1}`,
-      label:`${phaseLead[i]} ${action}`.trim(),
-      detail:`${phase} 장면 전용 행동 · 요구 능력치: ${stat}`,
-      stat,
-      dc:Math.min(18, dcBase+i),
-      path:statPath(stat),
+      id:`${beat.id}-${d.type.toUpperCase()}-${i+1}`,
+      label:d.label,
+      detail:`${d.stat} · DC ${dc}`,
+      stat:d.stat,
+      dc,
+      path:d.path,
       branchKey:`act${actNo}`,
-      branchValue,
-      success,
-      failure,
+      branchValue:d.route,
+      actionType:d.type,
+      startsCombat:Boolean(d.startsCombat),
+      isTravel:Boolean(d.isTravel),
+      success:prose[0],
+      failure:prose[1],
+      consequenceHint:{success:'새 경로·단서·관계 변화',failure:'대가와 함께 다른 경로가 열림'},
     };
   });
 }
@@ -733,47 +731,83 @@ function buildStoryBeats(c){
       beats.push(beat);
     }
   }
-  // v4.12 TRUE BRANCH GRAPH
-  // Each act has one entry, three mutually-exclusive route scenes, a crisis and a decision.
-  // The selected choice AND its D20 result decide the next node. This is a DAG: no main node points backward,
-  // so a main-story scene can never repeat during one session.
+  // v5.4 DEEP CHOICE BRANCHING
+  // Every visible action leads to its own consequence node before the story rejoins a later dramatic junction.
+  // This keeps the UI short while making 조사/싸움/설득/훔치기/미행/이동 등의 결과가 실제 장면으로 남는다.
   const nodeAt = (actIndex, stepIndex) => beats[actIndex * 6 + stepIndex];
-  for (let actIndex = 0; actIndex < 5; actIndex++) {
-    const entry = nodeAt(actIndex, 0);
-    const careful = nodeAt(actIndex, 1);
-    const bold = nodeAt(actIndex, 2);
-    const empathic = nodeAt(actIndex, 3);
-    const crisis = nodeAt(actIndex, 4);
-    const decision = nodeAt(actIndex, 5);
-    const nextAct = actIndex < 4 ? nodeAt(actIndex + 1, 0)?.id : '__ENDING__';
-
-    entry.nodeRole = 'entry';
-    careful.nodeRole = 'route-careful';
-    bold.nodeRole = 'route-bold';
-    empathic.nodeRole = 'route-empathetic';
-    crisis.nodeRole = 'crisis';
-    decision.nodeRole = 'decision';
-
-    // Opening choice establishes the route. A failed attempt can throw the party into a different route
-    // for a narratively understandable recovery rather than simply showing the same next chapter.
-    if (entry.choices?.[0]) entry.choices[0].next = { success: careful.id, failure: bold.id };
-    if (entry.choices?.[1]) entry.choices[1].next = { success: bold.id, failure: empathic.id };
-    if (entry.choices?.[2]) entry.choices[2].next = { success: empathic.id, failure: careful.id };
-
-    // Route scenes form an acyclic recovery chain. Failure exposes another angle; success reaches the crisis.
-    for (const choice of careful.choices || []) choice.next = { success: crisis.id, failure: bold.id };
-    for (const choice of bold.choices || []) choice.next = { success: crisis.id, failure: empathic.id };
-    for (const choice of empathic.choices || []) choice.next = { success: crisis.id, failure: crisis.id };
-    for (const choice of crisis.choices || []) choice.next = { success: decision.id, failure: decision.id };
-    for (const choice of decision.choices || []) choice.next = { success: nextAct, failure: nextAct };
-
-    // Image names are intentionally simple and work with user-added WEBP or existing PNG files.
-    for (let stepIndex = 0; stepIndex < 6; stepIndex++) {
-      const beat = nodeAt(actIndex, stepIndex);
-      beat.artChapter = beat.chapter;
-      beat.artFileBase = `${c.id}_${String(beat.chapter).padStart(2, '0')}`;
+  const branchNodes = [];
+  const makeBranchBeat = (base, choice, outcome, continueTarget, ordinal) => {
+    const won = outcome === 'success';
+    const verb = choice.label.replace(/한다$|간다$/,'');
+    const successFrames=[
+      `${choice.success} ${base.title}의 공기가 달라졌다. 방금 전까지 닫혀 있던 쪽에서 먼저 움직임이 생겼다.`,
+      `${choice.success} 예상과 달리 답은 정면이 아니라 옆에서 나타났다. 새로운 사람과 통로가 동시에 이야기 안으로 들어왔다.`,
+      `${choice.success} 선택의 효과는 즉시 눈에 보였다. 이전에는 의미 없던 물건 하나가 다음 목적지를 가리키기 시작했다.`,
+      `${choice.success} 누군가 파티보다 먼저 반응했다. 그 반응 덕분에 숨은 세력과 다음 장소가 한꺼번에 드러났다.`,
+      `${choice.success} 작은 성공이 현장의 질서를 바꿨다. 다음에는 처음부터 다른 위치와 다른 관계에서 시작할 수 있다.`,
+      `${choice.success} 사건의 중심이 한 칸 옮겨 갔다. 같은 목표를 향하지만 이제 만나게 될 사람과 위험이 달라졌다.`
+    ];
+    const failFrames=[
+      `${choice.failure} 실수는 끝이 아니라 다른 문제의 시작이 됐다. 경계가 바뀌면서 원래 없던 우회로가 생겼다.`,
+      `${choice.failure} 계획은 어긋났지만 그 틈에서 상대의 대응 방식이 드러났다. 다음에는 전혀 다른 곳을 건드릴 수 있다.`,
+      `${choice.failure} 원하는 것은 얻지 못했다. 대신 누가 먼저 움직였는지 확인하면서 새로운 추적 대상이 생겼다.`,
+      `${choice.failure} 상황이 나빠진 방향 자체가 단서가 됐다. 파티는 같은 방법을 반복하는 대신 다른 장소를 택해야 한다.`,
+      `${choice.failure} 주변의 태도가 바뀌었다. 도움을 주던 사람은 물러났고, 대신 지금까지 숨어 있던 인물이 모습을 드러냈다.`,
+      `${choice.failure} 대가는 분명했지만 이야기는 막히지 않았다. 실패가 만들어 낸 별도의 문제를 해결하는 길이 열렸다.`
+    ];
+    const frameIndex=(Number(base.chapter||1)+ordinal+(won?0:3))%6;
+    const worldReaction = won ? successFrames[frameIndex] : failFrames[frameIndex];
+    const directions = [
+      {label:'계속 파고든다', stat:'지능', route:'careful', path:'truth'},
+      {label:'먼저 움직인다', stat:'민첩', route:'bold', path:'survival'},
+      {label:'사람을 붙잡는다', stat:'매력', route:'empathetic', path:'bond'},
+    ];
+    const id=`${base.id}-AFTER-${String(ordinal).padStart(2,'0')}-${outcome.toUpperCase()}`;
+    const b={
+      id, act:base.act, actName:base.actName, chapter:base.chapter, artChapter:base.artChapter,
+      phase:'후속', title:`${verb}의 결과`, nodeRole:'action-consequence', branchScene:true,
+      text:worldReaction, situation:worldReaction,
+      objective:'방금 만든 변화 속에서 다음 행동을 정한다.',
+      why:'이 장면은 직전 선택 때문에 생긴 전용 후속 장면이다.',
+      visual:base.visual, reveal:base.reveal, stakes:base.stakes,
+      choices:directions.map((d,j)=>({
+        id:`${id}-FOLLOW-${j+1}`, label:d.label, detail:`${d.stat} · DC ${Math.max(8, Number(choice.dc||10)-1)}`,
+        stat:d.stat, dc:Math.max(8, Number(choice.dc||10)-1), path:d.path, branchValue:d.route,
+        branchKey:`act${base.act}`, actionType:`follow-${j+1}`,
+        success:`${d.label}는 방금 생긴 기회를 놓치지 않게 했다.`,
+        failure:`${d.label}는 완벽하지 않았지만 다음 장면의 조건을 바꿨다.`,
+        next:{success:continueTarget,failure:continueTarget}
+      }))
+    };
+    return b;
+  };
+  for (let actIndex=0; actIndex<5; actIndex++) {
+    const entry=nodeAt(actIndex,0), careful=nodeAt(actIndex,1), bold=nodeAt(actIndex,2), empathic=nodeAt(actIndex,3), crisis=nodeAt(actIndex,4), decision=nodeAt(actIndex,5);
+    const nextAct=actIndex<4 ? nodeAt(actIndex+1,0)?.id : '__ENDING__';
+    entry.nodeRole='entry'; careful.nodeRole='route-careful'; bold.nodeRole='route-bold'; empathic.nodeRole='route-empathetic'; crisis.nodeRole='crisis'; decision.nodeRole='decision';
+    const canon=[entry,careful,bold,empathic,crisis,decision];
+    for (const base of canon) {
+      const canonicalTarget = base===entry ? crisis.id : base===decision ? nextAct : base===crisis ? decision.id : crisis.id;
+      (base.choices||[]).forEach((choice,i)=>{
+        let successTarget=canonicalTarget, failureTarget=canonicalTarget;
+        if (base===entry) {
+          successTarget = choice.branchValue==='careful' ? careful.id : choice.branchValue==='bold' ? bold.id : empathic.id;
+          failureTarget = choice.branchValue==='careful' ? bold.id : choice.branchValue==='bold' ? empathic.id : careful.id;
+        }
+        const sNode=makeBranchBeat(base,choice,'success',successTarget,i+1);
+        const fNode=makeBranchBeat(base,choice,'failure',failureTarget,i+1);
+        branchNodes.push(sNode,fNode);
+        choice.next={success:sNode.id,failure:fNode.id};
+      });
+    }
+    for (let stepIndex=0; stepIndex<6; stepIndex++) {
+      const beat=nodeAt(actIndex,stepIndex);
+      beat.artChapter=beat.chapter;
+      beat.artFileBase=`${c.id}_${String(beat.chapter).padStart(2,'0')}`;
     }
   }
+  beats.push(...branchNodes);
+
   return beats;
 }
 

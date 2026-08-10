@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const server = fs.readFileSync(new URL('../server.js', import.meta.url), 'utf8');
+const app = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+
+test('exploration world is substantially larger than the old 15x9 map', () => {
+  assert.match(server, /EXPLORE_MAP_WIDTH = 45/);
+  assert.match(server, /EXPLORE_MAP_HEIGHT = 27/);
+  assert.match(server, /regions = \[/);
+});
+
+test('client uses a player-following local camera instead of shrinking the whole world', () => {
+  assert.match(app, /VIEW_W=Math\.min\(17,ex\.width\)/);
+  assert.match(app, /VIEW_H=Math\.min\(11,ex\.height\)/);
+  assert.match(app, /camX=/);
+  assert.match(app, /camY=/);
+});
+
+test('large map distributes NPCs and points of interest across distant coordinates', () => {
+  for (const token of ["x:40,y:3", "x:34,y:22", "x:22,y:6", "x:42,y:12"]) assert.ok(server.includes(token));
+});

@@ -166,3 +166,28 @@ export async function appendSessionEvent(roomCode, type, payload = {}) {
     console.error('[supabase] event log failed:', error.message);
   }
 }
+
+export async function findResumableRoomSnapshotsByName(playerName, limit = 100) {
+  if (!persistenceEnabled) return [];
+  const exact = String(playerName || '').trim();
+  if (!exact) return [];
+  try {
+    const { data } = await request(`/room_sessions?select=room_code,state,expires_at,updated_at&order=updated_at.desc&limit=${Math.max(1, Math.min(200, Number(limit || 100)))}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    const now = Date.now();
+    return (Array.isArray(data) ? data : []).filter(row => {
+      if (!row?.state) return false;
+      if (row.expires_at && new Date(row.expires_at).getTime() < now) return false;
+      const room = row.state;
+      if (!room.campaignId || ['lobby','ending'].includes(room.phase)) return false;
+      if (room.abandonVote || room.sessionClosed) return false;
+      const matches = (room.players || []).filter(player => String(player?.name || '').trim() === exact);
+      return matches.length === 1;
+    });
+  } catch (error) {
+    console.error('[supabase] resumable room lookup failed:', error.message);
+    return [];
+  }
+}

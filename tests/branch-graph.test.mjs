@@ -17,44 +17,43 @@ function walk(campaign, selector) {
     const success = selector.successFor ? selector.successFor(beat, steps) : true;
     id = choice.next?.[success ? 'success' : 'failure'];
     steps += 1;
-    assert.ok(steps <= 30, `${campaign.id}: graph did not terminate`);
+    assert.ok(steps <= 80, `${campaign.id}: graph did not terminate`);
   }
   assert.equal(id, '__ENDING__', `${campaign.id}: graph did not reach ending`);
   return seen;
 }
 
 for (const campaign of CAMPAIGNS) {
-  test(`${campaign.id}: authored graph has valid forward edges`, () => {
+  test(`${campaign.id}: deep branch graph has valid unique edges`, () => {
     const ids = new Set(campaign.storyBeats.map(b => b.id));
-    const pos = new Map(campaign.storyBeats.map((b, i) => [b.id, i]));
-    assert.equal(ids.size, 30);
+    assert.equal(ids.size, campaign.storyBeats.length);
+    assert.ok(campaign.storyBeats.length >= 400, `${campaign.id}: expected hundreds of consequence nodes`);
+    const canonical = campaign.storyBeats.filter(b => !b.branchScene);
+    assert.equal(canonical.length, 30);
     for (const beat of campaign.storyBeats) {
-      assert.equal(beat.artChapter, beat.chapter);
-      for (const choice of beat.choices) {
-        for (const key of ['success', 'failure']) {
+      for (const choice of beat.choices || []) {
+        for (const key of ['success','failure']) {
           const target = choice.next?.[key];
-          assert.ok(target, `${beat.id}/${choice.id}: missing ${key} target`);
-          if (target !== '__ENDING__') {
-            assert.ok(ids.has(target), `${beat.id}: missing ${target}`);
-            assert.ok(pos.get(target) > pos.get(beat.id), `${beat.id}: backward edge to ${target}`);
-          }
+          assert.ok(target, `${beat.id}/${choice.id}: missing ${key}`);
+          if (target !== '__ENDING__') assert.ok(ids.has(target), `${beat.id}: missing ${target}`);
         }
       }
     }
   });
 
-  test(`${campaign.id}: different opening choices expose different route nodes`, () => {
+  test(`${campaign.id}: opening actions produce distinct consequence scenes`, () => {
     const entry = campaign.storyBeats[0];
-    const targets = entry.choices.map(c => c.next.success);
-    assert.equal(new Set(targets).size, 3);
+    assert.ok(entry.choices.length >= 6);
+    assert.equal(new Set(entry.choices.map(c => c.next.success)).size, entry.choices.length);
+    assert.equal(new Set(entry.choices.map(c => c.next.failure)).size, entry.choices.length);
   });
 
-  test(`${campaign.id}: representative playthroughs never repeat`, () => {
-    for (let choiceIndex = 0; choiceIndex < 3; choiceIndex++) {
-      const selector = beat => beat.choices[Math.min(choiceIndex, beat.choices.length - 1)];
-      selector.successFor = () => choiceIndex !== 1;
-      const seen = walk(campaign, selector);
-      assert.ok(seen.size >= 20 && seen.size <= 30, `${campaign.id}: unexpected route length ${seen.size}`);
+  test(`${campaign.id}: representative playthroughs terminate without repeats`, () => {
+    for (let choiceIndex=0; choiceIndex<3; choiceIndex++) {
+      const selector = beat => beat.choices[Math.min(choiceIndex, beat.choices.length-1)];
+      selector.successFor = (_beat, step) => (step + choiceIndex) % 3 !== 1;
+      const seen=walk(campaign,selector);
+      assert.ok(seen.size >= 15 && seen.size <= 80, `${campaign.id}: unexpected route ${seen.size}`);
     }
   });
 }

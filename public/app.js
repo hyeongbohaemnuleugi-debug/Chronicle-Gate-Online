@@ -1411,11 +1411,11 @@ function renderMainStoryChoices(beat) {
   const visibleChoices = beat.choices
     .map((choice, originalIndex) => ({ choice, originalIndex }))
     .filter(({ choice }) => !choice.requiredJob || choice.requiredJob === myJob);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>짧게 고르세요. 선택마다 다른 후속 장면과 결과가 이어집니다.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 선택과 주사위 결과가 다음 장면과 엔딩 후보를 바꿉니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>행동을 고르세요. 능력치보다 원하는 결과와 감수할 위험이 더 중요합니다.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 선택과 주사위 결과가 다음 장면과 엔딩 후보를 바꿉니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
     <button class="choice-card story-choice ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
       <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${choice.rareJobMoment ? '희귀 기회 · ' : ''}${esc(choice.requiredJob)} 전용</span>` : ''}</div>
-      <div class="story-choice-meta"><span>${esc(choice.stat)}</span><span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span></div>
-      ${(beat?.statInsight?.insight || beat?.statInsight?.dangerSense) && choice.consequenceHint ? `<div class="choice-forecast">${beat.statInsight.insight ? `성공 시 ${esc(choice.consequenceHint.success)}` : ''}${beat.statInsight.insight && beat.statInsight.dangerSense ? ' · ' : ''}${beat.statInsight.dangerSense ? `실패 시 ${esc(choice.consequenceHint.failure)}` : ''}</div>` : ''}
+      <div class="story-choice-meta"><span>기회 · ${esc(choice.opportunity || choice.consequenceHint?.success || '새로운 전개')}</span>${beat?.statInsight?.insight ? `<span>${esc(choice.stat)} 판정</span>` : '<span>판정은 선택 후 공개</span>'}${beat?.statInsight?.insightDeep ? `<span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span>` : ''}</div>
+      ${beat?.statInsight?.dangerSense ? `<div class="choice-forecast">위험 · ${esc(choice.risk || '보통')}${choice.consequenceHint?.failure ? ` · ${esc(choice.consequenceHint.failure)}` : ''}</div>` : ''}
     </button>
   `).join('');
   box.querySelectorAll('.story-choice').forEach(button => button.onclick = () => {

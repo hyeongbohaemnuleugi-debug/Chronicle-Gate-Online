@@ -3,7 +3,6 @@ import http from 'http';
 import crypto from 'crypto';
 import { Server } from 'socket.io';
 import { CAMPAIGNS, STAT_NAMES, ITEMS_BY_CAMPAIGN, ECONOMY_FACILITY_TEMPLATES, ECONOMY_FACILITY_THEMES } from './campaign-data.js';
-import { explorationTemplate, EXPLORATION_APPROACHES, SIDE_QUESTS, interactionActionLabel } from './exploration-data.js';
 import {
   appendSessionEvent,
   loadRoomSnapshot,
@@ -22,7 +21,75 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '5.0.0-living-world.0';
+// Embedded Living World exploration data. Kept inline so Render never depends on a separate exploration-data.js file.
+const BASE_WORLDS = {
+  ember: { name:'재의 변경', ground:'황폐한 왕도 외곽', main:'봉인된 성문', merchant:'재를 뒤집어쓴 유물상', inn:'검은 사슴 여관', scholar:'왕실 기록관', rogue:'묘지 도굴꾼', guard:'백은 경비대', shrine:'폐예배당', board:'용병 게시판' },
+  neon: { name:'루멘-9 하층구', ground:'비 내리는 네온 골목', main:'봉쇄구역 관문', merchant:'기억 암시장 상인', inn:'오프그리드 캡슐 모텔', scholar:'데이터 기록사', rogue:'골목 픽서', guard:'도시 집행관', shrine:'폐쇄 단말기', board:'의뢰 터미널' },
+  abyss: { name:'세이렌 기지', ground:'압력 격벽 구역', main:'심해 격리문', merchant:'폐쇄 보급창 담당자', inn:'압력 안전실', scholar:'생체 기록 연구원', rogue:'무허가 잠수부', guard:'해군 구조대원', shrine:'소나 관측실', board:'구조 임무판' },
+  clock: { name:'크로노벨 중앙구', ground:'멈춘 시계 거리', main:'열세 번째 탑의 문', merchant:'태엽 골동품상', inn:'자정 전의 여관', scholar:'시간 기록관', rogue:'시간 밀수꾼', guard:'종소리 파수대', shrine:'멈춘 분수', board:'루프 기록판' },
+  wild: { name:'별먹는 숲 경계', ground:'별가루 숲길', main:'살아 있는 뿌리문', merchant:'별철 행상인', inn:'말하는 나무집', scholar:'별자리 기록자', rogue:'숲길 밀렵꾼', guard:'부족 파수꾼', shrine:'별빛 제단', board:'나무껍질 의뢰판' },
+  guardian1: { name:'캔터베리에서 사막까지', ground:'왕국의 길', main:'챔피언의 길 표식', merchant:'숲길 행상인', inn:'로레인의 여관', scholar:'마법학교 연구생', rogue:'매드 팬더 연락책', guard:'캔터베리 기사', shrine:'고대 유적 입구', board:'여관 의뢰판' },
+  guardian2: { name:'셴에서 쉬버링 산까지', ground:'영웅들의 교차로', main:'챔피언의 흔적', merchant:'던전 왕국 장비상', inn:'모험가 쉼터', scholar:'던전 고고학자', rogue:'요정 장난꾼', guard:'셴 수련생', shrine:'설산 고대석', board:'모험가 길드판' },
+  guardian3: { name:'라 제국과 미래', ground:'폐허와 저항군의 길', main:'헤븐홀드 진입로', merchant:'저항군 보급상', inn:'임시 피난처', scholar:'미래 기록관', rogue:'폐허의 정보상', guard:'저항군 경비', shrine:'시간 균열', board:'저항군 작전판' },
+};
+
+const WALLS = new Set([
+  '0,0','1,0','2,0','3,0','4,0','5,0','6,0','7,0','8,0','9,0','10,0','11,0','12,0','13,0','14,0',
+  '0,8','1,8','2,8','3,8','4,8','5,8','6,8','7,8','8,8','9,8','10,8','11,8','12,8','13,8','14,8',
+  '0,1','0,2','0,3','0,4','0,5','0,6','0,7','14,1','14,2','14,3','14,4','14,5','14,6','14,7',
+  '5,2','5,3','9,5','9,6','11,3','3,5'
+]);
+
+const EXPLORATION_APPROACHES = [
+  { id:'investigate', label:'조사해서 길을 만든다', stat:'지능', route:'careful', icon:'⌕' },
+  { id:'observe', label:'위험을 읽고 안전한 틈을 찾는다', stat:'지혜', route:'careful', icon:'◉' },
+  { id:'infiltrate', label:'숨어들어 먼저 안쪽을 장악한다', stat:'민첩', route:'bold', icon:'↝' },
+  { id:'force', label:'장애물을 정면으로 돌파한다', stat:'근력', route:'bold', icon:'⚔' },
+  { id:'negotiate', label:'사람을 움직여 길을 연다', stat:'매력', route:'empathetic', icon:'✦' },
+  { id:'endure', label:'위험을 받아내며 동료의 길을 만든다', stat:'체력', route:'empathetic', icon:'◆' },
+];
+
+function explorationTemplate(campaignId) {
+  const w = BASE_WORLDS[campaignId] || BASE_WORLDS.ember;
+  const npcs = [
+    { id:'merchant', name:w.merchant, role:'상인', x:3,y:2, icon:'◈', critical:false, traits:['greedy','connected'], actions:['talk','trade','steal','threaten','fight','bribe','inspect','askQuest','follow'] },
+    { id:'innkeeper', name:w.inn, role:'숙박업자', x:3,y:6, icon:'⌂', critical:false, traits:['local','cautious'], actions:['talk','rest','work','steal','threaten','fight','askRumor','askQuest','inspect'] },
+    { id:'scholar', name:w.scholar, role:'기록자', x:7,y:2, icon:'▤', critical:false, traits:['educated','nervous'], actions:['talk','askQuest','inspect','persuade','stealNotes','threaten','fight','follow'] },
+    { id:'rogue', name:w.rogue, role:'정보상', x:11,y:6, icon:'☗', critical:false, traits:['shady','alert'], actions:['talk','gamble','buyInfo','steal','threaten','fight','askQuest','follow'] },
+    { id:'guard', name:w.guard, role:'경비', x:7,y:6, icon:'♜', critical:false, traits:['law','armed'], actions:['talk','report','bribe','persuade','sneakPast','threaten','fight','inspect'] },
+    { id:'main', name:w.main, role:'메인 퀘스트', x:12,y:2, icon:'✦', critical:true, traits:['main'], actions:['talk','mainQuest','investigate','observe','infiltrate','force','negotiate','endure','inspect'] },
+    { id:'civilian1', name:`${w.name}의 여행자`, role:'일반 NPC', x:2,y:2, icon:'•', critical:false, traits:['civilian'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','askRumor'] },
+    { id:'civilian2', name:`${w.name}의 짐꾼`, role:'일반 NPC', x:5,y:6, icon:'•', critical:false, traits:['civilian','worker'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','work'] },
+    { id:'civilian3', name:`${w.name}의 떠돌이`, role:'일반 NPC', x:10,y:2, icon:'•', critical:false, traits:['civilian','traveler'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow','askRumor'] },
+    { id:'civilian4', name:`${w.name}의 부상자`, role:'일반 NPC', x:12,y:5, icon:'•', critical:false, traits:['civilian','wounded'], actions:['talk','help','inspect','steal','threaten','fight','bribe','follow'] },
+  ];
+  const pois = [
+    { id:'shrine', name:w.shrine, x:12,y:6, icon:'✧', actions:['inspect','pray','search','break','leaveOffering'] },
+    { id:'board', name:w.board, x:2,y:4, icon:'▣', actions:['inspect','takeQuest'] },
+    { id:'cache', name:'수상한 보관함', x:13,y:4, icon:'▥', hidden:true, actions:['inspect','pickLock','break','leave'] },
+  ];
+  return { id:`${campaignId}-field`, name:w.name, subtitle:w.ground, width:15, height:9, start:{x:7,y:4}, walls:[...WALLS], npcs, pois };
+}
+
+const SIDE_QUESTS = [
+  { id:'lostParcel', title:'사라진 꾸러미', giver:'merchant', description:'상인이 잃어버린 꾸러미를 찾아 달라고 한다.', target:'cache', reward:{coins:2, rapport:1} },
+  { id:'oldRumor', title:'묻힌 소문', giver:'innkeeper', description:'여관 주인이 기록관에게 오래된 소문의 진위를 확인해 달라고 한다.', target:'scholar', reward:{coins:1, clues:1} },
+  { id:'watchPatrol', title:'경비의 부탁', giver:'guard', description:'수상한 정보상의 움직임을 확인해 달라는 부탁이다.', target:'rogue', reward:{coins:2, position:1} },
+  { id:'quietResearch', title:'금지된 기록', giver:'scholar', description:'제단의 흔적을 조사해 기록과 대조해야 한다.', target:'shrine', reward:{coins:1, clues:2} },
+  { id:'dirtyFavor', title:'깨끗하지 않은 의뢰', giver:'rogue', description:'상인의 장부에서 특정 이름을 확인해 달라는 부탁이다. 훔칠 필요는 없다.', target:'merchant', reward:{coins:2, rapport:1} },
+];
+
+function interactionActionLabel(action) {
+  return ({
+    talk:'대화한다', help:'돕는다', trade:'거래한다', steal:'훔친다', threaten:'협박한다', fight:'싸운다', bribe:'뇌물을 건넨다', inspect:'자세히 살핀다', askQuest:'일거리를 묻는다', follow:'몰래 따라간다',
+    rest:'숙박한다', work:'일을 돕고 돈을 번다', askRumor:'소문을 묻는다', persuade:'설득한다', stealNotes:'기록을 훔쳐본다', gamble:'내기한다', buyInfo:'정보를 산다', report:'상황을 보고한다', sneakPast:'몰래 지나간다',
+    mainQuest:'메인 퀘스트를 시작한다', investigate:'단서를 조사해 진입한다', observe:'위험을 관찰해 진입한다', infiltrate:'잠입한다', force:'정면 돌파한다', negotiate:'협상으로 길을 연다', endure:'위험을 감수하고 길을 연다',
+    pray:'기도한다', search:'주변을 수색한다', break:'부순다', leaveOffering:'공물을 둔다', takeQuest:'의뢰를 확인한다', turnInQuest:'의뢰 완료를 보고한다', pickLock:'자물쇠를 딴다', leave:'내버려둔다',
+  })[action] || action;
+}
+
+
+const APP_VERSION = '5.0.2-inline-exploration.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;

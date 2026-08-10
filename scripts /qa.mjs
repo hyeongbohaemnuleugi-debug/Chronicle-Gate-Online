@@ -191,3 +191,12 @@ for (const campaign of CAMPAIGNS) {
   }
 }
 console.log('v5.4 deep branch graph QA PASS');
+
+// v5.5 encounter / ability-trait checks
+assert(server.includes('BOSS_INTRO_LINES'), '보스 등장 대사 데이터가 없습니다.');
+assert(server.includes('decorateEncounter'), '전투 등장 메타데이터가 없습니다.');
+assert(server.includes('traitCheckBonus'), '극단 능력치 패시브 판정 보정이 없습니다.');
+const app55 = read('public/app.js');
+assert(app55.includes('showEncounterIntro'), '전투 등장 오버레이가 없습니다.');
+assert(app55.includes('passive-traits'), '능력치 패시브 UI가 없습니다.');
+console.log('v5.5 encounter + ability trait QA PASS');

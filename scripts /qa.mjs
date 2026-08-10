@@ -200,3 +200,15 @@ const app55 = read('public/app.js');
 assert(app55.includes('showEncounterIntro'), '전투 등장 오버레이가 없습니다.');
 assert(app55.includes('passive-traits'), '능력치 패시브 UI가 없습니다.');
 console.log('v5.5 encounter + ability trait QA PASS');
+
+// v5.6 dialogue / compact UI / continue-session checks
+assert(index.includes('id="openContinue"'), '메인 화면 이어하기 버튼이 없습니다.');
+assert(index.includes('id="resumeCandidates"') && index.includes('id="resumeGate"'), '이어하기 후보/대기 UI가 없습니다.');
+assert(app55.includes("socket.emit('session:lookup'") && app55.includes("socket.emit('session:resume'"), '이어하기 클라이언트 이벤트가 없습니다.');
+assert(server.includes("socket.on('session:lookup'") && server.includes("socket.on('session:resume'"), '이어하기 서버 이벤트가 없습니다.');
+assert(server.includes('resumeBlocked') && server.includes('resumeRequiredIds'), '멀티 이어하기 전원 복귀 잠금이 없습니다.');
+assert(persistence.includes('findResumableRoomSnapshotsByName'), 'Supabase 진행 세션 닉네임 검색이 없습니다.');
+assert(app55.includes('story-dialogue') && app55.includes('story-thought') && css.includes('.scene-narration'), '대화/독백/배경 설명 분리 렌더링이 없습니다.');
+assert(css.includes('.party-defense') && app55.includes('방어 ${defense}'), '파티 카드 방어 표시가 없습니다.');
+assert(app55.includes('status-pill passive'), '상태 영역 패시브 표시가 없습니다.');
+console.log('v5.6 dialogue + continue session QA PASS');

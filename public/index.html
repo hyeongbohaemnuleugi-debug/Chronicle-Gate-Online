@@ -136,7 +136,7 @@
 
     <section class="view" id="combatView">
       <div class="combat-shell">
-        <div class="combat-title"><div class="eyebrow">ENCOUNTER</div><h1 id="monsterName">UNKNOWN</h1><p>턴 표시를 따라 행동하세요. 모든 플레이어가 행동하면 BOSS TURN이 시작됩니다.</p></div>
+        <div class="combat-title"><div class="eyebrow">ENCOUNTER</div><h1 id="monsterName">UNKNOWN</h1><p>내 차례에는 공격·방어·직업 스킬 중 하나만 고르면 됩니다. 모두 행동하면 보스가 한 번 공격합니다.</p></div>
         <div class="combat-turn-panel ornate" id="combatTurnPanel">
           <div class="combat-turn-head"><span id="combatTurnPhase">PLAYER TURN</span><b id="combatRoundLabel">ROUND 1</b></div>
           <div class="combat-timeline" id="combatTimeline"></div>
@@ -145,7 +145,7 @@
         <figure class="combat-visual ornate-subtle"><img id="combatSceneImg" alt="전투 보스 이미지"></figure>
         <div class="monster-card ornate"><div class="monster-sigil">☠</div><div><span>ARMOR CLASS <b id="monsterAC">—</b></span><div class="monster-hp"><i id="monsterHpFill"></i></div><strong id="monsterHpText">— / —</strong></div></div>
         <div id="combatParty" class="combat-party"></div>
-        <div class="combat-actions"><button class="ghost huge" id="combatSkillBtn" type="button">직업 스킬</button><button class="primary huge combat-attack" id="attackBtn" type="button">D20 공격</button></div>
+        <div class="combat-actions"><button class="ghost huge" id="combatSkillBtn" type="button">직업 스킬</button><button class="ghost huge" id="defendBtn" type="button">방어</button><button class="primary huge combat-attack" id="attackBtn" type="button">공격</button></div>
         <div class="combat-log" id="combatLog"></div>
       </div>
     </section>

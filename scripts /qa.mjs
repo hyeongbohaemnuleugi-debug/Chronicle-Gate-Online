@@ -212,3 +212,21 @@ assert(app55.includes('story-dialogue') && app55.includes('story-thought') && cs
 assert(css.includes('.party-defense') && app55.includes('방어 ${defense}'), '파티 카드 방어 표시가 없습니다.');
 assert(app55.includes('status-pill passive'), '상태 영역 패시브 표시가 없습니다.');
 console.log('v5.6 dialogue + continue session QA PASS');
+
+// v5.7 causal freedom / anti-minmax / deep continuity checks
+for (const campaign of CAMPAIGNS) {
+  const canonical = campaign.storyBeats.filter(b => !b.branchScene);
+  const second = campaign.storyBeats.filter(b => b.nodeRole === 'action-consequence-2');
+  assert(second.length >= 1800, `${campaign.id}: 2단계 후속 분기가 충분하지 않습니다.`);
+  for (const beat of canonical) {
+    assert((beat.choices || []).length >= 6, `${beat.id}: 선택지가 너무 적습니다.`);
+    for (const choice of beat.choices || []) {
+      assert(choice.opportunity || choice.isTravel, `${choice.id}: 기회 태그가 없습니다.`);
+      assert(choice.risk || choice.isTravel, `${choice.id}: 위험 태그가 없습니다.`);
+    }
+  }
+}
+assert(server.includes('approachPressure'), '반복 접근 방식의 예측/피로 시스템이 없습니다.');
+assert(server.includes('maybeFatalStoryFailure'), '고위험 선택의 사망 가능성이 없습니다.');
+assert(app55.includes('판정은 선택 후 공개'), '선택 전 정확한 능력치/DC 숨김이 적용되지 않았습니다.');
+console.log('v5.7 causal freedom + anti-minmax QA PASS');

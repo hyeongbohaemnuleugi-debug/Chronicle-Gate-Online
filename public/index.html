@@ -23,6 +23,7 @@
       <div class="room-chip"><span class="live-dot"></span><span id="connectionText">ONLINE</span> · ROOM <b id="roomCodeTop">-----</b><button id="leaveRoomBtn" class="room-leave" type="button">EXIT</button></div>
     </div>
   </header>
+  <div id="resumeGate" class="resume-gate hidden"></div>
 
   <main id="views">
     <section class="view active" id="homeView">
@@ -38,6 +39,7 @@
         <div class="home-actions">
           <button class="primary huge" id="openCreate" type="button">방 만들기</button>
           <button class="ghost huge" id="openJoin" type="button">방 참가하기</button>
+          <button class="ghost huge continue-home" id="openContinue" type="button">이어하기</button>
         </div>
       </div>
       <div class="home-vignette"></div>
@@ -52,6 +54,7 @@
         <label class="field"><span>플레이어 이름</span><input id="nameInput" maxlength="18" placeholder="예: 재의 기사 아린"></label>
         <label class="field" id="codeField"><span>방 코드</span><input id="codeInput" maxlength="5" placeholder="ABCDE"></label>
         <button class="primary full" id="entrySubmit" type="button">방 만들기</button>
+        <div id="resumeCandidates" class="resume-candidates"></div>
         <div class="error" id="entryError"></div>
       </div>
     </section>

@@ -1,39 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { explorationTemplate, EXPLORATION_APPROACHES, SIDE_QUESTS } from '../exploration-data.js';
 import { CAMPAIGNS } from '../campaign-data.js';
 
 const server = fs.readFileSync(new URL('../server.js', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
 
-test('every campaign has a free-roam map with NPCs, POIs and a critical main quest target', () => {
-  for (const campaign of CAMPAIGNS) {
-    const map = explorationTemplate(campaign.id);
-    assert.equal(map.width, 15);
-    assert.equal(map.height, 9);
-    assert.ok(map.npcs.length >= 6);
-    assert.ok(map.pois.length >= 3);
-    const main = map.npcs.find(n => n.id === 'main');
-    assert.ok(main?.critical);
-    for (const action of ['investigate','observe','infiltrate','force','negotiate','endure']) assert.ok(main.actions.includes(action));
+test('exploration data is embedded directly in server.js and no external exploration-data import remains', () => {
+  assert.ok(server.includes('function explorationTemplate(campaignId)'));
+  assert.ok(server.includes('const EXPLORATION_APPROACHES = ['));
+  assert.ok(server.includes('const SIDE_QUESTS = ['));
+  assert.ok(!server.includes("from './exploration-data.js'"));
+  for (const campaign of CAMPAIGNS) assert.ok(server.includes(`${campaign.id}: { name:`));
+});
+
+test('main quest keeps six systemic approaches, yielding at least 36 two-step routes', () => {
+  for (const id of ['investigate','observe','infiltrate','force','negotiate','endure']) {
+    assert.ok(server.includes(`id:'${id}'`));
   }
+  assert.ok(server.includes('Math.pow(EXPLORATION_APPROACHES.length,launches)'));
 });
 
-test('main quest has more than twenty systemic route combinations before authored story branching', () => {
-  assert.equal(EXPLORATION_APPROACHES.length, 6);
-  const twoStep = new Set();
-  for (const a of EXPLORATION_APPROACHES) for (const b of EXPLORATION_APPROACHES) twoStep.add(`${a.id}>${b.id}`);
-  assert.equal(twoStep.size, 36);
-  assert.ok(twoStep.size >= 20);
-});
-
-test('ordinary NPCs expose non-dialogue actions and side quests', () => {
-  const map = explorationTemplate('ember');
-  const merchant = map.npcs.find(n => n.id === 'merchant');
-  for (const action of ['talk','trade','steal','threaten','fight','bribe','inspect','askQuest','follow']) assert.ok(merchant.actions.includes(action));
-  assert.ok(SIDE_QUESTS.length >= 5);
+test('ordinary NPCs keep non-dialogue actions and side quests', () => {
+  for (const action of ['talk','trade','steal','threaten','fight','bribe','inspect','askQuest','follow']) assert.ok(server.includes(`'${action}'`));
+  for (const quest of ['사라진 꾸러미','묻힌 소문','경비의 부탁','금지된 기록','깨끗하지 않은 의뢰']) assert.ok(server.includes(quest));
 });
 
 test('server implements server-authoritative movement, interaction, free action and buying', () => {

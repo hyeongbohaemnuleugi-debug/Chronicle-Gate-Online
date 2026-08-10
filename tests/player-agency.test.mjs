@@ -41,6 +41,7 @@ test('boss combat has simple attack defend skill actions', () => {
 });
 
 test('natural 1 and 20 remain decisive while normal rolls use totals', () => {
-  assert.match(server, /roll === 20 \|\| \(roll !== 1 && total >= dc\)/);
+  assert.match(server, /if \(roll === 20 \|\| margin >= 8\) return 'critical'/);
+  assert.match(server, /if \(roll !== 1 && margin >= -2\) return 'cost'/);
   assert.match(server, /result === 20 \|\| \(result !== 1 && total >= room\.monster\.ac\)/);
 });

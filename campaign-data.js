@@ -588,11 +588,40 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
     { type:'break', stat:'근력', route:'bold', path:'survival', fatalRisk:true },
     { type:'hide', stat:'지혜', route:'empathetic', path:'bond' },
   ];
-  let allowed = new Set(['investigate','observe','sneak','help','bypass','wait','trap']);
-  if (personTarget) ['persuade','tail','threaten','fight','steal','trade'].forEach(x=>allowed.add(x));
-  if (/위기|대면/.test(phase)) ['fight','threaten','help','break','bypass','trap'].forEach(x=>allowed.add(x));
-  if (/탐색|도입|진실/.test(phase)) ['investigate','observe','tail','steal','wait','hide','trap'].forEach(x=>allowed.add(x));
-  if (/결단/.test(phase)) { allowed = new Set(['investigate','fight','persuade','help','threaten','break']); }
+  // v5.8: 선택지는 현재 장면에 실제로 존재하는 대상/위험/장소로 제한한다.
+  // 사람이 없는데 싸운다/설득한다/미행한다가 뜨거나, 훔칠 물건이 없는데 절도가 뜨는 일을 막는다.
+  const sceneText = `${beat?.title||''} ${beat?.text||''} ${beat?.situation||''} ${beat?.objective||''} ${beat?.reveal||''} ${beat?.stakes||''}`;
+  const hostilePresent = personTarget && /적|적대|공격|습격|침략|추적|암살|경비|병사|고블린|괴물|망령|집행|용병|배신|위협|무기|칼|총|전투|대면/.test(sceneText);
+  const socialPresent = personTarget || /사람|주민|생존자|증언|상인|사제|귀족|동료|경비|공주|로레인|부족|협력|대화/.test(sceneText);
+  const stealablePresent = /상인|가게|시장|장부|문서|기록|열쇠|물건|상자|보관|왕관|조각|데이터|카드|유물|가방|주머니|무기|도구/.test(sceneText);
+  const tailPossible = personTarget && /수상|숨기|도망|떠나|이동|접선|배신|의심|추적|뒤|사라|행방/.test(sceneText);
+  const helpPossible = /부상|위험|구조|생존자|피난|울음|갇|쓰러|구해|도와|공주|동료|주민/.test(sceneText);
+  const barrierPresent = /문|성문|격벽|봉인|장치|벽|잔해|바리케이드|잠긴|막힌|통로|유적|서버|기계/.test(sceneText);
+  const tradePossible = /상인|시장|거래|가격|물건|정보상|여관|식당|가게|길드/.test(sceneText);
+  const hidePossible = /추적|경비|감시|수색|현상수배|발각|숨어|은신|흔적/.test(sceneText);
+  const trapPossible = hostilePresent || /추적|경비|괴물|짐승|침략/.test(sceneText);
+
+  let allowed = new Set(['investigate','observe','wait']);
+  if (barrierPresent) ['sneak','bypass','break'].forEach(x=>allowed.add(x));
+  else if (/길|통로|골목|복도|숲|거리|기지|성채|유적/.test(sceneText)) ['sneak','bypass'].forEach(x=>allowed.add(x));
+  if (socialPresent) ['persuade'].forEach(x=>allowed.add(x));
+  if (hostilePresent) ['fight','threaten'].forEach(x=>allowed.add(x));
+  if (stealablePresent) allowed.add('steal');
+  if (tailPossible) allowed.add('tail');
+  if (helpPossible) allowed.add('help');
+  if (tradePossible) allowed.add('trade');
+  if (trapPossible) allowed.add('trap');
+  if (hidePossible) allowed.add('hide');
+  if (/위기|대면/.test(phase) && hostilePresent) ['fight','threaten','trap'].forEach(x=>allowed.add(x));
+  if (/탐색|도입|진실/.test(phase)) ['investigate','observe','wait'].forEach(x=>allowed.add(x));
+  if (/결단/.test(phase)) {
+    allowed = new Set(['investigate','observe']);
+    if (hostilePresent) ['fight','threaten'].forEach(x=>allowed.add(x));
+    if (socialPresent) allowed.add('persuade');
+    if (helpPossible) allowed.add('help');
+    if (barrierPresent) allowed.add('break');
+    if (stealablePresent) allowed.add('steal');
+  }
   let defs = baseDefs.filter(d=>allowed.has(d.type));
 
   const travelByWorld = {
@@ -606,7 +635,13 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
     defs.splice(4,0,{type:'travel-a',label:travel[(act+step)%travel.length],stat:'지혜',route:'careful',path:'truth',isTravel:true});
     defs.splice(6,0,{type:'travel-b',label:travel[(act+step+1)%travel.length],stat:'민첩',route:'bold',path:'survival',isTravel:true});
   }
-  const targetCount = phase === '결단' ? 6 : phase === '위기' ? 6 : 7;
+  const targetCount = phase === '결단' ? 5 : phase === '위기' ? 6 : 7;
+  // 가능한 행동만 보여주되 너무 단조롭다면 안전한 관찰/조사/대기 축에서 보충한다.
+  const fallbackDefs = baseDefs.filter(d=>['investigate','observe','wait','bypass'].includes(d.type));
+  for (const fallback of fallbackDefs) {
+    if (defs.length >= Math.min(5,targetCount)) break;
+    if (!defs.some(d=>d.type===fallback.type)) defs.push(fallback);
+  }
   defs = defs.slice(0,targetCount);
   const actionProse = {
     investigate:[`${target}에 남은 앞뒤가 맞지 않는 흔적을 연결해 사건의 다음 원인을 찾아냈다.`,`${target}을 잘못 짚었지만, 누가 흔적을 의도적으로 흐렸는지는 드러났다.`],

@@ -9,7 +9,7 @@ const REQUIRED_IDS = [
   'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'entryError',
   'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
-  'exploreParty','exploreMapName','exploreMapSubtitle','exploreRouteDiversity','exploreObjective','worldMap','exploreFreeInput','exploreFreeBtn','exploreLog','exploreFocusHint','exploreInteraction','questJournal','exploreChatLog','exploreChatForm','exploreChatInput',
+  'exploreParty','exploreMapName','exploreMapSubtitle','exploreRouteDiversity','exploreObjective','worldMap','exploreFreeInput','exploreFreeBtn','exploreFreeBox','exploreLog','exploreFocusHint','exploreInteraction','exploreDialogue','explorePortrait','exploreSpeaker','exploreRelation','exploreDialogueText','questJournal','exploreChatLog','exploreChatForm','exploreChatInput',
   'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
   'myJobMini', 'myStatsMini', 'economyPanel', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
   'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'defendBtn', 'attackBtn', 'combatLog',
@@ -1420,6 +1420,64 @@ function showResolution(r) {
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');
 
 
+let exploreFreeExpanded = false;
+let exploreShopTarget = '';
+function npcPortraitData(object = {}) {
+  const role = String(object.role || 'NPC');
+  const palette = role.includes('상인') ? ['#9b643f','#e7b56a','#34211a']
+    : role.includes('경비') ? ['#546b7c','#cfd8de','#18232c']
+    : role.includes('기록') ? ['#695d89','#d9c8ff','#211a33']
+    : role.includes('정보') ? ['#7d435b','#ef9fb5','#28141f']
+    : role.includes('숙박') ? ['#7c5e41','#f1cf9b','#2a1d13']
+    : role.includes('메인') ? ['#a96537','#ffd18b','#271711']
+    : ['#556f5b','#c8e0bb','#18251b'];
+  const icon = esc(object.icon || '•');
+  const name = esc(String(object.name || 'NPC').slice(0,12));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${palette[0]}"/><stop offset="1" stop-color="${palette[2]}"/></linearGradient></defs>
+    <rect width="180" height="180" fill="#11131a"/><rect x="8" y="8" width="164" height="164" rx="10" fill="url(#g)" stroke="${palette[1]}" stroke-width="4"/>
+    <circle cx="90" cy="78" r="42" fill="#e8c2a2"/><path d="M47 72q10-55 44-55 42 0 48 56-20-20-48-19-25 0-44 18z" fill="${palette[2]}"/>
+    <circle cx="74" cy="80" r="5" fill="#18151a"/><circle cx="106" cy="80" r="5" fill="#18151a"/><path d="M77 102q13 9 26 0" fill="none" stroke="#7f473a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M38 166q8-48 52-48 45 0 53 48" fill="${palette[0]}" stroke="${palette[1]}" stroke-width="3"/>
+    <text x="144" y="40" fill="${palette[1]}" font-size="28" text-anchor="middle">${icon}</text>
+    <rect x="18" y="136" width="144" height="28" rx="5" fill="rgba(5,6,10,.72)"/><text x="90" y="155" fill="#fff" font-size="11" text-anchor="middle" font-family="sans-serif">${name}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+function compactExploreActions(interaction) {
+  const o = interaction?.object || {};
+  const actions = interaction?.actions || [];
+  const byId = new Map(actions.map(a => [a.id,a]));
+  let ids = [];
+  if (o.id === 'main') ids = ['investigate','infiltrate','negotiate','force'];
+  else if (o.id === 'merchant') ids = ['talk','trade','askQuest'];
+  else if (o.id === 'innkeeper') ids = ['talk','rest','askQuest'];
+  else if (o.id === 'scholar') ids = ['talk','inspect','askQuest'];
+  else if (o.id === 'rogue') ids = ['talk','buyInfo','askQuest'];
+  else if (o.id === 'guard') ids = ['talk','report','persuade'];
+  else if (o.id === 'shrine') ids = ['inspect','pray','search'];
+  else if (o.id === 'board') ids = ['inspect','takeQuest'];
+  else if (o.id === 'cache') ids = ['inspect','pickLock','leave'];
+  else ids = ['talk','help','askRumor','inspect'];
+  if (byId.has('turnInQuest')) ids.unshift('turnInQuest');
+  const primary = [];
+  for (const id of ids) {
+    const action = byId.get(id);
+    if (action && !primary.some(x => x.id === id)) primary.push(action);
+    if (primary.length >= (o.id === 'main' ? 4 : 3)) break;
+  }
+  return primary;
+}
+function renderExploreDialogueIdle() {
+  $('#exploreDialogue').classList.remove('active');
+  $('#exploreSpeaker').textContent = '주변';
+  $('#exploreRelation').textContent = '';
+  $('#exploreDialogueText').textContent = '맵을 자유롭게 돌아다니세요. NPC나 장소 가까이 가면 상호작용할 수 있습니다.';
+  $('#explorePortrait').src = npcPortraitData({name:'탐험',role:'주변',icon:'◆'});
+  $('#exploreInteraction').innerHTML = '<div class="rpg-dialogue-hint">WASD / 방향키 이동 · 가까운 대상에서 E 또는 아이콘 클릭</div><button type="button" class="rpg-choice-btn more-action idle-other-action" id="exploreIdleOtherAction"><b>주변에 다른 행동…</b><small>수색, 기다리기, 환경 이용 등</small></button>';
+  $('#exploreFreeBox').classList.add('collapsed');
+  exploreFreeExpanded = false;
+}
 function exploreMove(dx,dy){
   if(state?.phase!=='explore') return;
   socket.emit('explore:move',{roomCode,playerToken,dx,dy},r=>{ if(!r?.ok && r?.error) toast(r.error); });
@@ -1430,10 +1488,11 @@ function renderExploration(){
   const player=me();
   const pos=ex.positions?.[playerToken] || {x:0,y:0};
   $('#exploreMapName').textContent=ex.name || '자유 탐험';
-  $('#exploreMapSubtitle').textContent=`${ex.subtitle||''} · WASD/방향키 또는 인접 타일 클릭으로 이동`;
+  const currentRegion=(ex.regions||[]).find(r=>pos.x>=r.x0&&pos.x<=r.x1&&pos.y>=r.y0&&pos.y<=r.y1);
+  $('#exploreMapSubtitle').textContent=`${ex.subtitle||''} · ${currentRegion?.name||'미지의 지역'} · 좌표 ${pos.x},${pos.y} · 월드 ${ex.width}×${ex.height}`;
   $('#exploreRouteDiversity').textContent=`${Number(ex.routeDiversity||36).toLocaleString()}+`;
   const beat=state.storyBeat;
-  $('#exploreObjective').innerHTML=`<b>메인 퀘스트</b><span>${esc(beat?.title || (state.storyComplete?'완료됨':'다음 목표를 찾는 중'))}</span><small>${state.storyComplete?'모든 핵심 퀘스트를 해결했습니다.':`✦ 표식까지 직접 이동한 뒤, 여섯 접근 방식 중 원하는 방법으로 시작하세요. 현재 메인 진행 ${state.storySeenCount||0}/${state.targetStory||30}`}</small>`;
+  $('#exploreObjective').innerHTML=`<b>MAIN</b><span>${esc(beat?.title || (state.storyComplete?'완료됨':'다음 목표를 찾는 중'))}</span><small>${state.storyComplete?'모든 핵심 퀘스트를 해결했습니다.':`✦ 표식까지 직접 이동하세요. 메인 진행 ${state.storySeenCount||0}/${state.targetStory||30}`}</small>`;
 
   $('#exploreParty').innerHTML=(state.players||[]).map(m=>{ const p=ex.positions?.[m.id]||{}; return `<div class="explore-party-member ${m.id===playerToken?'me':''}"><b>${esc(m.name)}</b><small>${esc(m.job?.name||'')}</small><span>HP ${m.hp}/${m.maxHp} · (${p.x??'?'},${p.y??'?'})</span></div>`; }).join('');
 
@@ -1441,44 +1500,73 @@ function renderExploration(){
   const discovered=new Set(ex.discoveredByPlayer?.[playerToken]||[]);
   const objectAt=(x,y)=>[...(ex.npcs||[]),...(ex.pois||[])].find(o=>o.x===x&&o.y===y&&(!o.hidden||discovered.has(o.id)));
   const playersAt=(x,y)=>(state.players||[]).filter(m=>ex.positions?.[m.id]?.x===x&&ex.positions?.[m.id]?.y===y);
+  // 실제 월드는 45x27이지만 화면에는 플레이어 주변만 카메라처럼 보여준다.
+  // 맵 전체를 한 번에 축소하지 않아 캐릭터/오브젝트가 작아지지 않고, 이동할수록 새로운 지역이 드러난다.
+  const VIEW_W=Math.min(17,ex.width), VIEW_H=Math.min(11,ex.height);
+  const camX=Math.max(0,Math.min(ex.width-VIEW_W,pos.x-Math.floor(VIEW_W/2)));
+  const camY=Math.max(0,Math.min(ex.height-VIEW_H,pos.y-Math.floor(VIEW_H/2)));
   const cells=[];
-  for(let y=0;y<ex.height;y++) for(let x=0;x<ex.width;x++){
+  for(let vy=0;vy<VIEW_H;vy++) for(let vx=0;vx<VIEW_W;vx++){
+    const x=camX+vx,y=camY+vy;
     const wall=walls.has(`${x},${y}`); const obj=objectAt(x,y); const ps=playersAt(x,y);
-    const dist=Math.abs(pos.x-x)+Math.abs(pos.y-y); const reachable=dist===1&&!wall;
-    const cls=['map-cell',wall?'wall':'floor',reachable?'reachable':'',obj?'has-object':'',ps.length?'has-player':''].filter(Boolean).join(' ');
+    const dist=Math.abs(pos.x-x)+Math.abs(pos.y-y); const reachable=dist===1&&!wall; const nearby=dist<=1;
+    const region=(ex.regions||[]).find(r=>x>=r.x0&&x<=r.x1&&y>=r.y0&&y<=r.y1);
+    const cls=['map-cell',wall?'wall':'floor',reachable?'reachable':'',obj?'has-object':'',nearby&&obj?'near-object':'',ps.length?'has-player':''].filter(Boolean).join(' ');
     const labels=[];
-    if(obj) labels.push(`<button class="map-object" data-interact="${esc(obj.id)}" title="${esc(obj.name)}"><i>${esc(obj.icon||'•')}</i><small>${esc(obj.role||obj.name)}</small></button>`);
+    if(obj) labels.push(`<button class="map-object" data-interact="${esc(obj.id)}" title="${esc(obj.name)}"><i>${esc(obj.icon||'•')}</i><small>${esc(obj.name)}</small>${nearby?'<em>말걸기</em>':''}</button>`);
     if(ps.length) labels.push(`<div class="map-players">${ps.map(m=>`<span class="map-player ${m.id===playerToken?'me':''}" title="${esc(m.name)}">${m.id===playerToken?'◆':'●'}</span>`).join('')}</div>`);
-    cells.push(`<div class="${cls}" data-x="${x}" data-y="${y}">${wall?'<span class="wall-mark">▦</span>':labels.join('')}</div>`);
+    cells.push(`<div class="${cls}" data-x="${x}" data-y="${y}" title="${esc(region?.name||'')} · ${x},${y}">${wall?'<span class="wall-mark">▦</span>':labels.join('')}</div>`);
   }
-  const map=$('#worldMap'); map.style.setProperty('--map-w',ex.width); map.innerHTML=cells.join('');
+  const map=$('#worldMap');
+  map.style.setProperty('--map-w',VIEW_W);
+  map.style.setProperty('--map-h',VIEW_H);
+  map.dataset.camera=`${camX},${camY}`;
+  map.innerHTML=cells.join('');
   map.querySelectorAll('.map-cell.reachable').forEach(cell=>cell.onclick=e=>{ if(e.target.closest('[data-interact]')) return; const x=Number(cell.dataset.x),y=Number(cell.dataset.y); exploreMove(x-pos.x,y-pos.y); });
   map.querySelectorAll('[data-interact]').forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); socket.emit('explore:interact',{roomCode,playerToken,targetId:btn.dataset.interact},r=>!r?.ok&&toast(r.error)); });
 
   const interaction=ex.interactions?.[playerToken] || null;
   const ib=$('#exploreInteraction');
-  if(!interaction){ $('#exploreFocusHint').textContent='NPC/장소 옆에서 아이콘을 누르세요'; ib.innerHTML='<div class="empty-interaction">맵을 자유롭게 돌아다니세요. 일반 NPC라도 대화·도둑질·협박·싸움·미행·의뢰 등 다양한 행동이 가능합니다.</div>'; }
-  else {
+  if(!interaction){
+    $('#exploreFocusHint').textContent='가까운 대상에서 E 또는 아이콘 클릭';
+    renderExploreDialogueIdle();
+    const idleOther=document.querySelector('#exploreIdleOtherAction'); if(idleOther) idleOther.onclick=()=>{exploreFreeExpanded=true;$('#exploreFreeBox').classList.remove('collapsed');$('#exploreFreeInput').focus();};
+  } else {
     const o=interaction.object; const ns=interaction.state;
-    $('#exploreFocusHint').textContent=o.name;
-    const rel=ns?`관계 ${ns.relation>=0?'+':''}${ns.relation}${ns.hostile?' · 적대':''}${ns.defeated?' · 제압됨':''}`:'';
-    const shop=(interaction.shopItems||[]).length?`<div class="explore-shop"><div class="eyebrow">SHOP STOCK</div>${interaction.shopItems.map(item=>`<div class="explore-shop-item"><div><b>${esc(item.name)}</b><small>${esc(item.stat)} 판정 보정 +${item.bonus}</small></div><button type="button" data-explore-buy="${esc(item.id)}">◈ ${item.price}</button></div>`).join('')}</div>`:'';
-    ib.innerHTML=`<div class="focus-object"><div class="focus-icon">${esc(o.icon||'•')}</div><div><b>${esc(o.name)}</b><small>${esc(o.role||'장소')} ${rel?`· ${esc(rel)}`:''}</small></div></div><div class="interaction-actions">${(interaction.actions||[]).map(a=>`<button type="button" data-explore-act="${esc(a.id)}"><b>${esc(a.label)}</b>${a.preview?`<small>${esc(a.preview)}</small>`:''}${a.warning?`<em>${esc(a.warning)}</em>`:''}</button>`).join('')}</div>${shop}`;
-    ib.querySelectorAll('[data-explore-act]').forEach(btn=>btn.onclick=()=>socket.emit('explore:act',{roomCode,playerToken,targetId:o.id,action:btn.dataset.exploreAct},r=>{if(!r?.ok)toast(r.error);else if(r.summary)toast(r.summary.slice(0,100));}));
+    const rel=ns?(Number.isFinite(Number(ns.relation))?`관계 ${Number(ns.relation)>=0?'+':''}${Number(ns.relation)}${ns.hostile?' · 적대':''}${ns.defeated?' · 제압됨':''}`:`${ns.hostile?'적대':''}${ns.defeated?' · 제압됨':''}`.replace(/^ · /,'')):'';
+    $('#exploreDialogue').classList.add('active');
+    $('#exploreFocusHint').textContent=`${o.name} · 상호작용 중`;
+    $('#exploreSpeaker').textContent=o.name;
+    $('#exploreRelation').textContent=[o.role,rel].filter(Boolean).join(' · ');
+    $('#explorePortrait').src=npcPortraitData(o);
+    $('#exploreDialogueText').textContent=interaction.dialogue?.text || `${o.name}이(가) 당신을 바라본다. 무엇을 할까?`;
+    const primary=compactExploreActions(interaction);
+    const buttons=primary.map(a=>`<button type="button" class="rpg-choice-btn" data-explore-act="${esc(a.id)}"><b>${esc(a.label)}</b>${a.preview?`<small>${esc(a.preview)}</small>`:''}${a.warning?`<em>${esc(a.warning)}</em>`:''}</button>`).join('');
+    const shop=(o.id==='merchant'&&exploreShopTarget===o.id&&(interaction.shopItems||[]).length)?`<div class="rpg-shop-drawer"><div class="rpg-shop-title">상인이 내민 물건</div>${interaction.shopItems.slice(0,4).map(item=>`<div class="rpg-shop-item"><div><b>${esc(item.name)}</b><small>${esc(item.stat)} 판정 +${item.bonus}</small></div><button type="button" data-explore-buy="${esc(item.id)}">◈ ${item.price}</button></div>`).join('')}</div>`:'';
+    ib.innerHTML=`<div class="rpg-choice-row">${buttons}<button type="button" class="rpg-choice-btn more-action" id="exploreOtherAction"><b>다른 행동…</b><small>직접 입력</small></button></div>${shop}`;
+    ib.querySelectorAll('[data-explore-act]').forEach(btn=>btn.onclick=()=>socket.emit('explore:act',{roomCode,playerToken,targetId:o.id,action:btn.dataset.exploreAct},r=>{if(!r?.ok)toast(r.error);else if(btn.dataset.exploreAct==='trade'){exploreShopTarget=o.id;renderExploration();}}));
     ib.querySelectorAll('[data-explore-buy]').forEach(btn=>btn.onclick=()=>socket.emit('explore:buy',{roomCode,playerToken,itemId:btn.dataset.exploreBuy},r=>{if(!r?.ok)toast(r.error);else toast(r.summary);}));
+    document.querySelector('#exploreOtherAction').onclick=()=>{ exploreFreeExpanded=!exploreFreeExpanded; $('#exploreFreeBox').classList.toggle('collapsed',!exploreFreeExpanded); if(exploreFreeExpanded) $('#exploreFreeInput').focus(); };
+    $('#exploreFreeBox').classList.toggle('collapsed',!exploreFreeExpanded);
   }
   const quests=ex.sideQuests?.[playerToken]||[];
-  $('#questJournal').innerHTML=`<div class="main-quest-card"><b>MAIN · ${esc(beat?.title||'연대기 완료')}</b><small>${state.storyComplete?'완료':'✦ 목표 지점에서 원하는 방식으로 다음 사건을 진행'}</small></div>${quests.filter(q=>q.state!=='available').map(q=>`<div class="side-quest ${q.state}"><b>${esc(q.title)}</b><small>${q.state==='active'?'진행 중':q.state==='ready'?'완료 보고 가능':'완료'} · ${esc(q.description)}</small></div>`).join('')||'<div class="empty-quest">NPC에게 일거리를 물어보면 서브 퀘스트가 이곳에 기록됩니다.</div>'}`;
-  $('#exploreLog').innerHTML=(ex.actionHistory||[]).slice(-6).reverse().map(a=>`<div><b>${esc(a.playerName)}</b><span>${esc(a.targetName)} · ${esc(a.text)}</span></div>`).join('');
+  $('#questJournal').innerHTML=`<div class="main-quest-card"><b>MAIN · ${esc(beat?.title||'연대기 완료')}</b><small>${state.storyComplete?'완료':'✦ 맵의 목표 지점으로 직접 이동'}</small></div>${quests.filter(q=>q.state!=='available').map(q=>`<div class="side-quest ${q.state}"><b>${esc(q.title)}</b><small>${q.state==='active'?'진행 중':q.state==='ready'?'완료 보고 가능':'완료'} · ${esc(q.description)}</small></div>`).join('')||'<div class="empty-quest">NPC와 대화하다 의뢰를 받으면 여기에 기록됩니다.</div>'}`;
+  $('#exploreLog').innerHTML=(ex.actionHistory||[]).slice(-4).reverse().map(a=>`<div><b>${esc(a.playerName)}</b><span>${esc(a.targetName)} · ${esc(a.text)}</span></div>`).join('');
 }
-
 $$('[data-move]').forEach(btn=>btn.onclick=()=>{ const [dx,dy]=btn.dataset.move.split(',').map(Number); exploreMove(dx,dy); });
 $('#exploreFreeBtn').onclick=()=>{ const input=$('#exploreFreeInput'); const text=input.value.trim(); if(!text)return; const interaction=state?.exploration?.interactions?.[playerToken]; socket.emit('explore:freeAction',{roomCode,playerToken,text,targetId:interaction?.object?.id||null},r=>{if(!r?.ok)return toast(r.error); input.value=''; if(r.summary)toast(r.summary.slice(0,120));}); };
 $('#exploreFreeInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();$('#exploreFreeBtn').click();} });
 document.addEventListener('keydown',e=>{
   if(state?.phase!=='explore'||['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
   const key=e.key.toLowerCase(); const move=key==='w'||key==='arrowup'?[0,-1]:key==='s'||key==='arrowdown'?[0,1]:key==='a'||key==='arrowleft'?[-1,0]:key==='d'||key==='arrowright'?[1,0]:null;
-  if(move){e.preventDefault();exploreMove(...move);}
+  if(move){e.preventDefault();exploreMove(...move);return;}
+  if(key==='e'){
+    const ex=state?.exploration; const pos=ex?.positions?.[playerToken];
+    if(!ex||!pos)return;
+    const discovered=new Set(ex.discoveredByPlayer?.[playerToken]||[]);
+    const nearest=[...(ex.npcs||[]),...(ex.pois||[])].filter(o=>(!o.hidden||discovered.has(o.id))&&(Math.abs(o.x-pos.x)+Math.abs(o.y-pos.y)<=1))[0];
+    if(nearest){e.preventDefault();socket.emit('explore:interact',{roomCode,playerToken,targetId:nearest.id},r=>!r?.ok&&toast(r.error));}
+  }
 });
 
 function renderCombat() {

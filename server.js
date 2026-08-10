@@ -21,7 +21,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '4.16.0-guardian-trilogy.0';
+const APP_VERSION = '4.17.0-player-agency.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -203,6 +203,173 @@ function rollReward(room, player, { margin = 0, natural = 0, lootItemId = null, 
 }
 
 
+const AGENCY_VERSION = 1;
+const SCENE_IMPORTANCE = {
+  ordinary: { label:'일반 장면', dcMin:8, dcMax:11, freeAction:true, consequence:'실패해도 이야기는 다른 방법으로 이어집니다.' },
+  important: { label:'중요 장면', dcMin:10, dcMax:13, freeAction:true, consequence:'성공과 실패가 다음 사건의 조건을 크게 바꿉니다.' },
+  pivotal: { label:'결정적 장면', dcMin:12, dcMax:15, freeAction:false, consequence:'이 장면의 선택은 큰 분기나 엔딩 후보를 바꿀 수 있습니다.' },
+};
+
+function rawAbility(player, stat) {
+  return Number(player?.abilities?.[stat]?.total || 10);
+}
+function rawAbilityMod(player, stat) {
+  return mod(rawAbility(player, stat));
+}
+function derivedAbilityImpact(player) {
+  const str = rawAbility(player, '근력');
+  const dex = rawAbility(player, '민첩');
+  const int = rawAbility(player, '지능');
+  const wis = rawAbility(player, '지혜');
+  const cha = rawAbility(player, '매력');
+  const con = rawAbility(player, '체력');
+  return {
+    strengthDamage: Math.max(0, mod(str)),
+    defense: 10 + mod(dex),
+    initiative: mod(dex),
+    insight: int >= 14,
+    insightDeep: int >= 16,
+    dangerSense: wis >= 14,
+    dangerSenseDeep: wis >= 16,
+    shopDiscount: cha >= 16 ? 2 : cha >= 14 ? 1 : 0,
+    questCoinBonus: cha >= 16 ? 1 : 0,
+    statusResistance: con >= 16 ? 2 : con >= 14 ? 1 : 0,
+    maxHpBonus: Math.max(-2, mod(con) * 2),
+  };
+}
+function recomputeDerivedVitals(player, { preserveRatio = false } = {}) {
+  if (!player?.job || !player?.abilities) return;
+  const oldMax = Math.max(1, Number(player.maxHp || player.job.baseHp || 10));
+  const oldHp = Math.max(0, Number(player.hp || 0));
+  const derived = derivedAbilityImpact(player);
+  const nextMax = Math.max(6, Number(player.job.baseHp || 10) + Number(derived.maxHpBonus || 0));
+  player.maxHp = nextMax;
+  if (preserveRatio) player.hp = Math.max(0, Math.min(nextMax, Math.round(nextMax * oldHp / oldMax)));
+  else player.hp = nextMax;
+  player.derivedVitalsVersion = AGENCY_VERSION;
+}
+function sceneImportanceKey(beat) {
+  const phase = String(beat?.phase || '');
+  const title = String(beat?.title || '');
+  const act = Number(beat?.act || 1);
+  if (phase === '결단' || /최후|마지막|왕관|운명|결전|선택|심판|챔피언 소드|헤븐홀드/.test(title) || (act >= 5 && phase === '위기')) return 'pivotal';
+  if (['진실','위기','대면'].includes(phase) || /배신|구조|붕괴|침공|봉인|실종|재판|살인/.test(title)) return 'important';
+  return 'ordinary';
+}
+function normalizeStoryDc(beat, dc) {
+  const key = sceneImportanceKey(beat);
+  const rule = SCENE_IMPORTANCE[key];
+  return Math.max(rule.dcMin, Math.min(rule.dcMax, Number(dc || 10)));
+}
+function difficultyLabel(dc) {
+  if (dc <= 9) return '쉬움';
+  if (dc <= 11) return '보통';
+  if (dc <= 13) return '어려움';
+  return '극한';
+}
+function routeFromStat(stat) {
+  if (['지능','지혜'].includes(stat)) return 'careful';
+  if (['근력','민첩'].includes(stat)) return 'bold';
+  return 'empathetic';
+}
+function choicePathFromRoute(route) {
+  return route === 'careful' ? 'truth' : route === 'bold' ? 'survival' : 'bond';
+}
+function routeTemplateChoice(beat, route) {
+  return (beat?.choices || []).find(c => c.branchValue === route) || beat?.choices?.[0] || null;
+}
+function alternateActionLabel(stat, beat) {
+  const objective = String(beat?.objective || '현재 목표');
+  const map = {
+    '근력': `주변 구조물을 이용해 판 자체를 바꾸고 ${objective}에 강제로 길을 만든다`,
+    '민첩': `정면을 피하고 측면으로 먼저 움직여 ${objective}에 유리한 위치를 잡는다`,
+    '지능': `지금까지 나온 단서들을 다시 조합해 ${objective}의 숨은 규칙을 찾아낸다`,
+    '지혜': `바로 움직이지 않고 주변의 반응과 위험 신호를 끝까지 읽어 ${objective}의 함정을 피한다`,
+    '매력': `관련 인물의 이해관계를 건드려 ${objective}의 조건 자체를 협상으로 바꾼다`,
+    '체력': `위험을 받아내며 시간을 벌어 동료들이 ${objective}에 접근할 틈을 만든다`,
+  };
+  return map[stat] || `다른 관점에서 ${objective}를 해결할 방법을 찾는다`;
+}
+function choiceConsequenceHint(choice, importanceKey) {
+  const route = choice?.branchValue || routeFromStat(choice?.stat);
+  const success = route === 'careful' ? '단서·정보 우위' : route === 'bold' ? '위치·속도 우위' : '관계·지원 우위';
+  const failure = importanceKey === 'pivotal' ? '큰 분기 변화 가능' : importanceKey === 'important' ? '위협·상태 변화 가능' : '작은 불리함 또는 우회';
+  return { success, failure };
+}
+function prepareAgencyBeat(room, beat) {
+  if (!beat) return beat;
+  const importanceKey = sceneImportanceKey(beat);
+  const rule = SCENE_IMPORTANCE[importanceKey];
+  beat.importance = { key:importanceKey, label:rule.label, consequence:rule.consequence };
+  beat.freeActionAllowed = Boolean(rule.freeAction && !beat.isDetour);
+  beat.choices = Array.isArray(beat.choices) ? beat.choices.map(choice => {
+    const normalized = { ...choice };
+    normalized.dc = normalizeStoryDc(beat, choice.dc);
+    const memory = room.agencyMemory || {};
+    const momentum = normalized.branchValue === 'careful' ? Number(memory.clues || 0)
+      : normalized.branchValue === 'bold' ? Number(memory.position || 0)
+      : Number(memory.rapport || 0);
+    if (momentum >= 4) {
+      normalized.dc = Math.max(SCENE_IMPORTANCE[importanceKey].dcMin, normalized.dc - 1);
+      normalized.detail = `${normalized.detail || ''} · 이전 선택들이 쌓여 이 접근에 실제 우위가 생겼습니다.`.trim();
+      normalized.memoryAdvantage = true;
+    }
+    normalized.difficulty = difficultyLabel(normalized.dc);
+    normalized.consequenceHint = choiceConsequenceHint(normalized, importanceKey);
+    return normalized;
+  }) : [];
+
+  const actor = currentTurnPlayer(room);
+  const visible = beat.choices.filter(choice => !choice.requiredJob || choice.requiredJob === actor?.job?.name);
+  if (importanceKey === 'ordinary' && visible.filter(choice => !choice.requiredJob).length < 4) {
+    const used = new Set(visible.map(choice => choice.stat));
+    const preferred = ['지혜','지능','민첩','매력','근력','체력'];
+    const actorBest = actor?.abilities ? Object.entries(actor.abilities).sort((a,b)=>Number(b[1]?.total||0)-Number(a[1]?.total||0)).map(([s])=>s) : [];
+    const stat = [...actorBest, ...preferred].find(s => !used.has(s)) || preferred[0];
+    const route = routeFromStat(stat);
+    const template = routeTemplateChoice(beat, route) || beat.choices[0];
+    if (template) {
+      const dc = normalizeStoryDc(beat, Math.max(8, Number(template.dc || 10) - (actor && rawAbility(actor, stat) >= 15 ? 1 : 0)));
+      beat.choices.push({
+        ...template,
+        id:`${beat.id || 'scene'}-agency-${stat}`,
+        label:alternateActionLabel(stat, beat),
+        detail:`자유 발상 선택 · ${stat}을 활용해 같은 목표를 전혀 다른 방식으로 해결합니다.`,
+        stat, dc, difficulty:difficultyLabel(dc), branchValue:route, path:choicePathFromRoute(route),
+        agencyGenerated:true,
+        consequenceHint:choiceConsequenceHint({branchValue:route,stat}, importanceKey),
+      });
+    }
+  }
+
+  if (actor) {
+    const derived = derivedAbilityImpact(actor);
+    beat.statInsight = {
+      actorId:actor.id,
+      insight:derived.insight,
+      dangerSense:derived.dangerSense,
+      text: derived.insight && derived.dangerSense
+        ? '높은 지능과 지혜 덕분에 선택의 난이도뿐 아니라 성공/실패가 남길 방향까지 더 선명하게 읽힙니다.'
+        : derived.insight ? '높은 지능 덕분에 일부 선택의 성공 방향을 미리 추론할 수 있습니다.'
+        : derived.dangerSense ? '높은 지혜 덕분에 어떤 선택의 실패가 더 위험한지 감지할 수 있습니다.'
+        : '',
+    };
+  }
+  return beat;
+}
+function applyAgencyMemory(room, player, choice, success, margin, declaration='') {
+  room.agencyMemory ||= { actions:[], clues:0, position:0, rapport:0, scars:0 };
+  const route = choice?.branchValue || routeFromStat(choice?.stat);
+  if (success) {
+    if (route === 'careful') room.agencyMemory.clues += margin >= 5 ? 2 : 1;
+    else if (route === 'bold') room.agencyMemory.position += margin >= 5 ? 2 : 1;
+    else room.agencyMemory.rapport += margin >= 5 ? 2 : 1;
+  } else room.agencyMemory.scars += margin <= -5 ? 2 : 1;
+  room.agencyMemory.actions.push({ beatId:room.storyNodeId, playerId:player.id, stat:choice?.stat, route, success, declaration:String(declaration || choice?.label || '').slice(0,120) });
+  if (room.agencyMemory.actions.length > 24) room.agencyMemory.actions.splice(0, room.agencyMemory.actions.length - 24);
+}
+
+
 function normalizeLoadedRoom(room) {
   if (!room) return room;
   room.mainTurnsSinceEvent = Number(room.mainTurnsSinceEvent || 0);
@@ -213,11 +380,13 @@ function normalizeLoadedRoom(room) {
     player.skillState ||= { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
     player.statuses ||= [];
     normalizeEconomyPlayer(player);
+    if (player.job && player.abilities && Number(player.derivedVitalsVersion || 0) < AGENCY_VERSION) recomputeDerivedVitals(player, { preserveRatio:true });
   }
   room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
   room.voteEndsAt ||= null;
   room.voteAllVotedCountdown = Boolean(room.voteAllVotedCountdown);
   room.choiceVotes ||= {};
+  room.agencyMemory ||= { actions:[], clues:0, position:0, rapport:0, scars:0 };
   room.storyHistory ||= [];
   room.lastStoryAction ||= null;
   room.storyFlags ||= {};
@@ -420,17 +589,19 @@ function applyStatus(player, status) {
   return status;
 }
 
-function storyFailureStatus(choice, room) {
+function storyFailureStatus(choice, room, player = null) {
   const template = STORY_STATUS_DEFS[choice?.stat] || STORY_STATUS_DEFS['체력'];
+  const resistance = player ? derivedAbilityImpact(player).statusResistance : 0;
+  const duration = Math.max(1, Number(template.duration || 2) - resistance);
   return {
     id: token(),
     key: template.key,
     label: template.label,
-    desc: template.desc,
+    desc: resistance ? `${template.desc} 높은 체력 덕분에 회복이 더 빠릅니다.` : template.desc,
     checkPenalty: template.checkPenalty,
     attackPenalty: template.attackPenalty,
     stats: [...(template.stats || [])],
-    expiresAtStory: Number(room.story || 0) + Number(template.duration || 2) + 1,
+    expiresAtStory: Number(room.story || 0) + duration + 1,
   };
 }
 
@@ -1119,7 +1290,7 @@ function renderedStoryBeat(room, campaign) {
   beat.visual = `${beat.visual} · ${routeName(currentRoute)}의 흔적`;
   adaptiveChoiceRewrite(room, beat);
   injectJobStoryChoices(room, campaign, beat);
-  return beat;
+  return prepareAgencyBeat(room, beat);
 }
 
 
@@ -1265,6 +1436,7 @@ function publicRoom(room) {
       hp: p.hp, maxHp: p.maxHp, inspiration: p.inspiration,
       coins: Number(p.coins || 0), inventory: [...(p.inventory || [])], equipment: { ...(p.equipment || {}) },
       equipmentBonuses: Object.fromEntries(STAT_NAMES.map(stat => [stat, equipmentStatBonus(room, p, stat)])),
+      derived: derivedAbilityImpact(p),
       statuses: activeStatuses(room, p),
       skillState: { ...(p.skillState || {}), cooldownRemaining: Math.max(0, Number(p.skillState?.readyAtTurn || 0) - Number(room.turnSerial || 0)) },
     })),
@@ -1304,6 +1476,7 @@ function publicRoom(room) {
     targetStory: TARGET_STORY,
     storySeenCount: room.storySeenIds?.length || 0,
     facilityUses: room.facilityUses || {},
+    agencyMemory: room.agencyMemory || { actions:[], clues:0, position:0, rapport:0, scars:0 },
     maxThreat: MAX_THREAT,
     revision: room.revision,
     chat: room.chat.slice(-120),
@@ -1456,24 +1629,34 @@ function interpretFreeAction(declaration, player, beat, room) {
     if (hits > score) { score = hits; picked = pattern; }
   }
   if (!picked || score <= 0) picked = ACTION_PATTERNS.find(item => item.stat === player.job?.prime) || ACTION_PATTERNS[2];
-  const act = Number(beat?.act || 1);
-  const threatPressure = room.threat >= 6 ? 2 : room.threat >= 3 ? 1 : 0;
-  const dc = 10 + Math.max(0, act - 1) + threatPressure + Number(room.dcPenalty || 0);
+  const importanceKey = sceneImportanceKey(beat);
+  const rule = SCENE_IMPORTANCE[importanceKey];
+  const threatPressure = room.threat >= 7 ? 1 : 0;
   const expertise = player.job?.prime === picked.stat ? 1 : 0;
-  return { stat:picked.stat, mode:picked.label, dc, expertise };
+  const naturalFit = rawAbility(player, picked.stat) >= 15 ? 1 : 0;
+  const dc = Math.max(rule.dcMin, Math.min(rule.dcMax, 10 + threatPressure - expertise - naturalFit + (importanceKey === 'important' ? 1 : 0)));
+  return { stat:picked.stat, mode:picked.label, dc, expertise, route:routeFromStat(picked.stat), importanceKey };
 }
 
 function actionNarrative({ success, declaration, player, beat, interpretation, margin }) {
-  const job = player.job?.name || '모험가';
-  const objective = beat?.objective || '현재 목표';
+  const objective = beat?.objective || '눈앞의 문제';
   const reveal = beat?.reveal || '';
   const role = beat?.roleHooks?.[player.job?.prime] || '';
+  const route = interpretation?.route || routeFromStat(interpretation?.stat);
+  const successTurn = route === 'careful'
+    ? '흩어진 징후들이 하나의 방향을 가리키기 시작했다.'
+    : route === 'bold' ? '머뭇거릴 틈을 주지 않은 행동이 상황의 균형을 깨뜨렸다.'
+    : '상대의 표정과 침묵 사이에서 처음과는 다른 반응이 돌아왔다.';
+  const failureTurn = route === 'careful'
+    ? '단서는 있었지만 한 조각을 너무 늦게 읽었다.'
+    : route === 'bold' ? '길은 열렸지만 그 대가로 주변의 위험까지 함께 깨어났다.'
+    : '말은 닿았지만 상대가 숨기고 있던 경계심까지 건드리고 말았다.';
   if (success) {
-    if (margin >= 5) return `${job} ${player.name}의 선택이 장면의 흐름을 바꿨다. “${declaration}”라는 행동은 ${interpretation.stat}에 기반한 ${interpretation.mode} 접근으로 완벽하게 맞아떨어졌다. ${role} 그 결과 ${objective}에 직접 연결되는 우위를 얻었고, ${reveal ? `앞서 암시되던 진실 ― ${reveal} ― 을 뒷받침하는 결정적인 흔적까지 확보했다.` : '다음 장면에서 사용할 수 있는 확실한 단서를 확보했다.'}`;
-    return `${job} ${player.name}은(는) “${declaration}”을 실행했다. ${interpretation.mode} 방식이 효과를 내면서 위험을 크게 키우지 않고 ${objective} 쪽으로 이야기를 전진시켰다. 성공은 장면을 끝내는 정답이 아니라, 다음 플레이어가 이어받을 수 있는 새로운 위치와 단서를 만들어냈다.`;
+    if (margin >= 5) return `“${declaration}.” ${player.name}이(가) 그렇게 움직이자 ${successTurn} ${role ? `${role} ` : ''}${objective}에 닿는 길이 예상보다 선명하게 열렸다.${reveal ? ` 그리고 그 끝에서 지금까지 설명되지 않던 사실 하나가 모습을 드러냈다. ${reveal}` : ''}`;
+    return `“${declaration}.” ${player.name}의 선택은 무리 없이 현실이 되었다. ${successTurn} 당장 모든 문제가 풀린 것은 아니었지만, ${objective}를 향해 움직일 수 있는 새로운 틈이 생겼다.`;
   }
-  if (margin <= -5) return `${job} ${player.name}의 “${declaration}”은(는) 시도 자체는 타당했지만 장면이 예상보다 거칠게 반응했다. ${interpretation.mode} 접근이 무너지면서 새로운 위험이 드러났고 세계의 압박이 커졌다. 하지만 실패 덕분에 무엇이 통하지 않는지, 그리고 ${beat?.stakes || '이 상황에서 무엇을 잃을 수 있는지'}가 분명해졌다. 다음 플레이어는 이 실패를 실제 정보로 이용할 수 있다.`;
-  return `${job} ${player.name}은(는) “${declaration}”을 시도했지만 원하는 결과까지 닿지는 못했다. 대신 장면의 저항과 숨은 규칙이 드러났다. 이야기는 멈추지 않는다. ${objective}를 향한 길은 그대로 열려 있지만, 다음 행동은 다른 각도에서 접근해야 한다.`;
+  if (margin <= -5) return `“${declaration}.” 시도는 끝까지 밀어붙였지만 ${failureTurn} 원하는 결과는 얻지 못했다. 대신 무엇이 이곳을 막고 있는지는 분명해졌다. ${beat?.stakes ? `${beat.stakes}라는 위험이 이제 눈앞의 현실이 되었다.` : '주변의 긴장이 한층 짙어졌다.'}`;
+  return `“${declaration}.” ${player.name}이(가) 움직였지만 상황은 생각처럼 따라주지 않았다. ${failureTurn} 그래도 완전한 헛수고는 아니었다. 실패한 자리에는 다음에 이용할 수 있는 흔적과, 피해야 할 방식이 선명하게 남았다.`;
 }
 
 function skillRemaining(room, player) {
@@ -1681,10 +1864,10 @@ function monsterForEvent(room, event) {
   const campaign = CAMPAIGNS.find(c => c.id === room.campaignId);
   const index = Math.max(0, campaign.monsters.indexOf(event.monster));
   const scale = Math.max(0, room.players.length - 2);
-  const hp = 10 + index * 5 + scale * 4;
+  const hp = 9 + index * 4 + scale * 3;
   return {
     name: event.monster,
-    ac: 11 + index,
+    ac: Math.min(15, 10 + index),
     hp,
     maxHp: hp,
     attackBonus: 2 + Math.floor(index / 2),
@@ -1923,6 +2106,18 @@ function maybeAttachFacility(room, event) {
   return event;
 }
 
+function prepareAgencyEvent(event) {
+  if (!event) return event;
+  const important = Boolean(event.monster || Number(event.act || 1) >= 4 || /위기|습격|붕괴|결투|구조|심판/.test(String(event.title || '')));
+  const rule = important ? SCENE_IMPORTANCE.important : SCENE_IMPORTANCE.ordinary;
+  event.importance = { key:important ? 'important' : 'ordinary', label:important ? '중요 사건' : '일반 사건', consequence:rule.consequence };
+  event.choices = (event.choices || []).map(choice => {
+    const dc = Math.max(rule.dcMin, Math.min(rule.dcMax, Number(choice.dc || 10)));
+    return { ...choice, dc, difficulty:difficultyLabel(dc), consequenceHint:choiceConsequenceHint(choice, important ? 'important' : 'ordinary') };
+  });
+  return event;
+}
+
 function drawEventForRoom(room) {
   if (room.currentEvent || !room.deck.length) return false;
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
@@ -1930,7 +2125,7 @@ function drawEventForRoom(room) {
   const desiredAct = Math.min(5, Math.max(1, Number(currentMainBeat?.act || 1)));
   const candidates = room.deck.map((event, index) => ({ event, index })).filter(item => item.event.act === desiredAct);
   const picked = candidates.length ? candidates[crypto.randomInt(0, candidates.length)] : { index: crypto.randomInt(0, room.deck.length) };
-  room.currentEvent = maybeAttachFacility(room, room.deck.splice(picked.index, 1)[0]);
+  room.currentEvent = prepareAgencyEvent(maybeAttachFacility(room, room.deck.splice(picked.index, 1)[0]));
   room.activeChoice = null;
   room.choiceVotes = {};
   room.voteAllVotedCountdown = false;
@@ -2108,6 +2303,7 @@ io.on('connection', socket => {
     const abilities = {};
     for (const stat of STAT_NAMES) abilities[stat] = roll4d6();
     player.abilities = abilities;
+    recomputeDerivedVitals(player);
     player.ready = true;
     emitRoll(room, player, { sides: 6, result: rand(6), purpose: '능력치 생성 · 4D6 × 6', kind: 'stats' });
     sync(room);
@@ -2248,9 +2444,29 @@ io.on('connection', socket => {
       return ack?.({ ok:true, result:room.lastStoryAction });
     }
 
+    const declaration = sanitize(payload?.declaration, 180);
     const choiceIndex = Number(payload?.choiceIndex);
-    const choice = beat.choices?.[choiceIndex];
-    if (!choice) return ack?.({ ok:false, error:'이 장면에서는 주어진 선택지 중 하나를 골라야 합니다.' });
+    let choice = Number.isInteger(choiceIndex) ? beat.choices?.[choiceIndex] : null;
+    let freeActionInterpretation = null;
+    if (!choice && declaration) {
+      if (!beat.freeActionAllowed) return ack?.({ ok:false, error:'이 장면은 결정적인 순간이라 자유 행동 대신 제시된 선택 중 하나를 골라야 합니다.' });
+      freeActionInterpretation = interpretFreeAction(declaration, player, beat, room);
+      const route = freeActionInterpretation.route;
+      const template = routeTemplateChoice(beat, route) || beat.choices?.[0];
+      if (!template) return ack?.({ ok:false, error:'이 장면의 분기 정보를 찾을 수 없습니다.' });
+      choice = {
+        ...template,
+        id:`${beat.id}-free-${token()}`,
+        label:declaration,
+        detail:`자유 행동 · ${freeActionInterpretation.mode}`,
+        stat:freeActionInterpretation.stat,
+        dc:freeActionInterpretation.dc,
+        branchValue:route,
+        path:choicePathFromRoute(route),
+        freeAction:true,
+      };
+    }
+    if (!choice) return ack?.({ ok:false, error:'선택지를 고르거나 자유 행동을 입력해 주세요.' });
     if (choice.requiredJob && player.job?.name !== choice.requiredJob) return ack?.({ ok:false, error:`${choice.requiredJob}만 선택할 수 있는 직업 전용 선택지입니다.` });
     const ability = player.abilities?.[choice.stat];
     if (!ability) return ack?.({ ok:false, error:'캐릭터 능력치를 찾을 수 없습니다.' });
@@ -2292,7 +2508,7 @@ io.on('connection', socket => {
       player.hp = Math.max(0, player.hp - 1);
       room.threat = Math.min(MAX_THREAT, room.threat + 1);
       room.dcPenalty = Math.min(2, Number(room.dcPenalty || 0) + 1);
-      status = applyStatus(player, storyFailureStatus(choice, room));
+      status = applyStatus(player, storyFailureStatus(choice, room, player));
       room.failureCount = Number(room.failureCount || 0) + 1;
       consequence = `불상사: ${status.label} 상태이상 적용 · HP -1 · 위협 +1 · 다음 장면 판정 불리`;
     }
@@ -2300,7 +2516,9 @@ io.on('connection', socket => {
     if (success && margin >= 5) room.narrativeState.boon = choice.branchValue;
     else if (!success) room.narrativeState.boon = null;
 
-    let narrative = storyResolutionNarrative(campaign, beat, choice, player, success, status);
+    let narrative = choice.freeAction
+      ? actionNarrative({ success, declaration:choice.label, player, beat, interpretation:freeActionInterpretation || interpretFreeAction(choice.label, player, beat, room), margin })
+      : storyResolutionNarrative(campaign, beat, choice, player, success, status);
     if (choice.jobSpecial) {
       room.jobStory ||= {};
       const jobName = player.job?.name || choice.requiredJob;
@@ -2314,6 +2532,7 @@ io.on('connection', socket => {
       room.jobStory.last = { jobName, success, narrative, chapter:beat.chapter, ending:choice.jobEnding || null };
     }
     rememberNarrativeThread(room, campaign, beat, choice, player, success, margin, status);
+    applyAgencyMemory(room, player, choice, success, margin, choice.freeAction ? choice.label : '');
     room.lastStoryAction = { playerId:player.id, playerName:player.name, declaration:choice.label, choiceId:choice.id, stat:choice.stat, mode:'story-choice', roll, total, dc, success, branchValue:choice.branchValue, branchKey:choice.branchKey, narrative, beatId:beat.id };
     room.storyHistory ||= [];
     room.storyHistory.push({ ...room.lastStoryAction, chapter: beat.chapter, act: beat.act, title: beat.title, isDetour });
@@ -2346,7 +2565,7 @@ io.on('connection', socket => {
     room.phase = 'resolution';
     room.pendingContinue = { source:'story', drawEvent: room.mainTurnsSinceEvent >= EVENT_EVERY_TURNS && room.deck.length > 0, clearDetour: isDetour };
 
-    pushChat(room, { type:'action', author:player.name, text:`메인 선택: ${choice.label}` });
+    pushChat(room, { type:'action', author:player.name, text:choice.freeAction ? `자유 행동: ${choice.label}` : `메인 선택: ${choice.label}` });
     pushChat(room, { type:success ? 'success' : 'failure', author:'GM', text:`${choice.stat} 판정 ${roll}${abilityMod>=0?'+':''}${abilityMod}${skillBonus?`+스킬${skillBonus}`:''}${statusPenalty?`${statusPenalty}`:''} = ${total} / DC ${dc} → ${success?'성공':'실패'}` });
 
     if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
@@ -2388,7 +2607,7 @@ io.on('connection', socket => {
     if (oneUseKinds.has(action) && room.facilityUses[useKey]) return ack?.({ ok:false, error:'이 이벤트에서는 이미 이용했습니다.' });
     let summary = '';
     if (action === 'inn') {
-      const cost = Number(facility.cost || 5);
+      const cost = Math.max(0, Number(facility.cost || 5) - derivedAbilityImpact(player).shopDiscount);
       if (!spendCoins(player, cost)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${cost} 코인` });
       const before = player.hp;
       player.hp = Math.min(player.maxHp, player.hp + Number(facility.heal || 5));
@@ -2397,7 +2616,7 @@ io.on('connection', socket => {
       if (status) { player.statuses = (player.statuses || []).filter(entry => entry.id !== status.id); cleansed = ` · ${status.label} 제거`; }
       summary = `숙박 -${cost} 코인 · HP +${player.hp - before}${cleansed}`;
     } else if (action === 'restaurant') {
-      const cost = Number(facility.cost || 2);
+      const cost = Math.max(0, Number(facility.cost || 2) - derivedAbilityImpact(player).shopDiscount);
       if (!spendCoins(player, cost)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${cost} 코인` });
       const before = player.hp;
       player.hp = Math.min(player.maxHp, player.hp + Number(facility.heal || 2));
@@ -2406,9 +2625,10 @@ io.on('connection', socket => {
       const item = findCampaignItem(room.campaignId, itemId);
       if (!item || !(facility.stock || []).includes(item.id)) return ack?.({ ok:false, error:'지금 이 상점에서 판매하는 아이템이 아닙니다.' });
       if (player.inventory.includes(item.id)) return ack?.({ ok:false, error:'이미 보유한 아이템입니다.' });
-      if (!spendCoins(player, item.price)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${item.price} 코인` });
+      const price = Math.max(1, Number(item.price || 1) - derivedAbilityImpact(player).shopDiscount);
+      if (!spendCoins(player, price)) return ack?.({ ok:false, error:`코인이 부족합니다. 필요 ${price} 코인` });
       player.inventory.push(item.id);
-      summary = `${item.name} 구매 · -${item.price} 코인`;
+      summary = `${item.name} 구매 · -${price} 코인`;
     } else if (action === 'gamble') {
       const cost = Number(facility.cost || 1);
       if (!spendCoins(player, cost)) return ack?.({ ok:false, error:`내기에는 ${cost} 코인이 필요합니다.` });
@@ -2424,8 +2644,8 @@ io.on('connection', socket => {
       const gearBonus = equipmentStatBonus(room, player, stat);
       const bonus = baseBonus + gearBonus;
       const total = result + bonus;
-      const success = result === 20 || total >= 12;
-      const coins = success ? (total >= 18 ? 3 : 2) : 0;
+      const success = result === 20 || (result !== 1 && total >= 12);
+      const coins = success ? (total >= 18 ? 3 : 2) + derivedAbilityImpact(player).questCoinBonus : 0;
       if (coins) grantCoins(player, coins);
       summary = `${stat} 의뢰 ${result}${bonus>=0?'+':''}${bonus}=${total} · ${success ? `성공, 코인 +${coins}` : '실패'}`;
       emitRoll(room, player, { sides:20, result, purpose:`짧은 의뢰 · ${stat} 판정`, kind:'facility-quest', stat, total, dc:12, success, modifiers:[{label:`${stat} 기본 보정`,value:baseBonus},{label:'장비 보정',value:gearBonus}].filter(m=>m.value) });
@@ -2589,6 +2809,25 @@ io.on('connection', socket => {
     ack?.({ ok: true });
   });
 
+  socket.on('combat:defend', (payload, ack) => {
+    const { room, player } = requireMember(socket, payload, ack);
+    if (!room || !requirePhase(room, 'combat', ack, '전투 중이 아닙니다.') || !room.monster) return;
+    if (player.hp <= 0) return ack?.({ ok:false, error:'쓰러진 캐릭터는 방어할 수 없습니다.' });
+    if (room.monster.turnPhase === 'boss') return ack?.({ ok:false, error:'지금은 보스의 행동 중입니다.' });
+    if (room.monster.acted?.includes(player.id)) return ack?.({ ok:false, error:'이번 라운드에는 이미 행동했습니다.' });
+    const con = rawAbilityMod(player, '체력');
+    const guard = Math.max(2, 2 + Math.max(0, con));
+    player.skillState ||= {};
+    player.skillState.guard = Math.max(Number(player.skillState.guard || 0), guard);
+    room.monster.acted ||= [];
+    room.monster.acted.push(player.id);
+    pushChat(room, { type:'success', author:player.name, text:`방어 태세 · 다음 피해 ${guard}까지 흡수` });
+    const eligible = room.players.filter(member => member.connected && member.hp > 0).map(member => member.id);
+    if (eligible.length && eligible.every(id => room.monster.acted.includes(id))) scheduleMonsterTurn(room, 900);
+    sync(room);
+    ack?.({ ok:true, guard });
+  });
+
   socket.on('combat:attack', (payload, ack) => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !requirePhase(room, 'combat', ack, '전투 중이 아닙니다.') || !room.monster) return;
@@ -2610,7 +2849,8 @@ io.on('connection', socket => {
     const hit = result === 20 || (result !== 1 && total >= room.monster.ac);
     let damage = 0;
     if (hit) {
-      damage = rand(6) + Math.max(0, bonus) + skillDamageBonus;
+      const strengthDamage = derivedAbilityImpact(player).strengthDamage;
+      damage = rand(6) + Math.max(0, bonus) + strengthDamage + skillDamageBonus;
       if (result === 20) damage += rand(6);
       room.monster.hp = Math.max(0, room.monster.hp - damage);
     }

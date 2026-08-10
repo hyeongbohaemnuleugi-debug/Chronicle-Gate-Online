@@ -13,20 +13,22 @@ for (const campaign of CAMPAIGNS) {
     assert.equal(campaign.events.length, 30);
     assert.equal(new Set(campaign.events.map(e => e.id)).size, 30);
     assert.equal(new Set(campaign.events.map(e => e.title)).size, 30);
-    assert.equal(campaign.storyBeats.length, 30);
-    assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, 30);
-    for (const beat of campaign.storyBeats) {
+    assert.ok(campaign.storyBeats.length >= 400);
+    assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, campaign.storyBeats.length);
+    const canonicalBeats = campaign.storyBeats.filter(b => !b.branchScene);
+    assert.equal(canonicalBeats.length, 30);
+    for (const beat of canonicalBeats) {
       assert.ok(beat.situation?.length >= 80);
       assert.equal(Object.keys(beat.roleHooks || {}).length, 6);
       assert.ok(beat.objective?.length > 10);
       assert.ok(beat.why?.length > 10);
       assert.ok(beat.prompt?.length > 10);
       assert.equal(beat.roleplayPrompt, undefined);
-      assert.equal(beat.choices?.length, 3);
+      assert.ok(beat.choices?.length >= 6 && beat.choices?.length <= 8);
       for (const choice of beat.choices) {
         assert.ok(STAT_NAMES.includes(choice.stat));
-        assert.ok(choice.dc >= 10 && choice.dc <= 18);
-        assert.ok(choice.detail?.length > 10);
+        assert.ok(choice.dc >= 8 && choice.dc <= 15);
+        assert.ok(choice.detail?.length >= 4);
         assert.ok(choice.success?.length > 10);
         assert.ok(choice.failure?.length > 10);
       }

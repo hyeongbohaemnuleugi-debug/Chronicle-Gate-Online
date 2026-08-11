@@ -6,9 +6,9 @@ import { CAMPAIGNS } from '../campaign-data.js';
 
 const root = path.resolve(new URL('..', import.meta.url).pathname);
 
-test('all 48 jobs have active skill definitions with diverse mechanics', () => {
+test('all campaign jobs have active skill definitions with diverse mechanics', () => {
   const jobs = CAMPAIGNS.flatMap(c => c.jobs);
-  assert.equal(jobs.length, 48);
+  assert.equal(jobs.length, CAMPAIGNS.length * 6);
   for (const job of jobs) {
     assert.ok(job.skillDef?.name, `${job.name} skill name`);
     assert.ok(job.skillDef?.kind, `${job.name} skill kind`);

@@ -36,7 +36,6 @@ let mode = 'create';
 let roomCode = localStorage.getItem('cg_room') || '';
 let playerToken = localStorage.getItem('cg_token') || '';
 let diceQueue = Promise.resolve();
-let resolutionTimer = null;
 let resumeInFlight = false;
 let shownEncounterId = '';
 let encounterIntroTimer = null;
@@ -82,7 +81,7 @@ function saveUiPrefs() {
 const AUDIO_FILES = {
   music: {
     ember: '/audio/bgm_ember.wav?v=4121d', neon: '/audio/bgm_neon.wav?v=4121d', abyss: '/audio/bgm_abyss.wav?v=4121d',
-    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', guardian: '/audio/bgm_guardian.wav?v=4150', guardian1: '/audio/bgm_guardian.wav?v=4160', guardian2: '/audio/bgm_guardian.wav?v=4160', guardian3: '/audio/bgm_guardian.wav?v=4160', nighttrain: '/audio/bgm_clock.wav?v=5800', combat: '/audio/bgm_combat.wav?v=4121d',
+    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', guardian: '/audio/bgm_guardian.wav?v=4150', guardian1: '/audio/bgm_guardian.wav?v=4160', guardian2: '/audio/bgm_guardian.wav?v=4160', guardian3: '/audio/bgm_guardian.wav?v=4160', combat: '/audio/bgm_combat.wav?v=4121d',
   },
   fx: {
     dice:'/audio/dice_roll.wav?v=4121d', success:'/audio/success.wav?v=4121d', failure:'/audio/failure.wav?v=4121d',
@@ -386,7 +385,7 @@ function resumeSavedSession(attempt = 0) {
       state = res.state;
       audioManager.syncMusic(state);
       renderState();
-      if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
+      if (state.phase === 'resolution' && state.lastResolution?.source !== 'story') showResolution(state.lastResolution);
       $('#connectionText').textContent = 'ONLINE';
       return;
     }
@@ -420,7 +419,6 @@ const WORLD_META = {
   guardian1: { motif:'GUARDIAN TALES I', scene:['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길'], boss:'월드 1~4의 인연과 침략의 흔적이 겹쳐진 첫 연대기의 마지막 시련' },
   guardian2: { motif:'GUARDIAN TALES II', scene:['셴 시티','작아진 여관','던전 왕국','쉬버링 산','라 제국 국경'], boss:'월드 5~8의 챔피언과 진실을 시험하는 두 번째 연대기의 마지막 시련' },
   guardian3: { motif:'GUARDIAN TALES III', scene:['라 제국','10년 뒤의 폐허','저항군 기지','점령된 헤븐홀드','차원의 문'], boss:'미래 공주와 저항군이 맞서는 기록되지 않은 세계의 최종 결전' },
-  nighttrain: { motif:'LINE ZERO', scene:['0번 승강장','이름을 잃은 객차','지도에 없는 역','붉은 기관차실','새벽이 멈춘 종점'], boss:'빈 얼굴의 차장과 이름을 잃은 승객들이 기다리는 마지막 객차' },
 };
 
 const STORY_ART_FILES = {
@@ -429,7 +427,7 @@ const STORY_ART_FILES = {
   abyss: { early: './art/abyss_early.png', late: './art/abyss_late.png' },
   clock: { early: './art/clock_early.png', late: './art/clock_late.png' },
   wild: { early: './art/wild_early.png', late: './art/wild_late.png' },
-  guardian: { profile:'./art/guardian_part1_profile.png', early:'./art/guardian_part1_profile.png', late:'./art/guardian_part3_profile.png' },
+  guardian: { early: './art/guardian_early.png', late: './art/guardian_late.png' },
   guardian1: { profile:'./art/guardian_part1_profile.png', early:'./art/guardian_part1_profile.png', late:'./art/guardian_part1_profile.png' },
   guardian2: { profile:'./art/guardian_part2_profile.png', early:'./art/guardian_part2_profile.png', late:'./art/guardian_part2_profile.png' },
   guardian3: { profile:'./art/guardian_part3_profile.png', early:'./art/guardian_part3_profile.png', late:'./art/guardian_part3_profile.png' },
@@ -1006,7 +1004,7 @@ function onJoined(res) {
   state = res.state;
   audioManager.syncMusic(state);
   renderState();
-  if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
+  if (state.phase === 'resolution' && state.lastResolution?.source !== 'story') showResolution(state.lastResolution);
   toast(res.resumed ? '저장된 연대기로 돌아왔습니다.' : `ROOM ${roomCode} 입장 완료`);
 }
 $('#copyCode').onclick = async () => {
@@ -1040,10 +1038,7 @@ socket.on('chat:new', entry => {
     renderChat();
   }
 });
-socket.on('resolution', r => {
-  // 모든 플레이어가 같은 주사위 애니메이션을 끝까지 본 뒤 결과 서술을 본다.
-  diceQueue = diceQueue.then(async () => { showResolution(r); await new Promise(resolve => setTimeout(resolve, 80)); }).catch(console.error);
-});
+socket.on('resolution', r => { if (r?.source !== 'story') showResolution(r); });
 socket.on('skill:ready', payload => toast(`✨ ${payload?.name || '직업 스킬'} 사용이 가능합니다!`));
 socket.on('skill:used', payload => { const combatKinds=new Set(['blast','markShot','partyAttackBoost','attackBoost']); const healKinds=new Set(['healParty','cleanseParty','healCleanse','partyHeal']); audioManager.fx(healKinds.has(payload?.kind)?'heal':(combatKinds.has(payload?.kind)?'attack':'skill'),1.12); toast(`✨ ${payload?.playerName || '플레이어'} · ${payload?.name || '직업 스킬'} — ${payload?.summary || '효과 적용'}`); });
 socket.on('dice:roll', payload => { audioManager.fx('dice', .85); enqueueDice(payload); });
@@ -1098,6 +1093,12 @@ function enqueueDice(payload) {
     }
     $('#diceOverlay').classList.remove('show');
     await new Promise(r => setTimeout(r, 180));
+    // v5.8: 메인 스토리 판정은 방 전체가 같은 주사위 연출을 본 뒤, 판정자 클라이언트가 다음 장면을 연다.
+    // 별도의 SCENE RESULT/SCENE RESOLVED 화면을 반복해서 보여주지 않는다.
+    if (payload.kind === 'story-choice' && payload.rollerId === playerToken) {
+      await new Promise(r => setTimeout(r, 180));
+      socket.emit('story:resultSeen', { roomCode, playerToken }, r => { if (!r?.ok && r?.error) console.warn(r.error); });
+    }
   }).catch(console.error);
 }
 
@@ -1297,9 +1298,16 @@ function renderStory() {
   $('#storyActionInput').maxLength = 180;
   $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${$('#storyActionInput').maxLength || 180}`;
 
-  // v5.8: 판정 결과는 공동 주사위 화면 -> 짧은 결과 모달에서 한 번만 보여준다.
-  // 메인 본문 아래에 같은 성공/실패 문구를 반복하지 않는다.
-  $('#lastActionResult').innerHTML = '';
+  const lastResolution = state.lastResolution?.source === 'story' ? state.lastResolution : null;
+  const last = lastResolution || state.lastStoryAction;
+  $('#lastActionResult').innerHTML = last ? `
+    <div class="eyebrow">최근 장면 결과</div>
+    ${last.choiceLabel ? `<div><b>${esc(last.choiceLabel)}</b></div>` : ''}
+    ${last.success === undefined || last.success === null ? '' : `<span class="${last.success ? 'success' : 'failure'}">${last.success ? '성공' : '실패'}${last.stat ? ` · ${esc(last.stat)} ${last.total}/${last.dc}` : ''}</span>`}
+    <p>${esc(last.text || last.narrative || '')}</p>
+    ${last.consequence ? `<p class="failure">${esc(last.consequence)}</p>` : ''}
+    ${last.status ? `<p class="failure">상태이상: ${esc(last.status.label)} — ${esc(last.status.desc || '')}</p>` : ''}
+  ` : '';
 
   if (state.phase === 'prologue') {
     const myScene = state.prologue?.scenes?.[playerToken];
@@ -1334,17 +1342,17 @@ function renderStory() {
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
       ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
-      : `SIDE EVENT · ${state.soloMode ? `SOLO ${Math.round((state.soloVoteDurationMs||20000)/1000)}초 선택` : `${Math.round((state.voteDurationMs||75000)/1000)}초 테이블 투표`} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
+      : `SIDE EVENT · ${state.soloMode ? 'SOLO 12초 선택' : '45초 테이블 투표'} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
     setSceneImage($('#storySceneImg'), c, ev);
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
     $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
     $('#storyClarity').classList.remove('clean-main');
-    $('#storySituation').textContent = [ev.contextLead, ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.'].filter(Boolean).join(' ');
+    $('#storySituation').textContent = ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.';
     $('#storyObjective').textContent = ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.';
     $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
-    $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> ${Math.round((state.soloVoteDurationMs||20000)/1000)}초 동안 상황을 읽고 대응을 고르세요. 투표 완료 후 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
-    $('#eventText').innerHTML = `${ev.contextLead ? `<p class="event-context-lead">${esc(ev.contextLead)}</p>` : ''}<p>${esc(ev.text || '')}</p>`;
+    $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> 12초 안에 대응을 고르세요. 투표 즉시 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
+    $('#eventText').textContent = ev.text;
     $('#storyActionBox').style.display = 'none';
     renderChoices(ev);
   } else {
@@ -1402,9 +1410,7 @@ function renderMainStoryChoices(beat) {
     return;
   }
   if (state.phase === 'resolution') {
-    // 결과 서술은 공동 주사위 연출 직후 모달에서 딱 한 번만 보여준다.
-    // 모달이 닫힌 뒤에는 원래 장면을 그대로 남기고, 다음 진행 버튼만 사용한다.
-    box.innerHTML = '';
+    box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">ROLL IN PROGRESS</div><b>모든 플레이어가 같은 판정 결과를 확인하고 있습니다.</b></div></div>`;
     return;
   }
   const myJob = me()?.job?.name;
@@ -1440,7 +1446,7 @@ function renderChoices(ev) {
   const votes = state.choiceVotes || {};
   const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
   const highest = Math.max(0, ...counts);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO CHOICE' : 'TABLE VOTE'}</span><b>${state.soloMode ? `${Math.round((state.soloVoteDurationMs||20000)/1000)}초 선택` : `${Math.round((state.voteDurationMs||75000)/1000)}초 투표`} · 전원 완료 시 3초 뒤 자동 확정</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO QUICK CHOICE' : '45 SECOND TABLE VOTE'}</span><b>${state.soloMode ? '12초 선택' : '45초 투표'} · 전원 완료 시 3초 뒤 자동 확정</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
@@ -1479,16 +1485,14 @@ setInterval(updateVoteCountdown, 250);
 
 function showResolution(r) {
   if (!r) return;
-  clearTimeout(resolutionTimer);
-  $('#resolutionEyebrow').textContent = r.ok ? 'ACTION SUCCEEDED' : 'ACTION FAILED';
-  $('#resolutionTitle').textContent = r.choiceLabel || (r.ok ? '행동 성공' : '행동 실패');
+  $('#resolutionEyebrow').textContent = r.ok ? 'SCENE RESULT' : 'SCENE CONSEQUENCE';
+  $('#resolutionTitle').textContent = r.detourCreated ? '길이 예상과 다르게 꺾였다' : (r.isDetour ? '예정에 없던 위기의 결과' : (r.ok ? '선택의 결과' : '실패가 남긴 흔적'));
   const mechanics = [r.consequence, r.status ? `${r.status.label}: ${r.status.desc || ''}` : ''].filter(Boolean).join(' · ');
-  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${mechanics ? `<small class="resolution-mechanics">게임 효과 · ${esc(mechanics)}</small>` : ''}`;
+  const branchAfter = r.detourCreated ? '<small class="resolution-next">방금 실패 때문에 원래 다음 장면 앞에 새로운 위기가 생겼습니다.</small>' : '';
+  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<small class="resolution-mechanics">게임 효과 · ${esc(mechanics)}</small>` : ''}`;
   $('#resolutionModal').classList.add('show');
-  // 주사위 결과를 또 본문에 반복하지 않고, 상황에 맞는 짧은 결과 서술만 잠시 보여준다.
-  resolutionTimer = setTimeout(() => $('#resolutionModal').classList.remove('show'), 4600);
 }
-$('#resolutionClose').onclick = () => { clearTimeout(resolutionTimer); $('#resolutionModal').classList.remove('show'); };
+$('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');
 
 function ensureEncounterIntroLayer() {
   let layer = document.getElementById('encounterIntroLayer');

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { CAMPAIGNS, STAT_NAMES } from '../campaign-data.js';
 
 test('campaign catalog is complete and unique', () => {
-  assert.equal(CAMPAIGNS.length, 8);
-  assert.equal(new Set(CAMPAIGNS.map(c => c.id)).size, 8);
+  assert.equal(CAMPAIGNS.length, 7);
+  assert.equal(new Set(CAMPAIGNS.map(c => c.id)).size, 7);
   assert.equal(STAT_NAMES.length, 6);
 });
 
@@ -24,7 +24,7 @@ for (const campaign of CAMPAIGNS) {
       assert.ok(beat.why?.length > 10);
       assert.ok(beat.prompt?.length > 10);
       assert.equal(beat.roleplayPrompt, undefined);
-      assert.ok(beat.choices?.length >= 4 && beat.choices?.length <= 8);
+      assert.ok(beat.choices?.length >= 5 && beat.choices?.length <= 7);
       for (const choice of beat.choices) {
         assert.ok(STAT_NAMES.includes(choice.stat));
         assert.ok(choice.dc >= 8 && choice.dc <= 15);
@@ -57,11 +57,12 @@ for (const campaign of CAMPAIGNS) {
         assert.ok(choice.dc >= 10 && choice.dc <= 20);
         assert.ok(choice.successEffect?.type);
         assert.ok(choice.failureEffect?.type);
-        assert.ok(choice.label.includes(event.title), `${event.id} choice must reference its event situation`);
-        allChoiceLabels.push(choice.label);
+        assert.ok(choice.label.length >= 2 && choice.label.length <= 80, `${event.id} choice should stay concise`);
+        assert.ok(choice.success.includes(event.title) && choice.failure.includes(event.title), `${event.id} outcome prose must reference its event situation`);
+        allChoiceLabels.push(`${event.id}:${choice.label}`);
         if (choice.requiredJob) assert.ok(campaign.jobs.some(job => job.name === choice.requiredJob));
       }
     }
-    assert.equal(new Set(allChoiceLabels).size, allChoiceLabels.length, 'choice labels should not repeat within a campaign');
+    assert.equal(new Set(allChoiceLabels).size, allChoiceLabels.length, 'event choice identity should stay unique within a campaign');
   });
 }

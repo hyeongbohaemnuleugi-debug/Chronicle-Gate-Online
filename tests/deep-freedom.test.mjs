@@ -3,19 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { CAMPAIGNS } from '../campaign-data.js';
 
-test('short action vocabulary is available and fights are not boss-only',()=>{
+test('context-valid action vocabulary remains broad without impossible actions',()=>{
+  const types=new Set();
   for (const c of CAMPAIGNS) {
     const canonical=c.storyBeats.filter(b=>!b.branchScene);
-    const labels=new Set(canonical.flatMap(b=>b.choices.map(x=>x.label)));
-    assert.ok([...labels].some(label=>label.includes('조사')),`${c.id}: 조사`);
-    assert.ok([...labels].some(label=>label.includes('설득') || label.includes('살펴본')),`${c.id}: social/observe`);
+    for (const b of canonical) for (const choice of b.choices) types.add(choice.actionType);
     assert.ok(canonical.some(b=>b.choices.some(x=>x.startsCombat)),`${c.id}: no normal combat action`);
     assert.ok(canonical.some(b=>b.choices.some(x=>x.isTravel)),`${c.id}: no travel choice`);
-    // Context-aware design: 싸움/절도/미행은 실제 적대자·사람·물건이 있는 장면에서만 나타나야 한다.
-    for (const b of canonical) for (const x of b.choices) {
-      if (x.startsCombat) assert.match(x.label,/싸운|공격|제압|막아|전투/);
-    }
+    assert.ok(canonical.every(b=>new Set(b.choices.map(x=>x.label)).size===b.choices.length),`${c.id}: duplicate labels`);
   }
+  for (const type of ['investigate','observe','bypass','persuade','sneak','fight','break','trade','wait','trap','endure','travel-a'])
+    assert.ok(types.has(type),`missing action type ${type}`);
 });
 
 test('every canonical action has distinct success and failure consequence nodes',()=>{

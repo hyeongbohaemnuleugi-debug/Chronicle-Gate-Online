@@ -817,6 +817,17 @@ CAMPAIGN_ENDING_VARIANTS.guardian3 = {
   empathetic:{title:'두 공주에게 남긴 약속',text:'작은 공주와 미래 공주, 과거와 미래 어느 한쪽도 단순한 정답으로 취급하지 않고 마지막 선택의 대가를 스스로 짊어졌습니다.'}
 };
 
+CAMPAIGN_ENDING_VARIANTS.guardian = {
+  careful:{title:'월드 1에서 미래까지 이어진 증언',text:'캔터베리 숲에서 시작한 단서들을 라 제국과 10년 뒤의 기록까지 끝까지 연결해 침략자의 계획과 기사의 부재가 만든 역사를 이해했습니다. 챔피언 소드의 첫 빛과 헤븐홀드의 마지막 문이 하나의 여정으로 이어집니다.'},
+  bold:{title:'헤븐홀드까지 멈추지 않은 수호자',text:'캔터베리의 폐허부터 셴, 던전, 설산, 라 제국과 미래 전장까지 정면으로 돌파했습니다. 앞 세계의 상처와 동료들이 마지막 탈환전에 실제 힘으로 합류했습니다.'},
+  empathetic:{title:'두 공주와 모든 세계에 남긴 약속',text:'작은 공주와 미래 공주, 숲의 주민과 챔피언, 난민과 저항군을 하나의 긴 관계로 이어 왔습니다. 마지막 선택은 어느 한 시간을 버리는 답이 아니라 지금까지 지킨 사람들의 기억을 함께 남기는 약속이 되었습니다.'}
+};
+CAMPAIGN_ENDING_VARIANTS.echo = {
+  careful:{title:'서로 다른 원본들의 기록',text:'하나의 절대적인 기억을 강요하지 않고 모순되는 증언을 함께 남겼습니다. 아스테라는 완벽한 진실 대신 검증 가능한 기록을 선택합니다.'},
+  bold:{title:'깨진 성좌 아래의 새벽',text:'기억 편집 시스템의 중심을 끊어 도시가 스스로 기억을 되찾게 했습니다. 일부 기록은 사라졌지만 누구도 다시 한 사람의 원본에 종속되지 않습니다.'},
+  empathetic:{title:'기억은 서로에게 남는다',text:'삭제된 주민과 죽은 탐사대, 현재의 파티가 서로의 증언을 보존하도록 연결했습니다. 유리별이 없어도 기억이 사람 사이에서 살아남는 도시가 시작됩니다.'}
+};
+
 function actionLegacy(room) {
   const history = room.storyHistory || [];
   const counts = {};
@@ -840,7 +851,7 @@ function tragicEnding(room) {
   const world = room.campaignId;
   const titles = {
     ember:['재가 이름을 덮은 밤','왕관보다 먼저 끝난 연대기'], neon:['삭제된 마지막 사용자','도시가 기억하지 못한 죽음'], abyss:['수면에 닿지 못한 이름들','심연이 돌려주지 않은 사람들'],
-    clock:['다음 반복에 없는 사람들','열세 번째 종 뒤의 빈자리'], wild:['숲이 삼킨 발자국','별빛 아래 남은 마지막 흔적'], guardian1:['모험이 끝난 자리','캔터베리로 돌아오지 못한 사람들'], guardian2:['다음 세계에 닿지 못한 동료들','여정에서 사라진 이름'], guardian3:['미래가 되돌려주지 않은 사람들','헤븐홀드에 남은 빈자리']
+    clock:['다음 반복에 없는 사람들','열세 번째 종 뒤의 빈자리'], wild:['숲이 삼킨 발자국','별빛 아래 남은 마지막 흔적'], guardian:['시간을 건넌 여정의 빈자리','헤븐홀드에 돌아오지 못한 이름들'], guardian1:['모험이 끝난 자리','캔터베리로 돌아오지 못한 사람들'], guardian2:['다음 세계에 닿지 못한 동료들','여정에서 사라진 이름'], guardian3:['미래가 되돌려주지 않은 사람들','헤븐홀드에 남은 빈자리']
   }[world] || ['끝나 버린 연대기','돌아오지 못한 사람들'];
   const seed=(dead.length + Number(room.failureCount||0) + Number(room.threat||0))%titles.length;
   return {
@@ -852,7 +863,8 @@ function buildVictoryEnding(room) {
   const alias = room.storyMemory?.alias;
   const motive = room.storyMemory?.motive;
   const path = dominantStoryPath(room);
-  const finalBranch = room.storyFlags?.act5 || room.storyFlags?.act4 || 'careful';
+  const finalActKey = Object.keys(room.storyFlags || {}).filter(k=>/^act\d+$/.test(k)).sort((a,b)=>Number(b.slice(3))-Number(a.slice(3)))[0];
+  const finalBranch = (finalActKey && room.storyFlags?.[finalActKey]) || 'careful';
   const titles = {
     truth: { careful:'진실을 끝까지 밝혀낸 연대기', bold:'거친 돌파 끝에 진실을 움켜쥔 연대기', empathetic:'사람을 지키며 진실을 밝힌 연대기' },
     survival: { careful:'살아남기 위해 끝까지 버틴 연대기', bold:'끝끝내 돌파해 낸 연대기', empathetic:'서로를 살리며 돌파한 연대기' },
@@ -958,6 +970,11 @@ WORLD_PROSE.guardian1 = WORLD_PROSE.guardian || WORLD_PROSE.ember;
 WORLD_PROSE.guardian2 = WORLD_PROSE.guardian || WORLD_PROSE.clock;
 WORLD_PROSE.guardian3 = WORLD_PROSE.guardian || WORLD_PROSE.clock;
 
+// v5.8.0 unified campaign aliases and new-world prose
+WORLD_ROUTE_WORDS.guardian = { threat:'침략자와 갈라진 세계, 그리고 무너진 미래', ally:'작은 공주·챔피언·미래 공주와 여정에서 지킨 사람들', medium:'챔피언 소드·세계별 증언·10년의 기록' };
+WORLD_ROUTE_WORDS.echo = { threat:'기억을 훔치는 성좌와 편집된 도시 기록', ally:'죽은 탐사대의 증언과 삭제된 구역의 주민들', medium:'유리별·원본 기억·서로 모순되는 증언' };
+WORLD_PROSE.echo = WORLD_PROSE.clock || WORLD_PROSE.neon || WORLD_PROSE.ember;
+
 function proseOutcome(campaign, beat, prev) {
   if (!prev?.branchValue) return '';
   const p = WORLD_PROSE[campaign?.id] || WORLD_PROSE.ember;
@@ -1011,9 +1028,12 @@ function storyResolutionNarrative(campaign, beat, choice, player, success, statu
     hide:[`${actor}는 파티가 남긴 흔적을 지워 추적과 경계를 잠시 끊어 냈다.`,`${actor}가 흔적을 지우려는 동안 이미 누군가가 파티를 따라오고 있었다는 사실이 드러났다.`],
     endure:[`${actor}는 환경의 압박을 몸으로 받아냈다. 그 짧은 시간 동안 동료들은 다음 행동에 필요한 위치와 여유를 확보했다.`,`${actor}는 끝까지 버텼지만 몸에 부담이 남았다. 그래도 무너지기 직전의 변화 덕분에 다음에 피해야 할 지점을 알아냈다.`],
   };
-  const pair=lines[action]||[choice?.success||'선택이 새로운 국면을 만들었다.',choice?.failure||'시도는 뜻대로 되지 않았지만 다른 길을 남겼다.'];
+  const generic=lines[action]||['선택이 새로운 국면을 만들었다.','시도는 뜻대로 되지 않았지만 다른 길을 남겼다.'];
+  const authored=success ? choice?.success : choice?.failure;
+  const concrete=authored || generic[success?0:1];
+  const echo=authored ? ` ${generic[success?0:1]}` : '';
   const injury=status?` 그 과정에서 부상이 하나 더 남았다.`:'';
-  return `${pair[success?0:1]}${injury}`;
+  return `${concrete}${echo}${injury}`.trim();
 }
 
 
@@ -2086,6 +2106,15 @@ const BOSS_INTRO_LINES = {
     '별먹는 신수 오르바':'“별은 하늘의 것이 아니다. 오늘부터 너희의 기억도 숲의 것이다.”',
     '꿈먹는 올빼미':'“눈을 감아라. 깨어 있는 동안보다 덜 아플 테니.”',
   },
+  guardian: {
+    '수호자의 첫 시험':'“검을 들었다면 증명해. 네가 누구를 지키려는지.”',
+    '최후의 침략자 지휘관':'“십 년을 버틴 세계다. 네가 돌아왔다고 역사가 바뀔 것 같나?”',
+    '차원 파괴자':'“돌아갈 세계와 남을 세계, 둘 다 가질 수는 없다.”',
+  },
+  echo: {
+    '원본 관리자 아르카':'“원본이 하나뿐이어야 모두가 같은 도시에서 살 수 있다. 네 기억부터 증명해.”',
+    '복제된 탐사대장':'“내가 죽었다는 기록과 네가 태어났다는 기록, 둘 중 하나는 거짓이다.”',
+  },
   guardian1: {
     '수호자의 첫 시험':'“검을 들었다면 증명해. 네가 누구를 지키려는지.”',
     '침략자 지휘관':'“캔터베리의 마지막 희망이라더니, 겨우 이 정도인가.”',
@@ -2105,6 +2134,8 @@ const REGULAR_ENCOUNTER_LINES = {
   abyss:['“소리를 내지 마. 저 아래에서 듣고 있어.”','“살아 있는 사람이 맞나? 확인부터 하겠다.”'],
   clock:['“이번 반복에서는 네가 먼저 왔군.”','“시간을 훔친 값은 몸으로 갚아.”'],
   wild:['“숲이 너희를 들였다 해서 우리도 허락한 건 아니다.”','“발을 멈춰. 다음 발자국은 사냥의 시작이다.”'],
+  guardian:['“공주와 함께 온 자라면 이름보다 먼저 목적을 밝혀.”','“여기까지 온 길이 길었다고 다음 문이 열리는 건 아니다.”'],
+  echo:['“그 기억은 등록되지 않았다. 원본을 제출해.”','“네가 기억하는 이름과 기록된 이름이 다르다.”'],
   guardian1:['“짐을 내려놓고 돌아가. 오늘은 경고로 끝내 주지.”','“공주를 찾는 자라면 더더욱 지나갈 수 없다.”'],
   guardian2:['“여긴 힘없는 자가 지나가는 길이 아니다.”','“한 번 물러서면 쫓지 않겠다. 두 번 말하게 하지 마.”'],
   guardian3:['“저항군인가? 그렇다면 이야기는 짧겠군.”','“신분증은 됐다. 살아남을 자격부터 보여.”'],
@@ -2129,7 +2160,7 @@ function decorateEncounter(room, monster, { isBoss = false } = {}) {
 function monsterForStoryChoice(room, beat, choice) {
   const campaign=CAMPAIGNS.find(c=>c.id===room.campaignId);
   const generic={
-    ember:['성채 경비병','재에 미친 망령','왕묘 약탈자'], neon:['추적 드론','갱단 집행자','보안 요원'], abyss:['광기에 잠식된 승무원','심해 포식자','고장 난 경비 기계'], clock:['시간 밀수꾼','역행 경비병','루프 망령'], wild:['오염된 야수','부족 전사','별가루 포식자'], guardian1:['고블린 전사','침략자 병사','사막 용병'], guardian2:['무투가','던전 몬스터','설산 추적자'], guardian3:['제국 집행병','침략자 병사','미래의 전투 기계']
+    ember:['성채 경비병','재에 미친 망령','왕묘 약탈자'], neon:['추적 드론','갱단 집행자','보안 요원'], abyss:['광기에 잠식된 승무원','심해 포식자','고장 난 경비 기계'], clock:['시간 밀수꾼','역행 경비병','루프 망령'], wild:['오염된 야수','부족 전사','별가루 포식자'], echo:['파손된 기록병','유리새 군집','기억 망령'], guardian:['침략자 병사','던전 몬스터','제국 집행병','미래의 전투 기계'], guardian1:['고블린 전사','침략자 병사','사막 용병'], guardian2:['무투가','던전 몬스터','설산 추적자'], guardian3:['제국 집행병','침략자 병사','미래의 전투 기계']
   };
   const pool=generic[room.campaignId]||campaign?.monsters||['적대자'];
   const name=pool[(Number(beat?.chapter||1)+Number(room.story||0))%pool.length];
@@ -2402,7 +2433,7 @@ function drawEventForRoom(room) {
   if (room.currentEvent || !room.deck.length) return false;
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
   const currentMainBeat = storyNodeById(campaign, room.storyNodeId);
-  const desiredAct = Math.min(5, Math.max(1, Number(currentMainBeat?.act || 1)));
+  const desiredAct = Math.min(Math.max(1, Number(campaign?.acts?.length || 5)), Math.max(1, Number(currentMainBeat?.act || 1)));
   const candidates = room.deck.map((event, index) => ({ event, index })).filter(item => item.event.act === desiredAct);
   const picked = candidates.length ? candidates[crypto.randomInt(0, candidates.length)] : { index: crypto.randomInt(0, room.deck.length) };
   room.currentEvent = prepareAgencyEvent(maybeAttachFacility(room, room.deck.splice(picked.index, 1)[0]));

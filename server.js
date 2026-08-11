@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '5.8.0-contextual-shared-dice.0';
+const APP_VERSION = '5.7.1-context-sync.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -372,6 +372,61 @@ function alternateActionLabel(stat, beat) {
   };
   return map[stat] || `다른 관점에서 ${objective}를 해결할 방법을 찾는다`;
 }
+function inferSceneAffordances(beat) {
+  const text = [beat?.title, beat?.phase, beat?.objective, beat?.situation, beat?.text, beat?.visual, beat?.why, beat?.stakes]
+    .filter(Boolean).join(' ');
+  const hasPerson = /사람|인물|경비|상인|주민|생존자|증언자|아이|공주|로레인|귀족|사제|군중|병사|기사|추적자|침략자|고블린|도굴꾼|브로커|의무관|조종사|연구원|파수꾼|부족|사냥꾼|동료|누군가|목소리|상대/.test(text);
+  const hasHostile = /적|적대|공격|습격|전투|싸움|결투|괴물|짐승|추적자|침략자|고블린|경비대가 .*막|길을 막|위협하는 존재|포위|매복|사냥감/.test(text);
+  const hasObstacle = /문|벽|봉쇄|잔해|장애|잠금|봉인|기계|장치|구조물|통로|계단|방벽|문턱|균열|붕괴|막혀|폐쇄|가로막/.test(text);
+  const hasClue = /단서|기록|흔적|문양|로그|지도|메시지|증거|비밀|이상|모순|신호|자국|문장|기억|정보|규칙|원인/.test(text);
+  const hasStealthPressure = /감시|경계|추적|시야|센서|포탑|몰래|숨|발각|봉쇄|경비|드론/.test(text);
+  const hasRescue = /구조|부상|다친|살리|피난|보호|위험에 처|갇힌|생존자|동료|시간을 벌/.test(text);
+  const hasItem = /물건|열쇠|상자|장부|지도|무기|왕관|조각|데이터|기록물|장치|보관|소지/.test(text);
+  return { text, hasPerson, hasHostile, hasObstacle, hasClue, hasStealthPressure, hasRescue, hasItem };
+}
+function choiceFitsScene(choice, ctx) {
+  if (!choice || choice.requiredJob || choice.isTravel) return true;
+  const action = String(choice.actionType || '');
+  if (!action || action.startsWith('follow-') || action.startsWith('chain-') || action.startsWith('travel-')) return true;
+  if (action === 'fight') return ctx.hasHostile;
+  if (['persuade','threaten','trade','tail'].includes(action)) return ctx.hasPerson;
+  if (action === 'steal') return ctx.hasPerson || ctx.hasItem;
+  if (['sneak','hide'].includes(action)) return ctx.hasStealthPressure || ctx.hasHostile || ctx.hasObstacle;
+  if (action === 'break') return ctx.hasObstacle || ctx.hasHostile;
+  if (action === 'trap') return ctx.hasHostile || ctx.hasStealthPressure || ctx.hasObstacle;
+  if (action === 'help') return ctx.hasPerson || ctx.hasRescue;
+  return true;
+}
+function sceneFocus(beat) {
+  return String(beat?.objective || beat?.title || '현재 상황').replace(/[.!?]+$/g,'').slice(0,72);
+}
+function contextualGeneratedAction(stat, beat, ctx, variant=0) {
+  const focus = sceneFocus(beat);
+  const table = {
+    '지능': [
+      {actionType:'investigate', label:`현장의 단서와 모순을 다시 맞춰 ${focus}의 원인을 좁힌다`},
+      {actionType:'trap', label:`주변 조건을 계산해 위험이 움직일 경로를 미리 제한한다`},
+    ],
+    '지혜': [
+      {actionType:'observe', label:`바로 움직이지 않고 기척과 변화를 읽어 가장 안전한 다음 수를 찾는다`},
+      {actionType:'wait', label:`상황이 먼저 반응하게 기다린 뒤 드러난 틈을 이용한다`},
+    ],
+    '민첩': ctx.hasStealthPressure
+      ? [{actionType:'sneak', label:`감시와 시야가 비는 순간을 골라 들키지 않고 유리한 위치로 이동한다`},{actionType:'bypass', label:`정면을 피하고 위험 구간을 우회해 ${focus}에 먼저 접근한다`}]
+      : [{actionType:'bypass', label:`정면을 피하고 지형의 빈틈을 이용해 ${focus}에 접근한다`},{actionType:'bypass', label:`가장 위험한 지점을 건드리지 않고 측면 경로를 확보한다`}],
+    '근력': ctx.hasHostile
+      ? [{actionType:'fight', label:`눈앞의 적대 세력을 정면으로 밀어내고 길을 연다`, startsCombat:true, fatalRisk:true},{actionType:'break', label:`주변 구조물을 힘으로 바꿔 상대의 유리한 판을 무너뜨린다`, fatalRisk:true}]
+      : [{actionType:'break', label:`막힌 구조물이나 장애물을 힘으로 치워 ${focus}에 길을 만든다`, fatalRisk:true},{actionType:'break', label:`주변 구조를 강제로 바꿔 지금 막힌 동선을 새로 만든다`, fatalRisk:true}],
+    '체력': ctx.hasRescue || ctx.hasPerson
+      ? [{actionType:'help', label:`위험을 대신 받아내며 사람들을 보호하고 움직일 시간을 번다`},{actionType:'endure', label:`가장 위험한 구간을 버텨 동료들이 ${focus}에 집중할 시간을 만든다`}]
+      : [{actionType:'endure', label:`환경의 압박을 몸으로 버티며 ${focus}을 위한 시간을 확보한다`},{actionType:'endure', label:`피로와 위험을 감수하고 가장 불안정한 구간을 직접 지탱한다`}],
+    '매력': ctx.hasPerson
+      ? [{actionType:'persuade', label:`관련 인물의 이해관계를 짚어 협조하는 편이 이득이 되도록 설득한다`},{actionType:'trade', label:`상대가 원하는 대가를 제시해 충돌 없이 정보나 통로를 얻는다`}]
+      : [],
+  };
+  const options = table[stat] || [];
+  return options.length ? options[variant % options.length] : null;
+}
 function choiceConsequenceHint(choice, importanceKey) {
   const route = choice?.branchValue || routeFromStat(choice?.stat);
   const success = route === 'careful' ? '단서·정보 우위' : route === 'bold' ? '위치·속도 우위' : '관계·지원 우위';
@@ -384,7 +439,8 @@ function prepareAgencyBeat(room, beat) {
   const rule = SCENE_IMPORTANCE[importanceKey];
   beat.importance = { key:importanceKey, label:rule.label, consequence:rule.consequence };
   beat.freeActionAllowed = false;
-  beat.choices = Array.isArray(beat.choices) ? beat.choices.map(choice => {
+  const sceneCtx = inferSceneAffordances(beat);
+  beat.choices = Array.isArray(beat.choices) ? beat.choices.filter(choice => choiceFitsScene(choice, sceneCtx)).map(choice => {
     const normalized = { ...choice };
     normalized.dc = normalizeStoryDc(beat, choice.dc);
     const memory = room.agencyMemory || {};
@@ -409,7 +465,7 @@ function prepareAgencyBeat(room, beat) {
   const actorBest = actor?.abilities
     ? Object.entries(actor.abilities).sort((a,b)=>Number(b[1]?.total||0)-Number(a[1]?.total||0)).map(([s])=>s)
     : [];
-  const statOrder = [...new Set([...actorBest, ...preferredStats])];
+  const statOrder = [...new Set([...actorBest, ...preferredStats])].filter(stat => stat !== '매력' || sceneCtx.hasPerson);
   let generatedIndex = 0;
   while (visibleForActor().length < targetChoiceCount && generatedIndex < 18) {
     const stat = statOrder[generatedIndex % statOrder.length];
@@ -419,20 +475,16 @@ function prepareAgencyBeat(room, beat) {
     const template = routeTemplateChoice(beat, route) || beat.choices[0];
     if (!template) break;
     const dc = normalizeStoryDc(beat, Number(template.dc || 10) + (generatedIndex % 3 === 0 ? 1 : 0));
-    const optionText = {
-      '근력': ['막힌 길을 힘으로 연다', '위험한 장애물을 밀어낸다'],
-      '민첩': ['경계를 피해 잠입한다', '위험 구간을 빠르게 지나간다'],
-      '지능': ['현장의 단서를 조사한다', '계획의 빈틈을 분석한다'],
-      '지혜': ['주변의 기척을 살핀다', '상대의 반응을 지켜본다'],
-      '매력': ['관련자를 설득한다', '상대와 조건을 협상한다'],
-      '체력': ['위험을 버티며 동료를 돕는다', '앞장서서 위험을 받아낸다'],
-    };
-    const labels = optionText[stat] || [alternateActionLabel(stat, beat)];
+    const generated = contextualGeneratedAction(stat, beat, sceneCtx, generatedIndex - 1);
+    if (!generated) continue;
     beat.choices.push({
       ...template,
       id:`${beat.id || 'scene'}-option-${stat}-${generatedIndex}`,
-      label:labels[(generatedIndex - 1) % labels.length],
-      detail:`${stat}을 중심으로 같은 목표를 다른 방식으로 해결합니다. 성공 시 얻는 이점과 실패 시 남는 대가가 다릅니다.`,
+      label:generated.label,
+      detail:`현재 장면에서 실제로 가능한 ${stat} 계열 접근입니다. 성공하면 같은 목표를 다른 경로로 진전시키고, 실패해도 그 행동 때문에 생긴 후속 상황으로 이어집니다.`,
+      actionType:generated.actionType,
+      startsCombat:Boolean(generated.startsCombat),
+      fatalRisk:Boolean(generated.fatalRisk),
       stat,
       dc,
       difficulty:difficultyLabel(dc),
@@ -952,6 +1004,12 @@ function storyResolutionNarrative(campaign, beat, choice, player, success, statu
     help:[`${actor}는 위험을 나눠 맡았다. 도움을 받은 사람은 보답 대신 지금까지 숨겨 온 사실을 털어놓았다.`,`${actor}는 누군가를 살리느라 중요한 순간을 놓쳤다. 하지만 그 사람이 나중에야 떠올린 한마디가 잃어버린 단서를 대신했다.`],
     threaten:[`${actor}는 물러설 생각이 없다는 걸 보여 줬다. 원하는 답은 빨리 나왔지만 그 자리에서 관계 하나도 함께 끊어졌다.`,`${actor}의 압박은 역효과를 냈다. 주변까지 경계하기 시작했지만 상대가 목숨 걸고 감추는 대상은 확실해졌다.`],
     trade:[`${actor}는 서로 필요한 것을 정확히 맞췄다. 싸우지 않고 정보와 통로를 얻었지만 대가를 기억하는 사람이 생겼다.`,`${actor}는 불리한 조건을 받아들였다. 손해는 남았지만 상대가 무엇을 가장 가치 있게 여기는지 알게 됐다.`],
+    bypass:[`${actor}는 정면의 위험을 건드리지 않고 지형의 빈틈을 이용했다. 그 덕분에 예상보다 먼저 다음 위치와 연결되는 길을 확보했다.`,`${actor}가 고른 우회로는 완전히 안전하지 않았다. 길은 막혔지만 무엇이 이 구간을 통제하는지는 분명해졌다.`],
+    wait:[`${actor}는 서두르지 않았다. 상황이 먼저 움직이게 두자 감춰져 있던 순서와 틈이 드러났다.`,`${actor}가 기다리는 동안 기회 하나는 지나갔다. 대신 다음에 무엇이 움직일지 읽을 수 있는 패턴이 남았다.`],
+    trap:[`${actor}는 주변 조건을 이용해 위험이 움직일 방향을 제한했다. 먼저 움직일 수 있는 짧은 우위가 생겼다.`,`${actor}의 준비는 완벽하지 않았지만 상대와 환경이 무엇을 피하려 하는지 확인했다.`],
+    break:[`${actor}는 막힌 구조와 장애물을 힘으로 바꿔 새로운 동선을 만들었다. 소음은 컸지만 다음 장면의 위치가 달라졌다.`,`${actor}가 힘을 쓴 순간 예상하지 못한 부분까지 무너졌다. 길은 열리지 않았지만 숨겨진 공간과 더 큰 위험이 함께 드러났다.`],
+    hide:[`${actor}는 파티가 남긴 흔적을 지워 추적과 경계를 잠시 끊어 냈다.`,`${actor}가 흔적을 지우려는 동안 이미 누군가가 파티를 따라오고 있었다는 사실이 드러났다.`],
+    endure:[`${actor}는 환경의 압박을 몸으로 받아냈다. 그 짧은 시간 동안 동료들은 다음 행동에 필요한 위치와 여유를 확보했다.`,`${actor}는 끝까지 버텼지만 몸에 부담이 남았다. 그래도 무너지기 직전의 변화 덕분에 다음에 피해야 할 지점을 알아냈다.`],
   };
   const pair=lines[action]||[choice?.success||'선택이 새로운 국면을 만들었다.',choice?.failure||'시도는 뜻대로 되지 않았지만 다른 길을 남겼다.'];
   const injury=status?` 그 과정에서 부상이 하나 더 남았다.`:'';
@@ -1655,6 +1713,7 @@ function emitRoll(room, roller, roll) {
     rollerId: roller.id,
     rollerName: roller.name,
     ts: Date.now(),
+    startsAt: Date.now() + 650,
     ...roll,
   });
 }
@@ -2878,7 +2937,7 @@ io.on('connection', socket => {
 
     if (evaluateEnding(room)) { sync(room); return ack?.({ ok:true, ending:true, result:room.lastStoryAction }); }
     sync(room);
-    // v5.8: 메인 스토리 결과는 공용 주사위 화면에서 한 번만 보여준다. 별도 결과 팝업은 띄우지 않는다.
+    setTimeout(() => io.to(room.code).emit('resolution', room.lastResolution), 350);
     ack?.({ ok:true, result:room.lastStoryAction });
   });
 
@@ -3068,12 +3127,12 @@ io.on('connection', socket => {
       coinBonus: Number(room.currentEvent?.coinReward || 0),
     }) : [];
     room.lastResolution = {
-      ok: success, result, total, dc,
+      source:'event', ok: success, result, total, dc,
+      playerId: player.id, playerName: player.name,
       text: `${success ? active.choice.success : active.choice.failure}${eventRewardNotes.length ? `
 
 보상: ${eventRewardNotes.join(' · ')}` : ''}`,
       rewards: eventRewardNotes,
-      playerId: player.id,
     };
     room.phase = 'resolution';
     pushChat(room, {
@@ -3083,39 +3142,6 @@ io.on('connection', socket => {
     sync(room);
     setTimeout(() => io.to(room.code).emit('resolution', room.lastResolution), 2200);
     ack?.({ ok: true });
-  });
-
-  function continueResolvedStory(room) {
-    if (!room || room.phase !== 'resolution' || room.pendingContinue?.source !== 'story') return false;
-    const pending = room.pendingContinue || {};
-    room.currentEvent = null;
-    room.activeChoice = null;
-    room.choiceVotes = {};
-    room.voteEndsAt = null;
-    room.lastResolution = null;
-    room.lastResolvedStoryBeat = null;
-    room.pendingContinue = null;
-    room.phase = 'story';
-    if (pending.clearDetour) room.storyDetour = null;
-    advanceSkillClock(room, 1);
-    if (evaluateEnding(room)) return true;
-    if (pending.drawEvent && room.deck.length) {
-      drawEventForRoom(room);
-      pushChat(room, { type:'system', text:`${EVENT_EVERY_TURNS}개의 메인 턴이 지나 이벤트 카드가 공개되었습니다.` });
-    } else advanceTurn(room);
-    return true;
-  }
-
-  socket.on('story:resultSeen', (payload, ack) => {
-    const { room, player } = requireMember(socket, payload, ack);
-    if (room && resumeBlocked(room, ack)) return;
-    if (!room || !player) return;
-    if (room.phase !== 'resolution' || room.pendingContinue?.source !== 'story') return ack?.({ ok:false, error:'넘길 스토리 결과가 없습니다.' });
-    const rollerId = room.lastResolution?.playerId;
-    if (rollerId && rollerId !== player.id) return ack?.({ ok:false, error:'판정한 플레이어가 결과 확인을 완료해야 합니다.' });
-    continueResolvedStory(room);
-    sync(room);
-    ack?.({ ok:true });
   });
 
   socket.on('event:continue', (payload, ack) => {

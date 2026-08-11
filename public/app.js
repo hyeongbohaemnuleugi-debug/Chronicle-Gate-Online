@@ -39,6 +39,7 @@ let diceQueue = Promise.resolve();
 let resumeInFlight = false;
 let shownEncounterId = '';
 let encounterIntroTimer = null;
+let lastChatRenderKey = '';
 const app = $('#app');
 
 const UI_DEFAULTS = { theme: 'dark', chatSize: 300, audioVolume: 0.65, audioMuted: false };
@@ -415,7 +416,8 @@ const WORLD_META = {
   abyss: { motif: 'LAST LIGHTHOUSE', scene: ['침수 통로', '관측창 심연', '해저 균열', '압력문 격납고', '상승용 잠수정 갑판'], boss: '깊은 바다의 거대한 촉수와 푸른 눈을 지닌 심연체' },
   clock: { motif: 'THIRTEENTH BELL', scene: ['시계광장', '사라지는 거리', '시간 밀수 시장', '열세 번째 탑', '루프가 끝나는 새벽'], boss: '금빛 톱니와 검은 망토로 된 시간의 파수꾼' },
   wild: { motif: 'STAR-EATEN WOODS', scene: ['별가루 숲길', '말하는 고목', '유성 대장간', '숲의 심장', '마지막 별이 뜬 밤하늘'], boss: '별빛을 삼킨 거대한 신수와 숲의 오오라' },
-  guardian: { motif: 'KANTERBURY FOREST', scene: ['추락한 숲길', '로레인의 여관', '왕실 초소와 숲 경계', '고대 유적 회랑', '챔피언 소드 제단'], boss: '고대 수호 시험과 침략자 잔당이 뒤엉킨 캔터베리의 마지막 시련' },
+  guardian: { motif: 'GUARDIAN TALES CHRONICLE', scene: ['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길','셴 시티','거대한 여관','던전 왕국','쉬버링 산','라 제국 국경','라 제국 수용소','10년 뒤의 폐허','미래 공주의 저항군','헤븐홀드 탈환전','기록되지 않은 세계의 새벽'], boss: '월드 1부터 미래의 헤븐홀드까지 이어진 선택과 인연이 한꺼번에 되돌아오는 연대기의 마지막 시련' },
+  echo: { motif:'GLASS STAR ARCHIVE', scene:['깨진 중앙 아카이브','봉인된 탐사기록 회랑','도시가 지운 제7구역','성좌 투영실','원본 보관실'], boss:'도시의 기억 원본과 복제된 증언을 동시에 지키는 성좌 관리자' },
   guardian1: { motif:'GUARDIAN TALES I', scene:['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길'], boss:'월드 1~4의 인연과 침략의 흔적이 겹쳐진 첫 연대기의 마지막 시련' },
   guardian2: { motif:'GUARDIAN TALES II', scene:['셴 시티','작아진 여관','던전 왕국','쉬버링 산','라 제국 국경'], boss:'월드 5~8의 챔피언과 진실을 시험하는 두 번째 연대기의 마지막 시련' },
   guardian3: { motif:'GUARDIAN TALES III', scene:['라 제국','10년 뒤의 폐허','저항군 기지','점령된 헤븐홀드','차원의 문'], boss:'미래 공주와 저항군이 맞서는 기록되지 않은 세계의 최종 결전' },
@@ -628,7 +630,7 @@ function renderSkillUi() {
   $('#combatSkillBtn').textContent = remaining > 0 ? `${skill.name} · ${remaining}턴` : ready ? `${skill.name} 사용` : `${skill.name} · 대기`;
 }
 
-function sceneWord(campaignId, actIndex = 0) { return WORLD_META[campaignId]?.scene?.[Math.max(0, Math.min(4, actIndex))] || '장면'; }
+function sceneWord(campaignId, actIndex = 0) { const scenes=WORLD_META[campaignId]?.scene||[]; return scenes[Math.max(0,Math.min(Math.max(0,scenes.length-1),actIndex))] || '장면'; }
 function svgUri(svg) { return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`; }
 
 function themedBackdrop(id) {
@@ -757,7 +759,7 @@ function representativeStoryArtCandidates(c, scene) {
 function builtInStoryArt(c,scene){
   const world=c?.id||'ember';
   const chapter=Number(scene?.artChapter||scene?.chapter||1);
-  const accent={ember:'#ff7654',neon:'#3fe8ff',abyss:'#68d7ff',clock:'#ffd47c',wild:'#8df4a8',guardian1:'#63d67c',guardian2:'#62c8ff',guardian3:'#a78bff'}[world]||'#ff7654';
+  const accent={ember:'#ff7654',neon:'#3fe8ff',abyss:'#68d7ff',clock:'#ffd47c',wild:'#8df4a8',guardian:'#63d67c',echo:'#8fd9ff',guardian1:'#63d67c',guardian2:'#62c8ff',guardian3:'#a78bff'}[world]||'#ff7654';
   const title=esc(scene?.title||scene?.actName||c?.title||'Chronicle Gate');
   const visual=esc(scene?.visual||scene?.phase||'중요 장면');
   const motif={
@@ -765,7 +767,9 @@ function builtInStoryArt(c,scene){
     neon:`<path d="M120 560 V265 H300 V430 H455 V180 H650 V500 H790 V245 H980 V455 H1170 V215 H1280 V560" fill="#07111d" stroke="${accent}" stroke-width="5"/><path d="M230 210 h190 M880 175 h250 M520 340 h180" stroke="#ff4aa1" stroke-width="12"/><circle cx="1040" cy="355" r="54" fill="none" stroke="${accent}" stroke-width="10"/>`,
     abyss:`<rect x="180" y="190" width="1040" height="410" rx="80" fill="#071827" stroke="${accent}" stroke-width="6"/><circle cx="720" cy="360" r="125" fill="#0d2a3b" stroke="#9cecff" stroke-width="7"/><path d="M595 520 C520 590 520 650 560 700 M665 520 C640 610 650 670 675 720 M775 520 C800 610 790 670 765 720 M845 520 C920 590 920 650 880 700" fill="none" stroke="${accent}" stroke-width="15"/>`,
     clock:`<circle cx="720" cy="370" r="190" fill="#11101d" stroke="${accent}" stroke-width="8"/><circle cx="720" cy="370" r="115" fill="none" stroke="#ffe8ad" stroke-width="5"/><path d="M720 370 V260 M720 370 L820 420" stroke="${accent}" stroke-width="13"/><path d="M450 570 H990" stroke="#aa8b50" stroke-width="8"/>`,
-    wild:`<path d="M160 600 C280 310 430 160 590 420 C675 205 800 160 880 420 C1030 160 1160 340 1260 600" fill="#07170f" stroke="${accent}" stroke-width="7"/><path d="M710 600 V270 M710 350 C600 315 540 260 485 205 M710 390 C820 335 900 270 965 190" stroke="#bfffd0" stroke-width="16"/><circle cx="710" cy="225" r="48" fill="#d8ffd8" opacity=".75"/>`
+    wild:`<path d="M160 600 C280 310 430 160 590 420 C675 205 800 160 880 420 C1030 160 1160 340 1260 600" fill="#07170f" stroke="${accent}" stroke-width="7"/><path d="M710 600 V270 M710 350 C600 315 540 260 485 205 M710 390 C820 335 900 270 965 190" stroke="#bfffd0" stroke-width="16"/><circle cx="710" cy="225" r="48" fill="#d8ffd8" opacity=".75"/>`,
+    guardian:`<path d="M190 590 L310 310 L510 410 L720 170 L930 410 L1130 310 L1250 590" fill="#0b1710" stroke="${accent}" stroke-width="7"/><path d="M650 570 V290 L720 220 L790 290 V570" fill="#17231a" stroke="#d9ffe2" stroke-width="6"/><circle cx="720" cy="205" r="34" fill="none" stroke="${accent}" stroke-width="9"/>`,
+    echo:`<path d="M720 150 L790 290 L950 315 L830 420 L865 580 L720 500 L575 580 L610 420 L490 315 L650 290 Z" fill="#0a1722" stroke="${accent}" stroke-width="7"/><path d="M720 150 L720 500 M490 315 L950 315 M610 420 L830 420" stroke="#ffd5e8" stroke-width="5" opacity=".8"/>`
   }[world]||'';
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07080d"/><stop offset="1" stop-color="#201018"/></linearGradient></defs><rect width="1400" height="760" fill="url(#g)"/><circle cx="1160" cy="125" r="70" fill="${accent}" opacity=".14"/><g opacity=".94">${motif}</g><rect x="70" y="70" width="520" height="170" rx="20" fill="rgba(0,0,0,.56)"/><text x="102" y="112" fill="${accent}" font-family="sans-serif" font-size="20" font-weight="700" letter-spacing="3">IMMERSIVE SCENE · ${chapter}</text><text x="102" y="165" fill="#fff" font-family="sans-serif" font-size="40" font-weight="800">${title}</text><text x="102" y="210" fill="#d8d8df" font-family="sans-serif" font-size="20">${visual}</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -1116,17 +1120,18 @@ function renderState() {
   $('#roomCodeTop').textContent = state.code;
   $('#roomCodeLobby').textContent = state.code;
   if (state.campaign) setWorld(state.campaign);
-  if (state.phase === 'lobby') view('lobbyView');
-  else if (state.phase === 'combat') view('combatView');
-  else if (state.phase === 'ending') view('endingView');
-  else view('storyView');
-  renderLobby();
-  renderStory();
-  renderCombat();
-  renderEnding();
-  renderChat();
+
+  // v5.8: 현재 화면만 다시 그린다. 이전에는 state 패킷 하나마다 로비/스토리/전투/엔딩 DOM을
+  // 전부 재생성해 긴 캠페인과 4인 플레이에서 불필요한 레이아웃 계산이 누적됐다.
+  if (state.phase === 'lobby') { view('lobbyView'); renderLobby(); }
+  else if (state.phase === 'combat') { view('combatView'); renderCombat(); }
+  else if (state.phase === 'ending') { view('endingView'); renderEnding(); }
+  else { view('storyView'); renderStory(); }
+
+  const chat = state.chat || [];
+  const chatKey = `${chat.length}:${chat[chat.length - 1]?.id || ''}`;
+  if (chatKey !== lastChatRenderKey) { lastChatRenderKey = chatKey; renderChat(); }
   renderSkillUi();
-  renderHelp();
 }
 
 function renderCampaigns() {
@@ -1266,7 +1271,8 @@ function renderStory() {
   $('#threatValue').textContent = state.threat;
   $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
   $('#storyValue').textContent = `${state.story || 0} SCENES`;
-  const actProgress = beat?.act ? ((Number(beat.act) - 1) / 5) * 100 : 0;
+  const totalActs = Math.max(1, Number(c?.acts?.length || 5));
+  const actProgress = beat?.act ? ((Number(beat.act) - 1) / totalActs) * 100 : 0;
   $('#storyFill').style.width = Math.max(4, Math.min(100, actProgress + 8)) + '%';
   $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(member => {
     const injuryCount = (member.statuses || []).reduce((n,s)=>n+Math.max(1,Number(s.stacks||1)),0);

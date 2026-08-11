@@ -7,7 +7,7 @@ import { CAMPAIGNS, ITEMS_BY_CAMPAIGN, STAT_NAMES, ECONOMY_FACILITY_TEMPLATES, E
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('each campaign has six equippable items with direct modifier bonuses', () => {
+test('each campaign has at least six unique equippable items with direct modifier bonuses', () => {
   for (const campaign of CAMPAIGNS) {
     const items = campaign.items || ITEMS_BY_CAMPAIGN[campaign.id] || [];
     assert.ok(items.length >= 6, `${campaign.id} item count`);

@@ -8,7 +8,7 @@ test('canonical choices are context-linked and expose opportunity/risk rather th
     const canonical=c.storyBeats.filter(b=>!b.branchScene);
     assert.equal(canonical.length,30);
     for(const b of canonical){
-      assert.ok(b.choices.length>=4 && b.choices.length<=8,`${c.id}/${b.id}`);
+      assert.ok(b.choices.length>=5 && b.choices.length<=7,`${c.id}/${b.id}`);
       for(const ch of b.choices){
         assert.ok(ch.opportunity?.length>0 || ch.isTravel,`${c.id}/${b.id}/${ch.label}: opportunity`);
         assert.ok(ch.risk?.length>0 || ch.isTravel,`${c.id}/${b.id}/${ch.label}: risk`);

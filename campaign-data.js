@@ -566,107 +566,122 @@ function actionOpportunity(type) {
 function actionRisk(type) {
   return ({fight:'높음',threaten:'높음',steal:'높음',sneak:'보통',tail:'보통',investigate:'낮음',observe:'낮음',persuade:'보통',help:'낮음',trade:'낮음',bypass:'보통',wait:'낮음',trap:'보통',break:'높음',hide:'낮음'})[type] || '보통';
 }
+function sceneCapabilities(c, guide, beat, act, step) {
+  const text = `${beat?.title || ''} ${beat?.text || ''} ${beat?.situation || ''} ${beat?.objective || ''} ${beat?.why || ''} ${guide?.place || ''} ${guide?.reveal || ''}`;
+  const target = detectSceneTarget(c, beat, guide);
+  const person = /증언자|목격자|경비|상인|생존자|부상자|피난민|추적자|사냥꾼|암살자|침략자|고블린|로레인|공주|사제|귀족|병사|승무원|시민|NPC|사람|인물|용병|관리자|연구원|학생|난민|저항군|제국|기사|상대/.test(text);
+  const hostile = /공격|적대|추적|포위|막아|위협|칼|검|총|사냥|암살|침략|적군|괴물|망령|포식자|경비.*체포|전투|결투|습격|폭군|수호자|병사|용병|고블린|하운드|키메라|촉수/.test(text) || /위기|대면/.test(beat?.phase || '');
+  const merchant = /상인|시장|상점|경매|거래|행상|보급/.test(text);
+  const evidence = /기록|장부|로그|문서|신문|편지|데이터|흔적|발자국|증거|표식|문장|암호|유언|코드|지도|사진|열쇠|왕관|조각|진주|부적|유물|장비|물건/.test(text);
+  const barrier = /문|성문|압력문|격벽|봉쇄|잠긴|자물쇠|장치|기계|서버|시계|기어|봉인|바리케이드|벽|문턱|통로/.test(text);
+  const route = /길|골목|숲|거리|통로|회랑|구역|방|기지|성벽|왕묘|유적|기관실|의무실|관측실|시장|광장|마을|도시|설산|던전|헤븐홀드|역|열차|플랫폼/.test(text);
+  const vulnerable = /생존자|부상자|피난민|공주|아이|인질|구조|도와|갇힌|쓰러진|환자|난민/.test(text);
+  const crowd = /사람들|군중|주민|부족|귀족|저항군|경비대|학생|승무원|난민|시민/.test(text);
+  const hidden = /사라진|숨어|비밀|수상|거짓|배신|몰래|감시|추적|실종|닫힌|잠긴/.test(text);
+  return { text,target,person,hostile,merchant,evidence,barrier,route,vulnerable,crowd,hidden };
+}
 function buildStoryChoices(c, guide, beat, act, step, index) {
   const phase = beat.phase || '장면';
   const actNo = act + 1;
-  const target = detectSceneTarget(c, beat, guide);
-  const personTarget = ['증언자','경비병','상인','생존자','추적자','침략자','고블린','로레인','공주','의심스러운 인물'].includes(target);
-  const baseDefs = [
-    { type:'investigate', stat:'지능', route:'careful', path:'truth' },
-    { type:'observe', stat:'지혜', route:'careful', path:'truth' },
-    { type:'persuade', stat:'매력', route:'empathetic', path:'bond' },
-    { type:'tail', stat:'지혜', route:'careful', path:'truth' },
-    { type:'fight', stat:'근력', route:'bold', path:'survival', startsCombat:true, fatalRisk:true },
-    { type:'steal', stat:'민첩', route:'bold', path:'survival', fatalRisk:true },
-    { type:'sneak', stat:'민첩', route:'bold', path:'survival', fatalRisk:true },
-    { type:'help', stat:'체력', route:'empathetic', path:'bond' },
-    { type:'threaten', stat:'매력', route:'bold', path:'survival', fatalRisk:true },
-    { type:'trade', stat:'매력', route:'empathetic', path:'bond' },
-    { type:'bypass', stat:'민첩', route:'bold', path:'survival' },
-    { type:'wait', stat:'지혜', route:'careful', path:'truth' },
-    { type:'trap', stat:'지능', route:'careful', path:'truth' },
-    { type:'break', stat:'근력', route:'bold', path:'survival', fatalRisk:true },
-    { type:'hide', stat:'지혜', route:'empathetic', path:'bond' },
-  ];
-  // v5.8: 선택지는 현재 장면에 실제로 존재하는 대상/위험/장소로 제한한다.
-  // 사람이 없는데 싸운다/설득한다/미행한다가 뜨거나, 훔칠 물건이 없는데 절도가 뜨는 일을 막는다.
-  const sceneText = `${beat?.title||''} ${beat?.text||''} ${beat?.situation||''} ${beat?.objective||''} ${beat?.reveal||''} ${beat?.stakes||''}`;
-  const hostilePresent = personTarget && /적|적대|공격|습격|침략|추적|암살|경비|병사|고블린|괴물|망령|집행|용병|배신|위협|무기|칼|총|전투|대면/.test(sceneText);
-  const socialPresent = personTarget || /사람|주민|생존자|증언|상인|사제|귀족|동료|경비|공주|로레인|부족|협력|대화/.test(sceneText);
-  const stealablePresent = /상인|가게|시장|장부|문서|기록|열쇠|물건|상자|보관|왕관|조각|데이터|카드|유물|가방|주머니|무기|도구/.test(sceneText);
-  const tailPossible = personTarget && /수상|숨기|도망|떠나|이동|접선|배신|의심|추적|뒤|사라|행방/.test(sceneText);
-  const helpPossible = /부상|위험|구조|생존자|피난|울음|갇|쓰러|구해|도와|공주|동료|주민/.test(sceneText);
-  const barrierPresent = /문|성문|격벽|봉인|장치|벽|잔해|바리케이드|잠긴|막힌|통로|유적|서버|기계/.test(sceneText);
-  const tradePossible = /상인|시장|거래|가격|물건|정보상|여관|식당|가게|길드/.test(sceneText);
-  const hidePossible = /추적|경비|감시|수색|현상수배|발각|숨어|은신|흔적/.test(sceneText);
-  const trapPossible = hostilePresent || /추적|경비|괴물|짐승|침략/.test(sceneText);
+  const cap = sceneCapabilities(c, guide, beat, act, step);
+  const target = cap.target;
+  const defs = [];
+  const add = (type, stat, route, path, extra={}) => {
+    if (defs.some(x=>x.type===type || (extra.label && x.label===extra.label))) return;
+    defs.push({type,stat,route,path,...extra});
+  };
 
-  let allowed = new Set(['investigate','observe','wait']);
-  if (barrierPresent) ['sneak','bypass','break'].forEach(x=>allowed.add(x));
-  else if (/길|통로|골목|복도|숲|거리|기지|성채|유적/.test(sceneText)) ['sneak','bypass'].forEach(x=>allowed.add(x));
-  if (socialPresent) ['persuade'].forEach(x=>allowed.add(x));
-  if (hostilePresent) ['fight','threaten'].forEach(x=>allowed.add(x));
-  if (stealablePresent) allowed.add('steal');
-  if (tailPossible) allowed.add('tail');
-  if (helpPossible) allowed.add('help');
-  if (tradePossible) allowed.add('trade');
-  if (trapPossible) allowed.add('trap');
-  if (hidePossible) allowed.add('hide');
-  if (/위기|대면/.test(phase) && hostilePresent) ['fight','threaten','trap'].forEach(x=>allowed.add(x));
-  if (/탐색|도입|진실/.test(phase)) ['investigate','observe','wait'].forEach(x=>allowed.add(x));
-  if (/결단/.test(phase)) {
-    allowed = new Set(['investigate','observe']);
-    if (hostilePresent) ['fight','threaten'].forEach(x=>allowed.add(x));
-    if (socialPresent) allowed.add('persuade');
-    if (helpPossible) allowed.add('help');
-    if (barrierPresent) allowed.add('break');
-    if (stealablePresent) allowed.add('steal');
-  }
-  let defs = baseDefs.filter(d=>allowed.has(d.type));
+  // 관찰/조사는 대부분의 장면에서 가능하지만 대상과 목적이 다르다.
+  add('investigate','지능','careful','truth');
+  add('observe','지혜','careful','truth');
+
+  // 사람과 대화할 수 있는 장면에서만 사회 행동을 제공한다.
+  if (cap.person || cap.crowd) add('persuade','매력','empathetic','bond');
+  if (cap.vulnerable) add('help','체력','empathetic','bond');
+  if (cap.merchant) add('trade','매력','empathetic','bond');
+
+  // 미행은 실제 움직이는 인물이 있고 즉시 전투가 벌어지는 장면이 아닐 때만.
+  if (cap.person && !cap.hostile && (cap.hidden || /도입|탐색|진실/.test(phase))) add('tail','지혜','careful','truth');
+
+  // 훔치기는 실제로 훔칠 대상/물건이 존재할 때만.
+  if ((cap.person && (cap.merchant || cap.evidence)) || cap.evidence) add('steal','민첩','bold','survival',{fatalRisk:true});
+
+  // 전투는 적대자/괴물이 있거나 직접 충돌 중일 때만 등장한다.
+  if (cap.hostile) add('fight','근력','bold','survival',{startsCombat:true,fatalRisk:true});
+  if (cap.hostile && cap.person) add('threaten','매력','bold','survival',{fatalRisk:true});
+
+  // 장소/장벽과 상호작용할 수 있을 때만 잠입·우회·파괴가 보인다.
+  if (cap.route || cap.barrier || cap.hidden) add('sneak','민첩','bold','survival',{fatalRisk:cap.hostile});
+  if (cap.barrier || cap.route) add('bypass','민첩','bold','survival');
+  if (cap.barrier && /위기|결단|대면/.test(phase)) add('break','근력','bold','survival',{fatalRisk:true});
+  if (cap.hostile || cap.hidden) add('wait','지혜','careful','truth');
+  if (cap.hostile && (cap.route || cap.barrier)) add('trap','지능','careful','truth');
+  if (cap.hostile && cap.route) add('hide','지혜','empathetic','bond');
 
   const travelByWorld = {
-    ember:['왕묘로 간다','성벽으로 간다','검은 숲으로 간다'], neon:['하층가로 간다','기억 시장으로 간다','봉쇄구역으로 간다'],
-    abyss:['의무실로 간다','기관실로 간다','관측실로 간다'], clock:['광장으로 간다','기록소로 간다','시계탑으로 간다'],
-    wild:['부족 마을로 간다','별가루 숲으로 간다','숲의 심장으로 간다'], guardian1:['여관으로 간다','왕국 쪽으로 간다','유적으로 간다'],
-    guardian2:['도시로 간다','던전으로 간다','설산으로 간다'], guardian3:['난민 구역으로 간다','저항군 기지로 간다','헤븐홀드로 간다'],
+    ember:['왕묘로 간다','성벽으로 간다','검은 숲으로 간다'],
+    neon:['하층가로 간다','기억 시장으로 간다','봉쇄구역으로 간다'],
+    abyss:['의무실로 간다','기관실로 간다','관측실로 간다'],
+    clock:['광장으로 간다','기록소로 간다','시계탑으로 간다'],
+    wild:['부족 마을로 간다','별가루 숲으로 간다','숲의 심장으로 간다'],
+    guardian:['캔터베리 쪽으로 간다','다음 챔피언의 지역으로 간다','침략자의 흔적을 따라간다'],
+    nighttrain:['승강장으로 간다','기관차 쪽으로 간다','마지막 객차로 간다'],
   };
-  if (step === 1 || step === 3 || phase === '도입') {
+  if ((step === 1 || step === 3 || phase === '도입' || cap.route) && !/위기/.test(phase)) {
     const travel = travelByWorld[c.id] || ['앞길로 간다','우회로로 간다','사람들이 모인 곳으로 간다'];
-    defs.splice(4,0,{type:'travel-a',label:travel[(act+step)%travel.length],stat:'지혜',route:'careful',path:'truth',isTravel:true});
-    defs.splice(6,0,{type:'travel-b',label:travel[(act+step+1)%travel.length],stat:'민첩',route:'bold',path:'survival',isTravel:true});
+    const a=travel[(act+step)%travel.length], b=travel[(act+step+1)%travel.length];
+    add('travel-a','지혜','careful','truth',{label:a,isTravel:true});
+    if (a!==b) add('travel-b','민첩','bold','survival',{label:b,isTravel:true});
   }
-  const targetCount = phase === '결단' ? 5 : phase === '위기' ? 6 : 7;
-  // 가능한 행동만 보여주되 너무 단조롭다면 안전한 관찰/조사/대기 축에서 보충한다.
-  const fallbackDefs = baseDefs.filter(d=>['investigate','observe','wait','bypass'].includes(d.type));
-  for (const fallback of fallbackDefs) {
-    if (defs.length >= Math.min(5,targetCount)) break;
-    if (!defs.some(d=>d.type===fallback.type)) defs.push(fallback);
+
+  // 결정적 장면은 불가능한 동작을 억지로 추가하지 않고 실제 가능한 것만 남긴다.
+  // 이동 선택은 상황상 이동할 수 있는 장면에서 반드시 화면에 한 칸을 확보한다.
+  // 이전 버전은 이동 선택을 마지막에 추가한 뒤 slice()해서 실제 UI에서는 잘리는 경우가 있었다.
+  const targetCount = phase === '결단' ? 5 : phase === '위기' ? 5 : 6;
+  if (defs.length < 5) {
+    if (!defs.some(x=>x.type==='wait')) add('wait','지혜','careful','truth');
+    if (!defs.some(x=>x.type==='bypass') && (cap.route||cap.barrier)) add('bypass','민첩','bold','survival');
+    if (!defs.some(x=>x.type==='hide') && (cap.hidden||cap.route)) add('hide','지혜','empathetic','bond');
+    if (!defs.some(x=>x.isTravel) && (cap.route || step === 1 || step === 3 || phase === '도입')) {
+      const fallbackTravel=(travelByWorld[c.id]||['다른 장소로 이동한다'])[0];
+      add('travel-safe','지혜','careful','truth',{label:fallbackTravel,isTravel:true});
+    }
   }
-  defs = defs.slice(0,targetCount);
+  const travelDefs = defs.filter(x=>x.isTravel);
+  const actionDefs = defs.filter(x=>!x.isTravel);
+  let chosen;
+  if (travelDefs.length) {
+    // 한 장면에서 이동 버튼이 너무 많아 행동 선택을 밀어내지 않도록 최대 1개만 우선 노출한다.
+    chosen = [...actionDefs.slice(0, Math.max(4,targetCount-1)), travelDefs[0]].slice(0,targetCount);
+  } else {
+    chosen = actionDefs.slice(0, Math.max(5,targetCount));
+  }
+
   const actionProse = {
-    investigate:[`${target}에 남은 앞뒤가 맞지 않는 흔적을 연결해 사건의 다음 원인을 찾아냈다.`,`${target}을 잘못 짚었지만, 누가 흔적을 의도적으로 흐렸는지는 드러났다.`],
-    observe:[`${target}의 작은 반응을 놓치지 않아 먼저 움직일 사람과 위험을 구분했다.`,`결정적인 순간은 놓쳤지만 ${target}이 무엇을 두려워하는지는 확인했다.`],
-    fight:[`${target}과의 충돌에서 주도권을 빼앗아 강제로 길을 열었다.`,`싸움이 예상보다 커져 상처와 적대가 남았고, 사건은 더 위험한 방향으로 꺾였다.`],
-    sneak:[`${target}의 시야 밖으로 들어가 공개되지 않은 장소와 정보를 먼저 확보했다.`,`잠입 흔적이 들켜 경계가 올라갔지만, 내부의 구조와 다음 이동 지점은 확인했다.`],
-    persuade:[`${target}이 지키려는 것을 먼저 짚어 자발적인 협조와 새로운 증언을 얻었다.`,`완전히 마음을 돌리진 못했지만 ${target}이 끝까지 숨기는 쟁점은 분명해졌다.`],
-    steal:[`${target}에게서 필요한 것을 손에 넣었고, 물건이 연결된 새로운 인물까지 알아냈다.`,`손을 대는 순간 들켰지만 보관 장소와 감시 방식이 드러나 다른 접근법이 생겼다.`],
-    tail:[`${target}의 뒤를 놓치지 않아 목적지와 접선 상대를 확인했다.`,`미행을 눈치챈 ${target}이 동선을 바꾸면서 오히려 숨기던 장소가 드러났다.`],
-    help:[`${target}을 도운 대가로 신뢰와 직접적인 도움을 얻었다.`,`구조에 시간이 걸렸지만 살려 둔 사람이 뒤늦게 결정적인 사실을 떠올렸다.`],
-    threaten:[`${target}을 압박해 즉시 필요한 정보를 받아냈지만, 관계에는 분명한 금이 갔다.`,`${target}은 굴복하지 않았고 주변까지 적대적으로 변했다. 대신 무엇을 지키는지는 선명해졌다.`],
-    trade:[`${target}과 서로 필요한 것을 맞바꿔 충돌 없이 통로와 정보를 얻었다.`,`조건은 불리했지만 ${target}이 무엇에 가치를 두는지 확인해 다음 협상의 기준을 얻었다.`],
-    bypass:[`${target}을 정면으로 건드리지 않고 다른 길을 찾아 예상하지 못한 장소에 먼저 닿았다.`,`우회로가 막혔지만 누가 이 길까지 감시하는지 드러났다.`],
-    wait:[`움직이지 않고 기다리자 ${target} 주변의 긴장이 풀리며 숨겨진 행동이 먼저 나타났다.`,`기다리는 동안 기회 하나를 놓쳤지만 상대의 다음 순서를 읽을 수 있었다.`],
-    trap:[`${target} 주변의 조건을 이용해 함정을 만들고 먼저 움직일 권리를 얻었다.`,`함정은 들켰지만 상대가 무엇을 경계하는지 분명해졌다.`],
-    break:[`${target}을 강제로 무너뜨려 가장 빠른 길을 만들었다.`,`부수는 순간 더 큰 위험이 깨어났고 원래의 길은 되돌릴 수 없게 됐다.`],
-    hide:[`파티가 남긴 흔적을 지워 추적과 의심을 한동안 끊어 냈다.`,`흔적을 숨기려다 오히려 누군가 이미 파티를 추적하고 있었다는 사실을 알아냈다.`],
+    investigate:[`${target}에 남은 모순을 하나씩 맞춰 보자 흩어진 정보가 같은 원인을 가리켰다.`,`${target}의 핵심을 바로 짚지는 못했다. 다만 잘못된 흔적을 따라간 덕분에 누군가 일부러 정보를 흐렸다는 사실이 드러났다.`],
+    observe:[`${target}의 작은 변화와 반응을 끝까지 지켜본 덕분에 누가 먼저 움직일지 알아챘다.`,`결정적인 순간은 놓쳤지만 ${target}이 반복해서 피하는 방향이 무엇인지 확인했다.`],
+    fight:[`${target}과 맞붙어 주도권을 빼앗았다. 충돌이 끝난 자리에는 말로는 얻지 못했을 새로운 길이 열렸다.`,`${target}과의 싸움은 생각보다 거칠었다. 밀어붙이려 했지만 상대가 반격하면서 상처와 적대가 남았다.`],
+    sneak:[`${target}의 시야 밖으로 파고들어 공개되지 않은 위치와 움직임을 먼저 확인했다.`,`몸을 숨겨 들어가려 했지만 작은 소음이 경계를 깨웠다. 들키긴 했어도 내부 구조와 다음 이동 지점은 눈에 들어왔다.`],
+    persuade:[`${target}이 지키려는 것을 먼저 짚어 말하자 굳어 있던 태도가 풀렸고 새로운 증언이 이어졌다.`,`설득은 완전히 먹히지 않았다. 그래도 상대가 어떤 말에 유난히 민감하게 반응하는지 드러났다.`],
+    steal:[`손을 빠르게 움직여 ${target}에서 필요한 것을 빼냈다. 아무도 눈치채지 못한 사이 물건 하나가 새로운 단서를 만들었다.`,`손을 재빠르게 움직여 훔치려 했지만 상대가 예상보다 먼저 몸을 틀었다. 손은 비었지만 무엇을 가장 먼저 지키려 했는지는 똑똑히 보였다.`],
+    tail:[`${target}과 거리를 유지하며 따라간 끝에 목적지와 접선 상대를 확인했다.`,`미행하던 중 상대가 갑자기 동선을 바꿨다. 놓치기는 했지만 일부러 피한 장소가 오히려 의심스러운 지점으로 남았다.`],
+    help:[`${target}을 먼저 도운 선택은 시간을 썼지만 신뢰를 만들었다. 도움을 받은 사람은 자신만 알고 있던 사실을 꺼냈다.`,`도우려 했지만 상황을 완전히 수습하지 못했다. 그래도 혼란 속에서 살아남은 사람이 파티를 기억하게 됐다.`],
+    threaten:[`${target}을 거칠게 압박하자 필요한 말은 빠르게 나왔다. 대신 그 눈빛에는 다음에 갚겠다는 적의가 남았다.`,`위협은 통하지 않았다. 상대는 오히려 주변 사람을 불러 모았고, 파티가 무엇을 원하는지 먼저 알아차렸다.`],
+    trade:[`${target}과 서로 필요한 것을 맞바꾸면서 충돌 없이 정보와 통로를 확보했다.`,`거래 조건이 예상보다 불리했다. 하지만 상대가 무엇에 값을 매기는지 알게 된 것만으로 다음 협상의 실마리는 생겼다.`],
+    bypass:[`${target}을 정면으로 건드리지 않고 돌아갈 길을 찾아 예상보다 먼저 다음 지점에 닿았다.`,`우회로는 막혀 있었다. 대신 그 길까지 누군가 감시하고 있다는 사실이 드러났다.`],
+    wait:[`성급히 움직이지 않고 기다리자 ${target} 쪽에서 먼저 변화가 생겼다. 숨어 있던 의도가 행동으로 드러났다.`,`기다리는 동안 기회 하나를 놓쳤다. 그러나 상대의 다음 순서와 반복되는 습관은 읽을 수 있었다.`],
+    trap:[`${target} 주변의 구조를 이용해 함정을 만들자 상대의 움직임을 원하는 방향으로 제한할 수 있었다.`,`함정은 예상보다 일찍 들켰다. 실패했지만 상대가 무엇을 가장 경계하는지는 분명해졌다.`],
+    break:[`${target}을 힘으로 무너뜨려 가장 빠른 길을 열었다. 부서진 뒤에는 되돌아갈 수 없는 새로운 상황이 시작됐다.`,`힘으로 밀어붙였지만 구조가 예상과 다르게 무너졌다. 길은 열리지 않았고 더 큰 소음과 위험만 깨웠다.`],
+    hide:[`파티가 남긴 흔적을 지워 추적을 한동안 끊어 냈다.`,`흔적을 감추려던 과정에서 이미 누군가 한발 앞서 파티를 추적하고 있었다는 사실이 드러났다.`],
   };
-  return defs.map((d,i)=>{
-    const base = 9 + act + (phase === '위기' || phase === '결단' ? 2 : 0);
+
+  return chosen.map((d,i)=>{
+    const base = 9 + act + (/위기|결단/.test(phase) ? 1 : 0);
     const typeRisk = actionRisk(d.type);
-    const dcDelta = typeRisk === '높음' ? 2 : typeRisk === '낮음' ? -1 : 0;
-    const dc = Math.max(8,Math.min(15,base+dcDelta+((i+step)%2)));
+    const dcDelta = typeRisk === '높음' ? 1 : typeRisk === '낮음' ? -1 : 0;
+    const dc = Math.max(8,Math.min(14,base+dcDelta+((i+step)%2)));
     const label = d.label || contextualActionLabel(d.type,target,c,act,step);
-    const prose = actionProse[d.type] || [`${label}는 새로운 경로를 열었다.`,`${label}는 대가를 남겼지만 다른 길을 만들었다.`];
+    const prose = actionProse[d.type] || [`${label}는 지금 상황에 맞는 새로운 길을 열었다.`,`${label}는 뜻대로 되지 않았지만 실패가 다음 대응의 이유를 만들었다.`];
     return {
       id:`${beat.id}-${String(d.type).toUpperCase()}-${i+1}`, label,
       detail:`기회: ${actionOpportunity(d.type)} · 위험: ${typeRisk}`,
@@ -674,11 +689,10 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
       startsCombat:Boolean(d.startsCombat), isTravel:Boolean(d.isTravel), fatalRisk:Boolean(d.fatalRisk),
       opportunity:actionOpportunity(d.type), risk:typeRisk,
       success:prose[0], failure:prose[1],
-      consequenceHint:{success:actionOpportunity(d.type),failure:typeRisk==='높음'?'부상·관계 악화·사망 가능':'우회·관계·위험 변화'},
+      consequenceHint:{success:actionOpportunity(d.type),failure:typeRisk==='높음'?'부상·적대·전투 위험':'우회·관계·위험 변화'},
     };
   });
 }
-
 
 function buildBridgeScene(c, guide, act) {
   const scenes = {
@@ -945,23 +959,48 @@ function buildStoryBeats(c){
   return beats;
 }
 
+function eventOutcomeProse({title, actionText, stat, success}) {
+  const action = String(actionText || '대응한다').replace(/[.。]+$/,'');
+  const successByStat = {
+    '지능': `“${action}”라는 판단은 정확했다. 기록과 현장을 맞춰 보자 서로 어긋나던 정보가 한 지점에서 겹쳤고, 그 차이가 다음 단서로 이어졌다.`,
+    '지혜': `“${action}”를 택해 서두르지 않고 반응과 기척을 읽었다. 위험이 움직이기 직전의 순간을 붙잡으며 파티가 먼저 움직일 시간을 벌었다.`,
+    '민첩': `“${action}”를 실행할 짧은 틈이 생겼다. 움직임은 매끄럽게 이어졌고, 아무도 예상하지 못한 위치를 선점했다.`,
+    '근력': `힘을 써야 할 순간을 정확히 골랐다. “${action}”가 막혀 있던 상황을 실제로 움직였고, 그 뒤에 숨은 길이 드러났다.`,
+    '매력': `상대가 무엇을 두려워하고 원하는지 먼저 짚은 뒤 “${action}”를 시도했다. 경계가 풀리며 말하지 않던 정보가 흘러나왔다.`,
+    '체력': `불편과 위험을 감수하면서도 “${action}”를 끝까지 밀고 갔다. 다른 이들이 포기한 지점까지 버틴 것이 결국 상황을 바꾸었다.`,
+  };
+  const failureByStat = {
+    '지능': `가정 하나가 틀렸다. “${action}”를 시도했지만 정보 일부가 의도적으로 섞여 있어 결론이 빗나갔다. 그래도 누가 기록을 손댔는지는 드러났다.`,
+    '지혜': `상대의 움직임을 읽으려 했지만 한 박자 늦었다. “${action}”는 실패했지만, 상대가 피하려 한 방향이 오히려 다음 위험을 알려 주었다.`,
+    '민첩': `손과 발을 재빠르게 움직여 “${action}”를 시도했지만 상대가 예상보다 먼저 몸을 틀었다. 실패했어도 무엇을 가장 먼저 지키려 했는지는 보였다.`,
+    '근력': `“${action}”를 밀어붙이는 순간 구조가 예상과 다르게 버텼다. 실패해 소음과 흔적이 남았지만 어디가 가장 약한지는 확실해졌다.`,
+    '매력': `“${action}”라는 말은 닿았지만 마음까지 움직이지는 못했다. 상대가 경계심을 드러내면서 오히려 감추고 있던 이해관계가 선명해졌다.`,
+    '체력': `끝까지 “${action}”를 이어 가려 했지만 몸이 먼저 한계를 알렸다. 완수하지 못했어도 다른 이들이 위험을 피할 짧은 시간을 벌었다.`,
+  };
+  const body = (success ? successByStat : failureByStat)[stat] || (success
+    ? `${action}가 상황과 맞아떨어져 「${title}」의 흐름을 유리하게 바꾸었다.`
+    : `${action}는 뜻대로 되지 않았지만 그 실패가 「${title}」에서 감춰진 다른 조건을 드러냈다.`);
+  return `「${title}」 — ${body}`;
+}
+
 function buildEvents(c) {
   const style=eventStyles[c.id];
   return c.titles.map((title, i) => {
     const act = Math.floor(i / 6) + 1;
     const monster = (i % 6 === 5 || i === 28) ? c.monsters[Math.min(c.monsters.length - 1, Math.floor(i/5))] : null;
+    const visual=style.visuals[i%style.visuals.length];
     const situationActions=contextualActions(c,title);
     const choices=[0,1,2].map(j=>{
       const action=situationActions[j];
       const effect=resultEffects[(i+j)%resultEffects.length];
-      const sceneVerb=["현장을 직접 확인하며","위험의 근원을 우회하며","단서를 역으로 이용해"][j];
       return {
-        label:`${title} — ${sceneVerb} ${action[0]}`,
+        // 이벤트 선택지는 본문을 다시 복사하지 않고, 지금 실제로 하려는 행동만 보여준다.
+        label:action[0],
         stat:action[1],
         dc:10+(act-1)*2+((i+j)%3),
-        success:`「${title}」의 핵심을 정확히 짚었다. 선택한 접근이 장면을 유리하게 바꾸고 다음 단서가 선명해진다.`,
+        success:eventOutcomeProse({title,actionText:action[0],stat:action[1],success:true}),
         successEffect:effect.success,
-        failure:`「${title}」의 상황이 예상보다 복잡했다. 시도는 흔적을 남기고 파티가 즉시 대가를 감수해야 한다.`,
+        failure:eventOutcomeProse({title,actionText:action[0],stat:action[1],success:false}),
         failureEffect:effect.failure
       };
     });
@@ -973,13 +1012,12 @@ function buildEvents(c) {
         dc:Math.max(10,9+(act-1)*2+(i%3)),
         requiredJob:job[0],
         special:true,
-        success:`${job[0]}의 전문성이 「${title}」에 숨은 결정적 틈을 찾아낸다. 일반적인 방법으로는 열리지 않던 길이 열린다.`,
+        success:`${job[0]}의 전문 지식이 「${title}」에서 다른 사람들이 지나친 징후를 정확히 짚었다. 그 판단 때문에만 가능한 해결 경로가 열렸다.`,
         successEffect:{type:"threatDown",amount:1},
-        failure:`${job[0]}의 판단은 옳았지만 상황이 한발 더 빨랐다. 전문적인 시도였던 만큼 실패의 흔적도 크게 남는다.`,
+        failure:`${job[0]}의 접근 자체는 「${title}」에 맞았지만 결정적인 변수 하나를 놓쳤다. 실패한 과정에서 그 직업만 알아볼 수 있는 두 번째 징후가 남았다.`,
         failureEffect:{type:"dcUp",amount:1}
       });
     }
-    const visual=style.visuals[i%style.visuals.length];
     const guide=actGuides[c.id][act-1];
     const incident=`${visual}에서 「${title}」 사건이 갑자기 발생했다.`;
     const immediate=monster ? `${monster}까지 모습을 드러내면서 파티의 이동 경로가 막혔다.` : `원래 계획대로 움직이려면 이 문제를 먼저 해결해야 한다.`;
@@ -988,7 +1026,7 @@ function buildEvents(c) {
     return {
       id:`${c.id.toUpperCase()}-${String(i+1).padStart(2,"0")}`,
       act, actName:c.acts[act-1], title, text:tone, situation:`${incident} ${immediate}`,
-      objective:`20초 안에 파티가 가장 설득력 있다고 생각하는 대응에 투표한다.`,
+      objective:`파티가 상황을 읽고 가장 설득력 있다고 생각하는 대응에 투표한다.`,
       why:relevance, stakes:monster?`투표 결과 뒤에는 ${monster}와의 전투가 이어질 수 있다.`:`실패하면 위협도나 다음 판정 난이도가 올라갈 수 있다.`,
       choices, monster, visual, seed:i+1
     };
@@ -1173,7 +1211,13 @@ const JOB_SKILL_DEFS = {
   "고대유적 연구원": {name:"룬 해독", cooldown:3, kind:"insight", amount:2, text:"고대 장치의 규칙을 밝혀 위협도 2를 낮추고 다음 장면의 판단을 돕는다."},
   "숲의 길잡이": {name:"짐승의 기척", cooldown:2, kind:"inspirationParty", amount:1, text:"파티 전원에게 영감 1을 부여한다."},
   "왕실 외교관": {name:"공주의 이름으로", cooldown:3, kind:"threatShield", amount:1, text:"다음 위협도 증가 1회를 무효화하고 영감 1을 얻는다."},
-  "야전 의무병": {name:"응급 붕대", cooldown:4, kind:"healCleanseParty", amount:2, text:"파티 전원의 HP를 2 회복하고 각자 상태이상 1개를 정화한다."}
+  "야전 의무병": {name:"응급 붕대", cooldown:4, kind:"healCleanseParty", amount:2, text:"파티 전원의 HP를 2 회복하고 각자 상태이상 1개를 정화한다."},
+  "야간 순찰관": {name:"철문 제압", cooldown:3, kind:"attackBoost", amount:2, text:"전투에서는 다음 공격 명중과 피해를 2 높이고, 비전투에서는 막힌 통로를 강제로 열 때 유리해진다."},
+  "분실물 조사원": {name:"소유자의 흔적", cooldown:2, kind:"insight", amount:2, text:"물건에 남은 사연과 연결을 읽어 위협도 2를 낮추고 영감 1을 얻는다."},
+  "철도 기관사": {name:"선로 선점", cooldown:3, kind:"threatShield", amount:1, text:"다음 위협도 증가를 1회 막고 이동·기계 장면의 위험을 줄인다."},
+  "심야 라디오 진행자": {name:"새벽 방송", cooldown:3, kind:"inspirationParty", amount:1, text:"파티 전원에게 영감 1을 주고 낯선 승객의 경계를 낮춘다."},
+  "도시 괴담 연구자": {name:"금기 목록", cooldown:2, kind:"insight", amount:2, text:"괴담의 규칙과 위험 신호를 먼저 찾아 위협도 2를 낮춘다."},
+  "응급 구조사": {name:"심야 응급처치", cooldown:4, kind:"healCleanseParty", amount:3, text:"파티 전원의 HP를 3 회복하고 각자 상태이상 1개를 정화한다."}
 };
 
 
@@ -1321,6 +1365,117 @@ const JOB_SKILL_DEFS = {
   COIN_EVENT_MAP.guardian2 = {5:1,18:1};
   COIN_EVENT_MAP.guardian3 = {3:1,16:1};
 
+})();
+
+
+// v5.8.0 - Guardian Worlds 1-11 unified + original campaign
+(function installUnifiedGuardianAndNightTrain(){
+  const g1 = campaigns.find(c=>c.id==='guardian1');
+  const g2 = campaigns.find(c=>c.id==='guardian2');
+  const g3 = campaigns.find(c=>c.id==='guardian3');
+  if (g1) {
+    Object.assign(g1, {
+      id:'guardian',
+      title:'가디언 테일즈 · 월드 1~11 연대기',
+      genre:'팬 어댑테이션 · 장편 픽셀 판타지', icon:'⚔', accent:'#6ed78a', accent2:'#7ec8ff',
+      subtitle:'캔터베리의 함락에서 기록되지 않은 미래까지, 하나로 이어지는 긴 모험.',
+      intro:'캔터베리가 무너진 날부터 이야기는 끊기지 않는다. 작은 공주와 기사는 캔터베리 숲, 티탄 왕국, 마법학교, 광기의 사막, 셴 시티, 기묘하게 커져 버린 여관, 던전 왕국, 쉬버링 산, 라 제국을 지나 마침내 10년 뒤의 기록되지 않은 미래와 헤븐홀드 탈환전까지 나아간다. 각 월드의 선택은 다음 월드에서 동료의 신뢰, 지원, 상처, 장비, 적대 관계로 돌아오며 하나의 장편 모험으로 이어진다.',
+      acts:['월드 1~2 · 왕국과 티탄','월드 3~4 · 학교와 사막','월드 5~7 · 수련과 던전','월드 8~9 · 설산과 제국','월드 10~11 · 기록되지 않은 미래'],
+      monsters:['고블린 대장','침략자 전투병','마법학교의 뒤틀린 실험체','던전의 고대 악마','라 제국 집행병','최후의 침략자 지휘관'],
+      titles:[
+        '캔터베리가 무너진 날','숲에 떨어진 작은 공주','로레인의 여관','챔피언 소드의 빛','티탄 왕국의 철문','침략자의 공장',
+        '마법학교의 닫힌 교문','사라진 학생들의 이름','금지된 실험실','광기의 사막 입구','모래 속 수감자','무너지는 사막 궁전',
+        '셴 시티의 입문 시험','늙은 스승의 조건','갑자기 작아진 기사','거대한 여관 바닥','던전 왕국의 입구','고대 악마의 봉인',
+        '쉬버링 산의 첫눈','죽은 눈사람과 누명','산이 기억한 진실','라 제국의 국경검문','수용소의 캔터베리 난민','도망치는 열차',
+        '차원이 갈라진 순간','10년 뒤의 폐허','미래 공주와의 재회','헤븐홀드 탈환 작전','기사의 마지막 선택','기록되지 않은 세계의 새벽'
+      ]
+    });
+    for (let i=campaigns.length-1;i>=0;i--) if (['guardian2','guardian3'].includes(campaigns[i].id)) campaigns.splice(i,1);
+    eventStyles.guardian = {actions:eventStyles.guardian1?.actions || eventStyles.guardian.actions, visuals:['캔터베리 숲','티탄 왕국','마법학교와 사막','던전 왕국과 설산','라 제국','10년 뒤 헤븐홀드']};
+    STORY_TEXTURE.guardian = STORY_TEXTURE.guardian1 || STORY_TEXTURE.guardian;
+    storyTone.guardian = [
+      '캔터베리에서 시작한 인연이 티탄 왕국의 저항과 연결된다',
+      '마법학교와 사막에서 구한 사람과 버린 기회가 다음 챔피언에게 전해진다',
+      '셴의 수련과 여관의 기묘한 사건, 던전의 선택이 동료 관계를 바꾼다',
+      '설산의 진실과 라 제국의 난민 문제를 해결한 방식이 미래의 연합 세력을 만든다',
+      '10년 뒤의 미래에서 지금까지의 선택이 살아남은 사람과 마지막 결말을 결정한다'
+    ];
+    actGuides.guardian = [
+      {goal:'작은 공주를 지키며 캔터베리와 티탄에서 첫 챔피언들의 흔적을 확보한다',place:'침공 직후의 캔터베리 숲과 기계 왕국 티탄',reveal:'침략자는 세계마다 따로 움직이는 것이 아니라 챔피언과 세계의 힘을 체계적으로 노리고 있다',stakes:'초기에 도운 사람과 버린 사람이 이후 월드에서 실제 지원과 적대로 돌아온다'},
+      {goal:'마법학교의 비극과 광기의 사막을 지나 침략 계획의 다음 연결점을 찾는다',place:'폐쇄된 마법학교와 환영이 뒤섞인 사막 왕국',reveal:'각 지역의 재난은 서로 다른 사건처럼 보이지만 침략자가 남긴 기술과 거래가 배후에서 이어진다',stakes:'진실을 먼저 좇을지 사람을 먼저 구할지에 따라 동료와 증거 중 무엇을 확보하는지가 달라진다'},
+      {goal:'셴 시티의 수련, 축소된 여관, 던전 왕국을 거치며 힘 외의 방식으로 챔피언의 자격을 증명한다',place:'셴의 무투장, 거대해진 여관 내부, 깊은 던전 왕국',reveal:'챔피언은 승자 한 명이 아니라 어떤 대가를 치르고 누구를 지켰는지로 선택된다',stakes:'경쟁자와 주민, 모험가를 대하는 방식이 다음 월드의 협력자와 장비 획득 경로를 바꾼다'},
+      {goal:'쉬버링 산의 누명을 풀고 라 제국에서 캔터베리 난민을 구할 방법을 선택한다',place:'눈보라 마을과 라 제국의 국경·수용 구역',reveal:'편견과 국가의 공포가 침략자에게 이용되고 있으며, 전쟁의 피해는 전투 밖에서도 이어지고 있다',stakes:'제국과 정면 충돌할지 내부 협력을 만들지에 따라 미래 저항군의 규모와 관계가 달라진다'},
+      {goal:'10년 뒤의 기록되지 않은 세계에서 미래 공주와 헤븐홀드를 구하고 어느 시간에 남을지 결정한다',place:'폐허가 된 미래 도시와 점령된 헤븐홀드',reveal:'기사의 부재와 과거 선택들이 10년 동안 쌓여 현재의 미래를 만들었다',stakes:'마지막 결말은 미래 공주와의 신뢰, 구조한 사람들, 잃은 동료, 침략자와 싸운 방식 전체를 반영한다'}
+    ];
+    novelActs.guardian = actGuides.guardian.map((g,i)=>({
+      intro:`${g.place}. 이전 월드에서 만든 관계와 상처가 그대로 따라왔다. 이번 구간의 목표는 “${g.goal}”이다. 새 장소는 처음 보는 풍경이지만, 파티가 전에 내린 선택 때문에 누군가는 먼저 알아보고 누군가는 문을 닫는다.`,
+      discovery:`조사와 대화를 이어가자 서로 다른 세계의 사건이 한 줄로 이어진다. ${g.reveal}. 방금 얻은 단서만으로는 부족하고, 앞선 월드에서 남긴 약속과 물건이 새로운 의미를 갖기 시작한다.`,
+      crisis:`상황이 갈라진다. ${g.stakes}. 싸워서 빠르게 길을 열 수도 있고, 사람을 설득하거나 몰래 들어가거나 다른 장소로 우회할 수도 있다. 어느 방법도 같은 결과를 주지 않으며 성공과 실패는 다음 월드의 출발 조건으로 남는다.`,
+      climax:`구간의 끝에서 “${g.goal}”이라는 처음 목표가 더 큰 이야기와 맞물린다. ${g.reveal}. 파티는 얻은 동료와 잃은 것, 해결하지 못한 문제를 함께 들고 다음 월드로 넘어간다.`
+    }));
+    ITEM_CATALOG.guardian = [
+      ...(ITEM_CATALOG.guardian1||[]), ...(ITEM_CATALOG.guardian2||[]), ...(ITEM_CATALOG.guardian3||[])
+    ];
+    const baseF=FACILITY_THEME.guardian || FACILITY_THEME.guardian1;
+    FACILITY_THEME.guardian={...baseF,shop:{...(baseF?.shop||{}),label:'세계 이동 행상단',storyLead:'여러 월드를 건넌 행상인들이 각 지역에서 모은 장비를 천막 위에 펼쳐 놓았다. 지금 재고는 이전 선택과 방문 지역에 따라 달라진다.'}};
+    LOOT_EVENT_MAP.guardian={3:'g1_champion_fragment',8:'g1_titan_goggles',12:'g1_magic_badge',15:'g2_shen_wrap',18:'g2_dungeon_map',21:'g2_snow_charm',24:'g3_rah_emblem',27:'g3_future_shield',29:'g3_princess_ribbon'};
+    COIN_EVENT_MAP.guardian={7:1,17:1,23:1};
+  }
+
+  const nighttrain={
+    id:'nighttrain', title:'0번선 · 새벽을 싣는 열차', genre:'도시 괴담 · 미스터리 TRPG', icon:'◫', accent:'#9ca8ff', accent2:'#ff7a9e',
+    subtitle:'막차가 끊긴 뒤에도 한 대의 열차가 도착한다. 탑승객 명단에는 죽은 사람의 이름이 있다.',
+    intro:'새벽 0시 17분, 존재하지 않는 0번 승강장에 낡은 열차가 들어온다. 행선지는 표시되지 않았고 객실마다 서로 다른 시대의 승객들이 앉아 있다. 차장은 “종점에 도착하기 전에 잃어버린 이름을 찾으라”고 말한다. 열차에서 내릴 수 있는 역은 선택에 따라 달라지고, 어떤 승객을 믿고 어떤 객차를 조사했는지에 따라 마지막에 도착하는 새벽도 달라진다.',
+    acts:['0번 승강장','이름을 잃은 객차','정차하지 않는 역','기관차의 기억','새벽의 종점'],
+    jobs:[
+      ['야간 순찰관','근력','강제 개방: 전투에서는 추가 피해, 비전투에서는 막힌 통로를 안전하게 연다.'],
+      ['분실물 조사원','지능','물건의 이력: 장면의 물건과 기록에서 숨은 연결을 찾는다.'],
+      ['철도 기관사','민첩','선로 감각: 이동·기계 판정의 위험을 낮추고 선제 위치를 얻는다.'],
+      ['심야 라디오 진행자','매력','목소리의 온도: 낯선 승객의 경계를 낮추고 숨은 사연을 끌어낸다.'],
+      ['도시 괴담 연구자','지혜','금기 감지: 위험한 규칙과 거짓말을 먼저 알아챈다.'],
+      ['응급 구조사','체력','끝까지 깨어 있기: 파티를 회복하고 공포·탈진 상태를 정화한다.']
+    ],
+    monsters:['표 없는 승객','검표원 그림자','선로 아래의 손','기억을 먹는 방송','빈 얼굴의 차장','종점의 승객'],
+    titles:[
+      '존재하지 않는 0번 승강장','죽은 사람의 승차권','차장이 묻는 이름','빈 좌석의 체온','첫 번째 검표','열리지 않는 출입문',
+      '이름이 지워진 승객','분실물 보관함 13번','다른 시대의 신문','식당칸의 마지막 식사','창밖을 따라오는 사람','누군가의 어린 시절',
+      '지도에 없는 역','내리면 돌아오지 못하는 플랫폼','승객 전원이 잠든 3분','선로 아래의 목소리','역무원의 거짓 안내','문이 닫히기 전 선택',
+      '기관차에 없는 기관사','운행일지의 삭제된 페이지','열차가 기억한 사고','0번선의 진짜 목적','차장의 얼굴','종점을 바꾸는 레버',
+      '새벽이 오지 않는 도시','살아 있는 사람의 명단','죽은 사람의 부탁','마지막 객차의 문','누구의 이름을 돌려줄 것인가','0시 18분의 첫차'
+    ]
+  };
+  campaigns.push(nighttrain);
+  eventStyles.nighttrain={
+    actions:[['운행기록과 승차권을 대조한다','지능'],['승객의 반응과 금기를 살핀다','지혜'],['객차 사이를 빠르게 이동한다','민첩'],['막힌 문이나 적을 밀어낸다','근력'],['승객과 차장을 설득한다','매력'],['공포와 피로를 버틴다','체력']],
+    visuals:['어두운 0번 승강장','낡은 야간열차 객실','형광등이 깜빡이는 식당칸','비어 있는 플랫폼','붉은 기관차실','새벽이 멈춘 종점']
+  };
+  STORY_TEXTURE.nighttrain=STORY_TEXTURE.clock;
+  storyTone.nighttrain=['승차권과 이름의 모순을 추적한다','승객들의 사연과 열차의 금기를 파헤친다','어느 역에 내리고 무엇을 포기할지 결정한다','기관차가 기억하는 사고의 진실을 확인한다','살아 있는 자와 죽은 자 중 누구의 새벽을 되돌릴지 선택한다'];
+  actGuides.nighttrain=[
+    {goal:'0번선에 왜 자신들의 이름이 올라왔는지 확인하고 열차에서 살아남을 규칙을 찾는다',place:'폐쇄된 지하역의 0번 승강장과 첫 객차',reveal:'열차는 죽은 사람만 태우는 것이 아니라 아직 끝내지 못한 일을 가진 사람을 불러 모은다',stakes:'초반에 규칙을 잘못 이해하면 이후 객차에서 선택지가 줄고 위험한 검표가 반복된다'},
+    {goal:'이름을 잃은 승객들의 사연을 연결해 열차가 무엇을 수집하는지 알아낸다',place:'분실물칸·식당칸·침대칸',reveal:'열차는 사람의 생명을 빼앗는 것이 아니라 기억에서 이름을 떼어내 종점의 승객에게 전달한다',stakes:'승객을 돕는 만큼 시간은 줄어들고, 빠르게 이동하면 중요한 사연과 동맹을 잃는다'},
+    {goal:'지도에 없는 역들 중 어디에 내릴지 고르고 0번선의 실제 노선을 추적한다',place:'정차하지 않는 세 개의 비공식 플랫폼',reveal:'각 역은 승객 한 명의 가장 큰 후회가 장소로 변한 것이며 어느 역을 통과했는지가 종점을 바꾼다',stakes:'잘못된 역에 내려도 이야기는 막히지 않지만 다른 승객의 기억과 위험을 떠안게 된다'},
+    {goal:'기관차실에 도달해 사고기록과 차장의 정체를 확인한다',place:'운전자가 없는 기관차와 삭제된 운행기록실',reveal:'차장은 사고 당시 살아남은 유일한 역무원의 기억으로 만들어진 존재이며 열차를 멈추지 못한 죄책감에 갇혀 있다',stakes:'차장을 쓰러뜨릴지 설득할지, 운행 자체를 바꿀지에 따라 마지막 종점의 적과 구조 대상이 달라진다'},
+    {goal:'종점에서 잃어버린 이름들을 누구에게 돌려줄지 결정하고 자신들의 새벽으로 돌아간다',place:'시간이 멈춘 종점과 마지막 객차',reveal:'0번선은 죽음을 되돌리는 열차가 아니라 남은 사람들이 기억을 어떻게 품을지 정하는 장소다',stakes:'모두를 구할 수는 없으며 어떤 이름과 기억을 선택했는지가 서로 다른 생존·희생·귀환·잔류 엔딩을 만든다'}
+  ];
+  novelActs.nighttrain=actGuides.nighttrain.map(g=>({intro:`${g.place}. ${g.goal}.`,discovery:`흩어진 승차권과 증언을 맞추자 ${g.reveal}.`,crisis:`열차가 다음 역에 접근한다. ${g.stakes}.`,climax:`이번 구간의 끝에서 파티는 ${g.goal}라는 목표를 다른 의미로 다시 마주한다. ${g.reveal}.`}));
+  ITEM_CATALOG.nighttrain=[
+    {id:'night_punch',name:'구형 검표 펀치',slot:'tool',stat:'민첩',bonus:1,price:7,rarity:'희귀',passive:'잠긴 검표 장치와 출입문을 빠르게 다룬다.'},
+    {id:'night_manifest',name:'찢어진 승객 명부',slot:'tool',stat:'지능',bonus:1,price:8,rarity:'희귀',passive:'이름과 기록의 모순을 찾는 데 도움을 준다.'},
+    {id:'night_whistle',name:'차장의 은빛 호루라기',slot:'charm',stat:'매력',bonus:1,price:9,rarity:'희귀',passive:'승객의 시선을 끌고 대화를 시작하기 쉬워진다.'},
+    {id:'night_redlamp',name:'붉은 신호등 조각',slot:'charm',stat:'지혜',bonus:1,price:9,rarity:'희귀',passive:'열차의 금기와 위험한 정차 신호를 먼저 감지한다.'},
+    {id:'night_rescuecoat',name:'심야 구조대 코트',slot:'armor',stat:'체력',bonus:1,price:8,rarity:'고급',passive:'공포와 피로가 쌓이는 장면에서 버티기 쉽다.'},
+    {id:'night_coupler',name:'기관차 연결봉',slot:'weapon',stat:'근력',bonus:1,price:8,rarity:'고급',passive:'문과 잔해를 밀어내거나 전투에서 힘을 싣는다.'}
+  ];
+  FACILITY_THEME.nighttrain={
+    restaurant:{label:'심야 식당칸',description:'누가 요리했는지 모를 따뜻한 식사가 놓여 있다. 코인 대신 승차권의 구멍 하나를 요구한다.',storyLead:'빈 식당칸에서 수프 냄새가 났다. 접시는 사람 수만큼 이미 준비되어 있었다.'},
+    inn:{label:'침대칸 04호',description:'잠깐 눈을 붙일 수 있지만 열차가 어느 역을 지나갈지는 알 수 없다.',storyLead:'침대칸 문 하나가 저절로 열렸다. 안쪽 시계는 정확히 0시 17분에 멈춰 있었다.'},
+    shop:{label:'분실물 교환대',description:'돈보다 물건의 사연을 값으로 매기는 기묘한 매점.',storyLead:'분실물 보관함 앞에 앉은 노인이 가격표 대신 물건마다 주인의 이름을 적고 있었다.'},
+    quest:{label:'승객의 부탁',description:'객차를 떠돌며 끝내지 못한 일을 부탁하는 승객을 돕는다.',storyLead:'누군가 조심스럽게 소매를 잡았다. 부탁 하나만 들어주면 자기 승차권을 넘기겠다고 했다.'},
+    gamble:{label:'13번 좌석 카드게임',description:'승객들과 작은 내기를 한다. 이긴 사람이 다음 역 이름을 먼저 듣는다.',storyLead:'13번 좌석의 사람들이 낡은 카드를 펼쳤다. 판돈보다 중요한 것은 이긴 사람에게 알려준다는 다음 역의 이름이었다.'}
+  };
+  LOOT_EVENT_MAP.nighttrain={4:'night_manifest',9:'night_whistle',13:'night_punch',18:'night_redlamp',23:'night_coupler',27:'night_rescuecoat'};
+  COIN_EVENT_MAP.nighttrain={8:1,19:1};
 })();
 
 export const CAMPAIGNS = campaigns.map(c => ({

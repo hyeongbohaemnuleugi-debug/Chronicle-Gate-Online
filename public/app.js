@@ -385,7 +385,7 @@ function resumeSavedSession(attempt = 0) {
       state = res.state;
       audioManager.syncMusic(state);
       renderState();
-      if (state.phase === 'resolution' && state.lastResolution?.source !== 'story') showResolution(state.lastResolution);
+      if (state.phase === 'resolution' && state.lastResolution && !['story','event'].includes(String(state.lastResolution.source || ''))) showResolution(state.lastResolution);
       $('#connectionText').textContent = 'ONLINE';
       return;
     }
@@ -1004,7 +1004,7 @@ function onJoined(res) {
   state = res.state;
   audioManager.syncMusic(state);
   renderState();
-  if (state.phase === 'resolution' && state.lastResolution?.source !== 'story') showResolution(state.lastResolution);
+  if (state.phase === 'resolution' && state.lastResolution && !['story','event'].includes(String(state.lastResolution.source || ''))) showResolution(state.lastResolution);
   toast(res.resumed ? '저장된 연대기로 돌아왔습니다.' : `ROOM ${roomCode} 입장 완료`);
 }
 $('#copyCode').onclick = async () => {
@@ -1038,7 +1038,7 @@ socket.on('chat:new', entry => {
     renderChat();
   }
 });
-socket.on('resolution', r => { if (r?.source !== 'story') showResolution(r); });
+socket.on('resolution', r => { if (!['story','event'].includes(String(r?.source || ''))) showResolution(r); });
 socket.on('skill:ready', payload => toast(`✨ ${payload?.name || '직업 스킬'} 사용이 가능합니다!`));
 socket.on('skill:used', payload => { const combatKinds=new Set(['blast','markShot','partyAttackBoost','attackBoost']); const healKinds=new Set(['healParty','cleanseParty','healCleanse','partyHeal']); audioManager.fx(healKinds.has(payload?.kind)?'heal':(combatKinds.has(payload?.kind)?'attack':'skill'),1.12); toast(`✨ ${payload?.playerName || '플레이어'} · ${payload?.name || '직업 스킬'} — ${payload?.summary || '효과 적용'}`); });
 socket.on('dice:roll', payload => { audioManager.fx('dice', .85); enqueueDice(payload); });
@@ -1053,13 +1053,26 @@ function enqueueDice(payload) {
     $('#diceFinal').textContent = '';
     $('#diceFinal').classList.remove('is-result');
     $('#diceBreakdown').innerHTML = '';
+    $('#diceSub').textContent = `${payload.rollerName}의 주사위를 모든 플레이어가 함께 봅니다…`;
+    const startsAt = Number(payload.startsAt || 0);
+    if (startsAt > Date.now()) await new Promise(r => setTimeout(r, Math.min(1200, startsAt - Date.now())));
     $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     const theater = getDiceTheater();
     if (theater) {
       await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', duration: payload.sides === 20 ? 2850 : 2350 });
     } else {
-      $('#diceSub').textContent = '3D 렌더러를 사용할 수 없어 결과를 바로 표시합니다.';
+      $('#diceSub').textContent = '3D 렌더러를 사용할 수 없어 판정을 진행합니다.';
       await new Promise(r => setTimeout(r, 450));
+    }
+
+    const narrativeRoll = payload.kind === 'story-choice' || payload.kind === 'check';
+    if (narrativeRoll) {
+      // 스토리/이벤트 판정은 3D 주사위에서 이미 결과를 확인했으므로 숫자 결과창을 다시 띄우지 않는다.
+      // 서버 state에 들어온 장면 결과가 오버레이 뒤의 본문에 바로 렌더링되어 다음 내용으로 자연스럽게 이어진다.
+      $('#diceOverlay').classList.remove('show');
+      await new Promise(r => setTimeout(r, 220));
+      renderStory();
+      return;
     }
 
     const rawLabel = payload.sides === 20 && payload.result === 20 ? 'NATURAL 20' : payload.sides === 20 && payload.result === 1 ? 'NATURAL 1' : `D${payload.sides} ${payload.result}`;
@@ -1093,12 +1106,6 @@ function enqueueDice(payload) {
     }
     $('#diceOverlay').classList.remove('show');
     await new Promise(r => setTimeout(r, 180));
-    // v5.8: 메인 스토리 판정은 방 전체가 같은 주사위 연출을 본 뒤, 판정자 클라이언트가 다음 장면을 연다.
-    // 별도의 SCENE RESULT/SCENE RESOLVED 화면을 반복해서 보여주지 않는다.
-    if (payload.kind === 'story-choice' && payload.rollerId === playerToken) {
-      await new Promise(r => setTimeout(r, 180));
-      socket.emit('story:resultSeen', { roomCode, playerToken }, r => { if (!r?.ok && r?.error) console.warn(r.error); });
-    }
   }).catch(console.error);
 }
 
@@ -1340,21 +1347,30 @@ function renderStory() {
   }
 
   if (ev) {
-    $('#turnBanner').textContent = state.activeChoice
-      ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
-      : `SIDE EVENT · ${state.soloMode ? 'SOLO 12초 선택' : '45초 테이블 투표'} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
+    const eventResolution = inResolution && state.lastResolution?.source === 'event' ? state.lastResolution : null;
+    $('#turnBanner').textContent = eventResolution
+      ? '주사위 판정이 끝났습니다. 결과가 사건의 다음 상태에 반영되었습니다.'
+      : state.activeChoice
+        ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
+        : `SIDE EVENT · ${state.soloMode ? 'SOLO 12초 선택' : '45초 테이블 투표'} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
     setSceneImage($('#storySceneImg'), c, ev);
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
     $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
     $('#storyClarity').classList.remove('clean-main');
-    $('#storySituation').textContent = ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.';
-    $('#storyObjective').textContent = ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.';
-    $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
-    $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> 12초 안에 대응을 고르세요. 투표 즉시 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
-    $('#eventText').textContent = ev.text;
+    $('#storySituation').textContent = eventResolution ? (eventResolution.ok ? '판정 성공 · 사건의 흐름이 바뀌었습니다.' : '판정 실패 · 대가가 다음 흐름에 남습니다.') : (ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.');
+    $('#storyObjective').textContent = eventResolution ? '결과를 읽고 다음 장면으로 이어가세요.' : (ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.');
+    $('#storyWhy').textContent = eventResolution ? (eventResolution.consequence || '이번 결과는 파티 상태와 이후 사건에 반영됩니다.') : (ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.');
+    $('#storyPrompt').innerHTML = eventResolution
+      ? `<b>${esc(eventResolution.playerName || state.activeChoice?.playerName || '플레이어')}의 판정 결과.</b> 주사위 숫자를 다시 보여주지 않고 이야기 결과로 바로 이어집니다.`
+      : state.soloMode ? `<b>돌발 사건.</b> 12초 안에 대응을 고르세요. 투표 즉시 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
+    $('#eventText').innerHTML = eventResolution
+      ? `<div class="inline-resolution ${eventResolution.ok ? 'success' : 'failure'}"><div class="eyebrow">SCENE RESULT</div><p>${esc(eventResolution.text || '')}</p>${eventResolution.rewards?.length ? `<small>보상 · ${eventResolution.rewards.map(esc).join(' · ')}</small>` : ''}</div>`
+      : esc(ev.text || '');
     $('#storyActionBox').style.display = 'none';
-    renderChoices(ev);
+    if (eventResolution) {
+      $('#choiceArea').innerHTML = `<div class="action-lock"><div><div class="eyebrow">SCENE RESOLVED</div><b>결과가 반영되었습니다. 아래 버튼으로 다음 장면을 이어가세요.</b><div class="vote-chip">주사위 결과는 다시 표시하지 않습니다.</div></div></div>`;
+    } else renderChoices(ev);
   } else {
     $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
     setSceneImage($('#storySceneImg'), c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
@@ -1367,6 +1383,15 @@ function renderStory() {
     $('#storyWhy').textContent = beat?.continuityHook || beat?.why || '';
     $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}의 선택.</b> ${esc(beat?.prompt || '아래 행동 중 하나를 고르세요.')}`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
+    if (inResolution && lastResolution) {
+      $('#storySituation').textContent = lastResolution.ok ? '판정 성공 · 선택의 결과' : '판정 실패 · 선택이 남긴 대가';
+      $('#storyObjective').textContent = '결과를 읽고 다음 장면으로 이어가세요.';
+      $('#storyWhy').textContent = lastResolution.detourCreated
+        ? '이번 실패가 원래 다음 장면 앞에 새로운 위기 장면을 만들었습니다.'
+        : (lastResolution.consequence || beat?.continuityHook || '이번 선택의 흔적이 다음 장면의 조건을 바꿉니다.');
+      $('#storyPrompt').innerHTML = `<b>${esc(lastResolution.playerName || '플레이어')}의 선택이 반영되었습니다.</b> 주사위 결과창을 반복하지 않고 이야기 결과를 바로 보여줍니다.`;
+      $('#eventText').innerHTML = `<div class="inline-resolution ${lastResolution.ok ? 'success' : 'failure'}"><div class="eyebrow">SCENE RESULT</div>${lastResolution.choiceLabel ? `<b>${esc(lastResolution.choiceLabel)}</b>` : ''}<p>${esc(lastResolution.text || '')}</p>${lastResolution.consequence ? `<small>게임 효과 · ${esc(lastResolution.consequence)}</small>` : ''}${lastResolution.status ? `<small>상태 · ${esc(lastResolution.status.label)} — ${esc(lastResolution.status.desc || '')}</small>` : ''}</div>`;
+    }
 
     const freeActionAllowed = false;
     const myTurn = state.turnPlayerId === playerToken;
@@ -1410,7 +1435,7 @@ function renderMainStoryChoices(beat) {
     return;
   }
   if (state.phase === 'resolution') {
-    box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">ROLL IN PROGRESS</div><b>모든 플레이어가 같은 판정 결과를 확인하고 있습니다.</b></div></div>`;
+    box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">SCENE RESOLVED</div><b>장면 결과를 확인한 뒤 아래 버튼을 눌러 다음 장면으로 넘어가세요.</b><div class="vote-chip">선택은 이미 확정되었습니다.</div></div></div>`;
     return;
   }
   const myJob = me()?.job?.name;

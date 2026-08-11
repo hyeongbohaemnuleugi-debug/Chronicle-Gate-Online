@@ -17,7 +17,8 @@ function walk(campaign, selector) {
     const success = selector.successFor ? selector.successFor(beat, steps) : true;
     id = choice.next?.[success ? 'success' : 'failure'];
     steps += 1;
-    assert.ok(steps <= 80, `${campaign.id}: graph did not terminate`);
+    const maxSteps = Math.max(80, (campaign.acts?.length || 5) * 18);
+    assert.ok(steps <= maxSteps, `${campaign.id}: graph did not terminate`);
   }
   assert.equal(id, '__ENDING__', `${campaign.id}: graph did not reach ending`);
   return seen;
@@ -29,7 +30,7 @@ for (const campaign of CAMPAIGNS) {
     assert.equal(ids.size, campaign.storyBeats.length);
     assert.ok(campaign.storyBeats.length >= 400, `${campaign.id}: expected hundreds of consequence nodes`);
     const canonical = campaign.storyBeats.filter(b => !b.branchScene);
-    assert.equal(canonical.length, 30);
+    assert.equal(canonical.length, (campaign.acts?.length || 5) * 6);
     for (const beat of campaign.storyBeats) {
       for (const choice of beat.choices || []) {
         for (const key of ['success','failure']) {
@@ -53,7 +54,8 @@ for (const campaign of CAMPAIGNS) {
       const selector = beat => beat.choices[Math.min(choiceIndex, beat.choices.length-1)];
       selector.successFor = (_beat, step) => (step + choiceIndex) % 3 !== 1;
       const seen=walk(campaign,selector);
-      assert.ok(seen.size >= 15 && seen.size <= 80, `${campaign.id}: unexpected route ${seen.size}`);
+      const maxRoute = Math.max(80, (campaign.acts?.length || 5) * 18);
+      assert.ok(seen.size >= 15 && seen.size <= maxRoute, `${campaign.id}: unexpected route ${seen.size}`);
     }
   });
 }

@@ -487,37 +487,13 @@ const STORY_TEXTURE = {
 
 function enrichStoryProse(c, guide, baseText, act, step) {
   const texture = STORY_TEXTURE[c.id] || STORY_TEXTURE.ember;
-  const sceneIndex = act * 6 + step;
   const sense = texture.sense[(act * 2 + step) % texture.sense.length];
   const npc = texture.npc[(act * 3 + step + 1) % texture.npc.length];
   const omen = texture.omen[(act * 4 + step + 2) % texture.omen.length];
-  const goal = String(guide.goal || '').replace(/[.!?]+$/g, '');
-  const reveal = String(guide.reveal || '').replace(/[.!?]+$/g, '');
-  const stakes = String(guide.stakes || '').replace(/[.!?]+$/g, '');
-  const actName = c.acts?.[act] || '이번 막';
-  const phaseNames = ['도입','탐색','대면','진실','위기','결단'];
-  const phase = phaseNames[step] || '장면';
-
-  const connective = [
-    `‘${actName}’의 첫 장면은 아직 답보다 질문이 많다. 파티가 붙잡아야 할 목표는 “${goal}”. 하지만 이곳에서 보이는 첫인상은 사건의 전부가 아니다.`,
-    `조사를 이어 갈수록 앞서 본 흔적들 사이에 설명되지 않는 간격이 생긴다. 특히 “${reveal}”이라는 가능성은 지금까지의 추측과 미묘하게 어긋난다. 그 어긋남을 그냥 지나치면 뒤의 선택은 모두 잘못된 전제 위에 놓이게 된다.`,
-    `이제 사건은 기록이나 흔적에만 머물지 않는다. 누군가가 파티보다 먼저 움직이고 있고, 그 움직임은 바로 눈앞의 인물과 장소를 바꾸고 있다. 여기서 무엇을 건드리느냐에 따라 다음 장면에서 만나는 사람과 위험이 달라진다.`,
-    `방금 드러난 사실은 앞선 장면을 다른 의미로 바꿔 놓는다. “${reveal}”이라는 진실이 맞다면, 처음부터 누군가가 파티가 무엇을 믿을지 계산하고 있었다는 뜻이다. 이제 단서를 모으는 것보다 무엇을 믿지 않을지 정하는 일이 더 중요해졌다.`,
-    `위기는 갑자기 생긴 것이 아니다. 앞선 선택에서 남긴 소리, 놓친 사람, 지켜 낸 단서가 한꺼번에 되돌아온 결과다. “${stakes}”라는 위험이 이제 추상적인 경고가 아니라 눈앞의 사건이 되었다.`,
-    `‘${actName}’에서 얻은 단서와 상처가 한 지점으로 모인다. 이번 결단은 단순히 다음 장소를 고르는 일이 아니다. 누구를 믿었는지, 무엇을 포기했는지, 어떤 방식으로 여기까지 왔는지가 다음 막의 출발 조건을 바꾼다.`
-  ][step];
-
-  const textureLine = step === 0 || step === 3 ? sense : step === 1 || step === 4 ? npc : omen;
-  const pressure = [
-    `아직 누구도 정답을 말해 주지 않는다. 대신 작은 징후들이 “${goal}”라는 목표 쪽으로 파티를 끌어당긴다.`,
-    `이 탐색에서 무엇을 찾아내느냐에 따라 다음 대면은 기습이 될 수도, 준비된 만남이 될 수도 있다.`,
-    `이제 물러서면 상대가 먼저 판을 정한다. 반대로 지금 움직이면 위험을 감수하는 대신 사건의 중심을 직접 흔들 수 있다.`,
-    `진실은 하나를 설명하는 대신 다른 의문을 만든다. 파티가 어느 모순을 먼저 믿느냐가 이후의 적과 동맹을 갈라놓는다.`,
-    `여기서 잃은 것은 뒤에서 되찾기 어렵다. 살아남는 것만큼 단서와 사람을 지켜 내는 일이 중요해졌다.`,
-    `그리고 결정을 미룰 시간은 거의 없다. ${stakes}.`
-  ][step];
-
-  return [baseText, textureLine, connective, pressure].filter(Boolean).join('\n\n');
+  // v5.9: 각 캠페인의 본문을 중심으로 보여준다. 공통 설명문을 길게 덧붙이지 않는다.
+  // 같은 구조의 문장이 모든 세계에 반복되어 이야기가 비슷해 보이던 문제를 제거한다.
+  const accent = step === 0 ? sense : step === 1 ? npc : step === 2 ? omen : step === 3 ? sense : step === 4 ? omen : npc;
+  return [baseText, accent].filter(Boolean).join('\n\n');
 }
 function detectSceneTarget(c, beat, guide) {
   const text = `${beat?.text || ''} ${beat?.situation || ''} ${beat?.objective || ''} ${guide?.place || ''}`;
@@ -542,23 +518,26 @@ function hasBatchim(word='') {
 function objJosa(word){ return hasBatchim(word)?'을':'를'; }
 function withJosa(word){ return hasBatchim(word)?'과':'와'; }
 function contextualActionLabel(type, target, c, act, step) {
-  const person = ['증언자','경비병','상인','생존자','추적자','침략자','고블린','로레인','공주','의심스러운 인물'].includes(target);
-  const obj=`${target}${objJosa(target)}`;
-  const together=`${target}${withJosa(target)}`;
-  const portable=['기록','왕관','신호'].includes(target);
+  const shortTargets = new Set(['공주','로레인','고블린','경비병','상인','생존자','추적자','침략자','왕관','봉인','기록','유적','문','신호','장치','짐승']);
+  const t = shortTargets.has(target) ? target : '';
   const map = {
-    investigate: `${obj} 조사한다`, observe:`${obj} 살펴본다`,
-    fight: person ? `${together} 싸운다` : '앞을 막는 적과 싸운다',
-    sneak: person ? `${target}의 눈을 피해 잠입한다` : ['문','유적','장치','봉인'].includes(target) ? `${target} 너머로 잠입한다` : '주변 경계를 피해 잠입한다',
-    persuade: person ? `${obj} 설득한다` : '주변 사람을 설득한다',
-    steal: person ? `${target}에게서 훔친다` : portable ? `${obj} 훔친다` : `${target} 안의 물건을 훔친다`,
-    tail: person ? `${obj} 미행한다` : '수상한 흔적을 뒤쫓는다',
-    help: person ? `${obj} 돕는다` : '위험에 처한 사람을 돕는다',
-    threaten: person ? `${obj} 협박한다` : '관련자를 압박한다',
-    trade: person ? `${together} 거래한다` : '정보를 거래한다',
-    bypass: ['문','유적','장치','봉인'].includes(target) ? `${obj} 우회한다` : '정면 접근을 피한다', wait:'기다려 본다', trap:'함정을 만든다', break:['문','장치','봉인'].includes(target)?`${obj} 부순다`:'막힌 길을 부순다', hide:'흔적을 숨긴다',
+    investigate: t ? `${t}${objJosa(t)} 조사한다` : '단서를 조사한다',
+    observe: '주변을 살핀다',
+    fight: t && ['고블린','침략자','추적자','짐승'].includes(t) ? `${t}${withJosa(t)} 싸운다` : '적과 싸운다',
+    sneak: '몰래 들어간다',
+    persuade: t && ['공주','로레인','경비병','상인','생존자'].includes(t) ? `${t}${objJosa(t)} 설득한다` : '상대를 설득한다',
+    steal: '증거를 훔친다',
+    tail: '뒤를 밟는다',
+    help: t && ['공주','로레인','생존자'].includes(t) ? `${t}${objJosa(t)} 돕는다` : '사람을 돕는다',
+    threaten: '상대를 압박한다',
+    trade: '거래한다',
+    bypass: t && ['문','유적','장치','봉인'].includes(t) ? `${t}${objJosa(t)} 우회한다` : '옆길로 간다',
+    wait: '기다린다',
+    trap: '함정을 만든다',
+    break: t && ['문','장치','봉인'].includes(t) ? `${t}${objJosa(t)} 부순다` : '장애물을 부순다',
+    hide: '몸을 숨긴다'
   };
-  return map[type] || '다른 방법을 택한다';
+  return map[type] || '다른 길을 찾는다';
 }
 function actionOpportunity(type) {
   return ({investigate:'단서',observe:'위험 감지',fight:'빠른 돌파',sneak:'선제 위치',persuade:'관계',steal:'물건·비밀',tail:'새 장소',help:'동맹',threaten:'즉시 정보',trade:'자원·통로',bypass:'안전한 우회',wait:'상대의 움직임',trap:'선제 우위',break:'강제 진입',hide:'추적 회피'})[type] || '새 가능성';
@@ -583,66 +562,66 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
 
   const candidates = [
     {type:'investigate',stat:'지능',route:'careful',path:'truth',when:hasClue||true,
-      label:`흩어진 단서들을 대조해 “${reveal}”과 현재 사건이 실제로 이어지는지 검증한다`,
+      label:contextualActionLabel('investigate', target, c, act, step),
       success:`서로 따로 보이던 흔적이 한 줄로 이어졌다. ${reveal}. 이 사실 때문에 다음 장면의 조사 대상과 접근 가능한 길이 구체적으로 좁혀졌다.`,
       failure:`단서 하나를 잘못 해석했지만 그 모순 덕분에 누군가 증거를 의도적으로 배열했다는 사실이 드러났다. 다음 장면에서는 그 조작의 출처를 추적해야 한다.`},
     {type:'observe',stat:'지혜',route:'careful',path:'truth',when:true,
-      label:`서두르지 않고 ${place}의 사람·소리·움직임 변화를 읽어 다음 위험이 어디서 시작될지 확인한다`,
+      label:contextualActionLabel('observe', target, c, act, step),
       success:`움직이기 전에 위험의 순서를 읽었다. 누가 먼저 반응하고 어떤 길이 잠시 비는지 알아내 다음 장면을 준비된 위치에서 시작한다.`,
       failure:`결정적인 순간 하나는 놓쳤지만 가장 부자연스러운 반응을 찾아냈다. 그 반응이 다음 장면의 추적 대상이 된다.`},
     {type:'bypass',stat:'민첩',route:'bold',path:'survival',when:hasObstacle||hasStealth||true,
-      label:`정면의 위험을 건드리지 않고 ${focus}에 바로 이어지는 측면 경로를 먼저 확보한다`,
+      label:contextualActionLabel('bypass', target, c, act, step),
       success:`정면 충돌을 피한 채 목표에 가까운 위치를 선점했다. 다음 장면에서는 원래 만나야 했던 위험보다 먼저 핵심 장소나 인물에 접근한다.`,
       failure:`우회로는 막혔지만 그 길까지 통제하는 존재가 드러났다. 다음 장면은 막힌 길 자체가 아니라 그 통제자의 목적을 상대하는 장면으로 바뀐다.`},
     {type:'help',stat:'체력',route:'empathetic',path:'bond',when:hasPerson||hasRescue,
-      label:`눈앞의 사람과 동료를 먼저 안전하게 만들고, 그들이 알고 있는 정보와 도움을 다음 행동의 발판으로 삼는다`,
+      label:contextualActionLabel('help', target, c, act, step),
       success:`사람을 먼저 지킨 선택이 즉시 신뢰로 돌아왔다. 구조받은 인물이 다음 위치, 통로 또는 숨겨진 사정을 직접 알려 주며 다음 장면의 조건이 유리해진다.`,
       failure:`구조에 시간이 걸려 기회 하나를 놓쳤지만 사람은 남았다. 그 인물이 뒤늦게 떠올린 증언 때문에 잃은 단서 대신 새로운 우회 사건이 열린다.`},
     {type:'persuade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,
-      label:`관련 인물에게 지금 숨기고 있는 것보다 협력했을 때 얻는 이익이 크다는 점을 짚어 자발적인 협조를 끌어낸다`,
+      label:contextualActionLabel('persuade', target, c, act, step),
       success:`상대의 이해관계를 정확히 건드려 협조와 증언을 얻었다. 다음 장면에서는 그 인물이 문을 열거나 다른 사람의 태도를 바꾸는 실제 지원자로 남는다.`,
       failure:`설득은 완전히 통하지 않았지만 상대가 끝까지 피한 쟁점이 드러났다. 다음 장면의 목표가 그 숨긴 대상이나 장소로 바뀐다.`},
     {type:'sneak',stat:'민첩',route:'bold',path:'survival',when:hasStealth||hasHostile,
-      label:`경계가 비는 순간을 골라 안쪽으로 잠입해 공개되지 않은 위치·물건·배치를 먼저 확인한다`,
+      label:contextualActionLabel('sneak', target, c, act, step),
       success:`정면에서는 보이지 않던 내부 정보와 빠져나갈 길을 확보했다. 다음 장면은 기습당하는 상황이 아니라 파티가 먼저 선택할 수 있는 상황에서 시작한다.`,
       failure:`잠입 흔적이 들켜 경계가 올라갔지만 내부 구조와 상대의 배치는 확인했다. 다음 장면은 추격 또는 봉쇄를 뚫는 후속 상황으로 이어진다.`},
     {type:'steal',stat:'민첩',route:'bold',path:'truth',when:hasPerson&&hasClue,
-      label:`상대가 숨기고 있는 기록·열쇠·증거 중 ${focus}과 직접 연결된 것을 들키지 않게 빼낸다`,
+      label:contextualActionLabel('steal', target, c, act, step),
       success:`필요한 물건을 손에 넣었고, 보관 방식까지 확인해 누가 이 정보를 통제했는지 알게 됐다. 다음 장면은 훔친 증거의 출처를 확인하는 방향으로 열린다.`,
       failure:`손을 대는 순간 경계가 올라갔지만 상대가 가장 먼저 지키려 한 물건이 무엇인지 드러났다. 그 물건과 보관자가 다음 장면의 핵심 표적이 된다.`},
     {type:'tail',stat:'지혜',route:'careful',path:'truth',when:hasPerson&&(hasStealth||hasClue),
-      label:`수상한 인물이 현장을 떠날 때 일정한 거리를 두고 미행해 누구를 만나고 어디로 가는지 확인한다`,
+      label:contextualActionLabel('tail', target, c, act, step),
       success:`상대를 놓치지 않고 뒤따라 공개되지 않은 만남과 다음 장소를 확인했다. 그 목적지가 그대로 다음 장면의 새로운 무대가 된다.`,
       failure:`미행을 눈치챈 상대가 일부러 길을 틀었지만 끝까지 피한 골목과 연락 상대가 드러났다. 그 회피 자체가 다음 장면의 추적 단서가 된다.`},
     {type:'threaten',stat:'매력',route:'bold',path:'survival',when:hasPerson&&hasHostile,fatalRisk:true,
-      label:`적대적인 인물에게 지금 버티면 잃게 될 것을 분명히 보여 주고 ${focus}에 필요한 정보를 즉시 내놓게 압박한다`,
+      label:contextualActionLabel('threaten', target, c, act, step),
       success:`상대가 계산 끝에 물러서며 필요한 정보를 토해냈다. 다음 장면에서는 그 정보로 적의 준비보다 한발 먼저 움직인다.`,
       failure:`압박이 반발을 불러 적대가 선명해졌지만 누가 상대의 진짜 배후인지 드러났다. 그 배후가 다음 후속 장면의 직접 상대가 된다.`},
     {type:'fight',stat:'근력',route:'bold',path:'survival',when:hasHostile,startsCombat:true,fatalRisk:true,
-      label:`현재 길을 막는 적대 세력을 정면으로 밀어내 ${focus}으로 가는 시간을 강제로 확보한다`,
+      label:contextualActionLabel('fight', target, c, act, step),
       success:`적대 세력의 주도권을 꺾어 길을 열었다. 다음 장면에서는 빠르게 목표에 접근하지만 소음과 적대의 흔적도 함께 따라온다.`,
       failure:`충돌이 커져 상처와 경계가 남았다. 대신 적의 배치와 지휘 계통이 드러나 다음 장면에서 다른 방법으로 판을 뒤집을 정보가 생겼다.`},
     {type:'break',stat:'근력',route:'bold',path:'survival',when:hasObstacle,fatalRisk:true,
-      label:`막힌 구조물이나 장치를 강제로 바꿔 ${focus}으로 이어지는 새 동선을 만든다`,
+      label:contextualActionLabel('break', target, c, act, step),
       success:`구조 자체를 바꿔 없던 길을 만들었다. 다음 장면의 시작 위치가 달라지고 원래의 경비나 함정 일부를 건너뛴다.`,
       failure:`예상보다 넓게 무너지며 더 큰 위험이 깨어났지만 숨겨진 공간도 동시에 드러났다. 그 공간이 다음 후속 장면의 중심이 된다.`},
     {type:'trade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,
-      label:`정보·통로·안전을 서로 필요한 대가와 맞바꿔 싸움 없이 ${focus}에 접근할 조건을 만든다`,
+      label:contextualActionLabel('trade', target, c, act, step),
       success:`거래가 성립해 필요한 통로와 정보를 얻었다. 상대는 대가를 기억하며 이후 장면에서 다시 등장할 관계로 남는다.`,
       failure:`조건은 불리했지만 상대가 무엇을 가장 원하고 두려워하는지 알아냈다. 다음 협상이나 대면에서 그 정보가 실제 약점으로 남는다.`},
     {type:'hide',stat:'민첩',route:'careful',path:'survival',when:hasStealth||hasHostile,
-      label:`현재 위치의 시야와 소리를 끊어 추적을 흘린 뒤, 상대가 파티를 놓쳤다고 믿는 순간의 행동을 관찰한다`,
+      label:contextualActionLabel('hide', target, c, act, step),
       success:`추적을 떼어 낸 뒤 상대의 경계가 풀리는 순간을 확보했다. 다음 장면에서는 들키지 않은 위치에서 먼저 선택할 수 있다.`,
       failure:`완전히 숨지는 못했지만 상대가 수색에 인원을 빼면서 빈 구역이 생겼다. 그 빈틈이 다음 장면의 우회 경로가 된다.`},
     {type:'wait',stat:'지혜',route:'careful',path:'truth',when:true,
-      label:`일부러 먼저 움직이지 않고 상대나 환경이 반응하게 만들어 숨은 순서와 의도를 드러낸다`,
+      label:contextualActionLabel('wait', target, c, act, step),
       success:`기다림 끝에 감춰진 행동 순서가 먼저 나타났다. 다음 장면에서는 그 움직임을 뒤쫓거나 선점할 수 있다.`,
       failure:`시간을 쓰는 동안 작은 기회는 지나갔지만 반복되는 패턴을 읽었다. 다음 장면에서 같은 함정에 다시 걸리지 않는다.`}
   ].filter(x=>x.when);
   candidates.push(
-    {type:'trap',stat:'지능',route:'careful',path:'truth',when:true,label:`${place}의 지형과 장치를 이용해 다음 위험이 움직일 경로를 미리 제한한다`,success:`위험의 이동 경로를 좁혀 다음 장면에서 먼저 행동할 우위를 만들었다.`,failure:`준비는 완벽하지 않았지만 무엇이 함정을 피하려 하는지 드러나 다음 추적 단서가 생겼다.`},
-    {type:'endure',stat:'체력',route:'empathetic',path:'bond',when:true,label:`당장 해결하려 서두르지 않고 현장의 압박을 버티며 동료가 ${focus}에 집중할 시간을 만든다`,success:`버틴 시간이 동료의 조사와 이동을 가능하게 해 다음 장면의 시작 조건을 안정시켰다.`,failure:`몸에 부담이 남았지만 무너지기 직전의 변화가 다음 장면에서 피해야 할 위험을 알려 줬다.`},
-    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:true,isTravel:true,label:`${place}에서 ${focus}과 직접 이어지는 다음 현장으로 이동한다`,success:`지금까지 확보한 단서를 따라 다음 현장에 도착했다.`,failure:`이동 중 예상 밖의 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.`}
+    {type:'trap',stat:'지능',route:'careful',path:'truth',when:true,label:'함정을 준비한다',success:`위험의 이동 경로를 좁혀 다음 장면에서 먼저 행동할 우위를 만들었다.`,failure:`준비는 완벽하지 않았지만 무엇이 함정을 피하려 하는지 드러나 다음 추적 단서가 생겼다.`},
+    {type:'endure',stat:'체력',route:'empathetic',path:'bond',when:true,label:'자리를 지킨다',success:`버틴 시간이 동료의 조사와 이동을 가능하게 해 다음 장면의 시작 조건을 안정시켰다.`,failure:`몸에 부담이 남았지만 무너지기 직전의 변화가 다음 장면에서 피해야 할 위험을 알려 줬다.`},
+    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:true,isTravel:true,label:'다음 장소로 간다',success:`지금까지 확보한 단서를 따라 다음 현장에 도착했다.`,failure:`이동 중 예상 밖의 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.`}
   );
 
   // 장면의 원인/대상/위험에 맞는 서로 다른 행동 축을 강제로 섞는다.
@@ -949,6 +928,24 @@ function buildStoryBeats(c){
   return beats;
 }
 
+function shortEventLabel(title, index){
+  const groups=[
+    [/시체|죽은|익사체|망령|유령/,['시체를 조사한다','흔적을 분석한다','움직임을 막는다']],
+    [/문장|암호|로그|기록|신문|편지|데이터|백업|유언|코드/,['기록을 확인한다','경고를 읽는다','사본을 챙긴다']],
+    [/문|성문|압력문|봉쇄|잠긴|닫히|균열/,['잠금을 푼다','틈으로 들어간다','문을 연다']],
+    [/발자국|추적|흔적|사라진|실종/,['흔적을 따라간다','앞질러 간다','가짜 흔적을 찾는다']],
+    [/식탁|연회|시장|상인|경매|투표|결투|부족|전쟁/,['협상한다','상대를 살핀다','물건을 확보한다']],
+    [/검|갑옷|왕관 조각|진주|별핵|뿔|알/,['물건을 분석한다','함정을 확인한다','직접 들어본다']],
+    [/드론|감시카메라|광고판|AI|MOTHER|로그인|백도어|삭제 버튼/,['감시망을 끈다','사각으로 간다','가짜 신호를 보낸다']],
+    [/산소|잠수정|수심|해저|소나|케이블|부력|관측창/,['수치를 확인한다','소나를 살핀다','장비를 고친다']],
+    [/시간|시계|자정|오후|역행|루프|미래|과거|내일|어제/,['루프를 비교한다','패턴을 읽는다','틈으로 들어간다']],
+    [/별|숲|나무|뿌리|꽃밭|호수|꿈|성운|유성/,['흔적을 읽는다','별빛을 분석한다','길을 선점한다']],
+    [/곰|사슴|올빼미|키메라|하운드|맹견|포식자|신수|촉수|승무원/,['움직임을 본다','주의를 돌린다','버틴다']]
+  ];
+  for(const [re,labels] of groups) if(re.test(title)) return labels[index] || labels[0];
+  return ['현장을 살핀다','다른 길을 찾는다','직접 해결한다'][index] || '행동한다';
+}
+
 function buildEvents(c) {
   const style=eventStyles[c.id];
   return c.titles.map((title, i) => {
@@ -960,7 +957,7 @@ function buildEvents(c) {
       const effect=resultEffects[(i+j)%resultEffects.length];
       const sceneVerb=["현장을 직접 확인하며","위험의 근원을 우회하며","단서를 역으로 이용해"][j];
       return {
-        label:`${title} — ${sceneVerb} ${action[0]}`,
+        label:shortEventLabel(title,j),
         stat:action[1],
         dc:Math.min(20,10+(act-1)*2+((i+j)%3)),
         success:`「${title}」의 핵심을 정확히 짚었다. 선택한 접근이 장면을 유리하게 바꾸고 다음 단서가 선명해진다.`,
@@ -972,7 +969,7 @@ function buildEvents(c) {
     if (i % 3 === 1 || i % 7 === 0) {
       const job = c.jobs[(i + act) % c.jobs.length];
       choices.push({
-        label:`${title} — ${job[0]}만 알아볼 수 있는 전문적인 해결책을 실행한다`,
+        label:`${job[0]} 기술을 쓴다`,
         stat:job[1],
         dc:Math.min(20,Math.max(10,9+(act-1)*2+(i%3))),
         requiredJob:job[0],
@@ -1355,12 +1352,23 @@ const JOB_SKILL_DEFS = {
     actGuides.guardian = [...actGuides.guardian1, ...actGuides.guardian2, ...actGuides.guardian3];
     storyTone.guardian = [...storyTone.guardian1, ...storyTone.guardian2, ...storyTone.guardian3];
     STORY_TEXTURE.guardian = STORY_TEXTURE.guardian1 || STORY_TEXTURE.guardian;
-    novelActs.guardian = actGuides.guardian.map((g, i) => ({
-      intro:`${g.place}. 직전 세계에서 남긴 동맹, 적대, 부상과 단서는 사라지지 않았다. 이번 막의 목표는 “${g.goal}”이다. 도착 직후의 첫 사건부터 이전 선택의 결과가 사람들의 태도와 접근 가능한 길을 바꿔 놓는다.`,
-      discovery:`현장을 파고들자 이번 세계만의 문제로 보였던 사건이 앞선 여정과 이어진다. ${g.reveal}. 이전에 확보한 기록이나 관계가 있다면 같은 사실도 더 빨리, 더 안전하게 확인할 수 있고, 놓친 것이 있다면 그 공백을 메우는 별도 위험이 생긴다.`,
-      crisis:`상황이 악화된다. ${g.stakes}. 누구를 먼저 지키고 무엇을 먼저 확보하느냐에 따라 다음 장면의 인물, 위치, 위협도가 달라진다. 실패해도 이야기는 멈추지 않지만 실패한 바로 그 행동 때문에 생긴 문제를 다음 장면에서 해결해야 한다.`,
-      climax:`이번 막의 결론은 “${g.goal}”의 결과로 정리된다. ${g.reveal}. 성공과 실패, 동맹과 적대, 남겨 둔 문제를 모두 다음 막의 시작 조건으로 넘긴 채 여정은 끊기지 않고 계속된다.`
-    }));
+    novelActs.guardian = [
+      {intro:'캔터베리 성벽이 무너지던 날, 기사는 작은 공주와 함께 숲으로 추락한다. 공주는 울음을 참으며 성으로 돌아가자고 하지만 길에는 고블린과 침략자의 흔적이 뒤섞여 있다.',discovery:'로레인의 여관과 하얀 짐승의 흔적을 따라가자 챔피언 소드가 단순한 무기가 아니라 여러 세계의 챔피언을 잇는 열쇠라는 사실이 드러난다.',crisis:'침략자 잔당이 숲 주민과 공주를 동시에 노린다. 검을 서둘러 찾을지, 사람들을 먼저 지킬지에 따라 유적의 시험이 달라진다.',climax:'챔피언 소드는 힘보다 누구를 지켰는지를 묻는다. 검의 빛이 켜지고, 공주는 캔터베리를 되찾기 위한 첫 목적지를 정한다.'},
+      {intro:'티탄 왕국은 거대한 기계가 도시 전체를 누르고 있다. 골목의 작은 저항군은 침략자 공장 때문에 숨조차 크게 쉬지 못한다.',discovery:'공장 부품에는 캔터베리에서 본 것과 같은 침략자 표식이 있다. 침략자들은 각 세계의 기술을 수집해 하나의 병기로 묶고 있었다.',crisis:'공장을 파괴하면 도시가 자유로워지지만 안에 갇힌 노동자도 위험해진다. 저항군은 빠른 폭파와 내부 구조 사이에서 갈린다.',climax:'철갑 병기의 심장이 멈추고 티탄의 하늘이 열린다. 살아남은 기술자들은 다음 세계에서 쓸 수 있는 좌표와 장비를 건넨다.'},
+      {intro:'마법학교의 교문은 열려 있지만 수업 종만 반복해서 울린다. 교실에는 학생 대신 이름이 지워진 출석부가 놓여 있다.',discovery:'실종은 유령의 짓이 아니라 금지 실험과 침략자 마력 장치가 겹친 결과였다. 살아 있는 학생과 이미 죽은 학생의 기억이 같은 복도를 떠돈다.',crisis:'실험동이 붕괴하기 시작한다. 학생을 구조하면 핵심 연구자가 달아날 수 있고, 연구자를 쫓으면 남은 학생들이 위험해진다.',climax:'마지막 종이 울리며 학교의 마력장이 풀린다. 구한 학생과 확보한 기록의 조합에 따라 사막으로 향하는 이유가 달라진다.'},
+      {intro:'광기의 사막에서는 낮마다 다른 왕이 즉위한다. 주민들은 환영에 속아 서로 다른 궁전을 진짜라고 믿고 있다.',discovery:'폭군의 권력은 마법이 아니라 침략자가 공급한 장치와 공포로 유지되고 있었다. 감옥의 포로들은 반란의 날짜를 기다린다.',crisis:'경기장에서는 반란군 지도자와 죄 없는 포로가 동시에 처형될 예정이다. 궁전을 노릴지 경기장을 구할지 시간이 갈린다.',climax:'모래폭풍 속에서 가짜 궁전이 무너지고 진짜 왕좌가 드러난다. 사막을 빠져나온 공주는 처음으로 자신이 모은 동료들의 이름을 적는다.'},
+      {intro:'국경 야영지의 밤, 네 세계에서 얻은 지도 조각이 한 장으로 맞춰진다. 모든 선은 셴 시티 방향으로 이어진다.',discovery:'침략은 우연한 연속이 아니라 챔피언과 세계의 힘을 수집하기 위한 장기 계획이었다.',crisis:'뒤쫓아온 침략자 정찰대가 야영지를 발견한다. 떠나기 전에 흔적을 지울지, 붙잡아 정보를 얻을지 선택해야 한다.',climax:'첫 여정의 동료들이 각자의 길로 흩어지고, 기사는 작은 공주와 셴 시티의 성문을 향해 출발한다.'},
+      {intro:'셴 시티에서는 검보다 주먹이 먼저 인사를 대신한다. 입문 시험에서 패하면 챔피언을 만날 자격조차 주어지지 않는다.',discovery:'늙은 스승은 가장 강한 제자가 아니라 싸울 이유를 잃지 않는 사람을 찾고 있다. 라이벌 역시 침략자에게 가족을 잃었다.',crisis:'무투대회 결승 직전 침략자의 첩자가 경기장을 습격한다. 우승을 지킬지 관중을 구할지 시험의 의미가 바뀐다.',climax:'스승은 승패보다 선택을 보고 챔피언의 흔적을 내준다. 라이벌은 동료가 되거나 다음에 다시 만날 적이 된다.'},
+      {intro:'아침에 눈을 뜨자 여관의 의자가 성벽만큼 커져 있었다. 요정의 장난으로 기사 일행이 손가락만 한 크기가 된 것이다.',discovery:'쥐구멍과 벽틈에는 인간이 몰랐던 작은 주민들의 생활권이 있다. 요정은 장난이 아니라 그들의 집을 지켜 달라는 조건을 걸었다.',crisis:'원래 크기로 돌아가는 약은 바로 앞에 있지만 작은 주민들의 둥지가 고양이에게 공격받는다.',climax:'여관 천장이 다시 평범한 높이로 돌아온다. 작은 세계에서 얻은 통로 지도와 우정은 훗날 예상하지 못한 탈출로가 된다.'},
+      {intro:'던전 왕국에서는 모험가의 시체보다 영웅담이 더 빨리 팔린다. 깊은 층으로 내려갈수록 상점은 줄고 구조 요청은 늘어난다.',discovery:'고대 악마의 봉인은 보물을 지키기 위한 것이 아니라 지상으로 올라오지 못하게 막는 마지막 장치였다.',crisis:'챔피언의 방과 무너지는 구조 구역이 서로 반대 방향에 있다. 보물을 먼저 잡으면 구조 시간이 사라진다.',climax:'깊은 층의 수호가 끝나고 지하 도시 전체에 승전가가 울린다. 살아남은 모험가들은 설산에서 벌어진 살인사건 소식을 전한다.'},
+      {intro:'쉬버링 산의 첫 마을에서 눈사람 하나가 살해되고, 이누이트 소년이 범인으로 몰려 있다. 모두가 너무 빨리 정답을 정했다.',discovery:'얼음 동굴의 흔적은 소년의 발자국과 맞지 않는다. 마을이 외면해 온 오래된 편견과 외부 세력의 조작이 겹쳐 있었다.',crisis:'진범을 쫓는 동안 분노한 주민들이 소년을 처벌하려 한다. 증거와 사람을 동시에 지키지 않으면 사건은 풀려도 누군가는 사라진다.',climax:'산이 숨겨 둔 마지막 흔적이 진실을 밝힌다. 설산의 동맹은 라 제국 국경에서 기사 일행을 증명해 줄 증인이 된다.'},
+      {intro:'설산 아래 국경로에는 챔피언들의 표식이 한 줄로 세워져 있다. 그러나 라 제국에서 온 난민 행렬이 길을 막고 있다.',discovery:'침략자의 영향은 이제 작은 세계의 사건이 아니라 국가 간 정치와 난민 문제로 번졌다.',crisis:'제국 순찰대가 난민과 기사 일행을 함께 체포하려 한다. 숨을지, 설득할지, 저항할지 이후 제국과의 관계가 여기서 시작된다.',climax:'국경문이 열리고 라 제국의 검은 성벽이 보인다. 공주는 지금까지 만난 사람들의 도움을 처음으로 하나의 연합이라 부른다.'},
+      {intro:'라 제국의 수용소에는 캔터베리 난민들이 번호로 불린다. 제국 병사 중 일부는 명령을 따르면서도 눈을 피한다.',discovery:'제국 상층부가 침략자와 비밀 거래를 하고 있으며 난민 노동력을 그 대가로 넘기고 있다는 기록이 발견된다.',crisis:'강제노동 구역에서 탈출 신호가 올라온다. 공개 봉기를 일으키면 많은 사람을 구할 수 있지만 제국 전체가 적이 될 수 있다.',climax:'도망치는 열차가 국경을 뚫는 순간 차원 장치가 폭주한다. 기사는 공주의 손을 놓친 채 빛 속으로 사라진다.'},
+      {intro:'눈을 뜬 곳은 같은 세계의 10년 뒤였다. 캔터베리는 지도에서 사라졌고, 기사 자신은 오래전 죽은 영웅으로 기록돼 있다.',discovery:'저항군 기록은 기사가 사라진 뒤 침략자가 세계를 빠르게 점령한 과정을 보여 준다. 헤븐홀드도 적의 요새가 되었다.',crisis:'과거로 돌아갈 장치의 신호와 현재 저항군의 구조 요청이 동시에 잡힌다. 어느 쪽을 따라가느냐가 미래 사람들의 신뢰를 가른다.',climax:'지하 기지의 문이 열리고 미래의 공주가 나타난다. 그녀는 반가움보다 먼저 “왜 이제 왔어?”라고 묻는다.'},
+      {intro:'미래 공주는 더 이상 보호받는 아이가 아니다. 전선 지도를 펼치는 손에는 오래된 상처가 겹쳐 있다.',discovery:'그녀가 10년 동안 지킨 것은 왕좌가 아니라 살아남은 사람들의 일상이었다. 기사에 대한 원망과 기다림도 함께 남아 있다.',crisis:'저항군 내부에서 과거로 돌아가려는 기사에게 반발이 일어난다. 미래를 버리는지, 구하러 온 것인지 말이 아니라 행동으로 보여 줘야 한다.',climax:'공주와 저항군은 마지막 공격에 동의한다. 기사와 미래 공주의 관계에 따라 작전 지휘권과 동료 반응이 달라진다.'},
+      {intro:'헤븐홀드 탈환은 정면전이 아니다. 라 제국 협력자, 설산의 증인, 던전 모험가와 셴의 전사들이 각자 다른 입구를 맡는다.',discovery:'지금까지 살려 둔 인연들이 실제 병력과 통로, 정보로 돌아온다. 반대로 버린 관계는 비어 있는 전선으로 남는다.',crisis:'성 내부에서 민간인 구역과 침략자 지휘부가 동시에 발견된다. 빠른 승리와 피해 최소화가 정면으로 충돌한다.',climax:'헤븐홀드의 문이 열리고 침략자 지휘부가 무너진다. 하지만 차원의 문은 한 번만 안정적으로 열 수 있다.'},
+      {intro:'새벽의 헤븐홀드에는 두 시간이 겹쳐 보인다. 한쪽에는 미래 공주가, 다른 쪽에는 아직 어린 공주가 기다리고 있다.',discovery:'어느 시간으로 가도 다른 쪽의 사람들은 남겨진다. 완벽하게 모두를 구하는 선택은 존재하지 않는다.',crisis:'차원의 문이 붕괴하며 마지막 몇 분이 시작된다. 동료들은 기사에게 자신의 답을 강요하지 않고 지금까지의 선택을 돌려준다.',climax:'기사는 돌아갈 시간, 남을 시간, 혹은 두 세계 사이에 남길 약속을 정한다. 엔딩은 승리보다 누구와 어떤 시간을 함께 선택했는지를 기록한다.'}
+    ];
     ITEM_CATALOG.guardian = [...(ITEM_CATALOG.guardian1 || []), ...(ITEM_CATALOG.guardian2 || []), ...(ITEM_CATALOG.guardian3 || [])];
     FACILITY_THEME.guardian = {...(FACILITY_THEME.guardian1 || FACILITY_THEME.guardian), shop:{...(FACILITY_THEME.guardian1?.shop || FACILITY_THEME.guardian?.shop || {}),label:'월드 순회 보급 상점',storyLead:'지금까지 지나온 세계의 상인과 동료들이 연결한 보급망이 현재 위치까지 따라왔다. 앞에서 맺은 관계 덕분에 서로 다른 지역의 장비가 한 자리에 모였다.'}};
     const offsetMap=(src,off)=>Object.fromEntries(Object.entries(src||{}).map(([k,v])=>[Number(k)+off,v]));
@@ -1419,7 +1427,7 @@ const JOB_SKILL_DEFS = {
   campaigns.push(echo);
   eventStyles.echo={actions:[['유리별의 균열과 기록 순서를 분석한다','지능'],['증언의 감정과 누락된 부분을 읽는다','지혜'],['공중 통로를 타고 먼저 현장에 도착한다','민첩'],['기억 망령을 붙잡아 시간을 번다','근력'],['서로 충돌하는 증언자를 중재한다','매력'],['기억 오염을 견디며 원본 기록을 지킨다','체력']],visuals:['푸른 중앙 아카이브','유리별이 떠 있는 회랑','바람 부는 공중로','삭제된 구역의 골목','성좌 투영실','원본 보관실']};
   storyTone.echo=['깨진 유리별에서 현재와 과거가 겹치는 원인을 찾는다','죽은 탐사대의 서로 다른 증언을 맞춘다','도시가 스스로 지워 버린 구역의 존재를 확인한다','기억을 훔치는 성좌와 관리자 사이의 목적을 밝힌다','누구의 기억을 원본으로 남길지 결정한다'];
-  STORY_TEXTURE.echo=STORY_TEXTURE.neon || STORY_TEXTURE.clock;
+  STORY_TEXTURE.echo={sense:['깨진 유리별 안에서 남의 어린 시절이 역재생됐다.','공중 회랑 아래로 기록 조각이 눈처럼 떨어졌다.','유리벽에 비친 얼굴이 실제 표정보다 한 박자 늦게 움직였다.','원본 보관실에서는 모든 목소리가 속삭임으로만 들렸다.','별자리 선이 도시 지도가 아니라 사람들의 관계를 그렸다.'],npc:['기록 관리인은 자기 이름이 적힌 출입증을 처음 보는 물건처럼 만졌다.','죽은 탐사대원의 음성이 현재 파티원에게만 대답했다.','삭제 구역의 아이는 도시가 잊은 거리 이름을 노래처럼 외웠다.','아르카는 거짓말을 하지 않았지만 질문의 순서를 바꾸려 했다.','복제된 탐사대장은 자신이 죽었다는 기록을 믿지 않았다.'],omen:['금이 간 별 하나가 아무도 건드리지 않았는데 두 조각으로 갈라졌다.','도시의 모든 시계 대신 아카이브의 별자리 하나가 꺼졌다.','파티의 그림자에 낯선 사람의 그림자가 겹쳤다.','삭제된 주민의 이름이 잠깐 모든 간판에 나타났다.','마지막 원본함에서 아직 살아 있는 사람의 장례 기록이 열렸다.']};
   actGuides.echo=[
     {goal:'중앙 아카이브의 파손 원인을 조사하고 죽은 탐사대의 기억이 왜 현재 파티 이름으로 재생되는지 첫 연결점을 찾는다',place:'유리별이 부서진 중앙 아카이브',reveal:'재생된 기억에는 현재 시점에서만 존재하는 정보가 섞여 있다',stakes:'파손된 기록을 서둘러 복구하면 오염된 기억까지 진실로 굳어질 수 있다'},
     {goal:'17년 전 탐사대 각자의 마지막 기억을 비교해 누락된 일곱 번째 대원의 정체를 찾는다',place:'봉인된 탐사기록 회랑과 추락한 탐사선',reveal:'탐사대는 사고로 죽은 것이 아니라 누군가 원본 기억을 분리하는 실험을 막으려 했다',stakes:'한 사람의 증언만 믿으면 다른 생존 흔적과 현재의 공범을 놓치게 된다'},
@@ -1427,7 +1435,13 @@ const JOB_SKILL_DEFS = {
     {goal:'기억을 훔치는 성좌 시스템과 관리자 아르카의 목적을 파헤쳐 현재 파티가 17년 전 사건과 연결된 이유를 밝힌다',place:'도시 상공의 성좌 투영실',reveal:'파티의 일부 기억은 17년 전 탐사대가 남긴 원본 조각을 기반으로 재구성되었다',stakes:'시스템을 파괴하면 수많은 시민 기억이 함께 사라질 수 있고 유지하면 조작의 가능성이 남는다'},
     {goal:'원본 보관실에서 각자의 기억과 도시 전체의 기록 중 무엇을 남길지 결정하고 조작을 끝낸다',place:'아스테라 최심부 원본 보관실',reveal:'완전한 원본은 존재하지 않으며 기억은 서로의 증언과 선택으로 계속 갱신되는 기록이다',stakes:'한 가지 원본만 강제하면 진실은 단순해지지만 누군가의 삶이 지워진다'}
   ];
-  novelActs.echo=actGuides.echo.map(g=>({intro:`${g.place}. ${g.goal}. 처음 보이는 현상은 결과일 뿐이며 원인은 아직 다른 장소에 숨어 있다.`,discovery:`흩어진 기록을 맞추자 ${g.reveal}. 앞에서 확보하거나 잃은 증언에 따라 같은 사실도 다른 인물의 입을 통해 드러난다.`,crisis:`${g.stakes}. 지금의 선택은 정보만 바꾸는 것이 아니라 다음 장면에서 누가 기억을 유지하고 누가 파티를 적대하는지 바꾼다.`,climax:`이번 막의 핵심은 ${g.goal}. 성공과 실패의 흔적을 모두 다음 막에 남긴 채, ${g.reveal}.` }));
+  novelActs.echo=[
+    {intro:'중앙 아카이브 천장에서 유리별 수백 개가 동시에 깨진다. 바닥에 떨어진 한 조각은 17년 전 죽은 탐사대원의 시점으로 현재 파티를 비춘다.',discovery:'기억의 날짜는 과거인데 창밖의 건물은 현재 모습이다. 누군가 오래된 기억 안에 오늘의 정보를 끼워 넣었다.',crisis:'복구 장치가 자동으로 오염된 파편까지 원본으로 굳히려 한다. 기록을 멈추면 시민들의 다른 기억도 손상될 수 있다.',climax:'가장 늦게 깨진 별에서 추락한 탐사선의 좌표가 나온다. 좌표는 17년 동안 폐쇄된 회랑을 가리킨다.'},
+    {intro:'봉인 회랑에는 탐사대원 여섯 명의 마지막 기억이 각각 다른 결말을 말한다. 누군가는 폭발을, 누군가는 배신을, 누군가는 구조를 기억한다.',discovery:'모든 기억에 공통으로 등장하지만 명단에는 없는 일곱 번째 목소리가 있다. 그 목소리는 현재 파티원의 말버릇을 그대로 쓴다.',crisis:'탐사선의 봉인칸을 열자 기억 복제 장치가 깨어나 파티의 최근 기억을 탐사대 기록 위에 덮어쓰기 시작한다.',climax:'일곱 번째 대원은 사람이 아니라 미래의 기억을 과거에 저장하기 위한 실험 슬롯이었다는 사실이 드러난다.'},
+    {intro:'제7구역은 지도에는 없지만 직접 걸어 들어갈 수 있다. 거리의 주민들은 자기 집을 기억하지만 도시 밖의 누구도 그들을 모른다.',discovery:'삭제는 주민의 기억을 지운 것이 아니었다. 도시 전체의 다른 사람들에게서 제7구역을 인식하는 연결만 잘라 냈다.',crisis:'구역을 공개하는 방송이 시작되자 시민 수만 명의 기억이 충돌한다. 갑자기 존재하게 된 가족과 빚, 범죄 기록이 도시를 뒤흔든다.',climax:'주민들이 보관한 종이 장부에서 관리자 아르카가 17년 전 삭제 명령을 거부했다는 서명이 발견된다.'},
+    {intro:'성좌 투영실에서는 사람들의 기억이 별자리로 연결돼 있다. 별 하나를 옮기면 멀리 있는 누군가가 특정 사람을 잊는다.',discovery:'기억을 훔치는 성좌는 외부 해커가 아니라 도시의 안정성을 위해 설계된 자동 정리 시스템이었다. 아르카는 그 폭주를 숨기고 있었다.',crisis:'성좌가 파티를 오류 원인으로 지정해 각자의 기억에서 서로의 얼굴을 지우기 시작한다. 싸움보다 서로를 기억하는 일이 먼저다.',climax:'파티의 기억 일부가 17년 전 탐사대 원본으로 만들어졌다는 기록이 열린다. 현재의 자아와 과거의 데이터가 어느 쪽도 가짜라고 단정할 수 없게 된다.'},
+    {intro:'최심부에는 단 하나의 원본이 아니라 서로 모순되는 수천 개의 원본 후보가 저장돼 있다. 아르카는 그중 하나만 남기면 도시를 안정시킬 수 있다고 말한다.',discovery:'완전한 원본은 처음부터 없었다. 기억은 저장될 때마다 관찰자와 관계, 감정에 의해 조금씩 바뀌었다.',crisis:'보관실이 붕괴하며 원본을 하나 선택하거나, 모두 공개하거나, 중앙 원본 제도 자체를 없앨 시간만 남는다.',climax:'마지막 유리별이 꺼진 뒤에도 사람들은 서로의 이름을 부른다. 무엇을 남겼는지에 따라 아스테라는 기록의 도시, 증언의 도시, 혹은 망각할 자유를 가진 도시가 된다.'}
+  ];
 })();
 
 export const CAMPAIGNS = campaigns.map(c => ({

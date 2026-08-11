@@ -547,21 +547,16 @@ function contextualActionLabel(type, target, c, act, step) {
   const together=`${target}${withJosa(target)}`;
   const portable=['기록','왕관','신호'].includes(target);
   const map = {
-    investigate: `${obj} 조사한다`,
-    observe: `${obj} 자세히 살핀다`,
-    fight: person ? `${together} 싸운다` : '나타난 적과 싸운다',
-    sneak: person ? `${target} 몰래 지나간다` : ['문','유적','장치','봉인'].includes(target) ? `${target} 너머로 잠입한다` : `${target} 주변으로 잠입한다`,
-    persuade: person ? `${obj} 설득한다` : '관련자를 설득한다',
-    steal: person ? `${target}에게서 훔친다` : portable ? `${obj} 훔친다` : `${target}의 물건을 훔친다`,
-    tail: person ? `${obj} 미행한다` : `${target}의 흔적을 뒤쫓는다`,
-    help: person ? `${obj} 돕는다` : '위험한 사람을 돕는다',
+    investigate: `${obj} 조사한다`, observe:`${obj} 살펴본다`,
+    fight: person ? `${together} 싸운다` : '앞을 막는 적과 싸운다',
+    sneak: person ? `${target}의 눈을 피해 잠입한다` : ['문','유적','장치','봉인'].includes(target) ? `${target} 너머로 잠입한다` : '주변 경계를 피해 잠입한다',
+    persuade: person ? `${obj} 설득한다` : '주변 사람을 설득한다',
+    steal: person ? `${target}에게서 훔친다` : portable ? `${obj} 훔친다` : `${target} 안의 물건을 훔친다`,
+    tail: person ? `${obj} 미행한다` : '수상한 흔적을 뒤쫓는다',
+    help: person ? `${obj} 돕는다` : '위험에 처한 사람을 돕는다',
     threaten: person ? `${obj} 협박한다` : '관련자를 압박한다',
     trade: person ? `${together} 거래한다` : '정보를 거래한다',
-    bypass: ['문','유적','장치','봉인'].includes(target) ? `${obj} 우회한다` : `${target}을 우회한다`,
-    wait: `${target}을 지켜보며 기다린다`,
-    trap: `${target} 주변에 함정을 놓는다`,
-    break: ['문','장치','봉인'].includes(target) ? `${obj} 부순다` : '막힌 길을 부순다',
-    hide: `${target} 주변의 흔적을 숨긴다`,
+    bypass: ['문','유적','장치','봉인'].includes(target) ? `${obj} 우회한다` : '정면 접근을 피한다', wait:'기다려 본다', trap:'함정을 만든다', break:['문','장치','봉인'].includes(target)?`${obj} 부순다`:'막힌 길을 부순다', hide:'흔적을 숨긴다',
   };
   return map[type] || '다른 방법을 택한다';
 }
@@ -574,99 +569,116 @@ function actionRisk(type) {
 function buildStoryChoices(c, guide, beat, act, step, index) {
   const phase = beat.phase || '장면';
   const actNo = act + 1;
+  const text = `${beat.text || ''} ${beat.situation || ''} ${beat.objective || ''} ${guide.place || ''} ${guide.goal || ''} ${guide.stakes || ''}`;
   const target = detectSceneTarget(c, beat, guide);
-  const personTarget = ['증언자','경비병','상인','생존자','추적자','침략자','고블린','로레인','공주','의심스러운 인물'].includes(target);
-  const baseDefs = [
-    { type:'investigate', stat:'지능', route:'careful', path:'truth' },
-    { type:'observe', stat:'지혜', route:'careful', path:'truth' },
-    { type:'persuade', stat:'매력', route:'empathetic', path:'bond' },
-    { type:'tail', stat:'지혜', route:'careful', path:'truth' },
-    { type:'fight', stat:'근력', route:'bold', path:'survival', startsCombat:true, fatalRisk:true },
-    { type:'steal', stat:'민첩', route:'bold', path:'survival', fatalRisk:true },
-    { type:'sneak', stat:'민첩', route:'bold', path:'survival', fatalRisk:true },
-    { type:'help', stat:'체력', route:'empathetic', path:'bond' },
-    { type:'threaten', stat:'매력', route:'bold', path:'survival', fatalRisk:true },
-    { type:'trade', stat:'매력', route:'empathetic', path:'bond' },
-    { type:'bypass', stat:'민첩', route:'bold', path:'survival' },
-    { type:'wait', stat:'지혜', route:'careful', path:'truth' },
-    { type:'trap', stat:'지능', route:'careful', path:'truth' },
-    { type:'break', stat:'근력', route:'bold', path:'survival', fatalRisk:true },
-    { type:'hide', stat:'지혜', route:'empathetic', path:'bond' },
+  const hasPerson = /사람|주민|증언|경비|병사|기사|공주|로레인|상인|생존자|동료|난민|학생|스승|라이벌|관리자|탐사대|아이|군중|부족|저항군|요정|모험가/.test(text);
+  const hasHostile = /적|적대|침략|고블린|괴물|수호자|집행|전투|공격|습격|추격|폭군|악마|병기|망령|포위|봉쇄군/.test(text);
+  const hasObstacle = /문|봉인|장치|벽|잔해|붕괴|통로|잠금|격벽|기계|장애|바리케이드|수용소|감옥|균열|절벽/.test(text);
+  const hasClue = /기록|흔적|증거|단서|문양|로그|기억|증언|지도|신호|비밀|모순|원인|정보|좌표/.test(text);
+  const hasStealth = /감시|경계|추적|봉쇄|잠입|몰래|숨|센서|카메라|경비|순찰/.test(text);
+  const hasRescue = /구조|부상|피난|보호|구하|살리|갇힌|난민|생존자|포로|수감/.test(text);
+  const focus = String(beat.objective || guide.goal || '현재 목표').replace(/[.!?]+$/g,'');
+  const reveal = String(guide.reveal || '숨은 원인').replace(/[.!?]+$/g,'');
+  const place = String(guide.place || target || '현장');
+
+  const candidates = [
+    {type:'investigate',stat:'지능',route:'careful',path:'truth',when:hasClue||true,
+      label:`흩어진 단서들을 대조해 “${reveal}”과 현재 사건이 실제로 이어지는지 검증한다`,
+      success:`서로 따로 보이던 흔적이 한 줄로 이어졌다. ${reveal}. 이 사실 때문에 다음 장면의 조사 대상과 접근 가능한 길이 구체적으로 좁혀졌다.`,
+      failure:`단서 하나를 잘못 해석했지만 그 모순 덕분에 누군가 증거를 의도적으로 배열했다는 사실이 드러났다. 다음 장면에서는 그 조작의 출처를 추적해야 한다.`},
+    {type:'observe',stat:'지혜',route:'careful',path:'truth',when:true,
+      label:`서두르지 않고 ${place}의 사람·소리·움직임 변화를 읽어 다음 위험이 어디서 시작될지 확인한다`,
+      success:`움직이기 전에 위험의 순서를 읽었다. 누가 먼저 반응하고 어떤 길이 잠시 비는지 알아내 다음 장면을 준비된 위치에서 시작한다.`,
+      failure:`결정적인 순간 하나는 놓쳤지만 가장 부자연스러운 반응을 찾아냈다. 그 반응이 다음 장면의 추적 대상이 된다.`},
+    {type:'bypass',stat:'민첩',route:'bold',path:'survival',when:hasObstacle||hasStealth||true,
+      label:`정면의 위험을 건드리지 않고 ${focus}에 바로 이어지는 측면 경로를 먼저 확보한다`,
+      success:`정면 충돌을 피한 채 목표에 가까운 위치를 선점했다. 다음 장면에서는 원래 만나야 했던 위험보다 먼저 핵심 장소나 인물에 접근한다.`,
+      failure:`우회로는 막혔지만 그 길까지 통제하는 존재가 드러났다. 다음 장면은 막힌 길 자체가 아니라 그 통제자의 목적을 상대하는 장면으로 바뀐다.`},
+    {type:'help',stat:'체력',route:'empathetic',path:'bond',when:hasPerson||hasRescue,
+      label:`눈앞의 사람과 동료를 먼저 안전하게 만들고, 그들이 알고 있는 정보와 도움을 다음 행동의 발판으로 삼는다`,
+      success:`사람을 먼저 지킨 선택이 즉시 신뢰로 돌아왔다. 구조받은 인물이 다음 위치, 통로 또는 숨겨진 사정을 직접 알려 주며 다음 장면의 조건이 유리해진다.`,
+      failure:`구조에 시간이 걸려 기회 하나를 놓쳤지만 사람은 남았다. 그 인물이 뒤늦게 떠올린 증언 때문에 잃은 단서 대신 새로운 우회 사건이 열린다.`},
+    {type:'persuade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,
+      label:`관련 인물에게 지금 숨기고 있는 것보다 협력했을 때 얻는 이익이 크다는 점을 짚어 자발적인 협조를 끌어낸다`,
+      success:`상대의 이해관계를 정확히 건드려 협조와 증언을 얻었다. 다음 장면에서는 그 인물이 문을 열거나 다른 사람의 태도를 바꾸는 실제 지원자로 남는다.`,
+      failure:`설득은 완전히 통하지 않았지만 상대가 끝까지 피한 쟁점이 드러났다. 다음 장면의 목표가 그 숨긴 대상이나 장소로 바뀐다.`},
+    {type:'sneak',stat:'민첩',route:'bold',path:'survival',when:hasStealth||hasHostile,
+      label:`경계가 비는 순간을 골라 안쪽으로 잠입해 공개되지 않은 위치·물건·배치를 먼저 확인한다`,
+      success:`정면에서는 보이지 않던 내부 정보와 빠져나갈 길을 확보했다. 다음 장면은 기습당하는 상황이 아니라 파티가 먼저 선택할 수 있는 상황에서 시작한다.`,
+      failure:`잠입 흔적이 들켜 경계가 올라갔지만 내부 구조와 상대의 배치는 확인했다. 다음 장면은 추격 또는 봉쇄를 뚫는 후속 상황으로 이어진다.`},
+    {type:'steal',stat:'민첩',route:'bold',path:'truth',when:hasPerson&&hasClue,
+      label:`상대가 숨기고 있는 기록·열쇠·증거 중 ${focus}과 직접 연결된 것을 들키지 않게 빼낸다`,
+      success:`필요한 물건을 손에 넣었고, 보관 방식까지 확인해 누가 이 정보를 통제했는지 알게 됐다. 다음 장면은 훔친 증거의 출처를 확인하는 방향으로 열린다.`,
+      failure:`손을 대는 순간 경계가 올라갔지만 상대가 가장 먼저 지키려 한 물건이 무엇인지 드러났다. 그 물건과 보관자가 다음 장면의 핵심 표적이 된다.`},
+    {type:'tail',stat:'지혜',route:'careful',path:'truth',when:hasPerson&&(hasStealth||hasClue),
+      label:`수상한 인물이 현장을 떠날 때 일정한 거리를 두고 미행해 누구를 만나고 어디로 가는지 확인한다`,
+      success:`상대를 놓치지 않고 뒤따라 공개되지 않은 만남과 다음 장소를 확인했다. 그 목적지가 그대로 다음 장면의 새로운 무대가 된다.`,
+      failure:`미행을 눈치챈 상대가 일부러 길을 틀었지만 끝까지 피한 골목과 연락 상대가 드러났다. 그 회피 자체가 다음 장면의 추적 단서가 된다.`},
+    {type:'threaten',stat:'매력',route:'bold',path:'survival',when:hasPerson&&hasHostile,fatalRisk:true,
+      label:`적대적인 인물에게 지금 버티면 잃게 될 것을 분명히 보여 주고 ${focus}에 필요한 정보를 즉시 내놓게 압박한다`,
+      success:`상대가 계산 끝에 물러서며 필요한 정보를 토해냈다. 다음 장면에서는 그 정보로 적의 준비보다 한발 먼저 움직인다.`,
+      failure:`압박이 반발을 불러 적대가 선명해졌지만 누가 상대의 진짜 배후인지 드러났다. 그 배후가 다음 후속 장면의 직접 상대가 된다.`},
+    {type:'fight',stat:'근력',route:'bold',path:'survival',when:hasHostile,startsCombat:true,fatalRisk:true,
+      label:`현재 길을 막는 적대 세력을 정면으로 밀어내 ${focus}으로 가는 시간을 강제로 확보한다`,
+      success:`적대 세력의 주도권을 꺾어 길을 열었다. 다음 장면에서는 빠르게 목표에 접근하지만 소음과 적대의 흔적도 함께 따라온다.`,
+      failure:`충돌이 커져 상처와 경계가 남았다. 대신 적의 배치와 지휘 계통이 드러나 다음 장면에서 다른 방법으로 판을 뒤집을 정보가 생겼다.`},
+    {type:'break',stat:'근력',route:'bold',path:'survival',when:hasObstacle,fatalRisk:true,
+      label:`막힌 구조물이나 장치를 강제로 바꿔 ${focus}으로 이어지는 새 동선을 만든다`,
+      success:`구조 자체를 바꿔 없던 길을 만들었다. 다음 장면의 시작 위치가 달라지고 원래의 경비나 함정 일부를 건너뛴다.`,
+      failure:`예상보다 넓게 무너지며 더 큰 위험이 깨어났지만 숨겨진 공간도 동시에 드러났다. 그 공간이 다음 후속 장면의 중심이 된다.`},
+    {type:'trade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,
+      label:`정보·통로·안전을 서로 필요한 대가와 맞바꿔 싸움 없이 ${focus}에 접근할 조건을 만든다`,
+      success:`거래가 성립해 필요한 통로와 정보를 얻었다. 상대는 대가를 기억하며 이후 장면에서 다시 등장할 관계로 남는다.`,
+      failure:`조건은 불리했지만 상대가 무엇을 가장 원하고 두려워하는지 알아냈다. 다음 협상이나 대면에서 그 정보가 실제 약점으로 남는다.`},
+    {type:'hide',stat:'민첩',route:'careful',path:'survival',when:hasStealth||hasHostile,
+      label:`현재 위치의 시야와 소리를 끊어 추적을 흘린 뒤, 상대가 파티를 놓쳤다고 믿는 순간의 행동을 관찰한다`,
+      success:`추적을 떼어 낸 뒤 상대의 경계가 풀리는 순간을 확보했다. 다음 장면에서는 들키지 않은 위치에서 먼저 선택할 수 있다.`,
+      failure:`완전히 숨지는 못했지만 상대가 수색에 인원을 빼면서 빈 구역이 생겼다. 그 빈틈이 다음 장면의 우회 경로가 된다.`},
+    {type:'wait',stat:'지혜',route:'careful',path:'truth',when:true,
+      label:`일부러 먼저 움직이지 않고 상대나 환경이 반응하게 만들어 숨은 순서와 의도를 드러낸다`,
+      success:`기다림 끝에 감춰진 행동 순서가 먼저 나타났다. 다음 장면에서는 그 움직임을 뒤쫓거나 선점할 수 있다.`,
+      failure:`시간을 쓰는 동안 작은 기회는 지나갔지만 반복되는 패턴을 읽었다. 다음 장면에서 같은 함정에 다시 걸리지 않는다.`}
+  ].filter(x=>x.when);
+  candidates.push(
+    {type:'trap',stat:'지능',route:'careful',path:'truth',when:true,label:`${place}의 지형과 장치를 이용해 다음 위험이 움직일 경로를 미리 제한한다`,success:`위험의 이동 경로를 좁혀 다음 장면에서 먼저 행동할 우위를 만들었다.`,failure:`준비는 완벽하지 않았지만 무엇이 함정을 피하려 하는지 드러나 다음 추적 단서가 생겼다.`},
+    {type:'endure',stat:'체력',route:'empathetic',path:'bond',when:true,label:`당장 해결하려 서두르지 않고 현장의 압박을 버티며 동료가 ${focus}에 집중할 시간을 만든다`,success:`버틴 시간이 동료의 조사와 이동을 가능하게 해 다음 장면의 시작 조건을 안정시켰다.`,failure:`몸에 부담이 남았지만 무너지기 직전의 변화가 다음 장면에서 피해야 할 위험을 알려 줬다.`},
+    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:true,isTravel:true,label:`${place}에서 ${focus}과 직접 이어지는 다음 현장으로 이동한다`,success:`지금까지 확보한 단서를 따라 다음 현장에 도착했다.`,failure:`이동 중 예상 밖의 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.`}
+  );
+
+  // 장면의 원인/대상/위험에 맞는 서로 다른 행동 축을 강제로 섞는다.
+  // 같은 문을 표현만 바꿔 여섯 번 누르는 식의 선택지를 막고, 장면마다 정보·이동·관계·위험·대기 축이 실제로 다른 후속 장면을 만든다.
+  const byType = type => candidates.find(x=>x.type===type);
+  const ordered=[];
+  const add = item => { if(item && !ordered.includes(item)) ordered.push(item); };
+  add(byType(hasClue ? 'investigate' : 'observe'));
+  add(byType('travel-a'));
+  if(hasPerson) add(byType(hasHostile ? 'persuade' : (index%2 ? 'trade' : 'help')) || byType('persuade') || byType('help'));
+  else add(byType('endure'));
+  if(hasHostile) add(byType(index%2 ? 'fight' : 'sneak') || byType('fight'));
+  else if(hasObstacle) add(byType(index%2 ? 'break' : 'bypass') || byType('bypass'));
+  else add(byType(index%2 ? 'trap' : 'wait'));
+  const sceneSpecific = [
+    hasPerson&&hasClue ? byType(index%2 ? 'tail':'steal') : null,
+    hasPerson&&hasHostile ? byType('threaten') : null,
+    hasStealth||hasHostile ? byType('hide') : null,
+    hasObstacle ? byType('bypass') : null,
+    byType(index%3===0?'observe':index%3===1?'wait':'trap')
   ];
-  // v5.8: 장면에 실제로 존재하는 대상이 허용하는 행동만 노출한다.
-  // 사람이 없는데 싸우기/미행/설득이 뜨거나, 훔칠 것이 없는데 훔치기가 뜨는 식의 가짜 자유도를 제거한다.
-  const textContext = `${beat?.text || ''} ${beat?.situation || ''} ${beat?.objective || ''} ${beat?.reveal || ''}`;
-  const hostilePresent = personTarget && /적|배신|공격|침략|추적|경비|고블린|집행|위협|괴물|짐승|망령|병사/.test(textContext);
-  const talkablePresent = personTarget && !/시체|사망|죽은/.test(textContext);
-  const stealablePresent = personTarget || ['기록','왕관','신호','장치'].includes(target) || /상자|서랍|가방|물건|열쇠|문서|장부|유물|보급|창고/.test(textContext);
-  const traversablePresent = ['문','유적','장치','봉인'].includes(target) || /통로|골목|성벽|기지|식당|연구|방|문|계단|길|폐허|왕묘/.test(textContext);
-  const vulnerablePresent = personTarget && /생존자|부상|피난|공주|아이|포로|구조|도움/.test(textContext);
-
-  let allowed = new Set(['investigate','observe','wait']);
-  if (traversablePresent) ['sneak','bypass','hide','trap'].forEach(x=>allowed.add(x));
-  if (talkablePresent) ['persuade','tail','trade'].forEach(x=>allowed.add(x));
-  if (hostilePresent || /위기|대면|결단/.test(phase)) ['fight','threaten'].forEach(x=>allowed.add(x));
-  if (stealablePresent) allowed.add('steal');
-  if (vulnerablePresent || /구조|보호|살려|구한다/.test(textContext)) allowed.add('help');
-  if (/막힌|봉인|격벽|문|장치|붕괴/.test(textContext)) allowed.add('break');
-  if (/탐색|도입|진실/.test(phase)) ['investigate','observe','wait'].forEach(x=>allowed.add(x));
-  if (/결단/.test(phase)) {
-    // 결단도 현재 장면의 대상에 맞는 행동만 남기되, 최소한 조사/관찰은 항상 가능하다.
-    allowed = new Set([...allowed].filter(x=>['investigate','observe','fight','persuade','help','threaten','break','bypass','sneak','trade'].includes(x)));
-  }
-  let defs = baseDefs.filter(d=>allowed.has(d.type));
-  // 선택지가 너무 적으면 상황을 깨지 않는 범용 행동만 보충한다.
-  for (const fallback of ['investigate','observe','wait','bypass']) {
-    if (defs.length >= 5) break;
-    const found=baseDefs.find(d=>d.type===fallback);
-    if(found && !defs.some(d=>d.type===fallback)) defs.push(found);
-  }
-
-  const travelByWorld = {
-    ember:['왕묘로 간다','성벽으로 간다','검은 숲으로 간다'], neon:['하층가로 간다','기억 시장으로 간다','봉쇄구역으로 간다'],
-    abyss:['의무실로 간다','기관실로 간다','관측실로 간다'], clock:['광장으로 간다','기록소로 간다','시계탑으로 간다'],
-    wild:['부족 마을로 간다','별가루 숲으로 간다','숲의 심장으로 간다'], guardian1:['여관으로 간다','왕국 쪽으로 간다','유적으로 간다'],
-    guardian2:['도시로 간다','던전으로 간다','설산으로 간다'], guardian3:['난민 구역으로 간다','저항군 기지로 간다','헤븐홀드로 간다'],
-  };
-  if (step === 1 || step === 3 || phase === '도입') {
-    const travel = travelByWorld[c.id] || ['앞길로 간다','우회로로 간다','사람들이 모인 곳으로 간다'];
-    defs.splice(4,0,{type:'travel-a',label:travel[(act+step)%travel.length],stat:'지혜',route:'careful',path:'truth',isTravel:true});
-    defs.splice(6,0,{type:'travel-b',label:travel[(act+step+1)%travel.length],stat:'민첩',route:'bold',path:'survival',isTravel:true});
-  }
-  const targetCount = phase === '결단' ? 6 : phase === '위기' ? 6 : 7;
-  defs = defs.slice(0,targetCount);
-  const actionProse = {
-    investigate:[`${target}에 남은 앞뒤가 맞지 않는 흔적을 연결해 사건의 다음 원인을 찾아냈다.`,`${target}을 잘못 짚었지만, 누가 흔적을 의도적으로 흐렸는지는 드러났다.`],
-    observe:[`${target}의 작은 반응을 놓치지 않아 먼저 움직일 사람과 위험을 구분했다.`,`결정적인 순간은 놓쳤지만 ${target}이 무엇을 두려워하는지는 확인했다.`],
-    fight:[`${target}과의 충돌에서 주도권을 빼앗아 강제로 길을 열었다.`,`싸움이 예상보다 커져 상처와 적대가 남았고, 사건은 더 위험한 방향으로 꺾였다.`],
-    sneak:[`${target}의 시야 밖으로 들어가 공개되지 않은 장소와 정보를 먼저 확보했다.`,`잠입 흔적이 들켜 경계가 올라갔지만, 내부의 구조와 다음 이동 지점은 확인했다.`],
-    persuade:[`${target}이 지키려는 것을 먼저 짚어 자발적인 협조와 새로운 증언을 얻었다.`,`완전히 마음을 돌리진 못했지만 ${target}이 끝까지 숨기는 쟁점은 분명해졌다.`],
-    steal:[`${target}에게서 필요한 것을 손에 넣었고, 물건이 연결된 새로운 인물까지 알아냈다.`,`손을 대는 순간 들켰지만 보관 장소와 감시 방식이 드러나 다른 접근법이 생겼다.`],
-    tail:[`${target}의 뒤를 놓치지 않아 목적지와 접선 상대를 확인했다.`,`미행을 눈치챈 ${target}이 동선을 바꾸면서 오히려 숨기던 장소가 드러났다.`],
-    help:[`${target}을 도운 대가로 신뢰와 직접적인 도움을 얻었다.`,`구조에 시간이 걸렸지만 살려 둔 사람이 뒤늦게 결정적인 사실을 떠올렸다.`],
-    threaten:[`${target}을 압박해 즉시 필요한 정보를 받아냈지만, 관계에는 분명한 금이 갔다.`,`${target}은 굴복하지 않았고 주변까지 적대적으로 변했다. 대신 무엇을 지키는지는 선명해졌다.`],
-    trade:[`${target}과 서로 필요한 것을 맞바꿔 충돌 없이 통로와 정보를 얻었다.`,`조건은 불리했지만 ${target}이 무엇에 가치를 두는지 확인해 다음 협상의 기준을 얻었다.`],
-    bypass:[`${target}을 정면으로 건드리지 않고 다른 길을 찾아 예상하지 못한 장소에 먼저 닿았다.`,`우회로가 막혔지만 누가 이 길까지 감시하는지 드러났다.`],
-    wait:[`움직이지 않고 기다리자 ${target} 주변의 긴장이 풀리며 숨겨진 행동이 먼저 나타났다.`,`기다리는 동안 기회 하나를 놓쳤지만 상대의 다음 순서를 읽을 수 있었다.`],
-    trap:[`${target} 주변의 조건을 이용해 함정을 만들고 먼저 움직일 권리를 얻었다.`,`함정은 들켰지만 상대가 무엇을 경계하는지 분명해졌다.`],
-    break:[`${target}을 강제로 무너뜨려 가장 빠른 길을 만들었다.`,`부수는 순간 더 큰 위험이 깨어났고 원래의 길은 되돌릴 수 없게 됐다.`],
-    hide:[`파티가 남긴 흔적을 지워 추적과 의심을 한동안 끊어 냈다.`,`흔적을 숨기려다 오히려 누군가 이미 파티를 추적하고 있었다는 사실을 알아냈다.`],
-  };
+  for(const item of sceneSpecific) add(item);
+  // 남는 칸은 시작 인덱스를 회전시켜 막마다 같은 6개가 반복되지 않게 한다.
+  for(let n=0; ordered.length<6 && n<candidates.length; n++) add(candidates[(index+n)%candidates.length]);
+  const defs=ordered.slice(0,6);
   return defs.map((d,i)=>{
-    const base = 9 + act + (phase === '위기' || phase === '결단' ? 2 : 0);
-    const typeRisk = actionRisk(d.type);
-    const dcDelta = typeRisk === '높음' ? 2 : typeRisk === '낮음' ? -1 : 0;
-    const dc = Math.max(8,Math.min(15,base+dcDelta+((i+step)%2)));
-    const label = d.label || contextualActionLabel(d.type,target,c,act,step);
-    const prose = actionProse[d.type] || [`${label}는 새로운 경로를 열었다.`,`${label}는 대가를 남겼지만 다른 길을 만들었다.`];
+    const risk = actionRisk(d.type);
+    const base = 9 + Math.min(5, Math.floor(act/2)) + (phase === '위기' || phase === '결단' ? 2 : 0);
+    const dc = Math.max(8,Math.min(15,base+(risk==='높음'?2:risk==='낮음'?-1:0)+(i%2)));
     return {
-      id:`${beat.id}-${String(d.type).toUpperCase()}-${i+1}`, label,
-      detail:`기회: ${actionOpportunity(d.type)} · 위험: ${typeRisk}`,
+      id:`${beat.id}-${String(d.type).toUpperCase()}-${i+1}`, label:d.label,
+      detail:`현재 목표 연결 · ${focus} · 성공 시 다음 장면 조건이 바뀌고 실패 시 이 행동 때문에 생긴 후속 사건이 열린다.`,
       stat:d.stat, dc, path:d.path, branchKey:`act${actNo}`, branchValue:d.route, actionType:d.type,
-      startsCombat:Boolean(d.startsCombat), isTravel:Boolean(d.isTravel), fatalRisk:Boolean(d.fatalRisk),
-      opportunity:actionOpportunity(d.type), risk:typeRisk,
-      success:prose[0], failure:prose[1],
-      consequenceHint:{success:actionOpportunity(d.type),failure:typeRisk==='높음'?'부상·관계 악화·사망 가능':'우회·관계·위험 변화'},
+      startsCombat:Boolean(d.startsCombat), fatalRisk:Boolean(d.fatalRisk), isTravel:Boolean(d.isTravel), opportunity:actionOpportunity(d.type), risk,
+      success:`${d.success} 이 결과가 다음 장면의 시작 조건으로 저장된다.`, failure:`${d.failure} 이 결과가 다음 장면의 시작 조건으로 저장된다.`,
+      consequenceHint:{success:`${actionOpportunity(d.type)} + 다음 장면 변화`,failure:risk==='높음'?'상처·적대·별도 후속 사건':'새 단서·우회 후속 사건'}
     };
   });
 }
@@ -762,7 +774,7 @@ function buildStoryBeats(c){
   const phases=['도입','탐색','대면','진실','위기','결단'];
   const guides=actGuides[c.id];
   const scripts=novelActs[c.id];
-  for(let act=0;act<5;act++){
+  for(let act=0;act<(c.acts?.length || 5);act++){
     const guide=guides[act];
     const script=scripts[act];
     const rawProse=[script.intro, buildBridgeScene(c, guide, act), buildExplorationScene(c, guide, act), script.discovery, script.crisis, script.climax];
@@ -857,9 +869,9 @@ function buildStoryBeats(c){
     };
     return b;
   };
-  for (let actIndex=0; actIndex<5; actIndex++) {
+  for (let actIndex=0; actIndex<(c.acts?.length || 5); actIndex++) {
     const entry=nodeAt(actIndex,0), careful=nodeAt(actIndex,1), bold=nodeAt(actIndex,2), empathic=nodeAt(actIndex,3), crisis=nodeAt(actIndex,4), decision=nodeAt(actIndex,5);
-    const nextAct=actIndex<4 ? nodeAt(actIndex+1,0)?.id : '__ENDING__';
+    const nextAct=actIndex<(c.acts?.length || 5)-1 ? nodeAt(actIndex+1,0)?.id : '__ENDING__';
     entry.nodeRole='entry'; careful.nodeRole='route-careful'; bold.nodeRole='route-bold'; empathic.nodeRole='route-empathetic'; crisis.nodeRole='crisis'; decision.nodeRole='decision';
     const canon=[entry,careful,bold,empathic,crisis,decision];
     for (const base of canon) {
@@ -950,7 +962,7 @@ function buildEvents(c) {
       return {
         label:`${title} — ${sceneVerb} ${action[0]}`,
         stat:action[1],
-        dc:10+(act-1)*2+((i+j)%3),
+        dc:Math.min(20,10+(act-1)*2+((i+j)%3)),
         success:`「${title}」의 핵심을 정확히 짚었다. 선택한 접근이 장면을 유리하게 바꾸고 다음 단서가 선명해진다.`,
         successEffect:effect.success,
         failure:`「${title}」의 상황이 예상보다 복잡했다. 시도는 흔적을 남기고 파티가 즉시 대가를 감수해야 한다.`,
@@ -962,7 +974,7 @@ function buildEvents(c) {
       choices.push({
         label:`${title} — ${job[0]}만 알아볼 수 있는 전문적인 해결책을 실행한다`,
         stat:job[1],
-        dc:Math.max(10,9+(act-1)*2+(i%3)),
+        dc:Math.min(20,Math.max(10,9+(act-1)*2+(i%3))),
         requiredJob:job[0],
         special:true,
         success:`${job[0]}의 전문성이 「${title}」에 숨은 결정적 틈을 찾아낸다. 일반적인 방법으로는 열리지 않던 길이 열린다.`,
@@ -1313,6 +1325,109 @@ const JOB_SKILL_DEFS = {
   COIN_EVENT_MAP.guardian2 = {5:1,18:1};
   COIN_EVENT_MAP.guardian3 = {3:1,16:1};
 
+})();
+
+
+// v5.8.0 - Guardian unified saga + new original campaign
+(function installUnifiedGuardianAndNewCampaign(){
+  const g1 = campaigns.find(c => c.id === 'guardian1');
+  const g2 = campaigns.find(c => c.id === 'guardian2');
+  const g3 = campaigns.find(c => c.id === 'guardian3');
+  if (g1 && g2 && g3) {
+    const mergedActs = [...g1.acts, ...g2.acts, ...g3.acts];
+    const mergedTitles = [...g1.titles, ...g2.titles, ...g3.titles];
+    const mergedMonsters = [...g1.monsters, ...g2.monsters, ...g3.monsters];
+    g1.id = 'guardian';
+    g1.title = '가디언 테일즈 연대기 · 시즌 1 통합편';
+    g1.genre = '팬 어댑테이션 · 월드 1~11 통합';
+    g1.subtitle = '캔터베리의 함락부터 기록되지 않은 세계와 헤븐홀드 탈환까지, 1·2·3부를 하나의 연속 장편으로.';
+    g1.intro = '침략으로 무너진 캔터베리에서 시작한 기사와 작은 공주의 여정은 숲, 티탄 왕국, 마법학교, 광기의 사막, 셴 시티, 거대한 여관, 던전 왕국, 쉬버링 산, 라 제국과 10년 뒤의 미래까지 끊기지 않고 이어진다. 앞 월드에서 누구를 도왔고 무엇을 포기했는지가 뒤 월드의 동맹, 위험, 선택 난이도와 마지막 시간의 선택까지 실제 조건으로 남는 하나의 장편 연대기다.';
+    g1.acts = mergedActs;
+    g1.titles = mergedTitles;
+    g1.monsters = mergedMonsters;
+    campaigns.splice(campaigns.indexOf(g2), 1);
+    campaigns.splice(campaigns.indexOf(g3), 1);
+
+    eventStyles.guardian = {
+      actions:eventStyles.guardian1.actions,
+      visuals:[...eventStyles.guardian1.visuals, ...eventStyles.guardian2.visuals, ...eventStyles.guardian3.visuals]
+    };
+    actGuides.guardian = [...actGuides.guardian1, ...actGuides.guardian2, ...actGuides.guardian3];
+    storyTone.guardian = [...storyTone.guardian1, ...storyTone.guardian2, ...storyTone.guardian3];
+    STORY_TEXTURE.guardian = STORY_TEXTURE.guardian1 || STORY_TEXTURE.guardian;
+    novelActs.guardian = actGuides.guardian.map((g, i) => ({
+      intro:`${g.place}. 직전 세계에서 남긴 동맹, 적대, 부상과 단서는 사라지지 않았다. 이번 막의 목표는 “${g.goal}”이다. 도착 직후의 첫 사건부터 이전 선택의 결과가 사람들의 태도와 접근 가능한 길을 바꿔 놓는다.`,
+      discovery:`현장을 파고들자 이번 세계만의 문제로 보였던 사건이 앞선 여정과 이어진다. ${g.reveal}. 이전에 확보한 기록이나 관계가 있다면 같은 사실도 더 빨리, 더 안전하게 확인할 수 있고, 놓친 것이 있다면 그 공백을 메우는 별도 위험이 생긴다.`,
+      crisis:`상황이 악화된다. ${g.stakes}. 누구를 먼저 지키고 무엇을 먼저 확보하느냐에 따라 다음 장면의 인물, 위치, 위협도가 달라진다. 실패해도 이야기는 멈추지 않지만 실패한 바로 그 행동 때문에 생긴 문제를 다음 장면에서 해결해야 한다.`,
+      climax:`이번 막의 결론은 “${g.goal}”의 결과로 정리된다. ${g.reveal}. 성공과 실패, 동맹과 적대, 남겨 둔 문제를 모두 다음 막의 시작 조건으로 넘긴 채 여정은 끊기지 않고 계속된다.`
+    }));
+    ITEM_CATALOG.guardian = [...(ITEM_CATALOG.guardian1 || []), ...(ITEM_CATALOG.guardian2 || []), ...(ITEM_CATALOG.guardian3 || [])];
+    FACILITY_THEME.guardian = {...(FACILITY_THEME.guardian1 || FACILITY_THEME.guardian), shop:{...(FACILITY_THEME.guardian1?.shop || FACILITY_THEME.guardian?.shop || {}),label:'월드 순회 보급 상점',storyLead:'지금까지 지나온 세계의 상인과 동료들이 연결한 보급망이 현재 위치까지 따라왔다. 앞에서 맺은 관계 덕분에 서로 다른 지역의 장비가 한 자리에 모였다.'}};
+    const offsetMap=(src,off)=>Object.fromEntries(Object.entries(src||{}).map(([k,v])=>[Number(k)+off,v]));
+    LOOT_EVENT_MAP.guardian = {...offsetMap(LOOT_EVENT_MAP.guardian1,0), ...offsetMap(LOOT_EVENT_MAP.guardian2,30), ...offsetMap(LOOT_EVENT_MAP.guardian3,60)};
+    COIN_EVENT_MAP.guardian = {...offsetMap(COIN_EVENT_MAP.guardian1,0), ...offsetMap(COIN_EVENT_MAP.guardian2,30), ...offsetMap(COIN_EVENT_MAP.guardian3,60)};
+  }
+
+  const echo = {
+    id:'echo', title:'유리별의 아카이브', genre:'기억 미스터리 판타지', icon:'✧', accent:'#8fd9ff', accent2:'#ff9fce',
+    subtitle:'도시의 모든 기억이 유리별에 저장된다. 그런데 오늘, 죽은 사람의 기억이 내 이름으로 깨어났다.',
+    intro:'산맥 위에 떠 있는 기록도시 아스테라는 시민의 중요한 기억을 작은 유리별에 보관한다. 어느 날 중앙 아카이브에서 17년 전 죽은 탐사대의 기억이 동시에 재생되고, 그 마지막 장면마다 현재 파티의 이름이 등장한다. 파티는 자신들이 태어나기 전 사건과 왜 연결되어 있는지, 누가 도시 전체의 기억을 다시 쓰고 있는지 추적해야 한다.',
+    acts:['깨진 유리별','죽은 탐사대의 목소리','도시가 잊은 구역','기억을 훔치는 성좌','마지막 원본'],
+    jobs:[
+      ['기억 복원사','지능','파편 복원: 조사 판정 실패 1회를 재굴림하고 숨은 기록 1개를 본다.'],
+      ['성좌 추적자','지혜','별자리 독해: 장면의 거짓 단서와 실제 위험을 구분한다.'],
+      ['유리검 수호자','근력','반사 방벽: 전투 피해 1회를 막고 적의 위치를 드러낸다.'],
+      ['공중로 질주자','민첩','낙하 경로: 위험 지역을 우회하고 다음 판정 DC를 1 낮춘다.'],
+      ['기록 중재관','매력','증언 봉합: 적대적인 증언자 둘의 말을 연결해 관계 위협 1회를 무효화한다.'],
+      ['아카이브 의무관','체력','기억 안정화: 파티 HP를 회복하고 기억 오염 상태를 정화한다.']
+    ],
+    monsters:['파손된 기록병','기억을 먹는 유리새','거짓 증언의 망령','성좌 수호기','복제된 탐사대장','원본 관리자 아르카'],
+    titles:Array.from({length:30},(_,i)=>[
+      '내 이름으로 깨어난 죽은 기억','금이 간 중앙 아카이브','17년 전 구조 신호','기억 속의 낯선 동료','유리별을 훔친 그림자','하늘에서 떨어진 기록',
+      '죽은 탐사대의 첫 증언','서로 다른 마지막 순간','기록되지 않은 일곱 번째 대원','거짓 구조 좌표','탐사선의 봉인된 칸','목소리가 가리킨 현재',
+      '지도에서 사라진 구역','아무도 기억하지 못하는 거리','이름 없는 주민들','기억세를 걷는 관리인','과거를 가진 아이','도시가 지운 밤',
+      '별자리가 바뀌는 시간','기억을 훔치는 성좌','복제된 탐사대장','아카이브의 반란','유리비가 내리는 광장','모든 증언이 한 사람을 가리킨다',
+      '원본 보관실','내 기억의 첫 장면','17년 전의 나','관리자 아르카의 제안','어떤 기억을 남길 것인가','유리별이 없는 새벽'
+    ][i])
+  };
+  ITEM_CATALOG.echo = [
+    {id:'echo_archive_lens',name:'아카이브 복원 렌즈',slot:'tool',stat:'지능',bonus:1,price:9,rarity:'희귀',passive:'깨진 기억 파편의 연결을 읽는다. 지능 판정 보정 +1.'},
+    {id:'echo_constellation_compass',name:'성좌 추적 나침반',slot:'charm',stat:'지혜',bonus:1,price:9,rarity:'희귀',passive:'거짓 궤적과 실제 기억 흐름을 가른다. 지혜 판정 보정 +1.'},
+    {id:'echo_glass_blade',name:'유리검 파편',slot:'weapon',stat:'근력',bonus:1,price:10,rarity:'희귀',passive:'기억 망령과 기록병을 밀어내는 공명 검편. 근력 판정 보정 +1.'},
+    {id:'echo_skyline_boots',name:'공중로 질주 장화',slot:'armor',stat:'민첩',bonus:1,price:9,rarity:'희귀',passive:'흔들리는 공중 통로에서 균형을 잡는다. 민첩 판정 보정 +1.'},
+    {id:'echo_mediator_badge',name:'기록 중재관 인장',slot:'charm',stat:'매력',bonus:1,price:8,rarity:'고급',passive:'충돌하는 증언자 사이에서 공식 신뢰를 얻는다. 매력 판정 보정 +1.'},
+    {id:'echo_stability_harness',name:'기억 안정화 하네스',slot:'armor',stat:'체력',bonus:1,price:10,rarity:'희귀',passive:'기억 오염과 장시간 동기화의 부담을 버틴다. 체력 판정 보정 +1.'}
+  ];
+  FACILITY_THEME.echo = {
+    restaurant:{label:'별빛 기록식당',description:'아카이브 근무자들이 이용하던 식당. 코인 2개로 따뜻한 식사를 하고 HP 2를 회복한다.',storyLead:'유리 천장 위로 기억별이 천천히 흘렀다. 조리대 뒤의 자동 주방은 도시가 혼란에 빠진 뒤에도 정해진 시간에 따뜻한 수프를 내놓고 있었다.'},
+    inn:{label:'무기억 숙면실',description:'외부 기억 신호를 차단하는 숙면 캡슐. 코인 5개로 HP 5 회복과 상태이상 1개 제거.',storyLead:'복도 끝 작은 숙면실은 성좌 신호가 닿지 않는 드문 공간이었다. 문을 닫자 머릿속에 섞여 들던 타인의 목소리가 처음으로 조용해졌다.'},
+    shop:{label:'파편 장비 보관소',description:'회수된 유리별과 탐사 장비를 소량 판매하는 보관소.',storyLead:'관리인이 잠긴 서랍 세 개만 열어 보였다. 각 서랍 속 장비에는 누군가의 희미한 기억이 잔광처럼 남아 있었다.'},
+    quest:{label:'미복구 기록 의뢰',description:'복구되지 않은 기록 하나를 확인하면 소량의 코인을 지급한다.',storyLead:'중앙 단말이 오류 목록 하나를 파티에게 넘겼다. 보상은 작았지만 해당 기록의 마지막 열람자는 17년 전에 사망한 탐사대원이었다.'},
+    gamble:{label:'기억 확률 주사위',description:'자신의 기억 한 조각을 예측값으로 바꾸는 위험한 D6 내기. 코인 1개를 건다.',storyLead:'휴게 회랑의 오래된 오락 단말이 여섯 개의 별점을 띄웠다. 화면에는 “기억은 정확할수록 확률이 낮아진다”는 이상한 문구가 남아 있었다.'}
+  };
+  LOOT_EVENT_MAP.echo = {4:'echo_archive_lens',10:'echo_constellation_compass',15:'echo_skyline_boots',22:'echo_mediator_badge'};
+  COIN_EVENT_MAP.echo = {8:1,19:1};
+
+  Object.assign(JOB_SKILL_DEFS,{
+    '기억 복원사':{name:'원본 복원',cooldown:3,kind:'insight',amount:2,text:'기억 파편을 복원해 위협도 2를 낮추고 영감 1을 얻는다.'},
+    '성좌 추적자':{name:'성좌 독해',cooldown:2,kind:'insight',amount:2,text:'거짓 궤적을 걷어내 위협도 2를 낮추고 영감 1을 얻는다.'},
+    '유리검 수호자':{name:'반사 방벽',cooldown:3,kind:'guardParty',amount:2,text:'파티 전원에게 피해 2를 막는 유리 방벽을 부여한다.'},
+    '공중로 질주자':{name:'낙하 경로',cooldown:3,kind:'threatShield',amount:1,text:'다음 위협도 증가 1회를 무효화하고 영감 1을 얻는다.'},
+    '기록 중재관':{name:'증언 봉합',cooldown:3,kind:'inspirationParty',amount:1,text:'파티 전원에게 영감 1을 부여하고 위협도 1을 낮춘다.'},
+    '아카이브 의무관':{name:'기억 안정화',cooldown:4,kind:'healCleanseParty',amount:2,text:'파티 전원의 HP를 2 회복하고 각자 상태이상 1개를 정화한다.'}
+  });
+  campaigns.push(echo);
+  eventStyles.echo={actions:[['유리별의 균열과 기록 순서를 분석한다','지능'],['증언의 감정과 누락된 부분을 읽는다','지혜'],['공중 통로를 타고 먼저 현장에 도착한다','민첩'],['기억 망령을 붙잡아 시간을 번다','근력'],['서로 충돌하는 증언자를 중재한다','매력'],['기억 오염을 견디며 원본 기록을 지킨다','체력']],visuals:['푸른 중앙 아카이브','유리별이 떠 있는 회랑','바람 부는 공중로','삭제된 구역의 골목','성좌 투영실','원본 보관실']};
+  storyTone.echo=['깨진 유리별에서 현재와 과거가 겹치는 원인을 찾는다','죽은 탐사대의 서로 다른 증언을 맞춘다','도시가 스스로 지워 버린 구역의 존재를 확인한다','기억을 훔치는 성좌와 관리자 사이의 목적을 밝힌다','누구의 기억을 원본으로 남길지 결정한다'];
+  STORY_TEXTURE.echo=STORY_TEXTURE.neon || STORY_TEXTURE.clock;
+  actGuides.echo=[
+    {goal:'중앙 아카이브의 파손 원인을 조사하고 죽은 탐사대의 기억이 왜 현재 파티 이름으로 재생되는지 첫 연결점을 찾는다',place:'유리별이 부서진 중앙 아카이브',reveal:'재생된 기억에는 현재 시점에서만 존재하는 정보가 섞여 있다',stakes:'파손된 기록을 서둘러 복구하면 오염된 기억까지 진실로 굳어질 수 있다'},
+    {goal:'17년 전 탐사대 각자의 마지막 기억을 비교해 누락된 일곱 번째 대원의 정체를 찾는다',place:'봉인된 탐사기록 회랑과 추락한 탐사선',reveal:'탐사대는 사고로 죽은 것이 아니라 누군가 원본 기억을 분리하는 실험을 막으려 했다',stakes:'한 사람의 증언만 믿으면 다른 생존 흔적과 현재의 공범을 놓치게 된다'},
+    {goal:'지도와 시민의 기억에서 동시에 지워진 구역에 들어가 도시가 무엇을 숨겼는지 확인한다',place:'아무도 이름을 기억하지 못하는 제7구역',reveal:'삭제된 구역 주민들은 기억을 잃은 것이 아니라 도시 전체가 그들을 기억하지 못하도록 편집되었다',stakes:'구역의 존재를 공개하면 시민 혼란이 커지고 숨기면 관리자에게 시간을 벌어 준다'},
+    {goal:'기억을 훔치는 성좌 시스템과 관리자 아르카의 목적을 파헤쳐 현재 파티가 17년 전 사건과 연결된 이유를 밝힌다',place:'도시 상공의 성좌 투영실',reveal:'파티의 일부 기억은 17년 전 탐사대가 남긴 원본 조각을 기반으로 재구성되었다',stakes:'시스템을 파괴하면 수많은 시민 기억이 함께 사라질 수 있고 유지하면 조작의 가능성이 남는다'},
+    {goal:'원본 보관실에서 각자의 기억과 도시 전체의 기록 중 무엇을 남길지 결정하고 조작을 끝낸다',place:'아스테라 최심부 원본 보관실',reveal:'완전한 원본은 존재하지 않으며 기억은 서로의 증언과 선택으로 계속 갱신되는 기록이다',stakes:'한 가지 원본만 강제하면 진실은 단순해지지만 누군가의 삶이 지워진다'}
+  ];
+  novelActs.echo=actGuides.echo.map(g=>({intro:`${g.place}. ${g.goal}. 처음 보이는 현상은 결과일 뿐이며 원인은 아직 다른 장소에 숨어 있다.`,discovery:`흩어진 기록을 맞추자 ${g.reveal}. 앞에서 확보하거나 잃은 증언에 따라 같은 사실도 다른 인물의 입을 통해 드러난다.`,crisis:`${g.stakes}. 지금의 선택은 정보만 바꾸는 것이 아니라 다음 장면에서 누가 기억을 유지하고 누가 파티를 적대하는지 바꾼다.`,climax:`이번 막의 핵심은 ${g.goal}. 성공과 실패의 흔적을 모두 다음 막에 남긴 채, ${g.reveal}.` }));
 })();
 
 export const CAMPAIGNS = campaigns.map(c => ({

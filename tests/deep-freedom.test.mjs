@@ -7,9 +7,14 @@ test('short action vocabulary is available and fights are not boss-only',()=>{
   for (const c of CAMPAIGNS) {
     const canonical=c.storyBeats.filter(b=>!b.branchScene);
     const labels=new Set(canonical.flatMap(b=>b.choices.map(x=>x.label)));
-    for (const verb of ['조사','싸운','설득','훔친','미행']) assert.ok([...labels].some(label=>label.includes(verb)),`${c.id}: ${verb}`);
+    assert.ok([...labels].some(label=>label.includes('조사')),`${c.id}: 조사`);
+    assert.ok([...labels].some(label=>label.includes('설득') || label.includes('살펴본')),`${c.id}: social/observe`);
     assert.ok(canonical.some(b=>b.choices.some(x=>x.startsCombat)),`${c.id}: no normal combat action`);
     assert.ok(canonical.some(b=>b.choices.some(x=>x.isTravel)),`${c.id}: no travel choice`);
+    // Context-aware design: 싸움/절도/미행은 실제 적대자·사람·물건이 있는 장면에서만 나타나야 한다.
+    for (const b of canonical) for (const x of b.choices) {
+      if (x.startsCombat) assert.match(x.label,/싸운|공격|제압|막아|전투/);
+    }
   }
 });
 

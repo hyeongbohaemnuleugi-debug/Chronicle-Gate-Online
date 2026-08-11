@@ -10,7 +10,7 @@ const notes = [];
 const assert = (condition, message) => { if (!condition) failures.push(message); };
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
-assert(CAMPAIGNS.length === 8, `캠페인 수: 기대 8, 실제 ${CAMPAIGNS.length}`);
+assert(CAMPAIGNS.length === 7, `캠페인 수: 기대 7, 실제 ${CAMPAIGNS.length}`);
 assert(STAT_NAMES.length === 6 && new Set(STAT_NAMES).size === 6, '능력치 6종이 유일해야 합니다.');
 const globalEventIds = new Set();
 for (const campaign of CAMPAIGNS) {
@@ -64,7 +64,7 @@ assert(app.includes('renderMainStoryChoices') && app.includes("socket.emit('stor
 
 
 assert(server.includes('const MIN_PLAYERS = 1'), 'SOLO 1인 시작 설정이 누락되었습니다.');
-assert(server.includes('SOLO_VOTE_DURATION_MS = 12_000'), 'SOLO 이벤트 투표 시간이 12초로 설정되어 있지 않습니다.');
+assert(server.includes('SOLO_VOTE_DURATION_MS = 20_000'), 'SOLO 이벤트 투표 시간이 20초로 설정되어 있지 않습니다.');
 assert(server.includes('ALL_VOTED_COUNTDOWN_MS = 3_000'), '전원 투표 완료 후 3초 확정 카운트다운이 누락되었습니다.');
 for (const campaign of CAMPAIGNS) {
   for (const beat of campaign.storyBeats.filter(beat => !beat.branchScene)) {
@@ -94,8 +94,8 @@ assert(index.includes('id="helpModal"') && index.includes('hidden'), 'ESC 모달
 assert(app.includes('resetTransientUi') && app.includes('pageshow'), '페이지 복원 시 임시 UI 초기화 로직 누락');
 assert(server.includes('choice.requiredJob') && server.includes('player.job?.name !== choice.requiredJob'), '직업 전용 선택 서버 검증 누락');
 
-assert(server.includes('function dynamicEventChance') && server.includes('function shouldDrawDynamicEvent'), '상황/운 기반 동적 이벤트 로직이 누락되었습니다.');
-assert(server.includes('VOTE_DURATION_MS = 45_000'), '이벤트 투표 시간이 45초로 설정되어 있지 않습니다.');
+assert(server.includes('EVENT_EVERY_TURNS = 3'), '이벤트 주기가 3 메인 턴으로 고정되어 있지 않습니다.');
+assert(server.includes('VOTE_DURATION_MS = 75_000'), '이벤트 투표 시간이 75초로 설정되어 있지 않습니다.');
 assert(server.includes("socket.on('story:advance'"), '메인 스토리 턴 진행 이벤트가 없습니다.');
 assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공개 로직이 없습니다.');
 assert(server.includes("event:finalizeChoice") && server.includes('서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
@@ -103,7 +103,7 @@ assert(server.includes('beginAllVotedCountdown(room)'), '전원 투표 완료 �
 assert(server.includes('clearDetour: isDetour'), '우회 위기 장면 해결 후 제거 플래그가 누락되었습니다.');
 assert(server.includes('storyNodeById') && server.includes('resolveNextStoryNode') && server.includes('consumeStoryBeat') && server.includes('storySeenIds'), '메인 스토리 분기 그래프/1회 소비 장치가 누락되었습니다.');
 assert(!server.includes('findIndex(beat => beat?.id && !seen.has(beat.id))'), '스토리 커서 오류 시 임의의 미소비 장면으로 점프하는 복구 로직이 남아 있습니다.');
-assert(app.includes("payload.kind === 'story-choice'") && app.includes("r.source === 'story'"), '메인 스토리 주사위 결과를 한 번만 보여주고 다음 장면으로 넘기는 장치가 누락되었습니다.');
+assert(server.includes('lastResolvedStoryBeat') && server.includes("room.phase === 'resolution' && room.lastResolvedStoryBeat"), '결과 화면에서 다음 챕터를 미리 노출하지 않는 스냅샷 장치가 누락되었습니다.');
 assert(!server.includes("type:'narration', author:'GM'") && !server.includes("type: 'narration', author: 'GM'") && !server.includes("type: 'narration', text: campaign.intro, author: 'GM'"), 'GM이 채팅창에 스토리 서술을 다시 기록하는 코드가 남아 있습니다.');
 assert(app.includes("m.author === 'GM' && m.type === 'narration'"), '기존 방의 GM 스토리 서술을 채팅에서 숨기는 호환 필터가 없습니다.');
 assert(app.includes('story-key') && css.includes('.story-key'), '스토리 중요 문장 강조 스타일이 누락되었습니다.');
@@ -139,13 +139,13 @@ assert(index.includes('id="economyPanel"') && index.includes('id="facilityPanel"
 assert(server.includes("socket.on('facility:action'") && server.includes("socket.on('item:equip'"), '경제/장비 서버 핸들러가 누락되었습니다.');
 assert(server.includes('effectiveAbilityTotal') && server.includes('equipmentStatBonus'), '장비 능력치 반영 로직이 누락되었습니다.');
 for (const campaign of CAMPAIGNS) {
-  assert((campaign.items || []).length === 6, `${campaign.title}: 장비 6종이 필요합니다.`);
+  assert((campaign.items || []).length >= 6, `${campaign.title}: 장비가 최소 6종 필요합니다.`);
   assert(campaign.events.some(event => event.facilityEligible), `${campaign.title}: 확률 시설이 등장할 수 있는 이벤트가 필요합니다.`);
   assert(campaign.events.some(event => event.lootItemId), `${campaign.title}: 상황 한정 아이템 보상 이벤트가 필요합니다.`);
   assert(ECONOMY_FACILITY_THEMES[campaign.id]?.shop?.storyLead, `${campaign.title}: 소설형 상점 도입문이 필요합니다.`);
 }
 for (const kind of ['restaurant','inn','shop','quest','gamble']) assert(ECONOMY_FACILITY_TEMPLATES[kind], `시설 템플릿 누락: ${kind}`);
-assert(server.includes('maybeAttachFacility') && server.includes('crypto.randomInt(0, 100) >= 27'), '확률 시설 등장 로직이 누락되었습니다.');
+assert(server.includes('maybeAttachFacility') && server.includes('crypto.randomInt(0, 100) >= 34'), '확률 시설 등장 로직이 누락되었습니다.');
 assert(server.includes('function effectiveAbilityMod') && server.includes('equipmentStatBonus(room, player, stat)'), '장비가 능력치 보정치에 직접 반영되지 않습니다.');
 
 for (const publicFile of ['public/index.html','public/app.js','public/dice3d.js','public/styles.css']) {
@@ -229,4 +229,4 @@ for (const campaign of CAMPAIGNS) {
 assert(server.includes('approachPressure'), '반복 접근 방식의 예측/피로 시스템이 없습니다.');
 assert(server.includes('maybeFatalStoryFailure'), '고위험 선택의 사망 가능성이 없습니다.');
 assert(app55.includes('판정은 선택 후 공개'), '선택 전 정확한 능력치/DC 숨김이 적용되지 않았습니다.');
-console.log('v5.7 causal freedom + anti-minmax QA PASS');
+console.log('v5.8 contextual TRPG + shared dice + unified Guardian QA PASS');

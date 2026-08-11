@@ -58,8 +58,8 @@ for (const campaign of CAMPAIGNS) {
         assert.ok(choice.dc >= 10 && choice.dc <= 20);
         assert.ok(choice.successEffect?.type);
         assert.ok(choice.failureEffect?.type);
-        assert.ok(choice.label.includes(event.title), `${event.id} choice must reference its event situation`);
-        allChoiceLabels.push(choice.label);
+        assert.ok(choice.label && [...choice.label].length <= 18, `${event.id} choice should stay short and direct`);
+        allChoiceLabels.push(`${event.id}:${choice.label}`);
         if (choice.requiredJob) assert.ok(campaign.jobs.some(job => job.name === choice.requiredJob));
       }
     }

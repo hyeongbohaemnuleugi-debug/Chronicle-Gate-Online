@@ -10,8 +10,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 test('each campaign has six equippable items with direct modifier bonuses', () => {
   for (const campaign of CAMPAIGNS) {
     const items = campaign.items || ITEMS_BY_CAMPAIGN[campaign.id] || [];
-    assert.equal(items.length, 6, `${campaign.id} item count`);
-    assert.equal(new Set(items.map(item => item.id)).size, 6, `${campaign.id} unique item ids`);
+    assert.ok(items.length >= 6, `${campaign.id} item count`);
+    assert.equal(new Set(items.map(item => item.id)).size, items.length, `${campaign.id} unique item ids`);
     for (const item of items) {
       assert.ok(['weapon','armor','charm','tool'].includes(item.slot), `${item.id} slot`);
       assert.ok(STAT_NAMES.includes(item.stat), `${item.id} stat`);

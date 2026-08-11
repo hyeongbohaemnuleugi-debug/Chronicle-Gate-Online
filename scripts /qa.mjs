@@ -16,21 +16,22 @@ const globalEventIds = new Set();
 for (const campaign of CAMPAIGNS) {
   assert(campaign.jobs.length === 6, `${campaign.title}: 직업이 6종이어야 합니다.`);
   assert(new Set(campaign.jobs.map(j => j.name)).size === 6, `${campaign.title}: 직업명이 중복됩니다.`);
-  assert(campaign.events.length === 30, `${campaign.title}: 이벤트가 30종이어야 합니다.`);
-  assert(new Set(campaign.events.map(e => e.title)).size === 30, `${campaign.title}: 이벤트 제목이 중복됩니다.`);
-  assert(new Set(campaign.events.map(e => e.id)).size === 30, `${campaign.title}: 이벤트 ID가 중복됩니다.`);
-  assert(campaign.acts.length === 5, `${campaign.title}: 5막이어야 합니다.`);
+  const expectedScenes = campaign.acts.length * 6;
+  assert(campaign.events.length === expectedScenes, `${campaign.title}: 막 수에 맞는 이벤트 ${expectedScenes}종이 필요합니다.`);
+  assert(new Set(campaign.events.map(e => e.title)).size === expectedScenes, `${campaign.title}: 이벤트 제목이 중복됩니다.`);
+  assert(new Set(campaign.events.map(e => e.id)).size === expectedScenes, `${campaign.title}: 이벤트 ID가 중복됩니다.`);
+  assert(campaign.acts.length >= 5, `${campaign.title}: 최소 5막이어야 합니다.`);
   const canonicalBeats = (campaign.storyBeats || []).filter(beat => !beat.branchScene);
   const consequenceBeats = (campaign.storyBeats || []).filter(beat => beat.branchScene);
-  assert(canonicalBeats.length === 30, `${campaign.title}: 정식 메인 장면 30개가 필요합니다.`);
+  assert(canonicalBeats.length === expectedScenes, `${campaign.title}: 정식 메인 장면 ${expectedScenes}개가 필요합니다.`);
   assert(consequenceBeats.length >= 400, `${campaign.title}: 선택별 전용 후속 장면이 충분하지 않습니다.`);
   assert(new Set(campaign.storyBeats.map(beat => beat.id)).size === campaign.storyBeats.length, `${campaign.title}: 스토리 ID가 중복됩니다.`);
-  assert(new Set(canonicalBeats.map(beat => (beat.text || '').slice(0, 120))).size === 30, `${campaign.title}: 정식 메인 장면 시작 문장이 반복됩니다.`);
+  assert(new Set(canonicalBeats.map(beat => (beat.text || '').slice(0, 120))).size === expectedScenes, `${campaign.title}: 정식 메인 장면 시작 문장이 반복됩니다.`);
   for (const event of campaign.events) {
     assert(!globalEventIds.has(event.id), `전체 캠페인에서 이벤트 ID 중복: ${event.id}`);
     globalEventIds.add(event.id);
     assert(event.choices.length === 3 || event.choices.length === 4, `${event.id}: 선택지는 3개 또는 직업 전용 포함 4개여야 합니다.`);
-    assert(event.act >= 1 && event.act <= 5, `${event.id}: act 범위 오류`);
+    assert(event.act >= 1 && event.act <= campaign.acts.length, `${event.id}: act 범위 오류`);
     for (const choice of event.choices) {
       assert(STAT_NAMES.includes(choice.stat), `${event.id}: 알 수 없는 능력치 ${choice.stat}`);
       assert(Number.isInteger(choice.dc) && choice.dc >= 8 && choice.dc <= 22, `${event.id}: DC 범위 오류 ${choice.dc}`);
@@ -39,7 +40,7 @@ for (const campaign of CAMPAIGNS) {
       if (choice.requiredJob) assert(campaign.jobs.some(job => job.name === choice.requiredJob), `${event.id}: 존재하지 않는 직업 전용 선택 ${choice.requiredJob}`);
     }
   }
-  notes.push(`${campaign.title}: 정식 30장면 + 선택 후속 ${consequenceBeats.length}장면 / 이벤트 30종 / 직업 6종`);
+  notes.push(`${campaign.title}: 정식 ${expectedScenes}장면 + 선택 후속 ${consequenceBeats.length}장면 / 이벤트 ${expectedScenes}종 / 직업 6종`);
 }
 
 const index = read('public/index.html');
@@ -64,7 +65,7 @@ assert(app.includes('renderMainStoryChoices') && app.includes("socket.emit('stor
 
 
 assert(server.includes('const MIN_PLAYERS = 1'), 'SOLO 1인 시작 설정이 누락되었습니다.');
-assert(server.includes('SOLO_VOTE_DURATION_MS = 20_000'), 'SOLO 이벤트 투표 시간이 20초로 설정되어 있지 않습니다.');
+assert(server.includes('SOLO_VOTE_DURATION_MS = 12_000'), 'SOLO 이벤트 투표 시간이 12초로 설정되어 있지 않습니다.');
 assert(server.includes('ALL_VOTED_COUNTDOWN_MS = 3_000'), '전원 투표 완료 후 3초 확정 카운트다운이 누락되었습니다.');
 for (const campaign of CAMPAIGNS) {
   for (const beat of campaign.storyBeats.filter(beat => !beat.branchScene)) {
@@ -95,7 +96,7 @@ assert(app.includes('resetTransientUi') && app.includes('pageshow'), '페이지 
 assert(server.includes('choice.requiredJob') && server.includes('player.job?.name !== choice.requiredJob'), '직업 전용 선택 서버 검증 누락');
 
 assert(server.includes('EVENT_EVERY_TURNS = 3'), '이벤트 주기가 3 메인 턴으로 고정되어 있지 않습니다.');
-assert(server.includes('VOTE_DURATION_MS = 75_000'), '이벤트 투표 시간이 75초로 설정되어 있지 않습니다.');
+assert(server.includes('VOTE_DURATION_MS = 45_000'), '이벤트 투표 시간이 45초로 설정되어 있지 않습니다.');
 assert(server.includes("socket.on('story:advance'"), '메인 스토리 턴 진행 이벤트가 없습니다.');
 assert(server.includes('drawEventForRoom(room)'), '3턴 후 자동 이벤트 공개 로직이 없습니다.');
 assert(server.includes("event:finalizeChoice") && server.includes('서버가 자동 집계'), '호스트 조기 확정 제거 호환 가드가 없습니다.');
@@ -139,7 +140,7 @@ assert(index.includes('id="economyPanel"') && index.includes('id="facilityPanel"
 assert(server.includes("socket.on('facility:action'") && server.includes("socket.on('item:equip'"), '경제/장비 서버 핸들러가 누락되었습니다.');
 assert(server.includes('effectiveAbilityTotal') && server.includes('equipmentStatBonus'), '장비 능력치 반영 로직이 누락되었습니다.');
 for (const campaign of CAMPAIGNS) {
-  assert((campaign.items || []).length >= 6, `${campaign.title}: 장비가 최소 6종 필요합니다.`);
+  assert((campaign.items || []).length >= 6, `${campaign.title}: 장비 최소 6종이 필요합니다.`);
   assert(campaign.events.some(event => event.facilityEligible), `${campaign.title}: 확률 시설이 등장할 수 있는 이벤트가 필요합니다.`);
   assert(campaign.events.some(event => event.lootItemId), `${campaign.title}: 상황 한정 아이템 보상 이벤트가 필요합니다.`);
   assert(ECONOMY_FACILITY_THEMES[campaign.id]?.shop?.storyLead, `${campaign.title}: 소설형 상점 도입문이 필요합니다.`);
@@ -178,7 +179,8 @@ for (const campaign of CAMPAIGNS) {
   const ids = new Set(campaign.storyBeats.map(b => b.id));
   const canonical = campaign.storyBeats.filter(b => !b.branchScene);
   const consequence = campaign.storyBeats.filter(b => b.branchScene);
-  if (canonical.length !== 30) throw new Error(`${campaign.id}: expected 30 canonical nodes`);
+  const expectedCanonical = campaign.acts.length * 6;
+  if (canonical.length !== expectedCanonical) throw new Error(`${campaign.id}: expected ${expectedCanonical} canonical nodes`);
   if (consequence.length < 400) throw new Error(`${campaign.id}: expected hundreds of consequence nodes`);
   for (const beat of campaign.storyBeats) for (const choice of beat.choices || []) {
     for (const target of [choice.next?.success, choice.next?.failure].filter(Boolean)) {
@@ -229,4 +231,4 @@ for (const campaign of CAMPAIGNS) {
 assert(server.includes('approachPressure'), '반복 접근 방식의 예측/피로 시스템이 없습니다.');
 assert(server.includes('maybeFatalStoryFailure'), '고위험 선택의 사망 가능성이 없습니다.');
 assert(app55.includes('판정은 선택 후 공개'), '선택 전 정확한 능력치/DC 숨김이 적용되지 않았습니다.');
-console.log('v5.8 contextual TRPG + shared dice + unified Guardian QA PASS');
+console.log('v5.7 causal freedom + anti-minmax QA PASS');

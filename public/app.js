@@ -36,6 +36,7 @@ let mode = 'create';
 let roomCode = localStorage.getItem('cg_room') || '';
 let playerToken = localStorage.getItem('cg_token') || '';
 let diceQueue = Promise.resolve();
+let resolutionTimer = null;
 let resumeInFlight = false;
 let shownEncounterId = '';
 let encounterIntroTimer = null;
@@ -81,7 +82,7 @@ function saveUiPrefs() {
 const AUDIO_FILES = {
   music: {
     ember: '/audio/bgm_ember.wav?v=4121d', neon: '/audio/bgm_neon.wav?v=4121d', abyss: '/audio/bgm_abyss.wav?v=4121d',
-    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', guardian: '/audio/bgm_guardian.wav?v=4150', guardian1: '/audio/bgm_guardian.wav?v=4160', guardian2: '/audio/bgm_guardian.wav?v=4160', guardian3: '/audio/bgm_guardian.wav?v=4160', combat: '/audio/bgm_combat.wav?v=4121d',
+    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', guardian: '/audio/bgm_guardian.wav?v=4150', guardian1: '/audio/bgm_guardian.wav?v=4160', guardian2: '/audio/bgm_guardian.wav?v=4160', guardian3: '/audio/bgm_guardian.wav?v=4160', nighttrain: '/audio/bgm_clock.wav?v=5800', combat: '/audio/bgm_combat.wav?v=4121d',
   },
   fx: {
     dice:'/audio/dice_roll.wav?v=4121d', success:'/audio/success.wav?v=4121d', failure:'/audio/failure.wav?v=4121d',
@@ -385,7 +386,7 @@ function resumeSavedSession(attempt = 0) {
       state = res.state;
       audioManager.syncMusic(state);
       renderState();
-      if (state.phase === 'resolution' && state.lastResolution?.source !== 'story') showResolution(state.lastResolution);
+      if (state.phase === 'resolution' && state.lastResolution) showResolution(state.lastResolution);
       $('#connectionText').textContent = 'ONLINE';
       return;
     }
@@ -419,6 +420,7 @@ const WORLD_META = {
   guardian1: { motif:'GUARDIAN TALES I', scene:['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길'], boss:'월드 1~4의 인연과 침략의 흔적이 겹쳐진 첫 연대기의 마지막 시련' },
   guardian2: { motif:'GUARDIAN TALES II', scene:['셴 시티','작아진 여관','던전 왕국','쉬버링 산','라 제국 국경'], boss:'월드 5~8의 챔피언과 진실을 시험하는 두 번째 연대기의 마지막 시련' },
   guardian3: { motif:'GUARDIAN TALES III', scene:['라 제국','10년 뒤의 폐허','저항군 기지','점령된 헤븐홀드','차원의 문'], boss:'미래 공주와 저항군이 맞서는 기록되지 않은 세계의 최종 결전' },
+  nighttrain: { motif:'LINE ZERO', scene:['0번 승강장','이름을 잃은 객차','지도에 없는 역','붉은 기관차실','새벽이 멈춘 종점'], boss:'빈 얼굴의 차장과 이름을 잃은 승객들이 기다리는 마지막 객차' },
 };
 
 const STORY_ART_FILES = {
@@ -427,7 +429,7 @@ const STORY_ART_FILES = {
   abyss: { early: './art/abyss_early.png', late: './art/abyss_late.png' },
   clock: { early: './art/clock_early.png', late: './art/clock_late.png' },
   wild: { early: './art/wild_early.png', late: './art/wild_late.png' },
-  guardian: { early: './art/guardian_early.png', late: './art/guardian_late.png' },
+  guardian: { profile:'./art/guardian_part1_profile.png', early:'./art/guardian_part1_profile.png', late:'./art/guardian_part3_profile.png' },
   guardian1: { profile:'./art/guardian_part1_profile.png', early:'./art/guardian_part1_profile.png', late:'./art/guardian_part1_profile.png' },
   guardian2: { profile:'./art/guardian_part2_profile.png', early:'./art/guardian_part2_profile.png', late:'./art/guardian_part2_profile.png' },
   guardian3: { profile:'./art/guardian_part3_profile.png', early:'./art/guardian_part3_profile.png', late:'./art/guardian_part3_profile.png' },
@@ -581,10 +583,6 @@ function renderFacilityPanel(event, player) {
         <small>${esc(item.passive || '')}</small>
         <strong>${owned.has(item.id) ? '보유 중' : `◈ ${Math.max(1, Number(item.price || 0) - charismaDiscount)}${charismaDiscount ? ` <small>(매력 할인 -${charismaDiscount})</small>` : ''}`}</strong>
       </button>`).join('')}</div>`;
-  } else if (facility.type === 'guild') {
-    const joined=Boolean(player.guild?.joined);
-    const usedQuest=facilityUsed(event.id,player.id,'guildQuest');
-    actions=`<div class="guild-actions">${joined?`<div class="guild-rank">길드 평판 ${Number(player.guild?.reputation||0)} · 완료 의뢰 ${Number(player.guild?.completed||0)}</div><button class="primary facility-action" type="button" data-facility-action="guildQuest" ${usedQuest?'disabled':''}>${usedQuest?'이번 방문의 길드 의뢰 완료':'길드 의뢰를 받는다'}</button>`:`<button class="primary facility-action" type="button" data-facility-action="guildJoin">길드에 들어간다</button>`}</div>`;
   } else {
     const label = facility.type === 'inn' ? `숙박하기 · ◈ ${Math.max(0, Number(facility.cost || 0) - charismaDiscount)}`
       : facility.type === 'restaurant' ? `식사하기 · ◈ ${Math.max(0, Number(facility.cost || 0) - charismaDiscount)}`
@@ -594,7 +592,7 @@ function renderFacilityPanel(event, player) {
   }
   panel.innerHTML = `
     <div class="facility-copy"><span class="eyebrow">장면 사이의 짧은 숨</span><h3>${esc(facility.label)}</h3>${facility.storyLead ? `<p class="facility-story-lead">${esc(facility.storyLead)}</p>` : ''}<p>${esc(facility.description || '')}</p><div class="coin-chip">보유 코인 ◈ ${Number(player.coins || 0)}</div></div>
-    <div class="facility-actions">${actions}${event?.noTimeLimit ? `<button class="ghost facility-leave" type="button">시설을 떠난다</button><small class="facility-no-timer">시간 제한 없음 · 충분히 둘러본 뒤 떠날 수 있습니다.</small>` : ''}</div>`;
+    <div class="facility-actions">${actions}</div>`;
   panel.querySelectorAll('[data-facility-action]').forEach(button => button.onclick = () => {
     button.disabled = true;
     socket.emit('facility:action', { roomCode, playerToken, action: button.dataset.facilityAction }, r => {
@@ -603,7 +601,6 @@ function renderFacilityPanel(event, player) {
       toast(r.summary || '시설을 이용했습니다.');
     });
   });
-  panel.querySelector('.facility-leave')?.addEventListener('click',()=>socket.emit('facility:leave',{roomCode,playerToken},r=>!r?.ok&&toast(r?.error||'떠나기 실패')));
   panel.querySelectorAll('[data-shop-item]').forEach(button => button.onclick = () => {
     button.disabled = true;
     socket.emit('facility:action', { roomCode, playerToken, action:'shop', itemId:button.dataset.shopItem }, r => {
@@ -1043,7 +1040,10 @@ socket.on('chat:new', entry => {
     renderChat();
   }
 });
-socket.on('resolution', r => { showResolution(r); });
+socket.on('resolution', r => {
+  // 모든 플레이어가 같은 주사위 애니메이션을 끝까지 본 뒤 결과 서술을 본다.
+  diceQueue = diceQueue.then(async () => { showResolution(r); await new Promise(resolve => setTimeout(resolve, 80)); }).catch(console.error);
+});
 socket.on('skill:ready', payload => toast(`✨ ${payload?.name || '직업 스킬'} 사용이 가능합니다!`));
 socket.on('skill:used', payload => { const combatKinds=new Set(['blast','markShot','partyAttackBoost','attackBoost']); const healKinds=new Set(['healParty','cleanseParty','healCleanse','partyHeal']); audioManager.fx(healKinds.has(payload?.kind)?'heal':(combatKinds.has(payload?.kind)?'attack':'skill'),1.12); toast(`✨ ${payload?.playerName || '플레이어'} · ${payload?.name || '직업 스킬'} — ${payload?.summary || '효과 적용'}`); });
 socket.on('dice:roll', payload => { audioManager.fx('dice', .85); enqueueDice(payload); });
@@ -1051,8 +1051,6 @@ socket.on('dice:roll', payload => { audioManager.fx('dice', .85); enqueueDice(pa
 function enqueueDice(payload) {
   diceQueue = diceQueue.then(async () => {
     audioManager.unlock();
-    const syncWait=Math.max(0,Number(payload.revealAt||0)-Date.now());
-    if(syncWait) await new Promise(r=>setTimeout(r,syncWait));
     const c = currentCampaign();
     $('#diceOverlay').classList.add('show');
     $('#diceRoller').textContent = `${payload.rollerName} · ${payload.kind?.toUpperCase() || 'ROLL'}`;
@@ -1100,17 +1098,12 @@ function enqueueDice(payload) {
     }
     $('#diceOverlay').classList.remove('show');
     await new Promise(r => setTimeout(r, 180));
-    // 메인 스토리 판정은 주사위 극장에서 결과를 한 번만 보여준 뒤 바로 다음 장면으로 넘어간다.
-    if (payload.kind === 'story-choice' && payload.rollerId === playerToken) {
-      socket.emit('event:continue',{roomCode,playerToken},r=>{ if(!r?.ok && !/결과가 없습니다/.test(String(r?.error||''))) toast(r?.error); });
-    }
   }).catch(console.error);
 }
 
 function renderState() {
   if (!state) return;
   renderResumeGate();
-  renderTurnTransferPrompt();
   roomCode = state.code;
   $('#roomCodeTop').textContent = state.code;
   $('#roomCodeLobby').textContent = state.code;
@@ -1251,17 +1244,6 @@ function renderResumeGate() {
   gate.innerHTML = `<b>이어하기 대기</b><span>기존 참가자 전원이 돌아와야 진행됩니다.${missing.length ? ` · 기다리는 중: ${missing.map(esc).join(', ')}` : ''}</span>`;
   gate.classList.remove('hidden');
 }
-function renderTurnTransferPrompt() {
-  let layer = document.getElementById('turnTransferPrompt');
-  const req = state?.turnTransferRequest;
-  if (!req || req.toId !== playerToken) { layer?.remove(); return; }
-  if (!layer) {
-    layer=document.createElement('div'); layer.id='turnTransferPrompt'; layer.className='turn-transfer-prompt'; document.body.appendChild(layer);
-  }
-  layer.innerHTML=`<div class="turn-transfer-card"><span class="eyebrow">TURN REQUEST</span><h3>${esc(req.fromName)} 님이 차례 변경을 요청합니다.</h3><p>동의하면 지금 메인 스토리 차례가 당신에게 넘어옵니다.</p><div><button type="button" data-turn-answer="yes">동의</button><button type="button" data-turn-answer="no" class="ghost">거절</button></div></div>`;
-  layer.querySelectorAll('[data-turn-answer]').forEach(btn=>btn.onclick=()=>socket.emit('turn:transferRespond',{roomCode,playerToken,requestId:req.id,accept:btn.dataset.turnAnswer==='yes'},r=>!r?.ok&&toast(r?.error)));
-}
-
 function renderStory() {
   if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
   const c = currentCampaign();
@@ -1272,7 +1254,7 @@ function renderStory() {
   const inResolution = state.phase === 'resolution';
 
   $('#deckCount').textContent = state.deckCount;
-  $('#eventCadence').textContent = state.eventMode === 'dynamic' ? '상황에 따라 발생' : `${state.mainTurnsSinceEvent || 0}턴`;
+  $('#eventCadence').textContent = `${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴`;
   $('#threatValue').textContent = state.threat;
   $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
   $('#storyValue').textContent = `${state.story || 0} SCENES`;
@@ -1283,22 +1265,8 @@ function renderStory() {
     const passiveBadges = (member.derived?.passives || []).map(t => `<span class="status-pill passive ${esc(t.key || '')}" title="${esc(t.effect || '')}">${esc(t.label)}</span>`).join('');
     const statuses = `<div class="status-strip">${injuryCount ? `<span class="status-pill injury" title="누적 실패로 인한 부상">부상 ${injuryCount}</span>` : `<span class="status-pill ok">정상</span>`}${passiveBadges}</div>`;
     const defense = Number(member.derived?.defense || 10) + equipmentBonusFor(member,'민첩');
-    const abilityTip = member.abilities ? Object.entries(member.abilities).map(([stat,val]) => {
-      const gear = Number(member.equipmentBonuses?.[stat] || 0);
-      const total = Number(val?.total || 10);
-      const bonus = rawMod(total) + gear;
-      return `<span><em>${esc(stat)}</em><b>${total}</b><small>${bonus>=0?'+':''}${bonus}${gear?` · 장비 +${gear}`:''}</small></span>`;
-    }).join('') : '<small>능력치 미생성</small>';
-    const canRequestTurn = state.phase==='story' && !state.currentEvent && !state.lastResolution && state.turnPlayerId===playerToken && member.id!==playerToken && member.connected && member.hp>0;
-    return `<div class="party-card ${member.id === playerToken ? 'active' : ''}" data-party-player="${esc(member.id)}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '')}</small><small class="party-defense">방어 ${defense}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}${canRequestTurn?`<button class="turn-transfer-btn" type="button" data-turn-transfer="${esc(member.id)}">차례 넘기기 요청</button>`:''}<div class="party-stat-tooltip"><strong>${esc(member.name)} · 능력치</strong><div>${abilityTip}</div><small>마우스를 올려 확인 · 판정 보정에는 장비/패시브가 추가됩니다.</small></div></div>`;
+    return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '')}</small><small class="party-defense">방어 ${defense}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}</div>`;
   }).join('');
-  $('#partyRail').querySelectorAll('[data-turn-transfer]').forEach(btn => btn.onclick = (ev) => {
-    ev.stopPropagation();
-    socket.emit('turn:transferRequest',{roomCode,playerToken,targetPlayerId:btn.dataset.turnTransfer},r=>{
-      if(!r?.ok) return toast(r?.error || '차례 변경 요청 실패');
-      toast('상대 플레이어의 동의를 기다립니다.');
-    });
-  });
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => {
     const gear = equipmentBonusFor(p, k);
@@ -1329,16 +1297,9 @@ function renderStory() {
   $('#storyActionInput').maxLength = 180;
   $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${$('#storyActionInput').maxLength || 180}`;
 
-  const lastResolution = state.lastResolution?.source === 'story' ? state.lastResolution : null;
-  const last = (lastResolution || state.lastStoryAction?.mode === 'story-choice') ? null : state.lastStoryAction;
-  $('#lastActionResult').innerHTML = last ? `
-    <div class="eyebrow">최근 장면 결과</div>
-    ${last.choiceLabel ? `<div><b>${esc(last.choiceLabel)}</b></div>` : ''}
-    ${last.success === undefined || last.success === null ? '' : `<span class="${last.success ? 'success' : 'failure'}">${last.success ? '성공' : '실패'}${last.stat ? ` · ${esc(last.stat)} ${last.total}/${last.dc}` : ''}</span>`}
-    <p>${esc(last.text || last.narrative || '')}</p>
-    ${last.consequence ? `<p class="failure">${esc(last.consequence)}</p>` : ''}
-    ${last.status ? `<p class="failure">상태이상: ${esc(last.status.label)} — ${esc(last.status.desc || '')}</p>` : ''}
-  ` : '';
+  // v5.8: 판정 결과는 공동 주사위 화면 -> 짧은 결과 모달에서 한 번만 보여준다.
+  // 메인 본문 아래에 같은 성공/실패 문구를 반복하지 않는다.
+  $('#lastActionResult').innerHTML = '';
 
   if (state.phase === 'prologue') {
     const myScene = state.prologue?.scenes?.[playerToken];
@@ -1373,22 +1334,21 @@ function renderStory() {
   if (ev) {
     $('#turnBanner').textContent = state.activeChoice
       ? `투표가 끝났습니다. ${state.activeChoice.playerName}이(가) 판정을 진행합니다.`
-      : ev.noTimeLimit ? `자유 체류 · ${ev.facility?.label || '시설'} · 시간 제한 없음`
-      : `SIDE EVENT · ${state.soloMode ? 'SOLO 12초 선택' : '45초 테이블 투표'} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
+      : `SIDE EVENT · ${state.soloMode ? `SOLO ${Math.round((state.soloVoteDurationMs||20000)/1000)}초 선택` : `${Math.round((state.voteDurationMs||75000)/1000)}초 테이블 투표`} · 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
     setSceneImage($('#storySceneImg'), c, ev);
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
     $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
     $('#storyClarity').classList.remove('clean-main');
-    $('#storySituation').textContent = ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.';
+    $('#storySituation').textContent = [ev.contextLead, ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.'].filter(Boolean).join(' ');
     $('#storyObjective').textContent = ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.';
     $('#storyWhy').textContent = ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.';
-    $('#storyPrompt').innerHTML = ev.noTimeLimit ? `<b>잠시 머물 수 있는 장소.</b> 시간 제한이 없습니다. 필요한 일을 마친 뒤 현재 차례 플레이어가 떠나기를 선택하세요.` : (state.soloMode ? `<b>돌발 사건.</b> 12초 안에 대응을 고르세요. 투표 즉시 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`);
-    $('#eventText').textContent = ev.text;
+    $('#storyPrompt').innerHTML = state.soloMode ? `<b>돌발 사건.</b> ${Math.round((state.soloVoteDurationMs||20000)/1000)}초 동안 상황을 읽고 대응을 고르세요. 투표 완료 후 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
+    $('#eventText').innerHTML = `${ev.contextLead ? `<p class="event-context-lead">${esc(ev.contextLead)}</p>` : ''}<p>${esc(ev.text || '')}</p>`;
     $('#storyActionBox').style.display = 'none';
     renderChoices(ev);
   } else {
-    $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · 사건은 선택과 상황에 따라 발생합니다` : '행동 순서를 준비 중입니다.';
+    $('#turnBanner').textContent = state.turnPlayerName ? `메인 스토리 차례: ${state.turnPlayerName} · ${state.mainTurnsSinceEvent || 0}/${state.eventEveryTurns || 3}턴 진행 후 이벤트 발생` : '행동 순서를 준비 중입니다.';
     setSceneImage($('#storySceneImg'), c, beat || { act: 1, actName: c?.acts?.[0], title: c?.title, visual: sceneWord(c?.id, 0), id: 'STORY' });
     $('#storySceneCaption').textContent = beat ? `${beat.isDetour ? 'UNEXPECTED SCENE' : `STORY SCENE ${(state.storySeenCount || 0) + (state.phase === 'resolution' ? 0 : 1)} · NODE ${beat.chapter || '?'}`} · ${beat.actName} · ${beat.visual}` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
     $('#actLabel').textContent = beat ? (beat.isDetour ? `UNEXPECTED SCENE · ACT ${beat.act}` : `MAIN STORY · ACT ${beat.act}`) : 'MAIN STORY';
@@ -1442,7 +1402,9 @@ function renderMainStoryChoices(beat) {
     return;
   }
   if (state.phase === 'resolution') {
-    box.innerHTML = `<div class="action-lock"><div><div class="eyebrow">SCENE RESOLVED</div><b>장면 결과를 확인한 뒤 아래 버튼을 눌러 다음 장면으로 넘어가세요.</b><div class="vote-chip">선택은 이미 확정되었습니다.</div></div></div>`;
+    // 결과 서술은 공동 주사위 연출 직후 모달에서 딱 한 번만 보여준다.
+    // 모달이 닫힌 뒤에는 원래 장면을 그대로 남기고, 다음 진행 버튼만 사용한다.
+    box.innerHTML = '';
     return;
   }
   const myJob = me()?.job?.name;
@@ -1467,10 +1429,6 @@ function renderChoices(ev) {
   const active = state.activeChoice;
   const box = $('#choiceArea');
   const p = me();
-  if (ev?.noTimeLimit && !active) {
-    box.innerHTML = `<div class="vote-strip no-timer"><div><span class="eyebrow">FREE STAY</span><b>${esc(ev.facility?.label || '머물 수 있는 장소')}</b></div><div>시간 제한이 없습니다. 상점·여관·길드를 충분히 이용한 뒤 현재 차례 플레이어가 ‘시설을 떠난다’를 누르세요.</div></div>`;
-    return;
-  }
   if (active) {
     const actorRule = active.choice.requiredJob
       ? `${active.choice.requiredJob} 전용 선택 · 해당 직업 보유자가 판정합니다.`
@@ -1482,7 +1440,7 @@ function renderChoices(ev) {
   const votes = state.choiceVotes || {};
   const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
   const highest = Math.max(0, ...counts);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO QUICK CHOICE' : '45 SECOND TABLE VOTE'}</span><b>${state.soloMode ? '12초 선택' : '45초 투표'} · 전원 완료 시 3초 뒤 자동 확정</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO CHOICE' : 'TABLE VOTE'}</span><b>${state.soloMode ? `${Math.round((state.soloVoteDurationMs||20000)/1000)}초 선택` : `${Math.round((state.voteDurationMs||75000)/1000)}초 투표`} · 전원 완료 시 3초 뒤 자동 확정</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
@@ -1520,15 +1478,17 @@ $('#continueBtn').onclick = () => socket.emit('event:continue', { roomCode, play
 setInterval(updateVoteCountdown, 250);
 
 function showResolution(r) {
-  if (!r || r.source === 'story') return;
-  $('#resolutionEyebrow').textContent = r.ok ? 'SCENE RESULT' : 'SCENE CONSEQUENCE';
-  $('#resolutionTitle').textContent = r.detourCreated ? '길이 예상과 다르게 꺾였다' : (r.isDetour ? '예정에 없던 위기의 결과' : (r.ok ? '선택의 결과' : '실패가 남긴 흔적'));
+  if (!r) return;
+  clearTimeout(resolutionTimer);
+  $('#resolutionEyebrow').textContent = r.ok ? 'ACTION SUCCEEDED' : 'ACTION FAILED';
+  $('#resolutionTitle').textContent = r.choiceLabel || (r.ok ? '행동 성공' : '행동 실패');
   const mechanics = [r.consequence, r.status ? `${r.status.label}: ${r.status.desc || ''}` : ''].filter(Boolean).join(' · ');
-  const branchAfter = r.detourCreated ? '<small class="resolution-next">방금 실패 때문에 원래 다음 장면 앞에 새로운 위기가 생겼습니다.</small>' : '';
-  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<small class="resolution-mechanics">게임 효과 · ${esc(mechanics)}</small>` : ''}`;
+  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${mechanics ? `<small class="resolution-mechanics">게임 효과 · ${esc(mechanics)}</small>` : ''}`;
   $('#resolutionModal').classList.add('show');
+  // 주사위 결과를 또 본문에 반복하지 않고, 상황에 맞는 짧은 결과 서술만 잠시 보여준다.
+  resolutionTimer = setTimeout(() => $('#resolutionModal').classList.remove('show'), 4600);
 }
-$('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');
+$('#resolutionClose').onclick = () => { clearTimeout(resolutionTimer); $('#resolutionModal').classList.remove('show'); };
 
 function ensureEncounterIntroLayer() {
   let layer = document.getElementById('encounterIntroLayer');

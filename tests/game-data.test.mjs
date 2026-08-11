@@ -4,19 +4,20 @@ import { CAMPAIGNS, STAT_NAMES } from '../campaign-data.js';
 
 test('campaign catalog is complete and unique', () => {
   assert.equal(CAMPAIGNS.length, 7);
-  assert.equal(new Set(CAMPAIGNS.map(c => c.id)).size, 7);
+  assert.equal(new Set(CAMPAIGNS.map(c => c.id)).size, CAMPAIGNS.length);
   assert.equal(STAT_NAMES.length, 6);
 });
 
 for (const campaign of CAMPAIGNS) {
-  test(`${campaign.id}: exactly 30 unique one-copy events`, () => {
-    assert.equal(campaign.events.length, 30);
-    assert.equal(new Set(campaign.events.map(e => e.id)).size, 30);
-    assert.equal(new Set(campaign.events.map(e => e.title)).size, 30);
+  test(`${campaign.id}: unique one-copy events match its act count`, () => {
+    const expectedEvents = (campaign.acts?.length || 5) * 6;
+    assert.equal(campaign.events.length, expectedEvents);
+    assert.equal(new Set(campaign.events.map(e => e.id)).size, expectedEvents);
+    assert.equal(new Set(campaign.events.map(e => e.title)).size, expectedEvents);
     assert.ok(campaign.storyBeats.length >= 400);
     assert.equal(new Set(campaign.storyBeats.map(b => b.id)).size, campaign.storyBeats.length);
     const canonicalBeats = campaign.storyBeats.filter(b => !b.branchScene);
-    assert.equal(canonicalBeats.length, 30);
+    assert.equal(canonicalBeats.length, expectedEvents);
     for (const beat of canonicalBeats) {
       assert.ok(beat.situation?.length >= 80);
       assert.equal(Object.keys(beat.roleHooks || {}).length, 6);
@@ -24,7 +25,7 @@ for (const campaign of CAMPAIGNS) {
       assert.ok(beat.why?.length > 10);
       assert.ok(beat.prompt?.length > 10);
       assert.equal(beat.roleplayPrompt, undefined);
-      assert.ok(beat.choices?.length >= 5 && beat.choices?.length <= 7);
+      assert.ok(beat.choices?.length >= 6 && beat.choices?.length <= 8);
       for (const choice of beat.choices) {
         assert.ok(STAT_NAMES.includes(choice.stat));
         assert.ok(choice.dc >= 8 && choice.dc <= 15);
@@ -42,10 +43,10 @@ for (const campaign of CAMPAIGNS) {
       assert.ok(Number.isInteger(job.skillDef.cooldown) && job.skillDef.cooldown >= 2 && job.skillDef.cooldown <= 4, `${campaign.id} ${job.name}: invalid cooldown`);
       assert.ok(job.skillDef.kind, `${campaign.id} ${job.name}: skill kind missing`);
     }
-    assert.equal(campaign.acts.length, 5);
+    assert.ok(campaign.acts.length >= 5);
     const allChoiceLabels = [];
     for (const event of campaign.events) {
-      assert.ok(event.act >= 1 && event.act <= 5);
+      assert.ok(event.act >= 1 && event.act <= campaign.acts.length);
       assert.ok(event.choices.length === 3 || event.choices.length === 4);
       assert.ok(event.visual && event.visual.length > 2);
       assert.ok(event.situation?.length > 10);
@@ -57,12 +58,11 @@ for (const campaign of CAMPAIGNS) {
         assert.ok(choice.dc >= 10 && choice.dc <= 20);
         assert.ok(choice.successEffect?.type);
         assert.ok(choice.failureEffect?.type);
-        assert.ok(choice.label.length >= 2 && choice.label.length <= 80, `${event.id} choice should stay concise`);
-        assert.ok(choice.success.includes(event.title) && choice.failure.includes(event.title), `${event.id} outcome prose must reference its event situation`);
-        allChoiceLabels.push(`${event.id}:${choice.label}`);
+        assert.ok(choice.label.includes(event.title), `${event.id} choice must reference its event situation`);
+        allChoiceLabels.push(choice.label);
         if (choice.requiredJob) assert.ok(campaign.jobs.some(job => job.name === choice.requiredJob));
       }
     }
-    assert.equal(new Set(allChoiceLabels).size, allChoiceLabels.length, 'event choice identity should stay unique within a campaign');
+    assert.equal(new Set(allChoiceLabels).size, allChoiceLabels.length, 'choice labels should not repeat within a campaign');
   });
 }

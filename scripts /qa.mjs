@@ -34,7 +34,7 @@ for (const campaign of CAMPAIGNS) {
     assert(event.act >= 1 && event.act <= campaign.acts.length, `${event.id}: act 범위 오류`);
     for (const choice of event.choices) {
       assert(STAT_NAMES.includes(choice.stat), `${event.id}: 알 수 없는 능력치 ${choice.stat}`);
-      assert(Number.isInteger(choice.dc) && choice.dc >= 8 && choice.dc <= 22, `${event.id}: DC 범위 오류 ${choice.dc}`);
+      assert(Number.isInteger(choice.dc) && choice.dc >= 7 && choice.dc <= 12, `${event.id}: DC 범위 오류 ${choice.dc}`);
       assert(choice.success && choice.failure, `${event.id}: 성공/실패 문구 누락`);
       assert(choice.successEffect?.type && choice.failureEffect?.type, `${event.id}: 효과 정의 누락`);
       if (choice.requiredJob) assert(campaign.jobs.some(job => job.name === choice.requiredJob), `${event.id}: 존재하지 않는 직업 전용 선택 ${choice.requiredJob}`);
@@ -81,8 +81,8 @@ for (const campaign of CAMPAIGNS) {
 assert(server.includes("socket.on('player:skillUse'"), '직업 스킬 서버 핸들러 누락');
 assert(app.includes("socket.emit('player:skillUse'"), '직업 스킬 UI 이벤트 누락');
 assert(index.includes('id="jobSkillBtn"') && index.includes('id="combatSkillBtn"'), '직업 스킬 버튼 누락');
-assert(server.includes('choiceTarget:6') && server.includes('choiceTarget:5') && server.includes('choiceTarget:4'), '다중 선택지 목표 수 누락');
-assert(server.includes('beat.freeActionAllowed = false') && app.includes('const freeActionAllowed = false'), '자유 입력 비활성화 누락');
+assert(server.includes('choiceTarget:4') && server.includes('choiceTarget:3'), '빠른 선택지 3~4개 목표 수 누락');
+assert(server.includes('beat.freeActionAllowed = Boolean(rule.freeAction)') && app.includes('const freeActionAllowed = Boolean(beat?.freeActionAllowed)'), '상황 검증 자유 입력 활성화 누락');
 
 assert(server.includes("release: 'release-candidate'"), 'health release marker 누락');
 

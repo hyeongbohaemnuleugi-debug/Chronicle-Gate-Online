@@ -1302,6 +1302,9 @@ function renderCharacterHud(player, storyItems = []) {
 function renderParallelStory() {
   const c=currentCampaign();
   const p=me();
+  const choiceBox=$('#choiceArea');
+  // v6.6.4: parallel-story choices must not inherit a hidden/display state from a previous screen.
+  if(choiceBox){ choiceBox.classList.remove('hidden'); choiceBox.style.display='grid'; choiceBox.style.visibility='visible'; choiceBox.style.opacity='1'; }
   const ps=state?.parallel?.playerStates?.[playerToken];
   const scene=ps?.scene;
   const isMyTurn=state?.turnPlayerId===playerToken && state?.phase==='story';
@@ -1372,8 +1375,9 @@ function renderParallelStory() {
     $('#eventText').innerHTML=`<div class="inline-resolution ${last.ok?'success':'failure'}"><div class="eyebrow">PERSONAL TURN RESULT</div>${last.choiceLabel?`<b>${esc(last.choiceLabel)}</b>`:''}<p>${esc(last.text||'')}</p>${last.consequence?`<small>게임 효과 · ${esc(last.consequence)}</small>`:''}</div>`+nearbyInfo;
     $('#choiceArea').innerHTML='<div class="action-lock"><div><div class="eyebrow">TURN RESOLVED</div><b>이 행동은 끝났습니다. 다음 플레이어의 턴으로 이어집니다.</b></div></div>';
   } else {
-    const choices=scene.choices || [];
-    $('#choiceArea').innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'당신이 지금 할 수 있는 행동입니다. 이동·조사·전투·만남·동행·헤어짐이 모두 여기서 결정됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 개인 턴을 기다리는 중입니다.`}</div></div>`+choices.map((choice,index)=>`
+    const choices=Array.isArray(scene.choices) ? scene.choices.filter(Boolean) : [];
+    const emptyNotice=choices.length ? '' : `<div class="action-lock"><div><div class="eyebrow">CHOICE RECOVERY</div><b>현재 장면의 선택지를 복구하는 중입니다.</b><small>서버 상태를 다시 동기화하면 기본 행동 선택지가 표시됩니다.</small></div></div>`;
+    $('#choiceArea').innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'당신이 지금 할 수 있는 행동입니다. 현재 장소·소지품·만난 사람에 맞는 행동만 표시됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 개인 턴을 기다리는 중입니다.`}</div></div>`+emptyNotice+choices.map((choice,index)=>`
       <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
         <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
         <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>

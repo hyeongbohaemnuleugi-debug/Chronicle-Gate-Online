@@ -1399,17 +1399,17 @@ function renderStory() {
       $('#eventText').innerHTML = `<div class="inline-resolution ${lastResolution.ok ? 'success' : 'failure'}"><div class="eyebrow">SCENE RESULT</div>${lastResolution.choiceLabel ? `<b>${esc(lastResolution.choiceLabel)}</b>` : ''}<p>${esc(lastResolution.text || '')}</p>${lastResolution.consequence ? `<small>게임 효과 · ${esc(lastResolution.consequence)}</small>` : ''}${lastResolution.status ? `<small>상태 · ${esc(lastResolution.status.label)} — ${esc(lastResolution.status.desc || '')}</small>` : ''}</div>`;
     }
 
-    const freeActionAllowed = false;
-    const myTurn = state.turnPlayerId === playerToken;
+    const freeActionAllowed = Boolean(beat?.freeActionAllowed);
+    const myTurn = state.phase === 'story' && state.turnPlayerId === playerToken;
     $('#storyActionBox').style.display = freeActionAllowed ? 'block' : 'none';
     $('#storyActionInput').disabled = !(freeActionAllowed && myTurn);
     $('#storyActionBox').classList.toggle('disabled', !(freeActionAllowed && myTurn));
     $('#storyActionInput').placeholder = freeActionAllowed
-      ? '직접 행동을 적어도 됩니다. 예: 경비에게 돈 대신 정보를 거래하자고 제안한다.'
-      : '결정적인 장면에서는 제시된 선택 중 하나를 골라야 합니다.';
-    $('#storyRoleContext').innerHTML = `<span>${esc(beat?.importance?.label || '장면')}</span><b>${esc(beat?.importance?.consequence || beat?.objective || '')}</b>${beat?.statInsight?.text ? `<small>${esc(beat.statInsight.text)}</small>` : ''}`;
+      ? '하고 싶은 행동을 직접 적으세요. 예: 경비에게 말을 걸어 안쪽 상황을 묻는다.'
+      : '이 장면에서는 아래 선택으로 진행합니다.';
+    $('#storyRoleContext').innerHTML = `<span>${esc(beat?.importance?.label || '장면')}</span><b>빠른 선택은 힌트입니다. 원하는 행동이 없으면 직접 말하듯 적어도 됩니다.</b>${beat?.statInsight?.text ? `<small>${esc(beat.statInsight.text)}</small>` : ''}`;
     $('#actionSuggestions').innerHTML = freeActionAllowed ? [
-      ['관찰하고 빈틈을 찾는다','지혜'],['주변 인물과 직접 협상한다','매력'],['환경을 이용해 우회한다','민첩']
+      ['주변을 살핀다','지혜'],['사람에게 말을 건다','매력'],['다른 길로 간다','민첩']
     ].map(([label,stat])=>`<button class="action-suggestion" type="button" data-free-suggestion="${esc(label)}"><b>${esc(label)}</b><small>${stat} 계열 자유 행동 예시</small></button>`).join('') : '';
     $('#actionSuggestions').querySelectorAll?.('[data-free-suggestion]').forEach(btn => btn.onclick = () => {
       if ($('#storyActionInput').disabled) return;
@@ -1421,11 +1421,11 @@ function renderStory() {
   }
 
   $('#gmBar').style.display = 'flex';
-  const freeActionSubmit = false;
+  const freeActionSubmit = Boolean(beat?.freeActionAllowed);
   $('#advanceStoryBtn').style.display = state.phase === 'prologue' || freeActionSubmit ? 'inline-flex' : 'none';
   if (state.phase !== 'prologue') {
     $('#advanceStoryBtn').disabled = !(freeActionSubmit && state.turnPlayerId === playerToken);
-    $('#advanceStoryBtn').textContent = freeActionSubmit ? '직접 적은 행동으로 판정하기' : '메인 스토리 진행';
+    $('#advanceStoryBtn').textContent = freeActionSubmit ? '이 행동을 해본다' : '메인 스토리 진행';
   }
   $('#continueBtn').style.display = state.phase === 'resolution' ? 'inline-flex' : 'none';
   $('#continueBtn').disabled = state.phase !== 'resolution';
@@ -1448,10 +1448,10 @@ function renderMainStoryChoices(beat) {
   const visibleChoices = beat.choices
     .map((choice, originalIndex) => ({ choice, originalIndex }))
     .filter(({ choice }) => !choice.requiredJob || choice.requiredJob === myJob);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>행동을 고르세요. 능력치보다 원하는 결과와 감수할 위험이 더 중요합니다.</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 선택과 주사위 결과가 다음 장면과 엔딩 후보를 바꿉니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>빠른 선택 3~4개 또는 직접 행동 선언</b></div><div>${isMyTurn ? '지금은 당신의 차례입니다. 원하는 선택이 없으면 아래에 직접 행동을 적으세요.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
     <button class="choice-card story-choice ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
       <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${choice.rareJobMoment ? '희귀 기회 · ' : ''}${esc(choice.requiredJob)} 전용</span>` : ''}</div>
-      <div class="story-choice-meta"><span>기회 · ${esc(choice.opportunity || choice.consequenceHint?.success || '새로운 전개')}</span>${beat?.statInsight?.insight ? `<span>${esc(choice.stat)} 판정</span>` : '<span>판정은 선택 후 공개</span>'}${beat?.statInsight?.insightDeep ? `<span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span>` : ''}</div>
+      <div class="story-choice-meta">${beat?.statInsight?.insight ? `<span>${esc(choice.stat)} 판정</span>` : '<span>판정 방식은 선택 후 공개</span>'}${beat?.statInsight?.insightDeep ? `<span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span>` : ''}</div>
       ${beat?.statInsight?.dangerSense ? `<div class="choice-forecast">위험 · ${esc(choice.risk || '보통')}${choice.consequenceHint?.failure ? ` · ${esc(choice.consequenceHint.failure)}` : ''}</div>` : ''}
     </button>
   `).join('');

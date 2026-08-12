@@ -55,7 +55,7 @@ for (const campaign of CAMPAIGNS) {
       assert.ok(event.stakes?.length > 10);
       for (const choice of event.choices) {
         assert.ok(STAT_NAMES.includes(choice.stat));
-        assert.ok(choice.dc >= 10 && choice.dc <= 20);
+        assert.ok(choice.dc >= 7 && choice.dc <= 12);
         assert.ok(choice.successEffect?.type);
         assert.ok(choice.failureEffect?.type);
         assert.ok(choice.label && [...choice.label].length <= 18, `${event.id} choice should stay short and direct`);

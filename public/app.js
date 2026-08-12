@@ -433,6 +433,7 @@ const STORY_ART_FILES = {
   guardian1: { profile:'./art/guardian_part1_profile.png', early:'./art/guardian_part1_profile.png', late:'./art/guardian_part1_profile.png' },
   guardian2: { profile:'./art/guardian_part2_profile.png', early:'./art/guardian_part2_profile.png', late:'./art/guardian_part2_profile.png' },
   guardian3: { profile:'./art/guardian_part3_profile.png', early:'./art/guardian_part3_profile.png', late:'./art/guardian_part3_profile.png' },
+  echo: { profile:'./art/echo_profile.png', early:'./art/echo_profile.png', late:'./art/echo_profile.png' },
 };
 
 function toast(msg) {
@@ -1268,7 +1269,7 @@ function renderParallelStory() {
   if(!scene||!ps) return;
 
   $('#deckCount').textContent='—';
-  $('#eventCadence').textContent=`심야 ${state.parallel.clockTick || 0}턴`;
+  $('#eventCadence').textContent='심야 진행 · 종료 시점 미정';
   $('#threatValue').textContent=state.threat;
   $('#threatTrack').innerHTML=Array.from({length:8},(_,i)=>`<i class="${i<state.threat?'on':''}"></i>`).join('');
   $('#storyValue').textContent=`${ps.progress || 0}장면`;
@@ -1319,7 +1320,8 @@ function renderParallelStory() {
   $('#storyActionBox').style.display='none';
   $('#storyActionInput').disabled=true;
   $('#actionSuggestions').innerHTML='';
-  $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>각 플레이어는 독립된 위치·진행·턴을 가집니다.</b><small>다른 사람의 행동은 전원·방송·출구·신호 같은 공통 역 상태를 바꿀 수 있습니다.</small>`;
+  const storyItems=(scene.storyItems||[]).map(item=>esc(item.name)).join(' · ');
+  $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>각 플레이어는 독립된 위치·진행·턴을 가집니다.</b><small>${storyItems?`현재 소지품 · ${storyItems}<br>`:''}소지한 물건과 직업 장비에 따라 새로운 선택지와 숨은 진행 루트가 열립니다.</small>`;
 
   if(inResolution){
     const last=state.lastResolution || {};
@@ -1332,7 +1334,7 @@ function renderParallelStory() {
     const choices=scene.choices || [];
     $('#choiceArea').innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'당신이 지금 할 수 있는 행동입니다. 이동·조사·전투·만남·동행·헤어짐이 모두 여기서 결정됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 개인 턴을 기다리는 중입니다.`}</div></div>`+choices.map((choice,index)=>`
       <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
-        <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b></div>
+        <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
         <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
       </button>`).join('');
     $('#choiceArea').querySelectorAll('[data-parallel-index]').forEach(btn=>btn.onclick=()=>{

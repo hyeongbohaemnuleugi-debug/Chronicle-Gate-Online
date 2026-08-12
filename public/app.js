@@ -6,7 +6,7 @@ const $$ = s => [...document.querySelectorAll(s)];
 
 const REQUIRED_IDS = [
   'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'combatView', 'endingView',
-  'openCreate', 'openJoin', 'openContinue', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'resumeCandidates', 'entryError',
+  'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'resumeCandidates', 'entryError',
   'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
   'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
@@ -964,7 +964,6 @@ function everyoneVoted(choiceVotes = {}) {
 
 $('#openCreate').onclick = () => openEntry('create');
 $('#openJoin').onclick = () => openEntry('join');
-if ($('#openContinue')) $('#openContinue').style.display='none';
 $('#entryBack').onclick = () => view('homeView');
 function openEntry(m) {
   mode = m;

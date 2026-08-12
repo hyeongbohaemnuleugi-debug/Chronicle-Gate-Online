@@ -1062,6 +1062,83 @@ function parallelDynamicChoices(room,campaign,player,node){
   }
   return dynamic.filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
 }
+function parallelSceneNarrative(room,campaign,player,node){
+  if(campaign?.id!=='echo' || !node) return [...(node?.text||[])];
+  const ps=parallelPlayerState(room,player);
+  const loc=ps?.location || node.location;
+  const job=player?.job?.name || '플레이어';
+  const world=room.parallel?.worldFlags || {};
+  const ambient={
+    maintenance:'형광등 한 줄이 낮게 떨리고, 분전반 안쪽에서는 전원이 끊긴 뒤에도 작은 릴레이 소리가 일정한 간격으로 이어진다. 바닥의 케이블 표시와 실제 배선 방향이 미묘하게 어긋나 있다.',
+    office:'유리창 너머 대합실은 비어 있는데 역무실 내부 장비 몇 개만 퇴근 처리를 무시한 채 켜져 있다. 프린터에는 뽑힌 적 없는 점검표 한 장이 반쯤 걸려 있고, 시계 초침은 움직이지 않는다.',
+    concourse:'광고판 불빛이 꺼진 대합실은 낮보다 훨씬 넓어 보인다. 자동 개찰구의 붉은 X가 사람의 움직임과 상관없이 순서대로 켜졌다 꺼지고, 셔터 너머에서는 역 바깥 소리 대신 같은 역사 안의 잔향이 돌아온다.',
+    service:'직원 통로는 폭이 좁고 천장이 낮다. 비상등 사이사이에 원래 없던 회색 화살표가 이어지고, 한쪽 벽에는 최근 누군가 밀고 지나간 듯 공구함 자국이 길게 남아 있다.',
+    platform1:'운행이 끝난 승강장에는 열차가 없지만 선로 쪽 바람은 아직 멈추지 않았다. 전광판의 두 시간이 번갈아 나타날 때마다 안전문 유리에 다른 방향의 터널 불빛이 잠깐 비친다.',
+    platform0gate:'0번 방화문 앞 공기는 다른 층보다 한결 차갑다. 문틀과 경첩은 분명 실제 설비인데 자산 번호만 깔끔하게 비어 있다. 안쪽 안내음은 정상 승강장과 같은 박자로 반복된다.',
+    platform0:'0번 승강장은 지나치게 정상적이다. 깨끗한 바닥, 켜진 안전문, 규칙적인 안내음까지 모두 익숙하지만 광고판의 날짜와 선로 방향은 청명역의 어느 기록과도 맞지 않는다.',
+    cctv:'모니터 여러 대가 서로 다른 시간을 비춘다. 대부분은 현재와 같지만 4번 화면만 정확히 몇 분 앞서 움직이고, 화면 속 문이 열릴 때 실제 방 안에서도 아주 약한 전자음이 따라온다.',
+    lostfound:'분실물 보관실에는 이름표와 접수 시간이 붙은 봉투들이 빼곡하다. 이상한 것은 몇 장의 접수 시간이 아직 오지 않은 시각이라는 점이다. 금속 보관함 손잡이는 방금 누가 잡았던 것처럼 미지근하다.',
+    signal:'신호실 벽을 가득 채운 선로도가 두 개의 경로를 동시에 표시한다. 정상 첫차 노선 위로 회색 0번 경로가 얇게 겹쳐지고, 둘 중 하나를 건드릴 때마다 역 다른 곳의 조명이 반응한다.',
+    track:'점검선은 사람 한 명이 겨우 비킬 폭이다. 멀리 작업등이 천천히 가까워지고, 레일 옆 표지판은 정상 번호와 회색 0을 번갈아 보여 준다. 여기서는 선택 하나가 실제 선로 안전과 직결된다.',
+    exit:'셔터 틈 사이로 들어오는 빛은 처음으로 진짜 새벽빛처럼 보인다. 하지만 역 안쪽 무전과 발소리는 여전히 이어지고, 지금 밖으로 나가면 다시 들어올 수 있을지 누구도 확신할 수 없다.',
+    train:'첫차의 전조등이 터널 끝에서 커지고 있다. 정상 안내방송과 아주 낮은 0번 방송이 겹쳐 들리며, 지금까지 열어 둔 문과 남겨 둔 사람, 확보한 물건이 마지막 선택의 의미를 바꾼다.',
+    sealedroom:'폐쇄 점검실은 오래 사용되지 않은 먼지 냄새와 새 전자 장비의 열기가 동시에 난다. 선반에는 폐기된 신호 부품과 봉인 스티커가 붙은 기록 상자가 놓여 있다.',
+    oldcontrol:'구형 신호 제어실의 화면은 현대 신호실과 다르게 물리 스위치와 오래된 CRT로 구성돼 있다. 그런데 그 낡은 화면에도 0번 경로가 선명하게 들어와 있다.'
+  }[loc];
+  const role={
+    '시설기사':'시설기사인 당신에게는 작은 차이가 더 먼저 보인다. 정상 설비라면 있어야 할 표시와 소리가 몇 군데 빠져 있고, 반대로 없어야 할 전원이 살아 있다.',
+    '야간 역무원':'야간 역무원인 당신은 평소 막차 뒤의 역사 소리를 알고 있다. 그래서 지금 들리는 안내음과 장비 반응 중 무엇이 평소와 다른지 더 선명하게 구분된다.',
+    '보안요원':'보안요원인 당신은 먼저 퇴로와 사각지대를 확인한다. 누군가 숨어 있을 만한 곳과 문이 갑자기 닫혔을 때 버틸 위치가 자연스럽게 눈에 들어온다.',
+    '심야 배달원':'심야 배달원인 당신은 출입문과 지름길부터 본다. 안내 표지보다 실제로 사람이 드나들 법한 흔적이 더 믿을 만하게 느껴진다.',
+    '민원 상담사':'민원 상담사인 당신은 장비보다 사람이 남긴 흔적과 말의 모순에 먼저 민감하다. 누군가 있었다면 무엇을 보고 당황했을지, 어디로 움직였을지 생각하게 된다.',
+    '응급구조사':'응급구조사인 당신은 위험보다 먼저 사람의 상태와 이동 가능성을 본다. 피난 경로와 쉬어 갈 공간, 다쳤을 때 버틸 수 있는 장소가 자연스럽게 눈에 들어온다.'
+  }[job];
+  const shared=[];
+  if(world.power_restored) shared.push('누군가 복구한 비상 전원 덕분에 멀리 있는 표지 몇 개가 다시 읽힌다.');
+  if(world.public_call) shared.push('조금 전 사용된 역사 방송의 잔향이 다른 스피커에서도 늦게 따라 나온다.');
+  if(world.evidence) shared.push('이미 확보된 기록과 지금 눈앞의 상황을 비교하면 같은 숫자와 시간이 반복되고 있음을 알 수 있다.');
+  if(world.zero_gate_open) shared.push('0번 승강장 방화문이 완전히 닫히지 않은 상태라 역의 공기 흐름과 소리가 이전과 달라졌다.');
+  const out=[...(node.text||[])];
+  if(ambient) out.push(ambient);
+  if(role) out.push(role);
+  if(shared.length) out.push(shared.slice(-2).join(' '));
+  return out.filter(Boolean).slice(0,5);
+}
+function parallelChoiceScore(choice,node){
+  const label=String(choice?.label||'');
+  const context=`${node?.title||''} ${node?.objective||''} ${(node?.text||[]).join(' ')}`;
+  let score=0;
+  if(choice?.kind==='parallel-social') score+=90;
+  if(choice?.kind==='parallel-item-transfer') score+=65;
+  if(choice?.choiceBadge==='특수 루트'||choice?.choiceBadge==='아이템 전용 루트'||choice?.choiceBadge==='핵심 아이템'||choice?.choiceBadge==='진엔딩 조건'||choice?.choiceBadge==='비밀 엔딩') score+=100;
+  else if(choice?.choiceBadge) score+=35;
+  if(/확인|조사|살핀|듣|분석|기록|대조/.test(label)) score+=18;
+  if(/간다|돌아|들어간|나간|향한다|따라/.test(label)) score+=8;
+  if(/싸|막|피한다|치료|구조|부른다/.test(label)) score+=12;
+  const words=label.replace(/[0-9·]/g,' ').split(/\s+/).map(w=>w.replace(/[을를이가와과에로만은는]/g,'')).filter(w=>w.length>=2);
+  for(const word of words) if(context.includes(word)) score+=12;
+  if(choice?.automatic) score+=3;
+  return score;
+}
+function parallelCurateChoices(room,campaign,player,node,dynamic,base){
+  const encounter=room.parallel?.encounters?.[parallelPlayerState(room,player)?.location];
+  if(encounter?.hp>0) return dynamic.slice(0,7);
+  const all=[...dynamic,...base].filter(Boolean);
+  const social=all.filter(c=>c.kind==='parallel-social').sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
+  const special=all.filter(c=>c.kind!=='parallel-social' && (c.choiceBadge || c.kind==='parallel-item-transfer')).sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
+  const ordinary=all.filter(c=>c.kind!=='parallel-social' && !c.choiceBadge && c.kind!=='parallel-item-transfer').sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
+  const selected=[];
+  const pushUnique=c=>{ if(!c) return; const key=String(c.label||'').replace(/\s+/g,''); if(selected.some(x=>String(x.label||'').replace(/\s+/g,'')===key)) return; selected.push(c); };
+  social.slice(0,3).forEach(pushUnique);
+  special.slice(0,2).forEach(pushUnique);
+  const inspect=ordinary.find(c=>/확인|조사|살핀|듣|분석|기록/.test(String(c.label||'')));
+  const move=ordinary.find(c=>/간다|돌아|들어간|나간|향한다|따라/.test(String(c.label||'')));
+  pushUnique(inspect); pushUnique(move);
+  ordinary.forEach(c=>{ if(selected.length<7) pushUnique(c); });
+  special.slice(2).forEach(c=>{ if(selected.length<7) pushUnique(c); });
+  return selected.slice(0,7);
+}
+
 function parallelRenderedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player);
   if(!ps) return null;
@@ -1071,11 +1148,11 @@ function parallelRenderedScene(room,campaign,player){
     .map((choice,index)=>({id:`base:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}))
     .filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
   const dynamic=parallelDynamicChoices(room,campaign,player,node);
-  const choices=[...dynamic,...base].slice(0,14);
+  const choices=parallelCurateChoices(room,campaign,player,node,dynamic,base);
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
-    paragraphs:[...(node.text||[])], choices, freeActionAllowed:false,
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices, freeActionAllowed:false,
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
     linked:parallelLinkedPlayers(room,player).map(p=>({id:p.id,name:p.name,location:room.parallel.playerStates?.[p.id]?.location,locationLabel:parallelLocationLabel(campaign,room.parallel.playerStates?.[p.id]?.location)})),
     worldSummary:parallelWorldSummary(room), clockTick:Number(room.parallel.clockTick||0), ended:Boolean(ps.ended), ending:ps.ending,

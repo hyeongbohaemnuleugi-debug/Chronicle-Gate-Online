@@ -490,10 +490,25 @@ function enrichStoryProse(c, guide, baseText, act, step) {
   const sense = texture.sense[(act * 2 + step) % texture.sense.length];
   const npc = texture.npc[(act * 3 + step + 1) % texture.npc.length];
   const omen = texture.omen[(act * 4 + step + 2) % texture.omen.length];
-  // v5.9: 각 캠페인의 본문을 중심으로 보여준다. 공통 설명문을 길게 덧붙이지 않는다.
-  // 같은 구조의 문장이 모든 세계에 반복되어 이야기가 비슷해 보이던 문제를 제거한다.
-  const accent = step === 0 ? sense : step === 1 ? npc : step === 2 ? omen : step === 3 ? sense : step === 4 ? omen : npc;
-  return [baseText, accent].filter(Boolean).join('\n\n');
+  // v6.6.3 STORY FLOW EVOLUTION
+  // Every chronicle gets a fuller scene, but its own texture remains dominant so the campaigns do not blur together.
+  // We deliberately add only two supporting paragraphs: enough atmosphere/context to roleplay from, without turning a turn into a wall of text.
+  const second = step === 0 ? sense : step === 1 ? npc : step === 2 ? omen : step === 3 ? sense : step === 4 ? omen : npc;
+  const third = step === 0 ? npc : step === 1 ? sense : step === 2 ? sense : step === 3 ? omen : step === 4 ? npc : omen;
+  const stakes = storyPhrase(guide?.stakes || '');
+  const reveal = storyPhrase(guide?.reveal || '');
+  const pressure = step === 0
+    ? `아직 어느 쪽이 정답인지는 보이지 않는다. 다만 ${stakes || '지금 무엇을 먼저 건드리느냐에 따라 뒤의 길이 달라질 수 있다'}. 그래서 이 장면에서는 눈앞의 목표만이 아니라 누구의 말과 어떤 흔적을 먼저 믿을지도 중요하다.`
+    : step === 1
+      ? `현장을 더 오래 볼수록 처음에는 배경처럼 보이던 것들이 선택의 재료가 된다. 길, 사람, 물건, 위험 요소가 서로 연결되어 있고, 지금 확보하거나 놓친 것이 뒤 장면의 선택지를 실제로 바꿀 수 있다.`
+      : step === 2
+        ? `이제는 관찰만으로 끝낼 수 없다. 정면으로 맞설지, 대화를 걸지, 우회할지, 누군가를 먼저 지킬지에 따라 같은 사건도 전혀 다른 방향으로 굴러갈 수 있다.`
+        : step === 3
+          ? `방금 드러난 사실이 정말 ${reveal || '사건의 핵심'}을 뜻하는지 확인할 필요가 있다. 서둘러 결론을 내리면 편한 길을 얻을 수 있지만, 모순을 더 파고들면 지금까지 보이지 않던 선택지가 열릴 수도 있다.`
+          : step === 4
+            ? `위기는 단순히 성공과 실패로 끝나지 않는다. 무엇을 지키고 무엇을 포기했는지가 다음 장면의 인물 관계, 위험도, 접근 가능한 길에 남는다.`
+            : `이번 선택은 한 막을 닫는 답이면서 다음 막의 출발점이다. ${stakes || '어떤 방식으로 문제를 풀었는지'}가 이후에 만나는 사람과 열리는 길, 마지막 결말까지 이어진다.`;
+  return [baseText, second, third, pressure].filter(Boolean).join('\n\n');
 }
 
 // v6.1.0 - LIVING STORY: explicit scene affordances.
@@ -702,11 +717,22 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
       success:'확보한 정보에 따라 다음 현장으로 이동했다.',failure:'이동 중 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.'}
   ].filter(item=>item.when);
 
-  const priority=['investigate','question','help','protect','persuade','trade','tail','fight','bypass','break','sneak','trap','distract','inspect-item','take-item','threaten','hide','listen','observe','wait','retreat','travel-a'];
+  // v6.6.3: phase-aware action order. The player still gets several believable options,
+  // but the list now begins with what people would naturally consider in THIS kind of scene.
+  const phasePriority={
+    '도입':['investigate','question','observe','persuade','help','listen','wait','bypass','travel-a'],
+    '탐색':['investigate','inspect-item','observe','question','tail','bypass','sneak','take-item','help','listen','wait','travel-a'],
+    '대면':['question','persuade','protect','help','fight','sneak','distract','bypass','hide','threaten','retreat','observe'],
+    '진실':['investigate','inspect-item','question','observe','persuade','tail','trade','take-item','listen','wait'],
+    '위기':['protect','help','fight','bypass','break','sneak','trap','distract','retreat','question','persuade','hide'],
+    '결단':['question','persuade','investigate','inspect-item','trade','protect','bypass','fight','break','help','retreat','travel-a']
+  };
+  const priority=phasePriority[phase] || ['investigate','observe','question','persuade','bypass','fight','help','wait','travel-a'];
   const rank=new Map(priority.map((type,i)=>[type,i]));
   candidates.sort((a,b)=>(rank.get(a.type)??99)-(rank.get(b.type)??99));
   const richness=[hasPerson,hasHostile,hasObstacle,hasClue,hasRescue,hasItem,hasStealth].filter(Boolean).length;
-  const desired=Math.max(6,Math.min(12,6+richness));
+  // Usually 7-9 choices: enough freedom to feel like a system GM, without dumping every mechanically legal action at once.
+  const desired=Math.max(6,Math.min(9,6+Math.ceil(richness/2)));
   const defs=candidates.slice(0,desired);
 
   return defs.map((d,i)=>{

@@ -1,9 +1,9 @@
 {
   "name": "chronicle-gate-online",
-  "version": "6.5.0",
+  "version": "6.6.0",
   "private": true,
   "type": "module",
-  "description": "1-4 player server-authoritative TRPG with a parallel-character after-last-train subway sandbox and contextual branching choices",
+  "description": "1-4 player server-authoritative TRPG with a parallel-character after-last-train subway sandbox with item-gated routes, contextual branching choices, and emergent endings",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",

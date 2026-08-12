@@ -964,7 +964,7 @@ function everyoneVoted(choiceVotes = {}) {
 
 $('#openCreate').onclick = () => openEntry('create');
 $('#openJoin').onclick = () => openEntry('join');
-$('#openContinue').onclick = () => openEntry('resume');
+if ($('#openContinue')) $('#openContinue').style.display='none';
 $('#entryBack').onclick = () => view('homeView');
 function openEntry(m) {
   mode = m;
@@ -1257,13 +1257,7 @@ function updateVoteCountdown() {
   el.classList.toggle('urgent', left <= 5);
 }
 
-function renderResumeGate() {
-  const gate = $('#resumeGate');
-  if (!gate || !state?.resumeBarrier) { gate?.classList.add('hidden'); return; }
-  const missing = state.resumeMissingNames || [];
-  gate.innerHTML = `<b>이어하기 대기</b><span>기존 참가자 전원이 돌아와야 진행됩니다.${missing.length ? ` · 기다리는 중: ${missing.map(esc).join(', ')}` : ''}</span>`;
-  gate.classList.remove('hidden');
-}
+function renderResumeGate(){ $('#resumeGate')?.classList.add('hidden'); }
 
 function renderCharacterHud(player, storyItems = []) {
   if (!state) return;
@@ -1313,21 +1307,21 @@ function renderParallelStory() {
   renderCharacterHud(p, scene.storyItems || []);
 
   $('#deckCount').textContent='—';
-  $('#eventCadence').textContent='심야 진행 · 종료 시점 미정';
+  $('#eventCadence').textContent='개인 진행 · 종료 시점은 선택에 따라 달라짐';
   $('#threatValue').textContent=state.threat;
   $('#threatTrack').innerHTML=Array.from({length:8},(_,i)=>`<i class="${i<state.threat?'on':''}"></i>`).join('');
   $('#storyValue').textContent=`${ps.progress || 0}장면`;
   $('#storyFill').style.width=`${Math.min(100,Math.max(4,(Number(ps.progress||0)/12)*100))}%`;
 
   if(ps.ended){
-    $('#turnBanner').textContent='당신의 개인 이야기는 끝났습니다. 다른 플레이어들의 청명역 이야기가 계속되고 있습니다.';
+    $('#turnBanner').textContent='당신의 개인 이야기는 한 결말에 도달했습니다. 다른 플레이어들의 이야기는 아직 계속될 수 있습니다.';
     setSceneImage($('#storySceneImg'),c,{act:5,actName:'04시 58분',title:'각자의 아침',visual:'첫차 직전의 청명역'});
     $('#storySceneCaption').textContent=`${c?.title || '막차 이후'} · ${p?.job?.name || ''}의 결말`;
     $('#actLabel').textContent='PERSONAL ENDING';
     $('#eventTitle').textContent='당신이 선택한 아침';
-    $('#storySituation').textContent=ps.endingText || '청명역에서의 당신 이야기는 여기서 끝났습니다.';
+    $('#storySituation').textContent=ps.endingText || `${c?.title || '이 연대기'}에서의 당신 이야기는 여기서 한 결말에 도달했습니다.`;
     $('#storyObjective').textContent='다른 플레이어는 아직 각자의 위치에서 이야기를 진행하고 있습니다.';
-    $('#storyWhy').textContent=(state.parallel.worldSummary||[]).join(' ') || '같은 역 안에서도 서로 다른 결말이 동시에 만들어질 수 있습니다.';
+    $('#storyWhy').textContent=(state.parallel.worldSummary||[]).join(' ') || '같은 세계 안에서도 서로 다른 선택과 결말이 동시에 만들어질 수 있습니다.';
     $('#storyPrompt').innerHTML='<b>당신은 더 이상 턴을 사용하지 않습니다.</b> 다른 플레이어들이 어떤 선택으로 아침을 맞는지 지켜볼 수 있습니다.';
     $('#eventText').innerHTML=`<div class="inline-resolution success"><div class="eyebrow">YOUR ENDING</div><p>${esc(ps.endingText || '')}</p></div>`;
     $('#choiceArea').innerHTML='<div class="action-lock"><div><div class="eyebrow">PERSONAL STORY COMPLETE</div><b>다른 플레이어의 개인 진행이 끝날 때까지 기다립니다.</b></div></div>';
@@ -1355,11 +1349,13 @@ function renderParallelStory() {
     ? `현재 같은 장소에 ${nearby.map(x=>`${x.name}${x.linked?'(동행 중)':''}`).join(', ')}이(가) 있습니다. 만난 뒤에도 같이 갈지 헤어질지는 선택입니다.`
     : linked.length ? `동행 관계: ${linked.map(x=>`${x.name}(${x.locationLabel})`).join(', ')}. 서로 다른 길로 갈 경우 다음 턴에 따라갈지 남을지 다시 선택합니다.` : '현재 이 장소에는 다른 플레이어가 보이지 않습니다.';
   $('#storyWhy').textContent=[social,world].filter(Boolean).join(' ');
-  $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}의 행동.</b> 같은 세계 상태를 공유하지만, 지금 선택과 이동은 당신의 이야기만 직접 움직입니다.`;
+  $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}의 행동.</b> 같은 세계를 공유하지만 각자의 턴과 위치는 따로 움직입니다. 같은 장소에서 만나면 함께 갈 수도, 다시 갈라질 수도 있습니다.`;
   const paragraphs=(scene.paragraphs||[]).map(text=>`<p>${esc(text)}</p>`).join('');
+  const last=state.lastResolution;
+  const lastResult=last?.source==='parallel-story' ? `<div class="inline-resolution ${last.ok?'success':'failure'}"><div class="eyebrow">LAST ACTION</div><b>${esc(last.playerName||'플레이어')} · ${esc(last.choiceLabel||'행동')}</b><p>${esc(last.text||'')}</p>${last.consequence?`<small>게임 효과 · ${esc(last.consequence)}</small>`:''}</div>` : '';
   const encounterInfo=encounter?`<div class="story-inline-help danger"><b>지역 전투</b> · ${esc(encounter.name)} · HP ${encounter.hp}/${encounter.maxHp}${encounter.weak?` · 약점: ${esc(encounter.weak)}`:''}<br>이 장소에 들어온 다른 플레이어도 자기 턴에 같은 전투에 참가할 수 있습니다.</div>`:'';
   const nearbyInfo=nearby.length?`<div class="story-inline-help"><b>우연한 조우</b> · ${nearby.map(x=>`${esc(x.name)}(${esc(x.job||'')})`).join(' · ')}<br>자동으로 파티가 되지 않습니다. 아래 선택으로 같이 다니거나, 잠깐 협력하거나, 계속 각자 움직일 수 있습니다.</div>`:'';
-  $('#eventText').innerHTML=paragraphs+encounterInfo+nearbyInfo;
+  $('#eventText').innerHTML=lastResult+paragraphs+encounterInfo+nearbyInfo;
 
   $('#storyActionBox').style.display='none';
   $('#storyActionInput').disabled=true;
@@ -1367,32 +1363,22 @@ function renderParallelStory() {
   const storyItems=(scene.storyItems||[]).map(item=>esc(item.name)).join(' · ');
   $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>각 플레이어는 독립된 위치·진행·턴을 가집니다.</b><small>${storyItems?`현재 소지품 · ${storyItems}<br>`:''}소지한 물건과 직업 장비에 따라 새로운 선택지와 숨은 진행 루트가 열립니다.</small>`;
 
-  if(inResolution){
-    const last=state.lastResolution || {};
-    $('#storySituation').textContent=`${last.playerName || '플레이어'}의 행동 결과`;
-    $('#storyObjective').textContent='결과를 확인한 뒤 다음 플레이어의 개인 턴으로 넘어갑니다.';
-    $('#storyPrompt').innerHTML=`<b>${esc(last.playerName || '플레이어')}의 선택이 청명역에 반영되었습니다.</b>`;
-    $('#eventText').innerHTML=`<div class="inline-resolution ${last.ok?'success':'failure'}"><div class="eyebrow">PERSONAL TURN RESULT</div>${last.choiceLabel?`<b>${esc(last.choiceLabel)}</b>`:''}<p>${esc(last.text||'')}</p>${last.consequence?`<small>게임 효과 · ${esc(last.consequence)}</small>`:''}</div>`+nearbyInfo;
-    $('#choiceArea').innerHTML='<div class="action-lock"><div><div class="eyebrow">TURN RESOLVED</div><b>이 행동은 끝났습니다. 다음 플레이어의 턴으로 이어집니다.</b></div></div>';
-  } else {
-    const choices=Array.isArray(scene.choices) ? scene.choices.filter(Boolean) : [];
-    const emptyNotice=choices.length ? '' : `<div class="action-lock"><div><div class="eyebrow">CHOICE RECOVERY</div><b>현재 장면의 선택지를 복구하는 중입니다.</b><small>서버 상태를 다시 동기화하면 기본 행동 선택지가 표시됩니다.</small></div></div>`;
-    $('#choiceArea').innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'당신이 지금 할 수 있는 행동입니다. 현재 장소·소지품·만난 사람에 맞는 행동만 표시됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 개인 턴을 기다리는 중입니다.`}</div></div>`+emptyNotice+choices.map((choice,index)=>`
-      <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
-        <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
-        <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
-      </button>`).join('');
-    $('#choiceArea').querySelectorAll('[data-parallel-index]').forEach(btn=>btn.onclick=()=>{
-      if(btn.disabled)return;
-      const choiceIndex=Number(btn.dataset.parallelIndex);
-      socket.emit('story:advance',{roomCode,playerToken,choiceIndex},r=>!r?.ok&&toast(r.error));
-    });
-  }
-  $('#gmBar').style.display='flex';
+  const choices=Array.isArray(scene.choices) ? scene.choices.filter(Boolean) : [];
+  const emptyNotice=choices.length ? '' : `<div class="action-lock"><div><div class="eyebrow">CHOICE RECOVERY</div><b>현재 장면에서 가능한 행동을 다시 구성하고 있습니다.</b><small>직업·아이템 조건과 무관한 기본 행동이 최소 하나 이상 남도록 서버가 보호합니다.</small></div></div>`;
+  $('#choiceArea').innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'지금 이 장소에서 실제로 할 수 있는 행동들입니다. 직업·장비·소지품이 있으면 특별한 방법이 추가됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 턴을 기다리는 중입니다.`}</div></div>`+emptyNotice+choices.map((choice,index)=>`
+    <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
+      <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
+      <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
+    </button>`).join('');
+  $('#choiceArea').querySelectorAll('[data-parallel-index]').forEach(btn=>btn.onclick=()=>{
+    if(btn.disabled)return;
+    const choiceIndex=Number(btn.dataset.parallelIndex);
+    socket.emit('story:advance',{roomCode,playerToken,choiceIndex},r=>!r?.ok&&toast(r.error));
+  });
+  $('#gmBar').style.display='none';
   $('#advanceStoryBtn').style.display='none';
-  $('#continueBtn').style.display=inResolution?'inline-flex':'none';
-  $('#continueBtn').disabled=!inResolution || state.lastResolution?.playerId!==playerToken;
-  $('#continueBtn').textContent=state.lastResolution?.playerId===playerToken?'내 턴을 마치고 다음 사람으로':'행동한 플레이어가 턴을 마무리하는 중';
+  $('#continueBtn').style.display='none';
+  $('#continueBtn').disabled=true;
   $('#facilityPanel')?.classList.add('hidden');
   updateVoteCountdown();
 }
@@ -1624,7 +1610,7 @@ $('#advanceStoryBtn').onclick = () => {
     $('#storyActionCount').textContent = `0/${max}`;
   });
 };
-$('#continueBtn').onclick = () => socket.emit('event:continue', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
+if ($('#continueBtn')) { $('#continueBtn').style.display='none'; $('#continueBtn').onclick=()=>{}; }
 setInterval(updateVoteCountdown, 250);
 
 function showResolution(r) {

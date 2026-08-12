@@ -16,7 +16,7 @@ test('all story and event choices stay short and direct', () => {
 test('campaigns keep clearly separate narrative identities', () => {
   const expected = {
     ember:['왕관','즉위'], neon:['기억','MOTHER-9'], abyss:['심해','산소'],
-    clock:['루프','종'], wild:['별','숲'], guardian:['캔터베리','헤븐홀드'], echo:['유리별','탐사대']
+    clock:['루프','종'], wild:['별','숲'], guardian:['캔터베리','헤븐홀드'], echo:['유리별','항로']
   };
   for (const c of CAMPAIGNS) {
     const text=[c.intro,...(c.storyBeats||[]).filter(b=>!b.branchScene).map(b=>b.text)].join(' ');

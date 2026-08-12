@@ -417,23 +417,23 @@ const WORLD_META = {
   clock: { motif: 'THIRTEENTH BELL', scene: ['시계광장', '사라지는 거리', '시간 밀수 시장', '열세 번째 탑', '루프가 끝나는 새벽'], boss: '금빛 톱니와 검은 망토로 된 시간의 파수꾼' },
   wild: { motif: 'STAR-EATEN WOODS', scene: ['별가루 숲길', '말하는 고목', '유성 대장간', '숲의 심장', '마지막 별이 뜬 밤하늘'], boss: '별빛을 삼킨 거대한 신수와 숲의 오오라' },
   guardian: { motif: 'GUARDIAN TALES CHRONICLE', scene: ['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길','셴 시티','거대한 여관','던전 왕국','쉬버링 산','라 제국 국경','라 제국 수용소','10년 뒤의 폐허','미래 공주의 저항군','헤븐홀드 탈환전','기록되지 않은 세계의 새벽'], boss: '월드 1부터 미래의 헤븐홀드까지 이어진 선택과 인연이 한꺼번에 되돌아오는 연대기의 마지막 시련' },
-  echo: { motif:'GLASS STAR ARCHIVE', scene:['깨진 중앙 아카이브','봉인된 탐사기록 회랑','도시가 지운 제7구역','성좌 투영실','원본 보관실'], boss:'도시의 기억 원본과 복제된 증언을 동시에 지키는 성좌 관리자' },
+  echo: { motif:'TERMINAL TRACK ZERO', scene:['불 꺼진 청명역 대합실','직원 통로의 회색 화살표','0번 승강장','3분 17초 뒤의 CCTV','04시 58분 첫차'], boss:'운행이 끝난 역에서 정상 시간표와 존재하지 않는 0번 운행이 충돌하며 만들어진 마지막 이상 현상' },
   guardian1: { motif:'GUARDIAN TALES I', scene:['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길'], boss:'월드 1~4의 인연과 침략의 흔적이 겹쳐진 첫 연대기의 마지막 시련' },
   guardian2: { motif:'GUARDIAN TALES II', scene:['셴 시티','작아진 여관','던전 왕국','쉬버링 산','라 제국 국경'], boss:'월드 5~8의 챔피언과 진실을 시험하는 두 번째 연대기의 마지막 시련' },
   guardian3: { motif:'GUARDIAN TALES III', scene:['라 제국','10년 뒤의 폐허','저항군 기지','점령된 헤븐홀드','차원의 문'], boss:'미래 공주와 저항군이 맞서는 기록되지 않은 세계의 최종 결전' },
 };
 
 const STORY_ART_FILES = {
-  ember: { early: './art/ember_early.png', late: './art/ember_late.png' },
-  neon: { early: './art/neon_early.png', late: './art/neon_late.png' },
-  abyss: { early: './art/abyss_early.png', late: './art/abyss_late.png' },
-  clock: { early: './art/clock_early.png', late: './art/clock_late.png' },
-  wild: { early: './art/wild_early.png', late: './art/wild_late.png' },
-  guardian: { early: './art/guardian_early.png', late: './art/guardian_late.png' },
-  guardian1: { profile:'./art/guardian_part1_profile.png', early:'./art/guardian_part1_profile.png', late:'./art/guardian_part1_profile.png' },
-  guardian2: { profile:'./art/guardian_part2_profile.png', early:'./art/guardian_part2_profile.png', late:'./art/guardian_part2_profile.png' },
-  guardian3: { profile:'./art/guardian_part3_profile.png', early:'./art/guardian_part3_profile.png', late:'./art/guardian_part3_profile.png' },
-  echo: { profile:'./art/echo_profile.png', early:'./art/echo_profile.png', late:'./art/echo_profile.png' },
+  ember: { early: '/art/ember_early.png?v=661', late: '/art/ember_late.png?v=661' },
+  neon: { early: '/art/neon_early.png?v=661', late: '/art/neon_late.png?v=661' },
+  abyss: { early: '/art/abyss_early.png?v=661', late: '/art/abyss_late.png?v=661' },
+  clock: { early: '/art/clock_early.png?v=661', late: '/art/clock_late.png?v=661' },
+  wild: { early: '/art/wild_early.png?v=661', late: '/art/wild_late.png?v=661' },
+  guardian: { early: '/art/guardian_early.png?v=661', late: '/art/guardian_late.png?v=661' },
+  guardian1: { profile:'/art/guardian_part1_profile.png?v=661', early:'/art/guardian_part1_profile.png?v=661', late:'/art/guardian_part1_profile.png?v=661' },
+  guardian2: { profile:'/art/guardian_part2_profile.png?v=661', early:'/art/guardian_part2_profile.png?v=661', late:'/art/guardian_part2_profile.png?v=661' },
+  guardian3: { profile:'/art/guardian_part3_profile.png?v=661', early:'/art/guardian_part3_profile.png?v=661', late:'/art/guardian_part3_profile.png?v=661' },
+  echo: { profile:'/art/echo_profile.png?v=661', early:'/art/echo_profile.png?v=661', late:'/art/echo_profile.png?v=661' },
 };
 
 function toast(msg) {

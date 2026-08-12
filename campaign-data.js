@@ -495,6 +495,101 @@ function enrichStoryProse(c, guide, baseText, act, step) {
   const accent = step === 0 ? sense : step === 1 ? npc : step === 2 ? omen : step === 3 ? sense : step === 4 ? omen : npc;
   return [baseText, accent].filter(Boolean).join('\n\n');
 }
+
+// v6.1.0 - LIVING STORY: explicit scene affordances.
+// Quick actions are built from concrete people/objects/risks that actually exist in the current act.
+const SCENE_KITS = {
+  ember:[
+    {clue:'왕가 문장',person:'장례 사제',hostile:'재해골 기사',obstacle:'봉인문',rescue:'부상 경비병',item:'검은 초대장'},
+    {clue:'왕관 조각 지도',person:'죽은 기사',hostile:'용암 맹견',obstacle:'왕묘 철문',rescue:'길 잃은 순례자',item:'왕묘 열쇠'},
+    {clue:'봉인 장치',person:'성채 기술자',hostile:'잿빛 키메라',obstacle:'붉은 성문',rescue:'갇힌 포로',item:'봉인 핵'},
+    {clue:'계승 서약서',person:'왕위 계승자',hostile:'귀족 호위대',obstacle:'연회장 경계',rescue:'협박받는 증인',item:'왕관 조각'},
+    {clue:'즉위식 기록',person:'백은 사제',hostile:'불멸왕 아르켄',obstacle:'타오르는 왕좌',rescue:'남은 생존자',item:'잿빛 왕관'},
+  ],
+  neon:[
+    {clue:'삭제 로그',person:'암시장 브로커',hostile:'감시 드론',obstacle:'도시 검문선',rescue:'추적당한 시민',item:'데이터키'},
+    {clue:'기억 거래 장부',person:'기억 상인',hostile:'크롬 하운드',obstacle:'경매장 보안문',rescue:'기억을 잃은 아이',item:'기억 캡슐'},
+    {clue:'봉쇄구역 지도',person:'내부 고발자',hostile:'제로데이 암살자',obstacle:'레이저 방벽',rescue:'갇힌 해커',item:'관리자 배지'},
+    {clue:'MOTHER-9 백도어',person:'합성인간 관리자',hostile:'추적자 부대',obstacle:'서버 격리벽',rescue:'붙잡힌 동료',item:'루트 키'},
+    {clue:'원본 기억',person:'기억 속 가족',hostile:'MOTHER-9',obstacle:'중앙 코어',rescue:'도시 시민들',item:'삭제 권한'},
+  ],
+  abyss:[
+    {clue:'마지막 로그',person:'구조 신호 발신자',hostile:'수몰 승무원',obstacle:'압력문',rescue:'격리실 생존자',item:'산소 카드'},
+    {clue:'젖은 발자국',person:'의무실 생존자',hostile:'유리해파리',obstacle:'침수 통로',rescue:'부상 연구원',item:'잠수정 키'},
+    {clue:'균열 소나 기록',person:'정비반 생존자',hostile:'심연 촉수',obstacle:'파손 격벽',rescue:'도킹실 승무원',item:'검은 진주'},
+    {clue:'탈라스 생체 신호',person:'연구책임자',hostile:'압력 유령',obstacle:'발전기실',rescue:'격리 병동',item:'생체 표본'},
+    {clue:'상승 좌표',person:'남은 구조대',hostile:'탈라스',obstacle:'잠수정 도킹문',rescue:'기지 생존자',item:'폭파 코드'},
+  ],
+  clock:[
+    {clue:'열세 번째 종 기록',person:'꽃가게 주인',hostile:'초침 사냥개',obstacle:'멈춘 광장문',rescue:'사라질 시민',item:'회중시계'},
+    {clue:'지워진 거리 지도',person:'이름 잃은 아이',hostile:'무명 시민',obstacle:'사라지는 골목',rescue:'잊힌 가족',item:'어제의 쪽지'},
+    {clue:'밀수된 7분',person:'시간 밀수꾼',hostile:'역행 기사',obstacle:'시간 장벽',rescue:'붙잡힌 예언자',item:'시간 병'},
+    {clue:'숨은 기어',person:'종지기',hostile:'시간 기생충',obstacle:'열세 번째 탑',rescue:'과거의 자신',item:'종탑 열쇠'},
+    {clue:'루프의 원인',person:'미래의 동료',hostile:'열세 번째 종지기',obstacle:'마지막 시계',rescue:'도시 전체',item:'내일의 태엽'},
+  ],
+  wild:[
+    {clue:'별가루 흔적',person:'숲 사냥꾼',hostile:'달빛 곰',obstacle:'뒤바뀐 숲길',rescue:'상처 입은 사슴',item:'꿈씨앗'},
+    {clue:'고목의 표식',person:'말하는 고목',hostile:'별가루 독사',obstacle:'움직이는 뿌리',rescue:'길 잃은 아이',item:'성운 사슴 뿔'},
+    {clue:'두 부족의 화살',person:'부족 대표',hostile:'뿌리 거인',obstacle:'부족 경계',rescue:'전쟁에 갇힌 주민',item:'별철 조각'},
+    {clue:'숲의 심장박동',person:'유성 대장장이',hostile:'꿈먹는 올빼미',obstacle:'심장 뿌리',rescue:'병든 정령',item:'별핵'},
+    {clue:'마지막 별빛',person:'오르바',hostile:'별먹는 신수',obstacle:'닫히는 하늘길',rescue:'두 부족',item:'마지막 별'},
+  ],
+  echo:[
+    {clue:'꺼진 유리별',person:'항로 관리인',hostile:'공중 약탈자',obstacle:'끊긴 부두',rescue:'고립된 승객',item:'별빛 병'},
+    {clue:'폭풍 지도',person:'비행선 기관사',hostile:'폭풍 가오리',obstacle:'번개 구름벽',rescue:'조난 비행선',item:'피뢰침 코어'},
+    {clue:'해적 항로표',person:'공중 해적 선장',hostile:'해적 추격선',obstacle:'협곡 항로',rescue:'납치된 상인',item:'해적 신호기'},
+    {clue:'하늘고래 이동선',person:'섬 생태학자',hostile:'별빛 포식조',obstacle:'번식 구역',rescue:'어린 하늘고래',item:'공명 나침반'},
+    {clue:'새 항로 설계도',person:'여섯 섬 대표',hostile:'독점 경비대',obstacle:'중앙 관제탑',rescue:'고립된 섬 주민',item:'항로 권한키'},
+  ],
+  guardian:[
+    {clue:'왕실 표식',person:'작은 공주',hostile:'고블린 추격대',obstacle:'무너진 왕도',rescue:'기절한 수호기사',item:'왕실 배지'},
+    {clue:'티탄 부품',person:'티탄 저항군',hostile:'침략자 병기',obstacle:'기계 방벽',rescue:'붙잡힌 주민',item:'정비 키'},
+    {clue:'마법학교 기록',person:'학교 학생',hostile:'폭주 마법생물',obstacle:'봉인 교실',rescue:'갇힌 학생',item:'마법 배지'},
+    {clue:'사막 표식',person:'사막 안내자',hostile:'광기의 용병',obstacle:'모래 협곡',rescue:'조난 상단',item:'고대 지도'},
+    {clue:'여정의 흔적',person:'챔피언 후보',hostile:'침략자 정찰대',obstacle:'끊긴 다리',rescue:'피난민',item:'챔피언 파편'},
+    {clue:'셴의 도전장',person:'무투가',hostile:'무투장 경쟁자',obstacle:'봉쇄된 경기장',rescue:'다친 수련생',item:'셴 손목붕대'},
+    {clue:'요정 가루 흔적',person:'작아진 로레인',hostile:'거대 벌레',obstacle:'거대한 여관문',rescue:'작아진 손님들',item:'요정 가루'},
+    {clue:'던전 봉인지도',person:'모험가 길드장',hostile:'던전 수호자',obstacle:'봉인석문',rescue:'갇힌 모험가',item:'던전 지도'},
+    {clue:'설산 발자국',person:'설산 주민',hostile:'설산 괴수',obstacle:'눈사태 길',rescue:'조난 등반대',item:'수호 부적'},
+    {clue:'라 제국 명령서',person:'난민 대표',hostile:'제국 경비대',obstacle:'수용소 철문',rescue:'수감된 난민',item:'제국 인장'},
+    {clue:'미래 저항군 지도',person:'미래 공주',hostile:'침략자 점령군',obstacle:'폐허 방벽',rescue:'저항군 부상자',item:'저항군 스코프'},
+    {clue:'10년 전 기록',person:'저항군 지휘관',hostile:'침략자 정예대',obstacle:'붕괴 지하도',rescue:'고립된 시민',item:'미래 방패'},
+    {clue:'헤븐홀드 접근키',person:'오래된 동료',hostile:'점령군 수비대',obstacle:'공중 요새문',rescue:'포로 수호자',item:'헤븐홀드 키'},
+    {clue:'차원 균열 좌표',person:'미래 공주',hostile:'균열 수호병',obstacle:'차원 균열',rescue:'시간에 갇힌 동료',item:'공주의 리본'},
+    {clue:'챔피언 소드 반응',person:'작은 공주와 미래 공주',hostile:'최후의 침략자',obstacle:'무너지는 헤븐홀드',rescue:'두 시간대의 사람들',item:'챔피언 소드'},
+  ],
+};
+function sceneAffordances(campaignId, actIndex, step=0){
+  const list=SCENE_KITS[campaignId] || SCENE_KITS.ember;
+  const kit={...(list[Math.min(actIndex,list.length-1)] || list[0])};
+  // Not every phase exposes every action. Explicit booleans stop impossible quick choices.
+  kit.hasClue = Boolean(kit.clue);
+  kit.hasPerson = Boolean(kit.person) && !['도입'].includes(['도입','탐색','대면','진실','위기','결단'][step]) ? true : Boolean(kit.person);
+  kit.hasHostile = Boolean(kit.hostile) && [2,4,5].includes(step);
+  kit.hasObstacle = Boolean(kit.obstacle) && [1,2,4,5].includes(step);
+  kit.hasRescue = Boolean(kit.rescue) && [2,4].includes(step);
+  kit.hasItem = Boolean(kit.item) && [1,3,5].includes(step);
+  kit.hasStealthPressure = kit.hasHostile || kit.hasObstacle;
+  return kit;
+}
+function sceneActionLabel(type, aff={}){
+  const obj=(name,verb,fallback)=>name?`${name}${objJosa(name)} ${verb}`:fallback;
+  const withTarget=(name,verb,fallback)=>name?`${name}${withJosa(name)} ${verb}`:fallback;
+  const labels={
+    investigate: obj(aff.clue,'본다','단서를 본다'), observe:'주변을 살핀다',
+    fight: withTarget(aff.hostile,'싸운다','적과 싸운다'), sneak:'몰래 들어간다',
+    persuade: aff.person?`${aff.person}${withJosa(aff.person)} 말한다`:'상대와 말한다', help:obj(aff.rescue||aff.person,'돕는다','사람을 돕는다'),
+    bypass: obj(aff.obstacle,'우회한다','우회한다'), break:obj(aff.obstacle,'연다','길을 연다'),
+    steal: obj(aff.item,'챙긴다','물건을 챙긴다'), tail:aff.person?`${aff.person}${objJosa(aff.person)} 따라간다`:'뒤를 밟는다',
+    threaten: aff.person?`${aff.person}${objJosa(aff.person)} 압박한다`:'상대를 압박한다', trade:aff.person?`${aff.person}${withJosa(aff.person)} 거래한다`:'거래한다',
+    hide:'몸을 숨긴다', wait:'기다린다', trap:'함정을 만든다', endure:'버틴다', 'travel-a':'다음 곳으로 간다'
+  };
+  const label=labels[type]||'다른 방법을 찾는다';
+  if([...label].length<=18) return label;
+  const fallback={investigate:'단서를 본다',fight:'적과 싸운다',persuade:'상대와 말한다',help:'사람을 돕는다',bypass:'우회한다',break:'길을 연다',steal:'물건을 챙긴다',tail:'뒤를 밟는다',threaten:'상대를 압박한다',trade:'거래한다'};
+  return fallback[type]||label;
+}
+
 function detectSceneTarget(c, beat, guide) {
   const text = `${beat?.text || ''} ${beat?.situation || ''} ${beat?.objective || ''} ${guide?.place || ''}`;
   const patterns = [
@@ -548,122 +643,102 @@ function actionRisk(type) {
 function buildStoryChoices(c, guide, beat, act, step, index) {
   const phase = beat.phase || '장면';
   const actNo = act + 1;
-  const text = `${beat.text || ''} ${beat.situation || ''} ${beat.objective || ''} ${guide.place || ''} ${guide.goal || ''} ${guide.stakes || ''}`;
-  const target = detectSceneTarget(c, beat, guide);
-  const hasPerson = /사람|주민|증언|경비|병사|기사|공주|로레인|상인|생존자|동료|난민|학생|스승|라이벌|관리자|탐사대|아이|군중|부족|저항군|요정|모험가/.test(text);
-  const hasHostile = /적|적대|침략|고블린|괴물|수호자|집행|전투|공격|습격|추격|폭군|악마|병기|망령|포위|봉쇄군/.test(text);
-  const hasObstacle = /문|봉인|장치|벽|잔해|붕괴|통로|잠금|격벽|기계|장애|바리케이드|수용소|감옥|균열|절벽/.test(text);
-  const hasClue = /기록|흔적|증거|단서|문양|로그|기억|증언|지도|신호|비밀|모순|원인|정보|좌표/.test(text);
-  const hasStealth = /감시|경계|추적|봉쇄|잠입|몰래|숨|센서|카메라|경비|순찰/.test(text);
-  const hasRescue = /구조|부상|피난|보호|구하|살리|갇힌|난민|생존자|포로|수감/.test(text);
+  const aff = beat.affordances || sceneAffordances(c.id, act, step);
+  const hasPerson = Boolean(aff.hasPerson);
+  const hasHostile = Boolean(aff.hasHostile);
+  const hasObstacle = Boolean(aff.hasObstacle);
+  const hasClue = Boolean(aff.hasClue);
+  const hasStealth = Boolean(aff.hasStealthPressure);
+  const hasRescue = Boolean(aff.hasRescue);
+  const hasItem = Boolean(aff.hasItem);
+  const dangerPhase = ['대면','위기','결단'].includes(phase);
   const focus = String(beat.objective || guide.goal || '현재 목표').replace(/[.!?]+$/g,'');
   const reveal = String(guide.reveal || '숨은 원인').replace(/[.!?]+$/g,'');
-  const place = String(guide.place || target || '현장');
 
   const candidates = [
-    {type:'investigate',stat:'지능',route:'careful',path:'truth',when:hasClue||true,
-      label:contextualActionLabel('investigate', target, c, act, step),
-      success:`서로 따로 보이던 흔적이 한 줄로 이어졌다. ${reveal}. 이 사실 때문에 다음 장면의 조사 대상과 접근 가능한 길이 구체적으로 좁혀졌다.`,
-      failure:`단서 하나를 잘못 해석했지만 그 모순 덕분에 누군가 증거를 의도적으로 배열했다는 사실이 드러났다. 다음 장면에서는 그 조작의 출처를 추적해야 한다.`},
-    {type:'observe',stat:'지혜',route:'careful',path:'truth',when:true,
-      label:contextualActionLabel('observe', target, c, act, step),
-      success:`움직이기 전에 위험의 순서를 읽었다. 누가 먼저 반응하고 어떤 길이 잠시 비는지 알아내 다음 장면을 준비된 위치에서 시작한다.`,
-      failure:`결정적인 순간 하나는 놓쳤지만 가장 부자연스러운 반응을 찾아냈다. 그 반응이 다음 장면의 추적 대상이 된다.`},
-    {type:'bypass',stat:'민첩',route:'bold',path:'survival',when:hasObstacle||hasStealth||true,
-      label:contextualActionLabel('bypass', target, c, act, step),
-      success:`정면 충돌을 피한 채 목표에 가까운 위치를 선점했다. 다음 장면에서는 원래 만나야 했던 위험보다 먼저 핵심 장소나 인물에 접근한다.`,
-      failure:`우회로는 막혔지만 그 길까지 통제하는 존재가 드러났다. 다음 장면은 막힌 길 자체가 아니라 그 통제자의 목적을 상대하는 장면으로 바뀐다.`},
-    {type:'help',stat:'체력',route:'empathetic',path:'bond',when:hasPerson||hasRescue,
-      label:contextualActionLabel('help', target, c, act, step),
-      success:`사람을 먼저 지킨 선택이 즉시 신뢰로 돌아왔다. 구조받은 인물이 다음 위치, 통로 또는 숨겨진 사정을 직접 알려 주며 다음 장면의 조건이 유리해진다.`,
-      failure:`구조에 시간이 걸려 기회 하나를 놓쳤지만 사람은 남았다. 그 인물이 뒤늦게 떠올린 증언 때문에 잃은 단서 대신 새로운 우회 사건이 열린다.`},
-    {type:'persuade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,
-      label:contextualActionLabel('persuade', target, c, act, step),
-      success:`상대의 이해관계를 정확히 건드려 협조와 증언을 얻었다. 다음 장면에서는 그 인물이 문을 열거나 다른 사람의 태도를 바꾸는 실제 지원자로 남는다.`,
-      failure:`설득은 완전히 통하지 않았지만 상대가 끝까지 피한 쟁점이 드러났다. 다음 장면의 목표가 그 숨긴 대상이나 장소로 바뀐다.`},
-    {type:'sneak',stat:'민첩',route:'bold',path:'survival',when:hasStealth||hasHostile,
-      label:contextualActionLabel('sneak', target, c, act, step),
-      success:`정면에서는 보이지 않던 내부 정보와 빠져나갈 길을 확보했다. 다음 장면은 기습당하는 상황이 아니라 파티가 먼저 선택할 수 있는 상황에서 시작한다.`,
-      failure:`잠입 흔적이 들켜 경계가 올라갔지만 내부 구조와 상대의 배치는 확인했다. 다음 장면은 추격 또는 봉쇄를 뚫는 후속 상황으로 이어진다.`},
-    {type:'steal',stat:'민첩',route:'bold',path:'truth',when:hasPerson&&hasClue,
-      label:contextualActionLabel('steal', target, c, act, step),
-      success:`필요한 물건을 손에 넣었고, 보관 방식까지 확인해 누가 이 정보를 통제했는지 알게 됐다. 다음 장면은 훔친 증거의 출처를 확인하는 방향으로 열린다.`,
-      failure:`손을 대는 순간 경계가 올라갔지만 상대가 가장 먼저 지키려 한 물건이 무엇인지 드러났다. 그 물건과 보관자가 다음 장면의 핵심 표적이 된다.`},
-    {type:'tail',stat:'지혜',route:'careful',path:'truth',when:hasPerson&&(hasStealth||hasClue),
-      label:contextualActionLabel('tail', target, c, act, step),
-      success:`상대를 놓치지 않고 뒤따라 공개되지 않은 만남과 다음 장소를 확인했다. 그 목적지가 그대로 다음 장면의 새로운 무대가 된다.`,
-      failure:`미행을 눈치챈 상대가 일부러 길을 틀었지만 끝까지 피한 골목과 연락 상대가 드러났다. 그 회피 자체가 다음 장면의 추적 단서가 된다.`},
-    {type:'threaten',stat:'매력',route:'bold',path:'survival',when:hasPerson&&hasHostile,fatalRisk:true,
-      label:contextualActionLabel('threaten', target, c, act, step),
-      success:`상대가 계산 끝에 물러서며 필요한 정보를 토해냈다. 다음 장면에서는 그 정보로 적의 준비보다 한발 먼저 움직인다.`,
-      failure:`압박이 반발을 불러 적대가 선명해졌지만 누가 상대의 진짜 배후인지 드러났다. 그 배후가 다음 후속 장면의 직접 상대가 된다.`},
-    {type:'fight',stat:'근력',route:'bold',path:'survival',when:hasHostile,startsCombat:true,fatalRisk:true,
-      label:contextualActionLabel('fight', target, c, act, step),
-      success:`적대 세력의 주도권을 꺾어 길을 열었다. 다음 장면에서는 빠르게 목표에 접근하지만 소음과 적대의 흔적도 함께 따라온다.`,
-      failure:`충돌이 커져 상처와 경계가 남았다. 대신 적의 배치와 지휘 계통이 드러나 다음 장면에서 다른 방법으로 판을 뒤집을 정보가 생겼다.`},
-    {type:'break',stat:'근력',route:'bold',path:'survival',when:hasObstacle,fatalRisk:true,
-      label:contextualActionLabel('break', target, c, act, step),
-      success:`구조 자체를 바꿔 없던 길을 만들었다. 다음 장면의 시작 위치가 달라지고 원래의 경비나 함정 일부를 건너뛴다.`,
-      failure:`예상보다 넓게 무너지며 더 큰 위험이 깨어났지만 숨겨진 공간도 동시에 드러났다. 그 공간이 다음 후속 장면의 중심이 된다.`},
-    {type:'trade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,
-      label:contextualActionLabel('trade', target, c, act, step),
-      success:`거래가 성립해 필요한 통로와 정보를 얻었다. 상대는 대가를 기억하며 이후 장면에서 다시 등장할 관계로 남는다.`,
-      failure:`조건은 불리했지만 상대가 무엇을 가장 원하고 두려워하는지 알아냈다. 다음 협상이나 대면에서 그 정보가 실제 약점으로 남는다.`},
-    {type:'hide',stat:'민첩',route:'careful',path:'survival',when:hasStealth||hasHostile,
-      label:contextualActionLabel('hide', target, c, act, step),
-      success:`추적을 떼어 낸 뒤 상대의 경계가 풀리는 순간을 확보했다. 다음 장면에서는 들키지 않은 위치에서 먼저 선택할 수 있다.`,
-      failure:`완전히 숨지는 못했지만 상대가 수색에 인원을 빼면서 빈 구역이 생겼다. 그 빈틈이 다음 장면의 우회 경로가 된다.`},
-    {type:'wait',stat:'지혜',route:'careful',path:'truth',when:true,
-      label:contextualActionLabel('wait', target, c, act, step),
-      success:`기다림 끝에 감춰진 행동 순서가 먼저 나타났다. 다음 장면에서는 그 움직임을 뒤쫓거나 선점할 수 있다.`,
-      failure:`시간을 쓰는 동안 작은 기회는 지나갔지만 반복되는 패턴을 읽었다. 다음 장면에서 같은 함정에 다시 걸리지 않는다.`}
-  ].filter(x=>x.when);
-  candidates.push(
-    {type:'trap',stat:'지능',route:'careful',path:'truth',when:true,label:'함정을 준비한다',success:`위험의 이동 경로를 좁혀 다음 장면에서 먼저 행동할 우위를 만들었다.`,failure:`준비는 완벽하지 않았지만 무엇이 함정을 피하려 하는지 드러나 다음 추적 단서가 생겼다.`},
-    {type:'endure',stat:'체력',route:'empathetic',path:'bond',when:true,label:'자리를 지킨다',success:`버틴 시간이 동료의 조사와 이동을 가능하게 해 다음 장면의 시작 조건을 안정시켰다.`,failure:`몸에 부담이 남았지만 무너지기 직전의 변화가 다음 장면에서 피해야 할 위험을 알려 줬다.`},
-    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:true,isTravel:true,label:'다음 장소로 간다',success:`지금까지 확보한 단서를 따라 다음 현장에 도착했다.`,failure:`이동 중 예상 밖의 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.`}
-  );
+    {type:'investigate',stat:'지능',route:'careful',path:'truth',when:hasClue,label:sceneActionLabel('investigate', aff),risk:'낮음',
+      success:`${aff.clue}에서 핵심 연결고리를 찾았다. ${reveal}. 다음 장면은 이 사실을 알고 시작한다.`,failure:`${aff.clue}의 해석은 빗나갔지만 모순 하나가 남아 다음 조사 대상을 가리켰다.`},
+    {type:'observe',stat:'지혜',route:'careful',path:'truth',when:true,label:'주변을 살핀다',risk:'낮음',
+      success:'현장의 움직임과 위험 순서를 읽어 먼저 움직일 틈을 찾았다.',failure:'결정적 순간은 놓쳤지만 가장 부자연스러운 움직임을 기억했다.'},
+    {type:'listen',stat:'지혜',route:'careful',path:'truth',when:hasPerson||hasHostile||hasObstacle,label:'소리를 듣는다',risk:'낮음',
+      success:'눈에 보이지 않는 움직임과 대화 방향을 소리로 구분해 안쪽 상황을 미리 파악했다.',failure:'정확한 위치는 잡지 못했지만 반복되는 소리를 다음 위험의 경고로 기억했다.'},
+    {type:'question',stat:'지혜',route:'careful',path:'truth',when:hasPerson,label:`${aff.person}에게 묻는다`,risk:'낮음',
+      success:`${aff.person}에게 필요한 사실을 직접 확인해 추측 하나를 확실한 정보로 바꿨다.`,failure:`대답은 흐렸지만 ${aff.person}이 피한 질문이 무엇인지 드러났다.`},
+    {type:'persuade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,label:sceneActionLabel('persuade', aff),risk:'보통',
+      success:`${aff.person}의 협조를 얻어 정보와 관계를 함께 확보했다.`,failure:`설득은 통하지 않았지만 ${aff.person}이 숨기는 이해관계가 드러났다.`},
+    {type:'help',stat:'체력',route:'empathetic',path:'bond',when:hasRescue,label:sceneActionLabel('help', aff),risk:'낮음',
+      success:`${aff.rescue}을 먼저 도왔다. 구조받은 쪽이 길이나 정보를 돌려주었다.`,failure:`시간은 들었지만 ${aff.rescue}을 남겨 두었고, 뒤늦은 증언이 새 길을 만들었다.`},
+    {type:'protect',stat:'체력',route:'empathetic',path:'bond',when:(hasPerson||hasRescue)&&dangerPhase,label:hasRescue?`${aff.rescue}${objJosa(aff.rescue)} 지킨다`:'사람을 지킨다',risk:'보통',
+      success:'위험을 대신 받아내 사람을 지켰고, 보호받은 쪽의 신뢰가 다음 장면에 남았다.',failure:'완전히 막지는 못했지만 피해가 퍼지는 것은 막았다. 대신 파티에 부담이 남았다.'},
+    {type:'trade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson&&hasItem,label:`${aff.person}${withJosa(aff.person)} 거래한다`,risk:'낮음',
+      success:`조건을 맞춰 ${aff.item} 또는 필요한 통로에 접근했다.`,failure:`거래는 깨졌지만 ${aff.person}이 무엇을 원하는지 알아냈다.`},
+    {type:'tail',stat:'지혜',route:'careful',path:'truth',when:hasPerson&&(hasClue||hasStealth),label:`${aff.person}${objJosa(aff.person)} 따라간다`,risk:'보통',
+      success:`${aff.person}을 따라가 공개되지 않은 이동 경로와 다음 장소를 찾았다.`,failure:`미행은 들켰지만 ${aff.person}이 피한 방향과 연락 대상을 확인했다.`},
+    {type:'threaten',stat:'매력',route:'bold',path:'survival',when:hasPerson&&hasHostile,label:`${aff.person}${objJosa(aff.person)} 압박한다`,risk:'높음',fatalRisk:true,
+      success:'강하게 압박해 즉시 필요한 정보를 얻었다. 빠른 대신 적대가 남았다.',failure:'압박이 역효과를 내 적대가 커졌지만 상대의 배후가 드러났다.'},
+    {type:'fight',stat:'근력',route:'bold',path:'survival',when:hasHostile,label:sceneActionLabel('fight', aff),risk:'높음',startsCombat:true,fatalRisk:true,
+      success:`${aff.hostile}의 주도권을 꺾고 길을 열었다.`,failure:'충돌이 커져 상처가 남았지만 적의 배치와 지휘 방식이 드러났다.'},
+    {type:'sneak',stat:'민첩',route:'bold',path:'survival',when:hasStealth,label:'몰래 접근한다',risk:'보통',
+      success:'시야 밖으로 파고들어 안쪽 위치를 선점했다.',failure:'흔적이 남아 경계가 올라갔지만 내부 배치와 탈출로를 확인했다.'},
+    {type:'distract',stat:'매력',route:'bold',path:'survival',when:hasHostile||(hasPerson&&hasObstacle),label:'시선을 돌린다',risk:'보통',
+      success:'주의를 다른 곳으로 돌려 이동·구조·조사를 할 짧은 틈을 만들었다.',failure:'완전히 속이지는 못했지만 상대가 무엇을 우선해서 지키는지 확인했다.'},
+    {type:'hide',stat:'민첩',route:'careful',path:'survival',when:hasStealth||hasHostile,label:'몸을 숨긴다',risk:'낮음',
+      success:'시야와 추적을 끊고 상대가 경계를 푸는 순간을 기다릴 수 있게 됐다.',failure:'완전히 숨지 못했지만 수색 인력이 분산되며 빈 구역이 생겼다.'},
+    {type:'trap',stat:'지능',route:'careful',path:'survival',when:hasHostile||hasStealth,label:'함정을 만든다',risk:'보통',
+      success:'예상 이동 경로에 함정을 준비해 다음 충돌에서 선제 우위를 만들었다.',failure:'함정은 불완전했지만 상대가 피하려는 지점을 알아냈다.'},
+    {type:'bypass',stat:'민첩',route:'careful',path:'survival',when:hasObstacle,label:sceneActionLabel('bypass', aff),risk:'보통',
+      success:`${aff.obstacle}을 건드리지 않고 지나갈 길을 찾았다.`,failure:`우회로는 막혔지만 ${aff.obstacle}이 어디에서 통제되는지 확인했다.`},
+    {type:'break',stat:'근력',route:'bold',path:'survival',when:hasObstacle,label:sceneActionLabel('break', aff),risk:'높음',fatalRisk:true,
+      success:`${aff.obstacle}을 강제로 열어 새 길을 만들었다.`,failure:`예상보다 크게 흔들렸지만 ${aff.obstacle}의 약한 부분이 드러났다.`},
+    {type:'inspect-item',stat:'지능',route:'careful',path:'truth',when:hasItem,label:`${aff.item}${objJosa(aff.item)} 살핀다`,risk:'낮음',
+      success:`${aff.item}의 쓰임과 출처를 확인해 다음 사건과 연결되는 단서를 얻었다.`,failure:`정확한 용도는 모르지만 ${aff.item}이 반응하는 조건 하나를 확인했다.`},
+    {type:'take-item',stat:'민첩',route:'bold',path:'truth',when:hasItem&&(hasHostile||hasPerson),label:`${aff.item}${objJosa(aff.item)} 챙긴다`,risk:'보통',
+      success:`${aff.item}을 확보해 이후 장면에서 사용할 수 있는 자원을 얻었다.`,failure:`확보에는 실패했지만 누가 ${aff.item}을 지키는지 분명해졌다.`},
+    {type:'wait',stat:'지혜',route:'careful',path:'truth',when:hasPerson||hasHostile||hasStealth,label:'잠시 기다린다',risk:'낮음',
+      success:'서두르지 않자 먼저 움직이는 쪽이 나타나 숨은 행동 순서를 확인했다.',failure:'작은 기회는 지나갔지만 반복되는 패턴을 읽었다.'},
+    {type:'retreat',stat:'지혜',route:'careful',path:'survival',when:dangerPhase&&(hasHostile||hasObstacle),label:'잠시 물러난다',risk:'낮음',
+      success:'안전한 거리로 빠져 상황을 다시 정리하고 다른 접근을 택할 여유를 얻었다.',failure:'후퇴가 늦어 압박이 따라붙었지만 추격 범위를 확실히 알게 됐다.'},
+    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:phase!=='결단',label:'다음 곳으로 간다',risk:'낮음',isTravel:true,
+      success:'확보한 정보에 따라 다음 현장으로 이동했다.',failure:'이동 중 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.'}
+  ].filter(item=>item.when);
 
-  // 장면의 원인/대상/위험에 맞는 서로 다른 행동 축을 강제로 섞는다.
-  // 같은 문을 표현만 바꿔 여섯 번 누르는 식의 선택지를 막고, 장면마다 정보·이동·관계·위험·대기 축이 실제로 다른 후속 장면을 만든다.
-  const byType = type => candidates.find(x=>x.type===type);
-  const ordered=[];
-  const add = item => { if(item && !ordered.includes(item)) ordered.push(item); };
-  add(byType(hasClue ? 'investigate' : 'observe'));
-  add(byType('travel-a'));
-  if(hasPerson) add(byType(hasHostile ? 'persuade' : (index%2 ? 'trade' : 'help')) || byType('persuade') || byType('help'));
-  else add(byType('endure'));
-  if(hasHostile) add(byType(index%2 ? 'fight' : 'sneak') || byType('fight'));
-  else if(hasObstacle) add(byType(index%2 ? 'break' : 'bypass') || byType('bypass'));
-  else add(byType(index%2 ? 'trap' : 'wait'));
-  const sceneSpecific = [
-    hasPerson&&hasClue ? byType(index%2 ? 'tail':'steal') : null,
-    hasPerson&&hasHostile ? byType('threaten') : null,
-    hasStealth||hasHostile ? byType('hide') : null,
-    hasObstacle ? byType('bypass') : null,
-    byType(index%3===0?'observe':index%3===1?'wait':'trap')
-  ];
-  for(const item of sceneSpecific) add(item);
-  // 남는 칸은 시작 인덱스를 회전시켜 막마다 같은 6개가 반복되지 않게 한다.
-  for(let n=0; ordered.length<6 && n<candidates.length; n++) add(candidates[(index+n)%candidates.length]);
-  const defs=ordered.slice(0,6);
+  const priority=['investigate','question','help','protect','persuade','trade','tail','fight','bypass','break','sneak','trap','distract','inspect-item','take-item','threaten','hide','listen','observe','wait','retreat','travel-a'];
+  const rank=new Map(priority.map((type,i)=>[type,i]));
+  candidates.sort((a,b)=>(rank.get(a.type)??99)-(rank.get(b.type)??99));
+  const richness=[hasPerson,hasHostile,hasObstacle,hasClue,hasRescue,hasItem,hasStealth].filter(Boolean).length;
+  const desired=Math.max(6,Math.min(12,6+richness));
+  const defs=candidates.slice(0,desired);
+
   return defs.map((d,i)=>{
-    const risk = actionRisk(d.type);
-    const base = 9 + Math.min(5, Math.floor(act/2)) + (phase === '위기' || phase === '결단' ? 2 : 0);
-    const dc = Math.max(8,Math.min(15,base+(risk==='높음'?2:risk==='낮음'?-1:0)+(i%2)));
+    const risk=d.risk||actionRisk(d.type);
+    const base=8+Math.min(4,Math.floor(act/3))+(phase==='위기'||phase==='결단'?1:0);
+    const dc=Math.max(7,Math.min(14,base+(risk==='높음'?2:risk==='낮음'?-1:0)+(i%4===3?1:0)));
     return {
-      id:`${beat.id}-${String(d.type).toUpperCase()}-${i+1}`, label:d.label,
-      detail:`현재 목표 연결 · ${focus} · 성공 시 다음 장면 조건이 바뀌고 실패 시 이 행동 때문에 생긴 후속 사건이 열린다.`,
-      stat:d.stat, dc, path:d.path, branchKey:`act${actNo}`, branchValue:d.route, actionType:d.type,
-      startsCombat:Boolean(d.startsCombat), fatalRisk:Boolean(d.fatalRisk), isTravel:Boolean(d.isTravel), opportunity:actionOpportunity(d.type), risk,
-      success:`${d.success} 이 결과가 다음 장면의 시작 조건으로 저장된다.`, failure:`${d.failure} 이 결과가 다음 장면의 시작 조건으로 저장된다.`,
-      consequenceHint:{success:`${actionOpportunity(d.type)} + 다음 장면 변화`,failure:risk==='높음'?'상처·적대·별도 후속 사건':'새 단서·우회 후속 사건'}
+      id:`${beat.id}-${String(d.type).toUpperCase()}-${i+1}`,
+      label:[...d.label].length<=18?d.label:[...d.label].slice(0,18).join(''),
+      detail:`${focus}와 직접 연결된 행동. 성공과 실패 모두 다음 장면에 영향을 준다.`,
+      stat:d.stat,dc,path:d.path,branchKey:`act${actNo}`,branchValue:d.route,actionType:d.type,
+      startsCombat:Boolean(d.startsCombat),fatalRisk:Boolean(d.fatalRisk),isTravel:Boolean(d.isTravel),opportunity:actionOpportunity(d.type),risk,
+      success:`${d.success} 이 결과는 다음 장면에 남는다.`,failure:`${d.failure} 이 결과는 다음 장면에 남는다.`,
+      consequenceHint:{success:`${actionOpportunity(d.type)} 확보`,failure:risk==='높음'?'큰 대가 또는 적대 증가':'다른 정보 또는 우회로 발생'}
     };
   });
 }
 
-
 function buildBridgeScene(c, guide, act) {
+  if (c.id==='echo') {
+    const echoScenes=[
+      '막차가 떠난 뒤 역사는 빠르게 잠겼다. 매점 셔터가 내려가고 개찰구 화면이 하나씩 꺼진 뒤, 마지막으로 남은 것은 비상등과 환풍기 소리뿐이었다. 그런데 파티가 1번 출구 계단을 오르려는 순간 방금 통과했던 방화 셔터가 다시 내려왔다. 역무실 단말에는 분명 “역사 내 잔류 인원 0명”이라고 떠 있었다. 역은 파티를 사람으로 인식하지 못하는 듯했다.',
+      '환승통로 벽의 노선도에는 조금 전까지 없던 회색 선 하나가 생겨 있었다. 선은 현재 역에서 시작해 역 이름이 없는 원 세 개를 지나 “0”이라고 적힌 승강장으로 이어졌다. 휴대폰으로 사진을 찍자 화면에는 회색 선이 나오지 않았지만, 실제 벽에는 그대로 남아 있었다. 통로 끝에서는 운행이 끝난 지 오래인데도 레일이 울리는 소리가 들렸다.',
+      'CCTV실에서 발견한 이상은 더 직접적이었다. 4번 카메라에는 현재 시각보다 정확히 3분 17초 뒤의 파티가 찍혀 있었다. 영상 속 누군가는 아직 열지 않은 비상문을 열었고, 다른 누군가는 뒤를 돌아보며 무전기를 떨어뜨렸다. 영상을 멈춰도 시간 표시는 계속 앞으로 갔다. 역은 파티의 다음 움직임을 보여 주는 것인지, 아니면 그 움직임을 먼저 정하고 있는 것인지 알 수 없었다.',
+      '첫차까지 23분이 남자 역 전체가 한꺼번에 깨어나기 시작했다. 꺼졌던 전광판은 목적지 대신 “운행 준비 중”이라는 문구를 띄웠고, 플랫폼의 유도등은 실제 출구가 아니라 0번 승강장 쪽으로 이어졌다. 관제실과 연결된 신호선에서는 정상 운행표와 존재하지 않는 운행표가 번갈아 들어왔다. 둘 중 하나를 기준으로 역을 정리하지 않으면 첫차가 들어올 시간에 두 경로가 겹칠 수 있었다.',
+      '04시 58분. 역사 바깥에서는 새벽 버스가 다니기 시작했고, 지상 출구 틈으로 실제 아침빛이 들어왔다. 동시에 지하에서는 아직 운행표에 없는 열차의 전조등이 켜졌다. 정상 첫차가 들어오기까지 남은 시간은 몇 분뿐이었다. 지금까지 열어 둔 문, 끈 방송, 복구한 신호, 구한 사람에 따라 역은 서로 다른 하나의 길만 남기려 하고 있었다. 마지막 선택은 이상 현상을 쓰러뜨리는 것이 아니라 어느 길을 현실로 남길지 정하는 일이 됐다.'
+    ];
+    const goal=String(guide.goal||'').replace(/[.!?]+$/g,'');
+    const stakes=String(guide.stakes||'').replace(/[.!?]+$/g,'');
+    const scene=echoScenes[act]||echoScenes[0];
+    return `${scene}\n\n지금 파티의 목표는 “${goal}”이다. 하지만 막차가 끝난 역에서는 서두르는 것만이 정답이 아니다. ${stakes} 작은 선택 하나가 어떤 통로가 열리고 어떤 안내가 거짓이 되는지를 바꾼다.`;
+  }
   const scenes = {
     ember: [
       '광장의 관을 떠난 뒤에도 검은 재는 파티의 장화 밑창에 달라붙었다. 폐예배당 뒤편 장례 창고에는 봉인용 밀랍이 뜯긴 상자와 왕가 인장이 반쯤 눌린 천 조각이 남아 있었다. 누군가는 왕의 장례 절차를 알고 있었고, 정식 사제보다 먼저 봉인에 손을 댔다. 창고 문밖에는 발자국 두 줄이 성벽 바깥이 아니라 오래 봉쇄된 지하 계단 쪽으로 이어졌다.',
@@ -707,6 +782,17 @@ function buildBridgeScene(c, guide, act) {
   return `${scene}\n\n이 장면에서 파티가 놓치면 안 되는 것은 “${goal}”라는 목표다. 하지만 그 목표에 곧장 달려들수록 “${stakes}”라는 대가가 더 가까워진다. 지금은 속도보다 무엇이 원인이고 무엇이 누군가가 만든 미끼인지 구분해야 한다.`;
 }
 function buildExplorationScene(c, guide, act) {
+  if (c.id==='echo') {
+    const echoScenes=[
+      '꺼진 개찰구 옆 비상문에는 안쪽에서만 열 수 있는 기계식 손잡이가 달려 있었다. 문제는 문 너머가 바로 지상 계단이어야 하는데, 작은 유리창으로 보이는 것은 방금 지나온 대합실이었다. 문을 두드리자 반대편에서도 같은 박자로 세 번 두드리는 소리가 돌아왔다. 몇 초 뒤 역 안내방송이 켜져 “마지막 열차가 곧 도착합니다”라고 말했다.',
+      '0번 승강장으로 내려가는 계단은 층수 표시가 없었다. 열두 계단을 내려가면 다시 같은 층계참이 나왔고, 벽의 광고만 조금씩 달라졌다. 세 번째 반복에서 광고 속 시계가 실제 시간보다 11분 빨랐고, 그 아래에는 현재 파티원 수와 정확히 같은 숫자의 사람 그림자가 그려져 있었다. 계단 옆 점검문은 현실의 역 설계도에는 존재하지 않았다.',
+      '분실물 보관함 327번은 열쇠가 없어도 열렸다. 안에는 파티가 아직 잃어버리지 않은 물건들이 들어 있었다. 배터리가 반쯤 닳은 손전등, 금이 간 휴대폰 케이스, 젖은 교통카드. 각 물건에는 서로 다른 시간이 적힌 분실 신고표가 붙어 있었다. 가장 늦은 신고 시간은 첫차가 출발한 뒤였다.',
+      '신호실 바닥에는 빨간색과 녹색 케이블이 같은 단자에 두 번 연결돼 있었다. 정상 운행표대로라면 있을 수 없는 배선이었지만, 한쪽을 끊자 멀리서 들리던 열차 소리가 바로 사라졌다. 다른 쪽을 끊으면 지상 출구 유도등이 꺼졌다. 역은 열차와 출구를 동시에 유지하지 못하고 둘 중 하나를 선택하도록 강요하고 있었다.',
+      '정상 첫차 운행표가 다시 뜨자 모든 시계가 처음으로 같은 시간을 가리켰다. 그러나 0번 승강장의 시계만 00시 47분에서 멈춰 있었다. 그 옆에는 처음 역이 파티를 “잔류 인원 0명”으로 처리했던 로그가 그대로 남아 있었다. 이상 현상은 파티를 가두려 했다기보다, 존재하지 않는 승객을 어느 운행표에도 배치하지 못해 계속 경로를 다시 계산하고 있었던 것처럼 보였다.'
+    ];
+    const scene=echoScenes[act]||echoScenes[0];
+    return `${scene}\n\n${guide.place}에서 확인한 것들은 하나의 괴물이나 한 사람의 장난으로 설명되지 않는다. 역의 공간, 안내, 시간표가 서로 다른 답을 내고 있다. “${guide.goal}”에 다가가려면 눈앞의 이상을 피하는 것뿐 아니라 어떤 규칙에서 어긋났는지 찾아야 한다.`;
+  }
   const variants = {
     ember: [
       '성채의 복도 끝에는 오래전에 폐쇄된 작은 기도실이 남아 있었다. 문은 잠겨 있지 않았지만 안쪽 바닥에는 최근 누군가 무릎을 꿇었던 자국이 선명했다. 향로의 재를 헤치자 왕가 문장과 다른 모양의 금속 조각이 하나 나온다. 누군가는 장례가 시작되기 전부터 이곳에서 기다리고 있었다.',
@@ -779,8 +865,9 @@ function buildStoryBeats(c){
         id:`${c.id.toUpperCase()}-STORY-${String(index+1).padStart(2,'0')}`,
         act:act+1, actName:c.acts[act], chapter, artChapter, phase,
         title:`${c.acts[act]} · ${phase}`,
+        affordances:sceneAffordances(c.id, act, step),
         text:prose[step], situation:prose[step], objective, why,
-        prompt: `${sceneAnchor(guide.place)}에서 무엇을 할지 아래 선택지 중 하나를 고르세요.`,
+        prompt: `지금 무엇을 할까요? 빠른 행동을 고르거나 직접 방법을 말해도 됩니다.`,
         reveal:guide.reveal, stakes:guide.stakes,
         visual:`${eventStyles[c.id].visuals[(act*2+step)%eventStyles[c.id].visuals.length]} · ${c.acts[act]}`,
         continuityHook: `이 장면 뒤의 이야기는 현재 선택과 판정 결과에 따라 달라진다. 같은 막에서도 다른 장소·인물·위기로 갈라질 수 있다.`,
@@ -798,132 +885,29 @@ function buildStoryBeats(c){
       beats.push(beat);
     }
   }
-  // v5.4 DEEP CHOICE BRANCHING
-  // Every visible action leads to its own consequence node before the story rejoins a later dramatic junction.
-  // This keeps the UI short while making 조사/싸움/설득/훔치기/미행/이동 등의 결과가 실제 장면으로 남는다.
+  // v6.1.0 - CINEGRAPH: the resolution itself is the consequence scene.
+  // Do not force players through two extra generic consequence clicks after every roll.
+  // Choices still branch to different route scenes, but the immediate result is narrated in the resolution panel.
   const nodeAt = (actIndex, stepIndex) => beats[actIndex * 6 + stepIndex];
-  const branchNodes = [];
-  const makeBranchBeat = (base, choice, outcome, continueTarget, ordinal) => {
-    const won = outcome === 'success';
-    const verb = choice.label.replace(/한다$|간다$/,'');
-    const successFrames=[
-      `${choice.success} ${base.title}의 공기가 달라졌다. 방금 전까지 닫혀 있던 쪽에서 먼저 움직임이 생겼다.`,
-      `${choice.success} 예상과 달리 답은 정면이 아니라 옆에서 나타났다. 새로운 사람과 통로가 동시에 이야기 안으로 들어왔다.`,
-      `${choice.success} 선택의 효과는 즉시 눈에 보였다. 이전에는 의미 없던 물건 하나가 다음 목적지를 가리키기 시작했다.`,
-      `${choice.success} 누군가 파티보다 먼저 반응했다. 그 반응 덕분에 숨은 세력과 다음 장소가 한꺼번에 드러났다.`,
-      `${choice.success} 작은 성공이 현장의 질서를 바꿨다. 다음에는 처음부터 다른 위치와 다른 관계에서 시작할 수 있다.`,
-      `${choice.success} 사건의 중심이 한 칸 옮겨 갔다. 같은 목표를 향하지만 이제 만나게 될 사람과 위험이 달라졌다.`
-    ];
-    const failFrames=[
-      `${choice.failure} 실수는 끝이 아니라 다른 문제의 시작이 됐다. 경계가 바뀌면서 원래 없던 우회로가 생겼다.`,
-      `${choice.failure} 계획은 어긋났지만 그 틈에서 상대의 대응 방식이 드러났다. 다음에는 전혀 다른 곳을 건드릴 수 있다.`,
-      `${choice.failure} 원하는 것은 얻지 못했다. 대신 누가 먼저 움직였는지 확인하면서 새로운 추적 대상이 생겼다.`,
-      `${choice.failure} 상황이 나빠진 방향 자체가 단서가 됐다. 파티는 같은 방법을 반복하는 대신 다른 장소를 택해야 한다.`,
-      `${choice.failure} 주변의 태도가 바뀌었다. 도움을 주던 사람은 물러났고, 대신 지금까지 숨어 있던 인물이 모습을 드러냈다.`,
-      `${choice.failure} 대가는 분명했지만 이야기는 막히지 않았다. 실패가 만들어 낸 별도의 문제를 해결하는 길이 열렸다.`
-    ];
-    const frameIndex=(Number(base.chapter||1)+ordinal+(won?0:3))%6;
-    const worldReaction = won ? successFrames[frameIndex] : failFrames[frameIndex];
-    const directions = [
-      {label:'계속 파고든다', stat:'지능', route:'careful', path:'truth'},
-      {label:'먼저 움직인다', stat:'민첩', route:'bold', path:'survival'},
-      {label:'사람을 붙잡는다', stat:'매력', route:'empathetic', path:'bond'},
-    ];
-    const id=`${base.id}-AFTER-${String(ordinal).padStart(2,'0')}-${outcome.toUpperCase()}`;
-    const b={
-      id, act:base.act, actName:base.actName, chapter:base.chapter, artChapter:base.artChapter,
-      phase:'후속', title:`${verb}의 결과`, nodeRole:'action-consequence', branchScene:true,
-      text:worldReaction, situation:worldReaction,
-      objective:'방금 만든 변화 속에서 다음 행동을 정한다.',
-      why:'이 장면은 직전 선택 때문에 생긴 전용 후속 장면이다.',
-      visual:base.visual, reveal:base.reveal, stakes:base.stakes,
-      choices:directions.map((d,j)=>({
-        id:`${id}-FOLLOW-${j+1}`, label:d.label, detail:`${d.stat} · DC ${Math.max(8, Number(choice.dc||10)-1)}`,
-        stat:d.stat, dc:Math.max(8, Number(choice.dc||10)-1), path:d.path, branchValue:d.route,
-        branchKey:`act${base.act}`, actionType:`follow-${j+1}`,
-        success:`${d.label}는 방금 생긴 기회를 놓치지 않게 했다.`,
-        failure:`${d.label}는 완벽하지 않았지만 다음 장면의 조건을 바꿨다.`,
-        next:{success:continueTarget,failure:continueTarget}
-      }))
-    };
-    return b;
-  };
   for (let actIndex=0; actIndex<(c.acts?.length || 5); actIndex++) {
     const entry=nodeAt(actIndex,0), careful=nodeAt(actIndex,1), bold=nodeAt(actIndex,2), empathic=nodeAt(actIndex,3), crisis=nodeAt(actIndex,4), decision=nodeAt(actIndex,5);
     const nextAct=actIndex<(c.acts?.length || 5)-1 ? nodeAt(actIndex+1,0)?.id : '__ENDING__';
     entry.nodeRole='entry'; careful.nodeRole='route-careful'; bold.nodeRole='route-bold'; empathic.nodeRole='route-empathetic'; crisis.nodeRole='crisis'; decision.nodeRole='decision';
-    const canon=[entry,careful,bold,empathic,crisis,decision];
-    for (const base of canon) {
-      const canonicalTarget = base===entry ? crisis.id : base===decision ? nextAct : base===crisis ? decision.id : crisis.id;
-      (base.choices||[]).forEach((choice,i)=>{
-        let successTarget=canonicalTarget, failureTarget=canonicalTarget;
-        if (base===entry) {
-          successTarget = choice.branchValue==='careful' ? careful.id : choice.branchValue==='bold' ? bold.id : empathic.id;
-          failureTarget = choice.branchValue==='careful' ? bold.id : choice.branchValue==='bold' ? empathic.id : careful.id;
-        }
-        const sNode=makeBranchBeat(base,choice,'success',successTarget,i+1);
-        const fNode=makeBranchBeat(base,choice,'failure',failureTarget,i+1);
-        branchNodes.push(sNode,fNode);
-        choice.next={success:sNode.id,failure:fNode.id};
-      });
+    const routeTarget={careful:careful.id,bold:bold.id,empathetic:empathic.id};
+    for (const choice of entry.choices||[]) {
+      const route=choice.branchValue||'careful';
+      const fallback=route==='careful'?bold.id:route==='bold'?empathic.id:careful.id;
+      choice.next={success:routeTarget[route]||careful.id,failure:fallback};
     }
+    for (const beat of [careful,bold,empathic]) for (const choice of beat.choices||[]) choice.next={success:crisis.id,failure:crisis.id};
+    for (const choice of crisis.choices||[]) choice.next={success:decision.id,failure:decision.id};
+    for (const choice of decision.choices||[]) choice.next={success:nextAct,failure:nextAct};
     for (let stepIndex=0; stepIndex<6; stepIndex++) {
       const beat=nodeAt(actIndex,stepIndex);
       beat.artChapter=beat.chapter;
       beat.artFileBase=`${c.id}_${String(beat.chapter).padStart(2,'0')}`;
     }
   }
-  // Second consequence layer: 선택 -> 결과 -> 대응 -> 결과 -> 다음 큰 장면.
-  // 이 층 때문에 서로 다른 선택이 한 문단 뒤 바로 합쳐지지 않고 최소 두 개의 독립 장면을 갖는다.
-  const secondLayer=[];
-  const layerOne=[...branchNodes];
-  const responseDefs=[
-    {label:'밀어붙인다',stat:'근력',route:'bold',path:'survival'},
-    {label:'우회한다',stat:'민첩',route:'bold',path:'survival'},
-    {label:'확인한다',stat:'지능',route:'careful',path:'truth'},
-    {label:'사람을 붙잡는다',stat:'매력',route:'empathetic',path:'bond'},
-  ];
-  for(const parent of layerOne){
-    for(let i=0;i<(parent.choices||[]).length;i++){
-      const follow=parent.choices[i];
-      const exitTarget=follow.next?.success || follow.next?.failure || '__ENDING__';
-      const makeSecond=(won)=>{
-        const outcome=won?'SUCCESS':'FAILURE';
-        const id=`${parent.id}-${String(i+1).padStart(2,'0')}-${outcome}`;
-        const action=follow.label;
-        const variation=(Number(parent.chapter||1)+i+(won?1:4))%6;
-        const good=[
-          `${action}는 직전 선택의 결과를 단순한 행운으로 끝내지 않았다. 파티는 그 변화가 어디에서 시작됐는지 확인했고, 다음 장소에 먼저 손을 뻗을 이유를 얻었다.`,
-          `${action}를 택하자 앞서 얻은 단서가 전혀 다른 의미로 맞물렸다. 한 사람의 반응이 바뀌고, 그 반응을 본 또 다른 인물이 움직이면서 사건의 범위가 넓어졌다.`,
-          `${action}는 현장의 균형을 다시 바꿨다. 얻은 것은 정보 하나가 아니라 다음 장면에서 누가 먼저 말하고 누가 먼저 칼을 뽑을지를 바꾸는 위치였다.`,
-          `${action} 이후 파티가 보던 풍경 자체가 달라졌다. 조금 전에는 배경이던 물건과 사람이 이제 명확한 목적지를 가리켰다.`,
-          `${action}는 성공의 흔적을 남겼다. 그 흔적을 따라가자 이전 루트에서는 만날 수 없던 증언과 장소가 이어졌다.`,
-          `${action} 덕분에 파티는 한발 앞섰다. 하지만 그 우위는 다음 선택에서 무엇을 지킬지 새로 결정해야 하는 책임도 함께 만들었다.`
-        ];
-        const bad=[
-          `${action}는 뜻대로 되지 않았다. 대신 실패를 막으려 움직인 인물이 모습을 드러냈고, 파티는 원래 찾던 답과는 다른 비밀을 마주했다.`,
-          `${action}의 대가는 즉시 돌아왔다. 길 하나가 닫히는 대신 다른 장소가 강제로 열렸고, 그곳에는 이전 선택 때문에 생긴 문제만 존재했다.`,
-          `${action}는 상황을 더 복잡하게 만들었다. 그러나 누가 그 복잡함을 이용하려 하는지 드러나면서 다음 목표는 오히려 선명해졌다.`,
-          `${action}가 실패하자 파티의 평판과 위치가 바뀌었다. 같은 장소로 돌아가도 이제 사람들은 이전과 같은 태도로 대하지 않을 것이다.`,
-          `${action}의 실패는 단서를 없애지 않았다. 단서의 주인이 먼저 움직이게 만들었고, 파티는 그 움직임을 따라 전혀 다른 길로 들어서게 됐다.`,
-          `${action} 이후 더 쉬운 길은 사라졌다. 하지만 그 때문에 감춰져 있던 위험과 동맹 후보가 동시에 모습을 드러냈다.`
-        ];
-        const text=(won?good:bad)[variation];
-        const defs=responseDefs.slice((variation%2), (variation%2)+3);
-        return {
-          id,act:parent.act,actName:parent.actName,chapter:parent.chapter,artChapter:parent.artChapter,
-          phase:'연쇄',title:`${action} 이후`,nodeRole:'action-consequence-2',branchScene:true,
-          text,situation:text,objective:'직전 행동이 만든 새 조건을 이용하거나 감당한다.',
-          why:'이 장면은 앞의 선택과 그 결과 때문에만 발생한다.',visual:parent.visual,reveal:parent.reveal,stakes:parent.stakes,
-          choices:defs.map((d,j)=>({id:`${id}-EXIT-${j+1}`,label:d.label,detail:`기회: ${d.path==='truth'?'단서':d.path==='bond'?'관계':'위치'}`,stat:d.stat,dc:Math.max(8,10+Number(parent.act||1)+(j%2)),path:d.path,branchValue:d.route,branchKey:`act${parent.act}`,actionType:`chain-${j+1}`,success:`${d.label}를 통해 다음 큰 사건으로 자연스럽게 연결될 조건을 만들었다.`,failure:`${d.label}는 완벽하지 않았지만 이미 생긴 결과를 안고 다음 사건으로 넘어갔다.`,next:{success:exitTarget,failure:exitTarget}}))
-        };
-      };
-      const s=makeSecond(true), f=makeSecond(false);
-      secondLayer.push(s,f);
-      follow.next={success:s.id,failure:f.id};
-    }
-  }
-  beats.push(...branchNodes,...secondLayer);
 
   return beats;
 }
@@ -1486,6 +1470,395 @@ const JOB_SKILL_DEFS = {
     {intro:'별빛 암시장은 떠다니는 선박 수십 척이 하루마다 위치를 바꾸며 만들어진다. 같은 물건도 어느 갑판에서 사느냐에 따라 가격과 의미가 달라진다.',discovery:'사라진 항로 지도는 해적 세 선장이 조각으로 나눠 갖고 있다. 누구도 전체 길을 혼자 독점하지 못하게 만든 합의다.',crisis:'한 선장이 지도를 훔쳐 달아나며 추격전이 시작된다. 잡는 것만큼 다른 선장들을 적으로 만들지 않는 것도 중요하다.',climax:'지도 조각이 합쳐지자 가장 짧은 길이 아니라 하늘고래의 이동을 피하는 옛 우회로가 드러난다.'},
     {intro:'구름 아래의 바다에서는 섬보다 하늘고래가 먼저 보인다. 거대한 몸들이 별가루를 먹으며 같은 방향으로 천천히 이동한다.',discovery:'옛 항로 표지들은 하늘고래의 이동을 이용해 폭풍을 예측하도록 설계돼 있었다. 인간이 표지만 남기고 생물을 무시하면서 사고가 늘었다.',crisis:'새끼 고래 한 마리가 버려진 화물 그물에 얽힌다. 구조를 위해 항로에서 벗어나면 마지막 등대 도착이 늦어진다.',climax:'고래 무리가 폭풍 앞에서 방향을 틀고, 파티는 그 움직임을 따라 지도에 없던 안전한 공역으로 들어간다.'},
     {intro:'마지막 등대가 켜지자 여섯 섬이 동시에 신호를 보낸다. 이제 기술 문제는 끝났지만 누가 항로를 관리할지가 더 큰 싸움으로 남는다.',discovery:'별빛 병은 특별한 유물이 아니었다. 제작법이 일부 길드에 의해 숨겨졌을 뿐, 섬마다 만들 수 있는 기술이다.',crisis:'상인 연합은 중앙 통제를, 고립 섬들은 자치를, 선원들은 완전 공개 항로를 요구한다. 어느 쪽도 단순한 악역은 아니다.',climax:'첫 민간 비행선이 새 규칙 아래 출항한다. 엔딩은 누가 승리했는지가 아니라 하늘길이 누구에게 열렸는지를 기록한다.'}
+  ];
+})();
+
+// v6.3.0 - GLASS STAR FESTIVAL
+// The glass-star campaign is intentionally bright, social, competitive and exploratory.
+// It does not use the ash/ruin/dead-king/sealed-past structure of the Ember campaign.
+(function rebuildGlassStarFestival(){
+  const c=campaigns.find(item=>item.id==='echo');
+  if(!c) return;
+
+  c.title='유리별의 축제';
+  c.genre='별빛 축제 모험 판타지';
+  c.subtitle='열두 해에 한 번 열리는 유리별 축제. 올해는 별들이 참가자를 직접 고른다.';
+  c.intro='호수도시 루미나는 열두 해마다 밤하늘에서 내려오는 유리별을 모아 일주일 동안 거대한 축제를 연다. 유리별은 보석이 아니라 사람의 손길과 음악, 음식, 바람, 동물의 기분에 따라 빛과 색이 달라지는 살아 있는 별빛 결정이다. 올해 첫 유리별 여섯 개가 각기 다른 참가자를 선택하면서 파티는 얼떨결에 축제 대표팀이 된다. 이제 별꽃 정원, 수상 경주장, 야시장, 별짐승 목장, 천공 무대를 돌며 종목을 치르고 다른 팀들과 관계를 맺어 마지막 밤에 자신들만의 별자리를 완성해야 한다. 승패만큼 누구와 손을 잡고 무엇을 만들어 관객과 나눌지가 중요한 축제 모험이다.';
+  c.acts=['첫별이 고른 사람들','유리별 대경주','밤시장 대소동','별짐승 행진','우리들의 별자리'];
+  c.jobs=[
+    ['별세공사','지능','별조율: 장치나 제작 판정의 실패 1회를 재굴림하고 다음 제작 판정 DC를 1 낮춘다.'],
+    ['별짐승 길잡이','지혜','마음 읽기: 동물·정령의 경계심을 낮추고 위험한 움직임을 먼저 알아챈다.'],
+    ['축제 수호자','근력','힘찬 도움: 무거운 물건이나 장애물을 처리하고 동료 1명의 피해를 대신 막는다.'],
+    ['바람달리기 선수','민첩','바람 타기: 경주·추격·곡예 판정에서 다음 위협도 증가 1회를 무효화한다.'],
+    ['거리 공연가','매력','관객 사로잡기: 사람들의 분위기를 바꾸고 파티 전원에게 영감 1을 준다.'],
+    ['별요리사','체력','축제 한 상: 파티 전원의 HP를 조금 회복하고 피로 계열 상태이상 1개를 정화한다.']
+  ];
+  c.monsters=['프리즘 장난도깨비','달빛 뿔사슴','폭주 축제 자동인형','별가루 먹보새','유리등껍질 거북','칠색 혜성사자'];
+  SCENE_KITS.echo=[
+    {clue:'유리별 반응표',person:'축제 안내원',hostile:'프리즘 도깨비',obstacle:'막힌 수로',rescue:'넘어진 참가자',item:'첫별 배지'},
+    {clue:'바람문 표식',person:'라이벌 주장',hostile:'경주 방해꾼',obstacle:'뒤집힌 발판',rescue:'멈춘 경주팀',item:'바람 깃발'},
+    {clue:'가짜 별 표시',person:'야시장 상인',hostile:'프리즘 도깨비',obstacle:'무너진 무대',rescue:'곤란한 공연팀',item:'별도장'},
+    {clue:'별짐승 발자국',person:'목장 아이',hostile:'폭주 자동인형',obstacle:'막힌 행진로',rescue:'겁먹은 별짐승',item:'달빛 방울'},
+    {clue:'무대 설계도',person:'축제 심사위원',hostile:'폭주 무대인형',obstacle:'고장 난 승강대',rescue:'무대에 갇힌 참가자',item:'추천 별빛'},
+  ];
+  c.titles=[
+    '첫별이 손에 내려앉다','대표팀 등록소','별꽃 정원의 규칙','빛깔을 고르는 유리별','라이벌 팀의 인사','첫 번째 별도장',
+    '수상 돛차 출발선','바람문 세 개','떠다니는 과일섬','뒤집힌 경주 깃발','마지막 지름길','웃으며 들어온 결승선',
+    '달빛 야시장 개장','별사탕 가격 전쟁','가짜 유리별 소동','공연 자리 쟁탈전','세공대회의 한 수','모두가 나눈 야식',
+    '별짐승 목장의 아침','도망친 달빛 뿔사슴','먹보새의 별가루 창고','유리등껍질 거북 행렬','혜성사자의 낮잠','별짐승 퍼레이드',
+    '천공 무대의 빈자리','우리 팀의 별자리','라이벌과 마지막 승부','관객이 고른 한 장면','유리별을 나누는 밤','축제가 끝난 뒤에도'
+  ];
+
+  ITEM_CATALOG.echo = [
+    {id:'echo_prism_tools',name:'칠색 별세공 도구',slot:'tool',stat:'지능',bonus:1,price:8,rarity:'희귀',passive:'유리별의 색과 울림을 정교하게 맞춘다. 지능 판정 보정 +1.'},
+    {id:'echo_beast_bell',name:'달빛 목장 방울',slot:'charm',stat:'지혜',bonus:1,price:8,rarity:'희귀',passive:'별짐승이 긴장할 때 낮은 공명음을 낸다. 지혜 판정 보정 +1.'},
+    {id:'echo_festival_hammer',name:'축제 조립 망치',slot:'weapon',stat:'근력',bonus:1,price:8,rarity:'고급',passive:'무대와 경주 장치를 빠르게 고치고 단단히 고정한다. 근력 판정 보정 +1.'},
+    {id:'echo_windshoes',name:'바람깃 경주화',slot:'armor',stat:'민첩',bonus:1,price:9,rarity:'희귀',passive:'수상 돛차와 공중 발판에서 균형을 잡는다. 민첩 판정 보정 +1.'},
+    {id:'echo_stage_ribbon',name:'별무대 리본',slot:'charm',stat:'매력',bonus:1,price:8,rarity:'고급',passive:'관객의 시선을 모으는 작은 별빛을 남긴다. 매력 판정 보정 +1.'},
+    {id:'echo_starlight_pan',name:'별빛 조리팬',slot:'tool',stat:'체력',bonus:1,price:9,rarity:'희귀',passive:'짧은 휴식에도 따뜻한 축제 음식을 만들 수 있다. 체력 판정 보정 +1.'}
+  ];
+  FACILITY_THEME.echo = {
+    restaurant:{label:'달빛 포장마차',description:'축제 참가자들이 모이는 야식 거리. 코인 2개로 따뜻한 별국수를 먹고 HP 2를 회복한다.',storyLead:'호수 위 등불이 반짝이는 골목에서 꼬치 굽는 냄새와 달콤한 별사탕 향이 섞여 왔다. 주인은 메뉴판보다 먼저 빈 의자를 가리켰다.'},
+    inn:{label:'종이등 여관',description:'축제 기간에만 문을 여는 작은 숙소. 코인 5개로 HP 5를 회복하고 상태이상 1개를 제거한다.',storyLead:'수백 개의 종이등이 처마 아래에서 바람에 흔들렸다. 안쪽에서는 다른 참가팀들이 서로 오늘 있었던 실수를 자랑하듯 떠들고 있었다.'},
+    shop:{label:'별손 공방 거리',description:'세공사와 장인들이 축제 장비를 즉석에서 맞춰 주는 공방 거리.',storyLead:'망치 소리와 유리종 소리가 골목 양쪽에서 박자를 맞췄다. 한 장인이 파티의 유리별 색을 보더니 어울릴 만한 장비 세 점을 꺼냈다.'},
+    quest:{label:'축제 운영진 부탁',description:'길 잃은 참가자, 고장 난 장식, 준비가 늦은 가게를 돕는 짧은 부탁. 성공하면 소량의 코인을 얻는다.',storyLead:'노란 완장을 찬 운영진이 명단을 들고 뛰어오다 파티 앞에서 급히 멈췄다. “대표팀 맞죠? 딱 십 분만 도와줄 수 있어요?”'},
+    gamble:{label:'별빛 병뚜껑 내기',description:'야시장에서 코인 1개를 걸고 하는 가벼운 D6 놀이. 큰돈보다 웃긴 벌칙이 유명하다.',storyLead:'둥근 탁자 위에서 여섯 색 병뚜껑이 빙글빙글 돌았다. 옆 팀 선수가 손짓했다. “한 판만. 지면 우리 팀 간식 사기.”'}
+  };
+  LOOT_EVENT_MAP.echo = {4:'echo_prism_tools',10:'echo_windshoes',16:'echo_stage_ribbon',22:'echo_beast_bell'};
+  COIN_EVENT_MAP.echo = {8:1,15:1,20:1};
+
+  Object.assign(JOB_SKILL_DEFS,{
+    '별세공사':{name:'별조율',cooldown:3,kind:'insight',amount:2,text:'유리별의 결을 맞춰 위협도 2를 낮추고 영감 1을 얻는다.'},
+    '별짐승 길잡이':{name:'마음 읽기',cooldown:3,kind:'threatShield',amount:1,text:'별짐승의 움직임을 읽어 다음 위협도 증가 1회를 무효화한다.'},
+    '축제 수호자':{name:'힘찬 도움',cooldown:3,kind:'guardParty',amount:2,text:'파티 전원에게 피해 2를 막는 보호를 부여한다.'},
+    '바람달리기 선수':{name:'바람 타기',cooldown:3,kind:'threatShield',amount:1,text:'위험한 코스를 앞질러 다음 위협도 증가 1회를 무효화하고 영감 1을 얻는다.'},
+    '거리 공연가':{name:'관객 사로잡기',cooldown:3,kind:'inspirationParty',amount:1,text:'파티 전원에게 영감 1을 부여하고 위협도 1을 낮춘다.'},
+    '별요리사':{name:'축제 한 상',cooldown:4,kind:'healCleanseParty',amount:2,text:'파티 전원의 HP를 2 회복하고 각자 상태이상 1개를 정화한다.'}
+  });
+
+  eventStyles.echo={
+    actions:[
+      ['유리별의 색과 장치 원리를 맞춘다','지능'],
+      ['별짐승과 사람들의 기분을 살핀다','지혜'],
+      ['경주로나 무대 장치를 힘으로 바로잡는다','근력'],
+      ['바람길과 발판을 빠르게 통과한다','민첩'],
+      ['관객·상인·라이벌을 설득하거나 공연한다','매력'],
+      ['긴 경기와 준비 작업을 끝까지 버틴다','체력']
+    ],
+    visuals:['별꽃이 핀 호숫가','수상 돛차 경주장','달빛 야시장','별세공 공방 거리','별짐승 목장','천공 축제 무대']
+  };
+  storyTone.echo=[
+    '유리별이 왜 자신들을 골랐는지보다 어떤 빛깔로 키울지 직접 결정한다',
+    '속도·안전·팀워크 중 무엇을 우선할지 선택하며 경주를 치른다',
+    '야시장에서 공연·거래·제작·도움을 통해 축제 점수를 모은다',
+    '별짐승을 잡아 끌고 가는 대신 행동을 이해하고 함께 퍼레이드를 만든다',
+    '마지막 무대에서 우승만 노릴지 다른 팀과 별빛을 나눌지 정한다'
+  ];
+  STORY_TEXTURE.echo={
+    sense:['유리별 안에서 일곱 색 빛이 사탕처럼 천천히 녹아 섞였다.','호수 위 경주선이 방향을 틀 때마다 물결에 별 모양 잔광이 남았다.','야시장 천막마다 다른 향신료와 과일 향이 밤공기에 겹쳤다.','별짐승의 털 끝에는 손으로 털어도 사라지지 않는 작은 빛가루가 묻어 있었다.','천공 무대 위에서는 관객의 박수에 맞춰 유리별이 하나씩 공중으로 떠올랐다.'],
+    npc:['라이벌 팀장은 승부를 걸면서도 넘어질 뻔한 파티원을 먼저 잡아 줬다.','세공사는 완벽한 별보다 주인이 자꾸 만져서 생긴 흠집을 더 좋아한다고 말했다.','야시장 상인은 돈 대신 자기 가게 앞에서 한 곡만 연주해 달라고 흥정했다.','목장 아이는 달빛 뿔사슴이 싫어하는 사람이 아니라 싫어하는 냄새가 따로 있다고 알려 줬다.','축제 심사위원은 점수표를 덮고 “마지막 무대는 관객이 기억하고 싶은 걸 보여 주세요”라고 말했다.'],
+    omen:['아직 주인을 정하지 않은 유리별 하나가 파티 모두의 색을 번갈아 비췄다.','경주 깃발이 바람 반대쪽을 가리키자 오래된 선수들이 동시에 웃었다.','밤시장 지붕 위에 프리즘 도깨비들이 훔친 리본으로 자기들만의 무대를 만들었다.','혜성사자가 하품할 때마다 별가루가 작은 불꽃놀이처럼 퍼졌다.','축제 마지막 밤, 서로 다른 팀의 유리별들이 먼저 손을 뻗듯 빛줄기를 연결했다.']
+  };
+  actGuides.echo=[
+    {goal:'첫 유리별과 호흡을 맞추고 대표팀으로 축제 규칙과 경쟁팀을 파악한다',place:'루미나 호숫가 별꽃 정원과 대표팀 등록소',reveal:'유리별은 정답이 정해진 유물이 아니라 주인의 행동에 따라 색과 성질이 달라진다',stakes:'처음부터 점수만 좇으면 별은 강해지지만 팀원과 맞지 않는 성질로 굳을 수 있다'},
+    {goal:'수상 돛차 경주를 완주하며 속도·안전·협력 중 팀의 방식을 만든다',place:'루미나 수로와 세 개의 바람문',reveal:'가장 빠른 지름길은 한 사람만 조종해서는 통과할 수 없고 역할을 나눠야 열린다',stakes:'우승을 노리면 위험을 감수해야 하고 다른 팀을 도우면 순위는 내려가도 관계와 다음 선택지가 넓어진다'},
+    {goal:'야시장 종목에서 제작·공연·거래·도움을 통해 필요한 별도장을 모은다',place:'달빛 야시장과 별손 공방 거리',reveal:'축제 점수는 돈이나 승리만이 아니라 다른 참가자와 관객이 준 별도장도 같은 가치로 계산된다',stakes:'한 종목에 몰두하면 전문 점수는 높지만 다른 사람들과 맺을 수 있는 관계와 보상이 줄어든다'},
+    {goal:'도망친 별짐승들을 억지로 포획하지 않고 각 성격에 맞는 방식으로 퍼레이드에 참여시킨다',place:'별짐승 목장과 호숫가 행진로',reveal:'별짐승들은 축제를 싫어한 게 아니라 너무 밝은 조명과 큰 북소리를 피하고 있었다',stakes:'행진을 예정대로 강행할지 동물에게 맞춰 축제 자체를 바꿀지에 따라 관객 만족과 별짐승 신뢰가 달라진다'},
+    {goal:'마지막 천공 무대에서 지금까지 모은 별빛과 관계를 이용해 자신들만의 별자리를 완성한다',place:'호수 중앙 천공 무대',reveal:'최종 우승은 한 팀의 점수 합계뿐 아니라 다른 팀이 건네는 추천 별빛으로도 뒤집힐 수 있다',stakes:'혼자 우승하는 무대, 라이벌과 합동 공연, 모든 참가자가 참여하는 공동 별자리 중 무엇을 선택할지가 엔딩을 바꾼다'}
+  ];
+  novelActs.echo=[
+    {intro:'호숫가 별꽃이 한꺼번에 피는 순간 작은 유리별 여섯 개가 관객 사이를 날아다니다 파티의 손바닥과 어깨, 머리 위에 제멋대로 내려앉는다. 사회자는 잠깐 말을 잃더니 즉석에서 파티를 올해의 특별 대표팀으로 등록해 버린다.',discovery:'유리별마다 좋아하는 반응이 다르다. 웃음에 밝아지는 별, 물결을 보면 파랗게 변하는 별, 음악에 맞춰 떨리는 별도 있다. 첫 과제는 별을 길들이는 것이 아니라 서로 반응하는 방식을 알아내는 것이다.',crisis:'대표팀 등록 마감까지 시간이 얼마 남지 않았는데 라이벌 팀이 별꽃 정원에서 실수로 장식용 수로를 막아 버린다. 자기 준비를 먼저 할지, 경쟁팀을 도울지, 운영진에게 다른 해결책을 제안할지 선택해야 한다.',climax:'첫 번째 별도장이 찍히는 순간 파티의 유리별 여섯 개가 서로 다른 색으로 빛나면서도 짧은 순간 하나의 무늬를 만든다. 관객석에서 누군가 “저 팀은 아직 모양이 정해지지 않았네. 그래서 재밌겠다”라고 웃는다.'},
+    {intro:'수상 돛차 경주는 돛을 단 작은 배와 공중 발판을 번갈아 타는 축제 최고의 인기 종목이다. 출발 신호와 동시에 열두 팀이 서로 다른 바람문을 향해 갈라진다.',discovery:'세 바람문은 빠른 길, 안정된 길, 두 팀이 동시에 레버를 당겨야 열리는 협동 길로 나뉜다. 어느 길도 무조건 정답은 아니다.',crisis:'중반부에서 라이벌 한 팀의 돛대가 부러져 물길 한가운데 멈춘다. 그들을 도우면 선두를 놓칠 수 있고, 지나치면 순위는 지키지만 이후 협동 구간에서 혼자 해결해야 한다.',climax:'결승선은 단순한 순위표보다 각 팀이 어떤 길을 골랐고 누구를 도왔는지 보여 주는 거대한 빛지도와 함께 열린다. 파티의 유리별 색도 그 선택에 따라 눈에 띄게 달라진다.'},
+    {intro:'달빛 야시장은 하루 동안 축제장이 아니라 작은 도시가 된다. 별사탕 요리대회, 즉석 세공전, 거리 공연, 물물교환 경매, 수수께끼 천막이 동시에 열려 어디에 시간을 쓸지부터 선택해야 한다.',discovery:'필요한 별도장은 한 종목을 우승해서만 얻는 것이 아니다. 가게 일을 돕거나 다른 팀 공연의 빈자리를 채우거나 망가진 장식을 고쳐도 받을 수 있다.',crisis:'프리즘 도깨비들이 가짜 유리별 수십 개를 시장에 풀어 진짜와 가짜가 뒤섞인다. 도깨비를 쫓을지, 세공법으로 구별할지, 그들의 장난을 아예 축제 공연으로 바꿀지 여러 해결법이 열린다.',climax:'밤이 끝날 때 상인들과 참가자들이 파티의 부스에 별도장을 하나씩 붙인다. 가장 많은 도장을 받은 이유가 우승 때문인지, 도움 때문인지, 웃긴 공연 때문인지는 플레이 방식에 따라 달라진다.'},
+    {intro:'퍼레이드 아침, 별짐승 목장의 문이 열리자 정작 주인공인 동물들이 전부 반대 방향으로 도망친다. 달빛 뿔사슴은 천막 아래 숨고, 먹보새는 별가루 창고를 털고, 거북들은 일렬로 수로를 막는다.',discovery:'별짐승들은 훈련을 거부한 것이 아니라 축제장의 큰 북소리와 번쩍이는 조명을 무서워했다. 각 종마다 편안해하는 소리와 먹이, 이동 방식이 다르다.',crisis:'운영진은 예정 시간 때문에 서둘러 포획하자고 하고, 목장 아이들은 동물에게 맞춰 행진 순서를 바꾸자고 한다. 파티는 힘, 음식, 음악, 유도, 협상 등 지금 가진 방식으로 문제를 풀 수 있다.',climax:'퍼레이드가 시작되면 별짐승들은 파티가 선택한 방식에 따라 질서정연한 행렬, 자유로운 군무, 혹은 관객까지 끌어들이는 난장판 축제를 만든다. 어느 쪽이든 실패가 아니라 다른 모습의 성공이 된다.'},
+    {intro:'마지막 밤 천공 무대에는 아직 아무 별자리도 그려져 있지 않다. 다섯 막 동안 얻은 유리별, 별도장, 라이벌의 추천, 별짐승의 빛가루가 모두 하나의 재료처럼 테이블 위에 놓인다.',discovery:'심사 규칙의 마지막 줄에는 “한 팀의 별자리일 필요는 없다”라고 적혀 있다. 축제는 원래 여러 도시가 서로 다른 빛을 가져와 새로운 모양을 만드는 행사였다.',crisis:'우승을 노리면 파티의 별빛을 집중해야 하고, 라이벌과 합동 무대를 만들면 점수는 나뉘지만 더 큰 별자리를 만들 수 있다. 모든 팀을 부르면 통제가 어려워지는 대신 축제 전체가 하나의 작품이 된다.',climax:'유리별들이 호수 위로 떠올라 파티가 선택한 모양을 그린다. 엔딩은 누가 악당을 쓰러뜨렸는지가 아니라 어떤 사람들과 어떤 방식으로 마지막 밤을 함께 만들었는지, 그리고 다음 축제에 어떤 전통이 남았는지를 기록한다.'}
+  ];
+})();
+
+
+// v6.4.0 - AFTER LAST TRAIN
+// Replaces the former glass-star campaign with a single-location late-night subway mystery.
+// The station becomes abnormal only after the last train has ended; all content below is grounded in that premise.
+(function rebuildAfterLastTrain(){
+  const c=campaigns.find(item=>item.id==='echo');
+  if(!c) return;
+
+  c.title='막차 이후';
+  c.genre='심야 지하철 미스터리 스릴러';
+  c.icon='🚇';
+  c.accent='#7ed0ff';
+  c.accent2='#ffd36f';
+  c.subtitle='막차가 떠난 지 18분. 꺼진 전광판에 존재하지 않는 열차가 한 대 더 잡혔다.';
+  c.intro='청명역의 막차가 떠난 뒤 파티는 각기 다른 이유로 역사 안에 조금 더 남게 된다. 분실물을 찾으러 돌아온 사람, 야간 점검을 돕던 사람, 출구를 착각한 사람. 역무원이 마지막 순찰을 끝내고 셔터가 내려온 순간부터 사소한 오류가 시작된다. 개찰구는 역 안에 사람이 없다고 표시하고, 폐쇄된 출구는 다시 대합실로 이어지며, 운행이 끝난 승강장에서는 열차 접근음이 들린다. 처음에는 단순한 시스템 고장처럼 보이지만 시간이 흐를수록 노선도, CCTV, 안내방송, 플랫폼 번호가 서로 다른 청명역을 보여 준다. 목표는 괴물을 찾아 쓰러뜨리는 것이 아니라 첫차가 들어오기 전까지 이 역이 어떤 규칙으로 뒤틀리고 있는지 알아내고, 사람들을 잃지 않은 채 현실의 출구를 남기는 것이다.';
+  c.acts=['운행 종료','0번 승강장','3분 17초 뒤','첫차까지 23분','04시 58분'];
+  c.jobs=[
+    ['시설기사','지능','회로 추적: 전원·신호·출입 장치의 연결을 읽어 장치 판정의 실패 1회를 재굴림한다.'],
+    ['야간 역무원','지혜','운행 감각: 안내방송과 역사 동선의 모순을 먼저 알아채 다음 위협 증가 1회를 막는다.'],
+    ['보안요원','근력','강제 확보: 셔터나 문을 버티고 동료에게 움직일 시간을 만들어 준다.'],
+    ['심야 배달원','민첩','지름길 감각: 계단·통로·직원용 동선을 빠르게 찾아 위험 구간을 우회한다.'],
+    ['민원 상담사','매력','차분한 목소리: 겁먹은 사람을 진정시키고 충돌하는 판단을 한 번 정리한다.'],
+    ['응급구조사','체력','현장 처치: 파티 HP를 회복하고 공포·피로 계열 상태이상 1개를 정화한다.']
+  ];
+  c.monsters=['전광판의 검은 승객','셔터 틈의 손','빈 열차의 차장','노선도 밖의 그림자','무인 점검열차','종착 없는 승객'];
+  c.titles=[
+    '막차가 떠난 뒤','꺼진 개찰구','내려온 셔터','다시 켜진 안내방송','나가지 못하는 출구','00시 47분',
+    '노선도에 없는 선','0번 승강장','끝나지 않는 환승통로','닫힌 방화문','빈 열차 도착','타지 않은 사람들',
+    '3분 17초 뒤의 CCTV','무전기 속 우리 목소리','먼저 열린 자동문','분실물 보관함 327번','같은 계단 세 번째','01시 33분',
+    '첫차까지 23분','거꾸로 도는 전광판','신호실의 녹색등','움직이는 선로표지','운행 없는 점검열차','04시 41분',
+    '첫차 운행 준비','정상으로 돌아온 노선도','열린 출구 하나','마지막 안내방송','04시 58분 첫차','역 밖의 아침'
+  ];
+
+  SCENE_KITS.echo=[
+    {clue:'운행 종료 로그',person:'야간 청소원',hostile:'셔터 틈의 그림자',obstacle:'내려온 셔터',rescue:'갇힌 청소원',item:'비상 마스터키'},
+    {clue:'바뀐 노선도',person:'시설기사',hostile:'빈 열차의 차장',obstacle:'끝없는 환승통로',rescue:'통로에 갇힌 역무원',item:'점검용 무전기'},
+    {clue:'CCTV 미래 영상',person:'관제실 목소리',hostile:'전광판의 검은 승객',obstacle:'0번 승강장 방화문',rescue:'길을 잃은 승객',item:'보안카드'},
+    {clue:'첫차 시각표',person:'신호실 직원',hostile:'무인 점검열차',obstacle:'뒤집힌 개찰구',rescue:'선로 쪽 동료',item:'신호 복구키'},
+    {clue:'정상 운행표',person:'새벽 역무원',hostile:'종착 없는 열차',obstacle:'닫힌 1번 출구',rescue:'역 안에 남은 사람들',item:'첫차 승차권'}
+  ];
+
+  ITEM_CATALOG.echo=[
+    {id:'echo_circuit_tester',name:'휴대용 회로 테스터',slot:'tool',stat:'지능',bonus:1,price:8,rarity:'고급',passive:'전원과 신호 장치의 실제 연결을 확인한다. 지능 판정 보정 +1.'},
+    {id:'echo_route_flashlight',name:'점검용 손전등',slot:'charm',stat:'지혜',bonus:1,price:8,rarity:'고급',passive:'비상 유도표시와 벽면 표식을 더 쉽게 구분한다. 지혜 판정 보정 +1.'},
+    {id:'echo_shutter_bar',name:'셔터 고정봉',slot:'weapon',stat:'근력',bonus:1,price:8,rarity:'고급',passive:'무거운 셔터와 문을 잠시 고정한다. 근력 판정 보정 +1.'},
+    {id:'echo_staff_shoes',name:'미끄럼 방지 안전화',slot:'armor',stat:'민첩',bonus:1,price:8,rarity:'고급',passive:'계단과 선로 점검로에서 균형을 잡는다. 민첩 판정 보정 +1.'},
+    {id:'echo_service_radio',name:'역무용 무전기',slot:'charm',stat:'매력',bonus:1,price:9,rarity:'희귀',passive:'역 안의 사람과 원격 관제에 안정적으로 말을 건다. 매력 판정 보정 +1.'},
+    {id:'echo_emergency_pack',name:'비상 구급가방',slot:'tool',stat:'체력',bonus:1,price:9,rarity:'희귀',passive:'긴 이동과 부상을 버틸 수 있게 한다. 체력 판정 보정 +1.'}
+  ];
+  FACILITY_THEME.echo={
+    restaurant:{label:'24시간 자판기 코너',description:'셔터 밖에서도 켜져 있는 음료·간식 자판기. 코인 2개로 HP 2를 회복한다.',storyLead:'대합실이 전부 어두운데 자판기 한 줄만 지나치게 밝았다. 상품 번호는 정상인데 결제 화면에는 현재 역 이름 대신 “운행 종료 구역”이라는 문구가 잠깐 나타났다.'},
+    inn:{label:'직원 휴게실',description:'직원용 간이침대와 정수기가 있는 작은 방. 코인 5개로 HP 5 회복과 상태이상 1개 제거.',storyLead:'휴게실 문을 닫자 안내방송이 거의 들리지 않았다. 벽시계만은 다른 시계들과 달리 정상적으로 움직였고, 탁자 위 근무일지에는 오늘 마지막 순찰이 이미 완료 처리돼 있었다.'},
+    shop:{label:'비상 물품 캐비닛',description:'야간 점검용 손전등·배터리·장갑·공구를 꺼낼 수 있는 보관함.',storyLead:'역무실 뒤편 금속 캐비닛은 교통카드가 아니라 점검 토큰을 요구했다. 안에는 새 물건과 오래 사용한 물건이 섞여 있었고, 몇몇 장비에는 아직 오지 않은 날짜의 점검 스티커가 붙어 있었다.'},
+    quest:{label:'야간 점검 단말',description:'잠긴 문, 끊긴 신호, 비상등 확인 같은 짧은 점검 작업을 처리하면 소량의 코인을 얻는다.',storyLead:'업무 단말은 사람 없는 역에서도 점검 항목을 계속 추가했다. 정상 목록 사이에 “0번 승강장 승객 수 확인” 같은 존재하지 않는 항목이 끼어 있었다.'},
+    gamble:{label:'오류 승차권 뽑기',description:'고장 난 발매기에 코인 1개를 넣으면 여섯 종류의 이상한 점검권 중 하나가 나온다.',storyLead:'영업이 끝난 발매기가 혼자 켜지더니 목적지 대신 숫자 여섯 개를 띄웠다. 동전을 넣으면 오래된 종이 승차권이 한 장 나오는데, 뒷면 시간은 매번 달랐다.'}
+  };
+  LOOT_EVENT_MAP.echo={4:'echo_route_flashlight',10:'echo_service_radio',16:'echo_circuit_tester',22:'echo_staff_shoes'};
+  COIN_EVENT_MAP.echo={8:1,15:1,20:1};
+
+  Object.assign(JOB_SKILL_DEFS,{
+    '시설기사':{name:'회로 추적',cooldown:3,kind:'insight',amount:2,text:'신호와 전원 흐름을 정리해 위협도 2를 낮추고 영감 1을 얻는다.'},
+    '야간 역무원':{name:'운행 감각',cooldown:3,kind:'threatShield',amount:1,text:'역의 정상 동선을 기억해 다음 위협도 증가 1회를 무효화한다.'},
+    '보안요원':{name:'강제 확보',cooldown:3,kind:'nearbyGuard',amount:2,text:'같은 장소의 사람들과 길을 지키며 피해 2를 막는 보호를 부여한다.'},
+    '심야 배달원':{name:'지름길 감각',cooldown:3,kind:'threatShield',amount:1,text:'직원용 통로를 찾아 다음 위협도 증가 1회를 막고 영감 1을 얻는다.'},
+    '민원 상담사':{name:'차분한 목소리',cooldown:3,kind:'nearbyInspiration',amount:1,text:'같은 장소의 사람들을 진정시켜 영감 1을 주고 위협도 1을 낮춘다.'},
+    '응급구조사':{name:'현장 처치',cooldown:4,kind:'nearbyHealCleanse',amount:2,text:'같은 장소의 사람들의 HP를 2 회복하고 상태이상 1개를 정화한다.'}
+  });
+
+  eventStyles.echo={
+    actions:[
+      ['전광판·신호·출입 장치의 연결을 확인한다','지능'],
+      ['방송과 발소리에서 정상 패턴을 구분한다','지혜'],
+      ['셔터나 고장 난 문을 힘으로 고정한다','근력'],
+      ['직원 통로와 계단을 빠르게 이동한다','민첩'],
+      ['겁먹은 사람이나 관제실을 설득한다','매력'],
+      ['어둠과 긴 이동을 버티며 사람을 돕는다','체력']
+    ],
+    visuals:['불 꺼진 지하철 대합실','셔터가 내려온 개찰구','텅 빈 심야 승강장','끝없이 이어지는 환승통로','CCTV가 켜진 역무실','첫차 직전의 신호실']
+  };
+  storyTone.echo=[
+    '막차 직후에는 단순한 시스템 고장처럼 보이는 작은 모순부터 확인한다',
+    '노선도에 없는 0번 승강장이 실제 공간으로 나타나면서 역의 구조 자체가 흔들린다',
+    'CCTV와 무전기가 현재보다 몇 분 앞선 장면을 보여 주며 선택과 예측의 경계가 흐려진다',
+    '첫차가 가까워질수록 정상 운행표와 존재하지 않는 운행표가 역 전체를 서로 다른 방향으로 당긴다',
+    '04시 58분에 어떤 문과 선로를 현실에 남길지 결정하고 실제 아침으로 빠져나간다'
+  ];
+  STORY_TEXTURE.echo={
+    sense:['막차가 떠난 뒤 레일의 진동이 완전히 사라지자 역이 평소보다 훨씬 넓게 느껴졌다.','꺼진 전광판에서 픽셀 몇 개만 켜져 화살표처럼 한쪽 계단을 가리켰다.','환풍기 소리가 멈춘 순간 멀리서 열차가 터널을 통과하는 듯한 바람소리가 한 번 지나갔다.','형광등은 파티가 지나간 뒤에 한 칸씩 늦게 꺼졌다.','첫차 시간이 가까워지자 닫혀 있던 광고 모니터들이 동시에 정상 시각을 띄웠다.'],
+    npc:['야간 청소원은 자기도 분명 퇴근 도장을 찍었다며 몇 번이나 사원증 시간을 확인했다.','시설기사는 0번 승강장이 설계도에도 점검표에도 없다고 단호하게 말했다.','관제실의 목소리는 전화가 끊긴 뒤에도 무전기에서 몇 초 더 말을 이어 갔다.','신호실 직원은 두 운행표 중 어느 것이 진짜인지 묻지 말고 어느 쪽이 실제 선로와 맞는지 보라고 했다.','새벽 역무원은 열린 셔터 너머에서 파티를 보자 “안에 사람이 있었어요?”라고 진심으로 놀랐다.'],
+    omen:['운행 종료 안내방송이 끝난 지 10분 뒤 같은 방송이 한 글자씩 다른 문장으로 다시 재생됐다.','노선도에 없는 회색 선이 파티가 고른 방향에 따라 조금씩 길어졌다.','CCTV 속 파티가 실제 파티보다 먼저 뒤를 돌아봤다.','첫차 전광판이 정상 목적지를 띄우기 직전 한 프레임 동안 “0번 승강장”이라고 표시됐다.','역 밖으로 나온 뒤 교통카드 이용기록에는 청명역에서 하차한 시간이 04시 58분으로 찍혀 있었다.']
+  };
+  actGuides.echo=[
+    {goal:'막차 이후 닫힌 청명역에서 왜 출구가 다시 역사 안으로 이어지는지 확인하고 안전한 거점을 만든다',place:'셔터가 내려온 대합실과 1번 출구',reveal:'역무 시스템은 파티가 안에 있는데도 잔류 인원을 0명으로 기록하고 있다',stakes:'무작정 셔터를 부수면 지상으로 나갈 수도 있지만 비상 방화구획이 닫혀 다른 사람과 통로를 잃을 수 있다'},
+    {goal:'노선도에 새로 생긴 회색 선과 0번 승강장의 연결을 조사해 공간이 바뀌는 규칙을 찾는다',place:'폐쇄된 환승통로와 0번 승강장',reveal:'0번 승강장은 지도에만 생긴 환상이 아니라 문·계단·전력까지 가진 실제 공간으로 잠시 나타난다',stakes:'깊이 들어갈수록 새로운 통로와 장비를 얻을 수 있지만 돌아가는 계단과 방화문이 바뀌어 원래 대합실로 복귀하기 어려워진다'},
+    {goal:'현재보다 3분 17초 앞선 CCTV와 무전기 기록을 이용해 역이 행동을 예측하는지 행동을 유도하는지 검증한다',place:'CCTV실과 분실물 보관구역',reveal:'미래 영상은 고정된 예언이 아니라 파티가 다른 선택을 하면 곧바로 다른 장면으로 바뀐다',stakes:'미래 영상을 믿으면 위험을 피할 수 있지만 영상에 맞춰 움직일수록 역이 보여 준 경로에서 벗어나기 어려워진다'},
+    {goal:'첫차가 오기 전에 정상 운행표와 0번 승강장 운행표가 충돌하는 신호를 정리해 실제 선로와 출구를 하나의 규칙으로 맞춘다',place:'신호실과 막차 후 점검선',reveal:'이상 현상은 특정 존재가 만든 함정보다 운행 종료 상태에서 서로 충돌한 두 개의 경로 체계가 현실 공간까지 겹쳐 놓은 것에 가깝다',stakes:'출구를 우선하면 0번 승강장에 남은 사람과 장비를 포기해야 하고 선로를 우선하면 첫차 진입 전에 위험 구역을 직접 정리해야 한다'},
+    {goal:'04시 58분에 정상 첫차가 들어오기 전 지금까지 연 통로와 복구한 신호를 이용해 모두가 빠져나갈 마지막 경로를 확정한다',place:'1번 승강장·0번 승강장·지상 출구가 동시에 연결된 청명역',reveal:'역은 파티를 가두려 한 것이 아니라 운행 종료 시점에 존재하면 안 되는 승객을 어느 시간표에도 배치하지 못해 계속 경로를 다시 계산하고 있었다',stakes:'가장 빠른 탈출·남은 사람 구조·이상 구역 봉쇄·0번 승강장 확인 중 무엇을 끝까지 선택하느냐에 따라 역 밖의 아침과 남는 기록이 달라진다'}
+  ];
+  // v6.5.0 - PARALLEL STATION STORY
+  // Only 「막차 이후」 uses this asynchronous, player-by-player station sandbox.
+  c.parallelStory={
+    enabled:true,
+    startByJob:{
+      '시설기사':'eng_start','야간 역무원':'staff_start','보안요원':'guard_start',
+      '심야 배달원':'courier_start','민원 상담사':'counselor_start','응급구조사':'medic_start'
+    },
+    startFallback:'concourse',
+    clockStart:'00:47',
+    clockLimit:30,
+    locations:{
+      maintenance:'전기실',office:'역무실',concourse:'대합실',service:'직원 통로',platform1:'1번 승강장',
+      platform0gate:'0번 승강장 입구',platform0:'0번 승강장',cctv:'CCTV실',lostfound:'분실물 보관실',
+      signal:'신호실',track:'점검선',exit:'1번 출구',train:'첫차 승강장'
+    },
+    enemies:{
+      shadow:{name:'전광판 아래의 검은 승객',hp:8,dc:9,damage:2,weak:'강한 빛'},
+      conductor:{name:'빈 열차의 차장',hp:10,dc:10,damage:2,weak:'운행 종료 방송'},
+      maintenanceTrain:{name:'무인 점검열차의 검은 형체',hp:12,dc:11,damage:3,weak:'신호 차단'}
+    },
+    nodes:{
+      eng_start:{location:'maintenance',act:1,title:'꺼지지 않은 회로',phase:'개인 시작',objective:'전기실에서 혼자 켜진 회로의 정체를 확인한다.',text:['막차가 떠난 뒤 시설기사는 마지막 점검표 한 장 때문에 전기실에 남아 있었다. 역 전체 조명이 꺼지는 순서와 달리 0번으로 표기된 회로 하나만 전력을 계속 먹고 있다.','무전기는 조용하다. 문밖 직원 통로에서는 누군가 공구함을 끄는 소리가 한 번 났지만, 오늘 야간 점검자는 자신뿐이다.'],choices:[
+        {label:'0번 회로를 추적한다',stat:'지능',dc:8,next:'service',success:'배선이 직원 통로 아래로 이어진다는 것을 확인했다.',failure:'회로를 잘못 건드려 비상등이 꺼졌지만 배선 방향만은 알아냈다.',flag:'route_power'},
+        {label:'전원을 잠깐 끊는다',stat:'지능',dc:9,next:'maintenance',success:'0번 회로만 독립 전원으로 다시 살아났다. 정상 설비가 아니다.',failure:'차단기가 튕기며 대합실 일부까지 어두워졌다.',worldFlag:'power_cut'},
+        {label:'문밖 소리를 확인한다',stat:'지혜',dc:8,next:'service',success:'발자국은 없고 끌린 공구 자국만 직원 통로로 이어진다.',failure:'소리는 멎었지만 직원 통로 문이 조금 열려 있다.'},
+        {label:'역무실에 무전한다',stat:'매력',dc:8,next:'office',success:'끊긴 무전 속에서 야간 역무원의 목소리가 잡힌다.',failure:'응답 대신 “잔류 인원 0명” 안내가 반복된다.',worldFlag:'radio_link'},
+        {label:'공구를 챙긴다',stat:'근력',dc:7,next:'maintenance',success:'절연 공구와 휴대등을 확보했다.',failure:'무거운 공구함을 옮기다 소음을 냈다.',buff:'tool'},
+        {label:'대합실로 나간다',stat:'민첩',dc:7,next:'concourse',success:'비상문이 아직 잠기기 전에 대합실로 나왔다.',failure:'방화문이 닫히기 직전 몸을 밀어 넣었다.'}
+      ]},
+      staff_start:{location:'office',act:1,title:'퇴근 처리된 사람',phase:'개인 시작',objective:'역무실 기록과 실제 역사 상태가 왜 다른지 확인한다.',text:['야간 역무원은 마지막 셔터를 내리고 퇴근 처리를 끝냈다. 그런데 근무 단말의 역사 내 잔류 인원은 0명인데, 창 너머 대합실에서 사람 그림자가 지나간다.','교통카드 발매기는 영업 종료 상태다. 그 옆 안내 모니터만 “00:52 0번 승강장”이라는 존재하지 않는 도착 정보를 띄운다.'],choices:[
+        {label:'잔류 인원을 다시 센다',stat:'지혜',dc:8,next:'concourse',success:'센서 기록과 실제 사람 수가 맞지 않는다는 사실을 확인했다.',failure:'센서는 계속 0명으로 돌아가지만 대합실의 움직임은 분명하다.',flag:'headcount_mismatch'},
+        {label:'CCTV를 확인한다',stat:'지능',dc:8,next:'cctv',success:'한 카메라가 현재보다 몇 분 앞선 화면을 보여 준다.',failure:'몇 화면이 꺼졌지만 4번 카메라만 시간 표시가 다르다.',flag:'future_cctv'},
+        {label:'대합실에 방송한다',stat:'매력',dc:8,next:'concourse',success:'방송 직후 멀리서 누군가 대답한다.',failure:'자기 목소리가 3초 뒤 다른 문장으로 되돌아온다.',worldFlag:'public_call'},
+        {label:'셔터를 다시 연다',stat:'근력',dc:9,next:'exit',success:'1번 출구 셔터를 반쯤 올렸지만 바깥이 아니라 같은 대합실이 보인다.',failure:'셔터가 걸려 통로가 좁아졌다.',flag:'loop_exit'},
+        {label:'직원 통로로 간다',stat:'민첩',dc:7,next:'service',success:'직원 통로 쪽에서 켜진 비상등을 발견했다.',failure:'자동문이 닫혀 우회 계단을 탔다.'},
+        {label:'운행 종료 로그를 뽑는다',stat:'지능',dc:8,next:'office',success:'00:47 이후 존재하지 않는 열차 코드가 하나 더 기록돼 있다.',failure:'로그가 일부 깨졌지만 열차 코드 000만 남았다.',flag:'train000'}
+      ]},
+      guard_start:{location:'concourse',act:1,title:'내려온 셔터 안쪽',phase:'개인 시작',objective:'대합실에 남은 사람과 닫힌 출구를 안전하게 확인한다.',text:['보안요원은 셔터가 완전히 내려왔는지 마지막으로 확인하다 안쪽에 남았다. 불 꺼진 대합실 건너편에서 청소 카트가 혼자 움직이고, 1번 출구 쪽에서는 금속을 두드리는 소리가 난다.','정상이라면 역무실에 사람이 있어야 하지만 창구 불은 꺼져 있다. 개찰구는 모든 방향에 붉은 X를 띄운다.'],choices:[
+        {label:'셔터 쪽을 확인한다',stat:'근력',dc:8,next:'exit',success:'셔터 너머에 사람이 아니라 같은 대합실이 이어져 있음을 확인했다.',failure:'셔터가 갑자기 내려와 손을 다칠 뻔했다.',flag:'loop_exit'},
+        {label:'청소 카트를 따라간다',stat:'지혜',dc:8,next:'service',success:'카트 바퀴 자국이 직원 통로 앞에서 끊긴다.',failure:'카트는 사라졌지만 문이 열려 있다.'},
+        {label:'역무실로 간다',stat:'민첩',dc:7,next:'office',success:'닫힌 창구 옆 비상문으로 역무실에 접근했다.',failure:'개찰구가 잠겨 광고판 뒤 통로로 돌아갔다.'},
+        {label:'남은 사람을 찾는다',stat:'매력',dc:8,next:'concourse',success:'멀리서 사람 목소리가 한 번 대답한다.',failure:'대답 대신 안내방송만 켜진다.',worldFlag:'public_call'},
+        {label:'개찰구를 강제로 연다',stat:'근력',dc:9,next:'concourse',success:'한 통로를 열어 다른 사람도 이동할 수 있게 했다.',failure:'경보음이 울리며 전광판 아래 그림자가 움직인다.',worldFlag:'gate_open',combat:'shadow'},
+        {label:'승강장으로 내려간다',stat:'민첩',dc:8,next:'platform1',success:'막차가 떠난 승강장까지 내려왔다.',failure:'에스컬레이터가 멈춰 비상계단으로 우회했다.'}
+      ]},
+      courier_start:{location:'service',act:1,title:'배달이 끝난 뒤',phase:'개인 시작',objective:'잠긴 직원 통로에서 나갈 길을 찾는다.',text:['심야 배달원은 막차 직전 역무실에 두고 갈 물건 때문에 직원 통로로 들어왔다. 돌아나오려는 순간 방화문이 잠겼다. 휴대폰 지도에는 출구가 바로 앞이라고 뜨지만 눈앞에는 본 적 없는 계단이 아래로 이어진다.','계단 벽에는 평소 없던 회색 화살표와 숫자 0이 희미하게 빛난다.'],choices:[
+        {label:'원래 길로 돌아간다',stat:'지혜',dc:8,next:'concourse',success:'표식을 무시하고 익숙한 계단으로 대합실에 도착했다.',failure:'같은 문을 두 번 지나서야 대합실에 닿았다.'},
+        {label:'0 표시를 따라간다',stat:'민첩',dc:9,next:'platform0gate',success:'노선도에 없는 아래층 방화문을 발견했다.',failure:'계단이 길어졌지만 끝에 0번 표지판이 보인다.',flag:'found_zero'},
+        {label:'배달 물건을 확인한다',stat:'지능',dc:8,next:'service',success:'수령지가 “청명역 0번 승강장”으로 인쇄돼 있다.',failure:'주소 스티커가 젖어 있지만 숫자 0만 선명하다.',flag:'zero_parcel'},
+        {label:'문을 억지로 연다',stat:'근력',dc:9,next:'concourse',success:'방화문 틈을 벌려 대합실로 빠져나왔다.',failure:'문은 열렸지만 경보가 켜졌다.',worldFlag:'alarm'},
+        {label:'무전 주파수를 듣는다',stat:'지혜',dc:8,next:'service',success:'역무용 채널에서 누군가 자신의 위치를 말한다.',failure:'잡음 사이로 “오지 마”라는 목소리만 들린다.',worldFlag:'radio_link'},
+        {label:'빠른 통로를 찾는다',stat:'민첩',dc:8,next:'platform1',success:'설비 계단을 통해 1번 승강장으로 바로 내려왔다.',failure:'한 층을 더 내려갔지만 승강장 표지판을 찾았다.'}
+      ]},
+      counselor_start:{location:'concourse',act:1,title:'마지막 민원',phase:'개인 시작',objective:'대합실에 남은 한 사람의 문제를 해결하고 출구를 찾는다.',text:['민원 상담사는 막차 직후 환불 문제로 화가 난 승객 한 명을 진정시키느라 대합실에 남았다. 잠깐 역무실 쪽을 본 사이 그 승객이 사라지고, 의자 위에는 목적지가 적히지 않은 승차권만 남았다.','셔터는 이미 내려왔고 안내방송은 종료됐다. 그런데 스피커에서 아주 작게 “아직 한 분이 남아 있습니다”라는 목소리가 흐른다.'],choices:[
+        {label:'남은 승객을 부른다',stat:'매력',dc:7,next:'concourse',success:'멀리 환승통로 쪽에서 대답이 들린다.',failure:'자신의 목소리만 다른 스피커에서 돌아온다.',flag:'missing_passenger'},
+        {label:'승차권을 살핀다',stat:'지능',dc:8,next:'lostfound',success:'승차권 뒷면에 분실물 보관함 번호 327이 적혀 있다.',failure:'목적지는 없지만 327이라는 숫자가 눌러 찍혀 있다.',flag:'locker327'},
+        {label:'안내방송에 답한다',stat:'매력',dc:8,next:'office',success:'역무실 인터폰에서 실제 사람의 응답이 돌아온다.',failure:'응답 대신 “잔류 인원 0명” 문장이 나온다.',worldFlag:'public_call'},
+        {label:'환승통로로 간다',stat:'민첩',dc:8,next:'service',success:'발소리를 놓치지 않고 직원 통로 앞까지 따라왔다.',failure:'발소리는 끊겼지만 회색 화살표를 발견했다.'},
+        {label:'출구를 확인한다',stat:'지혜',dc:8,next:'exit',success:'출구를 통과하면 같은 대합실로 되돌아온다는 것을 먼저 알아챘다.',failure:'한 번 통과한 뒤 다시 같은 장소에 서 있다.',flag:'loop_exit'},
+        {label:'승강장으로 내려간다',stat:'체력',dc:8,next:'platform1',success:'멈춘 에스컬레이터를 내려가 승강장에 도착했다.',failure:'긴 계단 끝에서 숨을 고르며 승강장에 닿았다.'}
+      ]},
+      medic_start:{location:'platform1',act:1,title:'막차 뒤의 환자',phase:'개인 시작',objective:'승강장에 쓰러진 사람을 살피고 안전한 곳으로 옮긴다.',text:['응급구조사는 퇴근길 막차를 놓쳤다. 역무원에게 도움을 청하려던 순간, 텅 빈 1번 승강장 벤치 옆에서 누군가 쓰러져 있는 것을 발견한다.','맥박은 있다. 그런데 그 사람 손에는 아직 도착하지 않은 첫차 승차권이 쥐어져 있고, 전광판은 운행 종료 대신 04:58을 반복한다.'],choices:[
+        {label:'환자를 먼저 살핀다',stat:'체력',dc:7,next:'platform1',success:'큰 부상은 없고 극심한 공포 반응임을 확인했다.',failure:'의식은 돌아오지 않지만 호흡은 안정적이다.',flag:'patient_stable'},
+        {label:'환자를 대합실로 옮긴다',stat:'근력',dc:8,next:'concourse',success:'환자를 안전한 대합실까지 옮겼다.',failure:'시간이 걸렸지만 대합실에 도착했다.',worldFlag:'rescued_passenger'},
+        {label:'승차권 시간을 본다',stat:'지능',dc:8,next:'platform1',success:'발권 시각이 현재보다 네 시간 뒤다.',failure:'인쇄가 흐리지만 04:58만 읽힌다.',flag:'future_ticket'},
+        {label:'역무실에 연락한다',stat:'매력',dc:8,next:'office',success:'역무용 인터폰에서 누군가 응답한다.',failure:'연결은 됐지만 대답 대신 잡음이 들린다.',worldFlag:'radio_link'},
+        {label:'터널 소리를 듣는다',stat:'지혜',dc:8,next:'platform1',success:'정상 선로가 아닌 반대편 벽 뒤에서 열차 소리가 난다.',failure:'소리가 사라졌지만 벽의 진동이 남았다.',flag:'hidden_track'},
+        {label:'비상통로로 이동한다',stat:'민첩',dc:8,next:'service',success:'환자를 두고 가기 전에 위치를 표시하고 직원 통로로 이동했다.',failure:'문은 잠겼지만 우회문을 찾았다.'}
+      ]},
+      maintenance:{location:'maintenance',act:1,title:'전기실의 두 전원',phase:'탐색',objective:'두 개의 전원 계통 중 무엇이 역을 뒤틀고 있는지 찾는다.',text:['전기실 패널은 정상 역 전원과 이름 없는 보조 전원을 동시에 표시한다. 보조 전원 쪽 케이블은 설계도에 없는 방향으로 벽을 뚫고 나간다.'],choices:[
+        {label:'보조 전원을 추적한다',stat:'지능',dc:9,next:'service',success:'케이블이 0번 승강장 쪽으로 이어지는 것을 확인했다.',failure:'회로를 완전히 읽지는 못했지만 직원 통로 방향은 확실하다.',flag:'zero_power'},
+        {label:'정상 전원을 복구한다',stat:'지능',dc:9,next:'concourse',success:'대합실 비상등과 일부 개찰구가 살아났다.',failure:'비상등만 잠깐 켜졌다.',worldFlag:'power_restored'},
+        {label:'전원을 모두 끊는다',stat:'근력',dc:10,next:'service',success:'역 전체가 암전되며 이상 방송도 멎었다.',failure:'암전은 됐지만 비상 전원이 즉시 켜졌다.',worldFlag:'blackout'},
+        {label:'역무실로 이동한다',stat:'민첩',dc:7,next:'office',success:'직원 통로를 통해 역무실로 이동했다.',failure:'잠긴 문을 돌아서 도착했다.'},
+        {label:'대합실로 이동한다',stat:'민첩',dc:7,next:'concourse',success:'비상문을 열고 대합실에 도착했다.',failure:'문이 걸렸지만 빠져나왔다.'},
+        {label:'회로 사진을 남긴다',stat:'지혜',dc:7,next:'maintenance',success:'나중에 비교할 수 있는 증거를 확보했다.',failure:'화면이 흔들렸지만 번호는 남았다.',worldFlag:'evidence'}
+      ]},
+      office:{location:'office',act:1,title:'사람 없는 역무실',phase:'탐색',objective:'근무 기록과 비상 연락망을 이용해 현재 역의 상태를 확인한다.',text:['역무실 안 시계는 00:47에서 멈춰 있다. 근무일지는 모두 퇴근 처리됐지만 단말에는 아직 열려 있는 업무 항목 하나가 있다. “0번 승강장 잔류 승객 확인.”'],choices:[
+        {label:'근무일지를 확인한다',stat:'지능',dc:8,next:'office',success:'0번 승강장 항목이 오늘 처음 생긴 것이 아님을 발견했다.',failure:'기록은 지워졌지만 같은 항목의 흔적이 남았다.',flag:'old_zero_log'},
+        {label:'CCTV실로 간다',stat:'민첩',dc:7,next:'cctv',success:'내부문을 열고 CCTV실로 이동했다.',failure:'보안문을 우회해 도착했다.'},
+        {label:'방송을 다시 켠다',stat:'매력',dc:8,next:'concourse',success:'역 안에 남은 사람들에게 자신의 위치를 알렸다.',failure:'방송이 엉뚱한 플랫폼 번호를 섞어 내보낸다.',worldFlag:'public_call'},
+        {label:'비상키를 찾는다',stat:'지혜',dc:8,next:'office',success:'직원용 마스터키를 확보했다.',failure:'키는 없지만 보관 위치를 알아냈다.',worldFlag:'master_key'},
+        {label:'분실물실로 간다',stat:'민첩',dc:7,next:'lostfound',success:'잠긴 문을 열고 분실물 보관실에 들어갔다.',failure:'복도 끝 다른 문으로 우회했다.'},
+        {label:'대합실로 나간다',stat:'민첩',dc:7,next:'concourse',success:'창구 옆 비상문으로 대합실에 나왔다.',failure:'개찰구 쪽으로 돌아서 나왔다.'}
+      ]},
+      concourse:{location:'concourse',act:1,title:'잔류 인원 0명',phase:'공용 공간',objective:'대합실에서 다른 사람의 흔적과 열린 동선을 확인한다.',text:['텅 빈 대합실의 모든 개찰구가 붉은 X를 띄운다. 사람 목소리와 발자국은 간헐적으로 들리지만 센서에는 아무도 잡히지 않는다. 여러 통로가 여기서 갈라진다.'],choices:[
+        {label:'역무실로 간다',stat:'민첩',dc:7,next:'office',success:'역무실 쪽 비상문으로 이동했다.',failure:'개찰구를 돌아서 도착했다.'},
+        {label:'1번 승강장으로 간다',stat:'민첩',dc:7,next:'platform1',success:'멈춘 에스컬레이터를 내려갔다.',failure:'비상계단으로 우회했다.'},
+        {label:'직원 통로로 간다',stat:'민첩',dc:8,next:'service',success:'직원 통로 문을 열었다.',failure:'문은 잠겼지만 옆 점검구로 들어갔다.'},
+        {label:'1번 출구를 확인한다',stat:'지혜',dc:8,next:'exit',success:'출구의 공간이 반복되는 규칙을 확인했다.',failure:'밖으로 나간 줄 알았지만 다시 같은 대합실이다.',flag:'loop_exit'},
+        {label:'전광판을 조사한다',stat:'지능',dc:8,next:'concourse',success:'00:52에 0번 승강장 열차가 잡혀 있다.',failure:'몇 픽셀만 남았지만 0이라는 숫자를 읽었다.',flag:'zero_schedule'},
+        {label:'사람을 불러본다',stat:'매력',dc:7,next:'concourse',success:'같은 층 어딘가에서 대답이 들린다.',failure:'응답 대신 다른 스피커에서 자신의 목소리가 난다.',worldFlag:'public_call'},
+        {label:'개찰구를 강제로 연다',stat:'근력',dc:9,next:'concourse',success:'한 개찰구를 고정해 공용 통로를 만들었다.',failure:'경보와 함께 검은 승객이 나타난다.',worldFlag:'gate_open',combat:'shadow'},
+        {label:'잠시 기다려본다',stat:'지혜',dc:8,next:'concourse',success:'안내방송이 정확히 8분마다 반복됨을 알아냈다.',failure:'기다리는 동안 조명이 한 줄 더 꺼졌다.',flag:'cycle8'}
+      ]},
+      service:{location:'service',act:2,title:'직원 통로의 회색 화살표',phase:'탐색',objective:'직원 통로에서 0번 승강장과 기존 역사 사이의 연결을 찾는다.',text:['직원 통로에는 원래 없던 회색 화살표가 바닥에 이어진다. 한쪽은 대합실, 다른 쪽은 설계도에 없는 아래층으로 향한다. 멀리서 무전기 잡음과 사람 발소리가 번갈아 들린다.'],choices:[
+        {label:'회색 화살표를 따라간다',stat:'지혜',dc:8,next:'platform0gate',success:'0번 승강장 방화문 앞에 도착했다.',failure:'같은 문을 두 번 지나고서야 방화문을 찾았다.',flag:'found_zero'},
+        {label:'대합실로 돌아간다',stat:'민첩',dc:7,next:'concourse',success:'정상 표지판만 따라 대합실로 돌아왔다.',failure:'우회했지만 대합실에 닿았다.'},
+        {label:'전기실로 간다',stat:'지능',dc:7,next:'maintenance',success:'케이블을 따라 전기실에 도착했다.',failure:'배선함을 두 번 확인한 뒤 찾았다.'},
+        {label:'무전기 소리를 쫓는다',stat:'지혜',dc:8,next:'office',success:'무전 신호가 역무실 쪽에서 가장 강함을 알아냈다.',failure:'잡음은 사라졌지만 역무실 표지판을 발견했다.'},
+        {label:'통로 표식을 남긴다',stat:'지능',dc:7,next:'service',success:'뒤틀린 통로에서도 돌아올 수 있는 기준점을 만들었다.',failure:'표식 일부가 사라졌지만 방향 하나는 남았다.',worldFlag:'marked_route'},
+        {label:'발소리를 따라간다',stat:'민첩',dc:8,next:'platform1',success:'발소리는 1번 승강장 계단으로 이어졌다.',failure:'놓쳤지만 승강장 문이 열려 있었다.'}
+      ]},
+      platform1:{location:'platform1',act:2,title:'막차가 없는 승강장',phase:'탐색',objective:'운행이 끝난 승강장에서 들리는 열차 접근음의 출처를 찾는다.',text:['1번 승강장은 텅 비어 있다. 안전문은 닫혀 있는데 열차 접근음이 짧게 울리고, 맞은편 벽 너머에서 바람이 불어온다. 전광판에는 04:58과 00:52가 번갈아 뜬다.'],choices:[
+        {label:'선로 진동을 확인한다',stat:'지혜',dc:8,next:'platform1',success:'진동은 정상 터널이 아니라 벽 뒤에서 온다.',failure:'방향은 놓쳤지만 규칙적인 진동을 확인했다.',flag:'hidden_track'},
+        {label:'비상문을 조사한다',stat:'지능',dc:8,next:'service',success:'직원 통로와 연결된 비상문을 열었다.',failure:'문은 잠겼지만 우회 통로를 찾았다.'},
+        {label:'0번 입구를 찾는다',stat:'지혜',dc:9,next:'platform0gate',success:'광고판 뒤에 0번 계단 표식을 발견했다.',failure:'표식은 희미하지만 아래로 내려가는 문이 있다.',flag:'found_zero'},
+        {label:'대합실로 올라간다',stat:'체력',dc:7,next:'concourse',success:'멈춘 계단을 올라 대합실로 돌아왔다.',failure:'숨이 찼지만 무사히 올라왔다.'},
+        {label:'안전문을 강제로 연다',stat:'근력',dc:10,next:'track',success:'점검선으로 내려갈 틈을 만들었다.',failure:'경보가 울렸지만 점검구 위치를 찾았다.',worldFlag:'track_access'},
+        {label:'전광판을 촬영한다',stat:'지능',dc:7,next:'platform1',success:'두 시간이 번갈아 표시되는 영상을 남겼다.',failure:'노이즈가 심하지만 시간 표시는 남았다.',worldFlag:'evidence'},
+        {label:'열차를 기다린다',stat:'체력',dc:9,next:'platform0',success:'정상 선로가 아닌 쪽에서 빈 열차가 나타났다.',failure:'아무 열차도 오지 않았지만 0번 방송이 시작됐다.',combat:'conductor'}
+      ]},
+      platform0gate:{location:'platform0gate',act:2,title:'0번 방화문',phase:'경계',objective:'존재하지 않는 승강장으로 들어갈지 다른 방법을 찾을지 결정한다.',text:['아래층 방화문 위에는 숫자 0 하나만 켜져 있다. 문 너머에서는 정상 승강장과 똑같은 안내음이 들리지만 노선도에는 이 층이 없다.'],choices:[
+        {label:'0번으로 들어간다',stat:'지혜',dc:9,next:'platform0',success:'문이 열리며 낯선 승강장이 모습을 드러냈다.',failure:'문이 한 번 닫혔다가 다시 열렸다. 안쪽 공간은 여전히 존재한다.',flag:'entered_zero'},
+        {label:'문 구조를 조사한다',stat:'지능',dc:8,next:'platform0gate',success:'방화문은 실제 설비지만 등록 번호가 없다.',failure:'번호판은 없지만 전력선은 살아 있다.',flag:'zero_is_real'},
+        {label:'전원을 끊어본다',stat:'지능',dc:9,next:'service',success:'0번 조명이 꺼지며 문이 잠시 사라진다.',failure:'조명만 깜빡이고 문은 남아 있다.',worldFlag:'zero_power_cut'},
+        {label:'대합실로 돌아간다',stat:'민첩',dc:7,next:'concourse',success:'회색 표식을 거꾸로 따라 돌아왔다.',failure:'한 번 길을 잃었지만 대합실에 도착했다.'},
+        {label:'누군가를 기다린다',stat:'체력',dc:7,next:'platform0gate',success:'멀리 직원 통로에서 사람 움직임이 들린다.',failure:'아무도 오지 않았지만 안내음 간격을 파악했다.',flag:'waited_zero'},
+        {label:'문을 고정한다',stat:'근력',dc:9,next:'platform0gate',success:'방화문을 열어 두어 다른 사람도 접근할 수 있게 했다.',failure:'완전히 고정하지 못했지만 닫히는 속도를 늦췄다.',worldFlag:'zero_gate_open'}
+      ]},
+      platform0:{location:'platform0',act:3,title:'노선도 밖의 승강장',phase:'이상 구역',objective:'0번 승강장의 열차와 시간표가 무엇을 기준으로 움직이는지 확인한다.',text:['0번 승강장은 너무 정상적으로 보여서 오히려 이상하다. 광고판은 비어 있고, 안전문 너머 터널은 기존 선로와 방향이 맞지 않는다. 전광판에는 다음 열차가 “지금”이라고 표시된다.'],choices:[
+        {label:'빈 열차 안을 본다',stat:'지혜',dc:9,next:'platform0',success:'차량 안 좌석마다 아직 만나지 않은 사람들의 물건이 놓여 있다.',failure:'문이 닫힐 뻔했지만 내부 구조를 확인했다.',flag:'train_contents'},
+        {label:'열차에 탄다',stat:'체력',dc:11,next:'lostfound',success:'열차가 한 정거장도 가지 않고 분실물 보관실 문 앞에 멈춘다.',failure:'차량이 흔들리며 다른 역사처럼 보이는 공간을 지나 분실물실 근처에 멈춘다.',worldFlag:'rode_zero'},
+        {label:'차장에게 말을 건다',stat:'매력',dc:10,next:'platform0',success:'차장은 “어느 시간표에 속한 승객이냐”고 묻는다.',failure:'차장은 대답 대신 출입문을 닫으려 한다.',flag:'conductor_question',combat:'conductor'},
+        {label:'승강장 끝을 조사한다',stat:'민첩',dc:9,next:'signal',success:'점검문을 통해 신호실로 이어지는 통로를 찾았다.',failure:'길이 길어졌지만 신호 설비 소리를 따라갔다.'},
+        {label:'노선도를 기록한다',stat:'지능',dc:8,next:'platform0',success:'회색 노선이 플레이어들의 실제 이동 경로를 따라 변함을 알아냈다.',failure:'완전한 기록은 못 했지만 선이 움직이는 순간을 남겼다.',worldFlag:'evidence'},
+        {label:'0번을 빠져나간다',stat:'민첩',dc:8,next:'platform0gate',success:'방화문이 닫히기 전에 빠져나왔다.',failure:'문이 한 번 닫혔다 다시 열리며 탈출했다.'}
+      ]},
+      cctv:{location:'cctv',act:3,title:'3분 17초 뒤',phase:'정보 장면',objective:'CCTV의 미래 영상이 예언인지 경로 계산인지 시험한다.',text:['4번 모니터에는 지금 이 방에 있는 사람보다 3분 17초 앞선 장면이 나온다. 화면 속 인물은 아직 열지 않은 문을 열고, 아직 만나지 않은 누군가와 대화한다.'],choices:[
+        {label:'영상대로 움직인다',stat:'지혜',dc:8,next:'lostfound',success:'영상이 보여 준 안전한 길을 따라 분실물실에 도착했다.',failure:'길은 맞았지만 영상보다 늦게 도착했다.',flag:'followed_future'},
+        {label:'영상과 반대로 간다',stat:'민첩',dc:9,next:'service',success:'미래 화면이 즉시 새 장면으로 바뀐다.',failure:'한 번 막혔지만 화면 역시 바뀌었다.',flag:'changed_future'},
+        {label:'카메라 시간을 분석한다',stat:'지능',dc:9,next:'cctv',success:'모든 미래 화면이 정확히 3분 17초 차이임을 확인했다.',failure:'원인은 못 찾았지만 시간차는 일정하다.',flag:'317_rule'},
+        {label:'다른 플레이어를 찾는다',stat:'지혜',dc:8,next:'cctv',success:'역 안 다른 위치에 있는 사람 하나를 카메라로 찾아냈다.',failure:'몇 화면은 비어 있지만 사람 그림자를 확인했다.',worldFlag:'camera_contact'},
+        {label:'CCTV를 끈다',stat:'근력',dc:8,next:'office',success:'미래 영상이 사라지고 역무실 시계가 다시 움직인다.',failure:'4번 화면만 꺼지지 않는다.',worldFlag:'future_off'},
+        {label:'영상을 저장한다',stat:'지능',dc:8,next:'cctv',success:'미래 영상 일부를 외부 저장장치에 남겼다.',failure:'파일은 깨졌지만 타임코드가 남았다.',worldFlag:'evidence'}
+      ]},
+      lostfound:{location:'lostfound',act:3,title:'아직 잃지 않은 물건',phase:'정보 장면',objective:'미래 시각의 분실 신고와 현재 행동 사이의 관계를 확인한다.',text:['분실물 보관실 327번 칸에는 플레이어 중 누군가의 물건이 들어 있다. 문제는 그 물건이 아직 그 사람 손에 있다는 점이다. 신고표에는 몇 시간 뒤 시각이 적혀 있다.'],choices:[
+        {label:'327번을 연다',stat:'지능',dc:8,next:'lostfound',success:'복제된 물건과 미래 신고표를 확보했다.',failure:'잠금은 풀리지 않았지만 신고 시각을 읽었다.',flag:'locker327_open'},
+        {label:'물건을 가져간다',stat:'지혜',dc:9,next:'signal',success:'물건을 꺼내자 신호실 쪽 비상등이 켜졌다.',failure:'물건이 사라졌다가 신호실 방향에서 다시 나타난다.',worldFlag:'future_item'},
+        {label:'신고 시각을 따라간다',stat:'지혜',dc:9,next:'signal',success:'신고표의 경로 번호가 신호실 점검 코드와 일치한다.',failure:'시간은 맞지 않지만 신호실 코드 하나를 찾았다.'},
+        {label:'역무실로 돌아간다',stat:'민첩',dc:7,next:'office',success:'내부 복도를 통해 돌아왔다.',failure:'문 하나를 잘못 열었지만 역무실에 도착했다.'},
+        {label:'0번 승강장으로 간다',stat:'민첩',dc:9,next:'platform0',success:'보관실 뒤 점검문이 0번 승강장과 이어진다.',failure:'통로가 길었지만 0번에 도착했다.'},
+        {label:'신고표를 증거로 남긴다',stat:'지능',dc:7,next:'lostfound',success:'미래 시각이 적힌 원본 표를 확보했다.',failure:'사진만 남겼지만 시각은 분명하다.',worldFlag:'evidence'}
+      ]},
+      signal:{location:'signal',act:4,title:'두 개의 운행표',phase:'결정 장면',objective:'정상 첫차와 0번 열차가 동시에 같은 역을 요구하는 신호 충돌을 해결한다.',text:['신호실에는 정상 첫차 운행표와 출처 없는 0번 운행표가 동시에 활성화돼 있다. 두 표는 같은 전력과 선로 일부를 차지하려 한다. 첫차 준비 카운트가 시작됐다.'],choices:[
+        {label:'정상 신호를 우선한다',stat:'지능',dc:10,next:'exit',success:'첫차 경로가 안정되고 지상 출구가 정상 방향을 되찾는다.',failure:'신호 일부만 복구됐지만 출구 쪽 전력이 살아났다.',worldFlag:'normal_signal'},
+        {label:'0번 신호를 차단한다',stat:'지능',dc:11,next:'platform0gate',success:'0번 승강장의 전광판이 처음으로 완전히 꺼졌다.',failure:'신호는 약해졌지만 점검열차가 움직이기 시작했다.',worldFlag:'zero_sealed',combat:'maintenanceTrain'},
+        {label:'두 신호를 분리한다',stat:'지혜',dc:11,next:'track',success:'정상선과 점검선을 물리적으로 나눌 방법을 찾았다.',failure:'분리는 불완전하지만 점검선 접근로가 열린다.',worldFlag:'split_signal'},
+        {label:'점검선으로 내려간다',stat:'민첩',dc:9,next:'track',success:'신호실 아래 점검선으로 내려왔다.',failure:'사다리가 흔들렸지만 내려왔다.'},
+        {label:'다른 사람을 부른다',stat:'매력',dc:8,next:'signal',success:'역 안 무전망에 신호실 위치를 알렸다.',failure:'잡음이 심하지만 위치 정보는 전송됐다.',worldFlag:'signal_call'},
+        {label:'신호 기록을 저장한다',stat:'지능',dc:8,next:'signal',success:'두 운행표가 동시에 존재했다는 증거를 남겼다.',failure:'일부만 저장됐지만 열차 코드 000은 남았다.',worldFlag:'evidence'}
+      ]},
+      track:{location:'track',act:4,title:'첫차 전 점검선',phase:'위험 장면',objective:'점검선에서 실제 선로와 0번 경로가 겹치는 지점을 정리한다.',text:['점검선에는 정상 선로 표지와 회색 0번 표지가 서로 겹쳐 있다. 멀리 무인 점검열차의 작업등이 켜지고, 첫차 준비 신호가 하나씩 녹색으로 변한다.'],choices:[
+        {label:'선로표지를 바로잡는다',stat:'지능',dc:10,next:'signal',success:'정상선 표지가 고정되고 0번 경로가 약해졌다.',failure:'표지는 일부만 돌아왔지만 충돌 지점을 표시했다.',worldFlag:'track_fixed'},
+        {label:'점검열차를 멈춘다',stat:'근력',dc:11,next:'track',success:'비상 정지 장치를 작동시켰다.',failure:'열차가 가까워지며 검은 형체가 나타난다.',worldFlag:'maintenance_stopped',combat:'maintenanceTrain'},
+        {label:'점검열차를 피한다',stat:'민첩',dc:9,next:'platform1',success:'측면 피난로를 통해 1번 승강장으로 빠졌다.',failure:'간신히 피난로에 몸을 던졌다.'},
+        {label:'0번 쪽 선로를 본다',stat:'지혜',dc:9,next:'platform0',success:'0번 터널이 기존 선로 사이에 순간적으로 겹치는 것을 보았다.',failure:'완전히 보진 못했지만 전조등 방향을 확인했다.'},
+        {label:'신호실로 돌아간다',stat:'민첩',dc:8,next:'signal',success:'점검 계단으로 신호실에 복귀했다.',failure:'한 구간을 돌아서 도착했다.'},
+        {label:'구조 통로를 연다',stat:'근력',dc:9,next:'track',success:'선로 쪽에서 대합실로 이어지는 비상 통로를 열었다.',failure:'반쯤 열어 다른 사람이 밀면 통과할 수 있게 됐다.',worldFlag:'rescue_route'}
+      ]},
+      exit:{location:'exit',act:5,title:'열린 것처럼 보이는 출구',phase:'최종 경로',objective:'첫차가 들어오기 전 현실로 이어지는 출구인지 확인한다.',text:['1번 출구 셔터 사이로 새벽빛이 들어온다. 이번에는 바깥 도로가 보이지만 한 번 발을 내딛으면 다시 돌아올 수 있을지 확신할 수 없다. 역 안에서는 아직 다른 사람들의 움직임과 무전이 들린다.'],choices:[
+        {label:'밖으로 나간다',stat:'지혜',dc:9,next:'train',success:'이번 출구는 실제 거리로 이어진다.',failure:'한 번 대합실로 되돌아왔지만 두 번째에는 바깥이 열린다.',ending:'escaped'},
+        {label:'다른 사람을 기다린다',stat:'체력',dc:8,next:'exit',success:'출구를 지키며 역 안의 사람에게 위치를 알렸다.',failure:'시간은 줄었지만 출구를 잃지 않았다.',worldFlag:'exit_held'},
+        {label:'역 안으로 돌아간다',stat:'민첩',dc:8,next:'concourse',success:'출구 위치를 기억한 채 다시 대합실로 돌아갔다.',failure:'문이 흔들렸지만 안으로 돌아왔다.'},
+        {label:'셔터를 고정한다',stat:'근력',dc:9,next:'exit',success:'다른 사람도 사용할 수 있게 출구를 고정했다.',failure:'완전히 고정하진 못했지만 닫히는 속도를 늦췄다.',worldFlag:'exit_open'},
+        {label:'바깥에 도움을 요청한다',stat:'매력',dc:8,next:'exit',success:'새벽 역무원에게 연락이 닿았다.',failure:'통화는 끊겼지만 위치가 전송됐다.',worldFlag:'outside_contact'},
+        {label:'0번을 봉쇄하러 간다',stat:'지혜',dc:10,next:'signal',success:'출구를 포기하지 않고 신호실로 돌아갈 길을 잡았다.',failure:'시간이 더 걸렸지만 신호실 방향을 찾았다.'}
+      ]},
+      train:{location:'train',act:5,title:'04시 58분',phase:'엔딩',objective:'첫차가 들어오는 순간 자신이 무엇을 남기고 나갈지 결정한다.',text:['정상 첫차의 전조등이 터널 끝에 나타난다. 역 안의 회색 표지와 0번 숫자가 하나씩 꺼진다. 하지만 아직 역 안에 남아 있는 사람, 닫지 않은 문, 기록하지 않은 증거가 있다.'],choices:[
+        {label:'첫차를 타고 떠난다',stat:'지혜',dc:8,next:'train',success:'정상 첫차에 올라 청명역을 벗어났다.',failure:'문이 닫히기 직전 올라탔다.',ending:'first_train'},
+        {label:'지상으로 나간다',stat:'체력',dc:8,next:'train',success:'출구를 통해 아침 거리로 나왔다.',failure:'마지막 셔터를 밀고 밖으로 나왔다.',ending:'escaped'},
+        {label:'남은 사람을 찾는다',stat:'매력',dc:9,next:'concourse',success:'역 안에 남은 사람의 위치를 확인하고 다시 들어갔다.',failure:'응답은 희미하지만 위치 하나를 잡았다.',worldFlag:'rescue_priority'},
+        {label:'0번 기록을 남긴다',stat:'지능',dc:9,next:'train',success:'이상 운행표와 이동 기록을 외부에 남겼다.',failure:'일부만 저장됐지만 0번 코드가 남았다.',worldFlag:'evidence',ending:'witness'},
+        {label:'0번을 끝까지 막는다',stat:'근력',dc:10,next:'train',success:'0번 경로가 닫히는 것을 확인한 뒤 빠져나왔다.',failure:'완전 봉쇄는 못 했지만 첫차와 겹치지 않게 만들었다.',worldFlag:'zero_sealed',ending:'sealed'},
+        {label:'0번 열차를 지켜본다',stat:'지혜',dc:11,next:'train',success:'정상 첫차가 들어오자 0번 열차는 터널 벽 속으로 사라졌다.',failure:'전조등만 남기고 사라지는 모습을 보았다.',ending:'observer'}
+      ]}
+    }
+  };
+
+  novelActs.echo=[
+    {intro:'00시 47분. 마지막 열차가 터널 끝으로 사라지고 역무원의 퇴근 안내가 끝난다. 파티가 지상으로 나가려는 순간 1번 출구 셔터가 내려오고, 방금 통과한 개찰구가 모두 붉은 X로 바뀐다.',discovery:'비상 인터폰은 작동하지만 역무실 단말은 “역사 내 잔류 인원 0명”이라고 표시한다. 휴대폰 신호도 잡히는데 위치 정보만 청명역이 아닌 다른 역을 번갈아 가리킨다.',crisis:'야간 청소원 한 명이 셔터 반대편 직원 통로에 갇혔다는 목소리가 들린다. 출구를 강제로 열지, 청소원을 먼저 찾을지, 전원을 되살릴지 선택하는 순간부터 역의 문 배치가 달라진다.',climax:'운행 종료 방송이 다시 켜진다. 이번에는 “0번 승강장으로 들어오는 열차를 이용해 주십시오”라는 문장이 섞여 있다. 청명역에는 원래 0번 승강장이 없다.'},
+    {intro:'노선도 한가운데 회색 선이 새로 생기고 직원용 계단 하나가 처음 보는 아래층으로 이어진다. 계단 끝 표지판에는 숫자 0 하나만 켜져 있다.',discovery:'0번 승강장은 정상 플랫폼처럼 전등·방송·안전문이 작동하지만 선로 방향은 기존 터널과 맞지 않는다. 시간표에는 열차가 없는데 접근 경고등만 8분 간격으로 켜진다.',crisis:'빈 열차가 한 번 들어왔다가 문을 연 채 기다린다. 탈 수도 있고, 내부를 조사할 수도 있고, 전원을 끊거나 지나쳐 직원 통로를 탐색할 수도 있다. 어느 선택도 즉시 정답으로 표시되지 않는다.',climax:'열차가 떠난 뒤 벽의 노선도는 파티가 실제로 이동한 동선을 그대로 회색 선으로 그린다. 0번 승강장은 장소라기보다 역이 새로 만들고 있는 경로의 중심처럼 보이기 시작한다.'},
+    {intro:'CCTV실 4번 화면에 현재보다 3분 17초 뒤의 파티가 나타난다. 영상 속 파티는 아직 열지 않은 문을 열고, 아직 줍지 않은 무전기로 누군가와 대화하고 있다.',discovery:'파티가 일부러 영상과 다른 행동을 하자 CCTV의 미래 장면도 몇 초 뒤 새롭게 바뀐다. 영상은 미래를 확정하지 않지만 가능한 경로 중 하나를 빠르게 계산해 보여 주는 듯하다.',crisis:'분실물 보관함에는 아직 잃지 않은 파티 물건과 미래 시각의 신고표가 들어 있다. 물건을 가져갈지, 신고 시간을 따라갈지, CCTV를 끄고 직접 움직일지에 따라 안전한 길과 단서가 달라진다.',climax:'무전기에서 파티 자신의 목소리가 들린다. “첫차가 오기 전에 신호실을 열어. 0번을 그대로 두면 두 열차가 같은 역에 들어와.” 목소리 뒤로는 아직 듣지 못한 첫차 안내음이 울린다.'},
+    {intro:'첫차까지 23분. 꺼졌던 역 전체가 자동으로 운행 준비를 시작한다. 승강장 조명과 안전문이 켜지지만 일부 유도등은 지상이 아니라 0번 승강장으로 사람을 안내한다.',discovery:'신호실에는 정상 첫차 운행표와 출처 없는 0번 운행표가 동시에 활성화돼 있다. 두 표는 같은 전력·통로·신호 일부를 공유해 하나를 건드리면 다른 쪽 공간이 변한다.',crisis:'무인 점검열차가 선로로 들어오며 0번 승강장 쪽 방화문이 닫히기 시작한다. 남은 사람을 먼저 데려올지, 신호를 끊을지, 출구를 열지, 점검열차를 이용할지 결정해야 한다.',climax:'파티가 신호 하나를 정상화할 때마다 역의 시계들이 같은 시간으로 맞춰진다. 마지막으로 남은 것은 0번 승강장의 시계뿐이다. 그 시계는 계속 00시 47분을 가리킨다.'},
+    {intro:'04시 58분. 지상 출구 사이로 아침빛이 들어오고 정상 첫차의 운행 안내가 시작된다. 동시에 0번 승강장 터널에서도 다른 열차의 전조등이 보인다.',discovery:'처음의 “잔류 인원 0명” 로그와 지금까지의 경로 기록을 겹쳐 보면 이상 현상은 파티를 적으로 본 것이 아니다. 운행 종료 뒤 존재해서는 안 되는 승객을 시스템과 공간 모두가 어느 경로에 둘지 결정하지 못했던 것이다.',crisis:'첫차가 들어오기 전에 하나의 경로를 확정해야 한다. 지상 출구를 완전히 열고 빠져나갈지, 0번을 봉쇄할지, 아직 남은 사람을 모두 데려올지, 마지막으로 0번 열차 내부를 확인할지 선택할 수 있다.',climax:'정상 첫차가 승강장에 들어오는 순간 역 안의 이상한 표지와 회색 노선이 하나씩 사라진다. 누가 함께 나왔는지, 어떤 문을 닫았는지, 무엇을 기록으로 남겼는지에 따라 다음 날 청명역은 완전히 평범한 역이 되기도 하고, 단 한 사람의 교통카드에만 0번 승강장 이용기록이 남기도 한다.'}
   ];
 })();
 

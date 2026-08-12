@@ -32,11 +32,11 @@ test('each campaign has a two-stage consequence graph before canonical rejoin',(
   }
 });
 
-test('client does not advertise exact stat/DC unless insight passives reveal them',()=>{
+test('client keeps quick choices simple and hides exact DC unless insight reveals it',()=>{
   const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
-  assert.match(app,/판정은 선택 후 공개/);
+  assert.match(app,/판정 방식은 선택 후 공개/);
   assert.match(app,/statInsight\?\.insightDeep/);
-  assert.match(app,/기회 ·/);
+  assert.match(app,/빠른 선택 3~4개 또는 직접 행동 선언/);
 });
 
 test('server contains repeated-approach pressure and fatal high-risk outcomes',()=>{

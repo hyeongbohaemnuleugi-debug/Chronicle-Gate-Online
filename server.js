@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '6.6.0-living-inventory';
+const APP_VERSION = '6.6.3-story-flow-evolution';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -1148,7 +1148,9 @@ function parallelRenderedScene(room,campaign,player){
     .map((choice,index)=>({id:`base:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}))
     .filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
   const dynamic=parallelDynamicChoices(room,campaign,player,node);
-  const choices=parallelCurateChoices(room,campaign,player,node,dynamic,base);
+  // v6.6.3: preserve every choice that is actually valid for this exact scene/player.
+  // The previous seven-choice curation could hide legitimate item, route, or interaction options.
+  const choices=[...dynamic,...base].slice(0,14);
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,

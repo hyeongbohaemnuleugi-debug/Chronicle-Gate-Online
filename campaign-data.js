@@ -1319,9 +1319,9 @@ const JOB_SKILL_DEFS = {
     const mergedTitles = [...g1.titles, ...g2.titles, ...g3.titles];
     const mergedMonsters = [...g1.monsters, ...g2.monsters, ...g3.monsters];
     g1.id = 'guardian';
-    g1.title = '가디언 테일즈 연대기 · 시즌 1 통합편';
+    g1.title = '인베이더의 침공';
     g1.genre = '팬 어댑테이션 · 월드 1~11 통합';
-    g1.subtitle = '캔터베리의 함락부터 기록되지 않은 세계와 헤븐홀드 탈환까지, 1·2·3부를 하나의 연속 장편으로.';
+    g1.subtitle = '무너진 캔터베리에서 시작된 침공. 여러 세계를 집어삼키는 인베이더에 맞서 끝까지 살아남아라.';
     g1.intro = '침략으로 무너진 캔터베리에서 시작한 기사와 작은 공주의 여정은 숲, 티탄 왕국, 마법학교, 광기의 사막, 셴 시티, 거대한 여관, 던전 왕국, 쉬버링 산, 라 제국과 10년 뒤의 미래까지 끊기지 않고 이어진다. 앞 월드에서 누구를 도왔고 무엇을 포기했는지가 뒤 월드의 동맹, 위험, 선택 난이도와 마지막 시간의 선택까지 실제 조건으로 남는 하나의 장편 연대기다.';
     g1.acts = mergedActs;
     g1.titles = mergedTitles;
@@ -1583,7 +1583,7 @@ const JOB_SKILL_DEFS = {
   const c=campaigns.find(item=>item.id==='echo');
   if(!c) return;
 
-  c.title='막차 이후';
+  c.title='종착역 0번선';
   c.genre='심야 지하철 미스터리 스릴러';
   c.icon='🚇';
   c.accent='#7ed0ff';
@@ -1674,7 +1674,7 @@ const JOB_SKILL_DEFS = {
     {goal:'04시 58분에 정상 첫차가 들어오기 전 지금까지 연 통로와 복구한 신호를 이용해 모두가 빠져나갈 마지막 경로를 확정한다',place:'1번 승강장·0번 승강장·지상 출구가 동시에 연결된 청명역',reveal:'역은 파티를 가두려 한 것이 아니라 운행 종료 시점에 존재하면 안 되는 승객을 어느 시간표에도 배치하지 못해 계속 경로를 다시 계산하고 있었다',stakes:'가장 빠른 탈출·남은 사람 구조·이상 구역 봉쇄·0번 승강장 확인 중 무엇을 끝까지 선택하느냐에 따라 역 밖의 아침과 남는 기록이 달라진다'}
   ];
   // v6.5.0 - PARALLEL STATION STORY
-  // Only 「막차 이후」 uses this asynchronous, player-by-player station sandbox.
+  // Only 「종착역 0번선」 uses this asynchronous, player-by-player station sandbox.
   c.parallelStory={
     enabled:true,
     startByJob:{
@@ -1864,7 +1864,7 @@ const JOB_SKILL_DEFS = {
 
 
 // v6.6.0 - LIVING INVENTORY / ROUTE GATING
-// Expands 「막차 이후」 so items are acquired through multiple methods and can unlock or block entire routes.
+// Expands 「종착역 0번선」 so items are acquired through multiple methods and can unlock or block entire routes.
 (function expandAfterLastTrainInventoryRoutes(){
   const c=campaigns.find(item=>item.id==='echo');
   if(!c?.parallelStory?.enabled) return;

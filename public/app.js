@@ -1,4 +1,7 @@
-import { DiceTheater } from './dice3d.js';
+import { DiceTheater } from './dice3d.js?v=6722';
+
+const CLIENT_BUILD = '6.7.2-choice-render';
+console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
 const $ = s => document.querySelector(s);
@@ -1075,7 +1078,7 @@ function enqueueDice(payload) {
       await new Promise(r => setTimeout(r, 450));
     }
 
-    const narrativeRoll = payload.kind === 'story-choice' || payload.kind === 'check';
+    const narrativeRoll = ['story-choice','check','parallel-story'].includes(payload.kind);
     if (narrativeRoll) {
       // 스토리/이벤트 판정은 3D 주사위에서 이미 결과를 확인했으므로 숫자 결과창을 다시 띄우지 않는다.
       // 서버 state에 들어온 장면 결과가 오버레이 뒤의 본문에 바로 렌더링되어 다음 내용으로 자연스럽게 이어진다.
@@ -1362,14 +1365,32 @@ function renderParallelStory() {
   const storyItems=(scene.storyItems||[]).map(item=>esc(item.name)).join(' · ');
   $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>각 플레이어는 독립된 위치·진행·턴을 가집니다.</b><small>${storyItems?`현재 소지품 · ${storyItems}<br>`:''}소지한 물건과 직업 장비에 따라 새로운 선택지와 숨은 진행 루트가 열립니다.</small>`;
 
-  const choices=Array.isArray(scene.choices) ? scene.choices.filter(Boolean) : [];
-  const emptyNotice=choices.length ? '' : `<div class="action-lock"><div><div class="eyebrow">CHOICE RECOVERY</div><b>현재 장면에서 가능한 행동을 다시 구성하고 있습니다.</b><small>직업·아이템 조건과 무관한 기본 행동이 최소 하나 이상 남도록 서버가 보호합니다.</small></div></div>`;
-  $('#choiceArea').innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'지금 이 장소에서 실제로 할 수 있는 행동들입니다. 직업·장비·소지품이 있으면 특별한 방법이 추가됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 턴을 기다리는 중입니다.`}</div></div>`+emptyNotice+choices.map((choice,index)=>`
+  const choices=Array.isArray(scene.choices) ? scene.choices.filter(choice=>choice && choice.label) : [];
+  const emptyNotice=choices.length ? '' : `<div class="action-lock"><div><div class="eyebrow">CHOICE DATA ERROR</div><b>서버에서 현재 장면의 선택지가 전달되지 않았습니다.</b><small>새 패치에서는 이 상태가 생기지 않도록 서버가 기본 행동을 항상 보장합니다. 화면이 계속 이 상태라면 서버도 함께 재배포했는지 확인하세요.</small></div></div>`;
+  const renderedChoices=choices.map((choice,index)=>`
     <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
       <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
       <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
     </button>`).join('');
-  $('#choiceArea').querySelectorAll('[data-parallel-index]').forEach(btn=>btn.onclick=()=>{
+  choiceBox.style.setProperty('display','grid','important');
+  choiceBox.style.setProperty('visibility','visible','important');
+  choiceBox.style.setProperty('opacity','1','important');
+  choiceBox.style.minHeight=choices.length ? '120px' : '90px';
+  choiceBox.innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'지금 이 장소에서 실제로 할 수 있는 행동들입니다. 직업·장비·소지품이 있으면 특별한 방법이 추가됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 턴을 기다리는 중입니다.`}</div></div>${emptyNotice}${renderedChoices}`;
+  requestAnimationFrame(()=>{
+    choiceBox.style.setProperty('display','grid','important');
+    choiceBox.style.setProperty('visibility','visible','important');
+    choiceBox.style.setProperty('opacity','1','important');
+  });
+  /* buttons are bound below using the server order rendered above */
+  /* legacy inline mapping removed intentionally */
+  /*
+    <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
+      <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
+      <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
+    </button>`).join('');
+  */
+  choiceBox.querySelectorAll('[data-parallel-index]').forEach(btn=>btn.onclick=()=>{
     if(btn.disabled)return;
     const choiceIndex=Number(btn.dataset.parallelIndex);
     socket.emit('story:advance',{roomCode,playerToken,choiceIndex},r=>!r?.ok&&toast(r.error));
@@ -1867,7 +1888,7 @@ document.addEventListener('visibilitychange', () => {
 makeParticles();
 renderCampaigns();
 
-fetch('/api/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(cfg => { if (cfg?.version) $('#versionLabel').textContent = `ONLINE EDITION · SERVER AUTHORITATIVE DICE · 5 CHRONICLES · v${cfg.version}`; }).catch(() => {});
+fetch('/api/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(cfg => { if (cfg?.version) $('#versionLabel').textContent = `ONLINE EDITION · ${CLIENT_BUILD} · SERVER v${cfg.version}`; }).catch(() => {});
 
 // QA marker: state.phase==='ending'
 // QA marker: state.phase==='resolution'&&state.lastResolution

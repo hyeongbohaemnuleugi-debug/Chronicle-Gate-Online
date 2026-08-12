@@ -495,6 +495,11 @@ function enrichStoryProse(c, guide, baseText, act, step) {
   // We deliberately add only two supporting paragraphs: enough atmosphere/context to roleplay from, without turning a turn into a wall of text.
   const second = step === 0 ? sense : step === 1 ? npc : step === 2 ? omen : step === 3 ? sense : step === 4 ? omen : npc;
   const third = step === 0 ? npc : step === 1 ? sense : step === 2 ? sense : step === 3 ? omen : step === 4 ? npc : omen;
+  const extra = step % 3 === 0
+    ? texture.omen[(act + step + 1) % texture.omen.length]
+    : step % 3 === 1
+      ? texture.npc[(act + step + 2) % texture.npc.length]
+      : texture.sense[(act + step + 3) % texture.sense.length];
   const stakes = storyPhrase(guide?.stakes || '');
   const reveal = storyPhrase(guide?.reveal || '');
   const pressure = step === 0
@@ -508,7 +513,7 @@ function enrichStoryProse(c, guide, baseText, act, step) {
           : step === 4
             ? `위기는 단순히 성공과 실패로 끝나지 않는다. 무엇을 지키고 무엇을 포기했는지가 다음 장면의 인물 관계, 위험도, 접근 가능한 길에 남는다.`
             : `이번 선택은 한 막을 닫는 답이면서 다음 막의 출발점이다. ${stakes || '어떤 방식으로 문제를 풀었는지'}가 이후에 만나는 사람과 열리는 길, 마지막 결말까지 이어진다.`;
-  return [baseText, second, third, pressure].filter(Boolean).join('\n\n');
+  return [baseText, second, third, extra, pressure].filter(Boolean).join('\n\n');
 }
 
 // v6.1.0 - LIVING STORY: explicit scene affordances.
@@ -1950,13 +1955,127 @@ const JOB_SKILL_DEFS = {
   ps.clockLimit=999;
 })();
 
-export const CAMPAIGNS = campaigns.map(c => ({
-  ...c,
-  jobs: c.jobs.map((j, i) => ({roll:i+1,name:j[0],prime:j[1],skill:j[2],skillDef:JOB_SKILL_DEFS[j[0]],baseHp:10 + (i%3)*2})),
-  storyBeats: buildStoryBeats(c),
-  items: ITEM_CATALOG[c.id] || [],
-  events: decorateEconomyEvents(c, buildEvents(c))
-}));
+
+
+// v6.7.0 - SHARED WORLD SANDBOX
+// Every chronicle now supports independent player starts, organic meetings, temporary cooperation,
+// splitting up again, and independent turns. Existing authored story beats remain the source of truth.
+function buildUniversalParallelStory(c, storyBeats){
+  if (c.parallelStory?.enabled) return c.parallelStory;
+  const beats=storyBeats || [];
+  const nodes={};
+  const locations={};
+  const enemyKeys={};
+  const enemies={};
+  (c.monsters||[]).forEach((name,i)=>{
+    const key=`enemy_${i+1}`;
+    enemyKeys[i]=key;
+    enemies[key]={name,hp:8+Math.min(8,i*2),dc:8+Math.min(4,i),damage:2+(i>=3?1:0),weak:'상황에 맞는 준비와 협력'};
+  });
+
+  for(const beat of beats){
+    locations[beat.id]=beat.visual || `${beat.actName} · ${beat.phase}`;
+    const choices=(beat.choices||[]).map((choice,index)=>{
+      const nextSuccess=choice.next?.success || null;
+      const nextFailure=choice.next?.failure || nextSuccess;
+      const mapped={
+        ...choice,
+        id:choice.id || `${beat.id}-P-${index+1}`,
+        label:choice.label,
+        stat:choice.stat,
+        dc:choice.dc,
+        success:choice.success,
+        failure:choice.failure,
+        nextSuccess,
+        nextFailure,
+        path:choice.path || (choice.branchValue==='bold'?'survival':choice.branchValue==='empathetic'?'bond':'truth'),
+        actionType:choice.actionType,
+        fatalRisk:Boolean(choice.fatalRisk),
+      };
+      if(choice.startsCombat){
+        const enemyIndex=Math.max(0,Math.min((c.monsters||[]).length-1,Number(beat.act||1)-1));
+        mapped.combat=enemyKeys[enemyIndex] || enemyKeys[0];
+      }
+      return mapped;
+    });
+    nodes[beat.id]={
+      location:beat.id,
+      act:beat.act,
+      title:beat.title,
+      phase:beat.phase,
+      objective:beat.objective,
+      text:String(beat.text||beat.situation||'').split(/\n\n+/).filter(Boolean),
+      choices,
+      affordances:beat.affordances || {},
+      roleHooks:beat.roleHooks || {},
+      campaignBeat:true,
+      reveal:beat.reveal,
+      stakes:beat.stakes,
+    };
+  }
+
+  const entry=beats[0];
+  const firstAct=beats.filter(b=>Number(b.act||1)===1);
+  const routeTargets=[firstAct[0],firstAct[1]||firstAct[0],firstAct[2]||firstAct[0],firstAct[3]||firstAct[0]];
+  const startByJob={};
+  (c.jobs||[]).forEach((job,index)=>{
+    const name=job[0];
+    const key=`start_${index+1}`;
+    const route=routeTargets[index%routeTargets.length] || entry;
+    const prime=job[1];
+    const hook=entry?.roleHooks?.[prime] || `당신의 ${prime} 감각은 다른 사람과 다른 시작점을 보여 준다.`;
+    const baseChoices=(route?.choices||entry?.choices||[]).filter(ch=>ch?.label).slice(0,6).map((choice,i)=>({
+      ...choice,
+      id:`${key}-C-${i+1}`,
+      nextSuccess:choice.next?.success || route?.id || entry?.id,
+      nextFailure:choice.next?.failure || choice.next?.success || route?.id || entry?.id,
+      next:undefined,
+      path:choice.path || (choice.branchValue==='bold'?'survival':choice.branchValue==='empathetic'?'bond':'truth'),
+    }));
+    locations[key]=`${route?.visual || route?.title || c.acts?.[0] || '첫 장면'} · ${name}`;
+    nodes[key]={
+      location:key,
+      act:1,
+      title:`${name} · 각자의 시작`,
+      phase:'개인 시작',
+      objective:`${c.acts?.[0]||'첫 사건'} 안에서 자신이 놓인 상황을 파악하고 다음 행동을 정한다.`,
+      text:[
+        `${name}인 당신은 다른 플레이어들과 같은 세계에 있지만 처음부터 같은 장소에 있지는 않다. ${hook}`,
+        ...String(route?.text || c.intro || '').split(/\n\n+/).filter(Boolean).slice(0,3),
+        `지금 내리는 선택은 단순한 프롤로그가 아니다. 이동 경로와 사건 처리 방식에 따라 다른 플레이어와 예상보다 빨리 마주칠 수도 있고, 한동안 전혀 다른 사건을 겪다가 뒤늦게 같은 장소에서 만날 수도 있다.`
+      ],
+      choices:baseChoices,
+      roleHooks:entry?.roleHooks || {},
+      affordances:entry?.affordances || {},
+      campaignBeat:false,
+    };
+    startByJob[name]=key;
+  });
+
+  return {
+    enabled:true,
+    universal:true,
+    startByJob,
+    startFallback:Object.values(startByJob)[0] || entry?.id,
+    clockStart:null,
+    clockLimit:999,
+    locations,
+    enemies,
+    nodes,
+  };
+}
+
+export const CAMPAIGNS = campaigns.map(c => {
+  const storyBeats=buildStoryBeats(c);
+  return {
+    ...c,
+    jobs: c.jobs.map((j, i) => ({roll:i+1,name:j[0],prime:j[1],skill:j[2],skillDef:JOB_SKILL_DEFS[j[0]],baseHp:10 + (i%3)*2})),
+    storyBeats,
+    parallelStory:buildUniversalParallelStory(c,storyBeats),
+    items: ITEM_CATALOG[c.id] || [],
+    events: decorateEconomyEvents(c, buildEvents(c))
+  };
+});
 
 export const STAT_NAMES = stats;
 export const ITEMS_BY_CAMPAIGN = ITEM_CATALOG;

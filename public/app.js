@@ -533,7 +533,7 @@ function effectiveStatTotal(_player, _stat, ability) { return Number(ability?.to
 function effectiveStatMod(player, stat, ability) { return rawMod(Number(ability?.total || 10)) + equipmentBonusFor(player, stat); }
 function slotLabel(slot) { return ({weapon:'무기',armor:'방어구',charm:'부적',tool:'도구'})[slot] || slot; }
 
-function renderEconomyPanel(player) {
+function renderEconomyPanel(player, storyItems = []) {
   const panel = $('#economyPanel');
   if (!panel) return;
   if (!player?.abilities) { panel.innerHTML = ''; panel.classList.add('hidden'); return; }
@@ -551,9 +551,15 @@ function renderEconomyPanel(player) {
       <small>${esc(item.passive || '')}</small>
       <strong>${equipped.has(item.id) ? '장착 해제' : '장착'}</strong>
     </button>`).join('') : '<div class="inventory-empty">아직 획득한 장비가 없습니다.</div>';
+  const storyInventory = Array.isArray(storyItems) && storyItems.length ? `
+    <details class="inventory-drawer story-inventory" open>
+      <summary>STORY ITEMS · ${storyItems.length}개</summary>
+      <div class="story-item-list">${storyItems.map(item => `<div class="story-item-chip"><b>${esc(item.name)}</b><small>${(item.tags || []).slice(0,3).map(esc).join(' · ') || '스토리 아이템'}</small></div>`).join('')}</div>
+    </details>` : '';
   panel.innerHTML = `
     <div class="economy-head"><span>COINS</span><b>◈ ${Number(player.coins || 0)}</b></div>
     <div class="equipment-grid">${equipment}</div>
+    ${storyInventory}
     <details class="inventory-drawer"><summary>INVENTORY · ${inventory.length}개</summary><div class="inventory-list">${inventoryHtml}</div></details>`;
   panel.querySelectorAll('[data-equip-item]').forEach(button => button.onclick = () => {
     socket.emit('item:equip', { roomCode, playerToken, itemId: button.dataset.equipItem }, r => {
@@ -1259,6 +1265,40 @@ function renderResumeGate() {
   gate.classList.remove('hidden');
 }
 
+function renderCharacterHud(player, storyItems = []) {
+  if (!state) return;
+  const p = player || me();
+  $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(member => {
+    const injuryCount = (member.statuses || []).reduce((n,s)=>n+Math.max(1,Number(s.stacks||1)),0);
+    const passiveBadges = (member.derived?.passives || []).map(t => `<span class="status-pill passive ${esc(t.key || '')}" title="${esc(t.effect || '')}">${esc(t.label)}</span>`).join('');
+    const statuses = `<div class="status-strip">${injuryCount ? `<span class="status-pill injury" title="누적 실패로 인한 부상">부상 ${injuryCount}</span>` : `<span class="status-pill ok">정상</span>`}${passiveBadges}</div>`;
+    const defense = Number(member.derived?.defense || 10) + equipmentBonusFor(member,'민첩');
+    return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '역할 미지정')}</small><small class="party-defense">방어 ${defense}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}</div>`;
+  }).join('');
+  $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
+  $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => {
+    const gear = equipmentBonusFor(p, k);
+    const total = effectiveStatTotal(p, k, v);
+    const baseMod = rawMod(total);
+    const finalMod = effectiveStatMod(p, k, v);
+    return `<div class="stat-line"><span>${k}</span><b>${total} <i>${finalMod >= 0 ? '+' : ''}${finalMod}</i></b>${gear ? `<small class="gear-stat">기본 보정 ${baseMod >= 0 ? '+' : ''}${baseMod} · 장비 +${gear}</small>` : ''}</div>`;
+  }).join('') + (() => {
+    const d = p?.derived || {};
+    const traits = [
+      `체력 → 최대 HP ${p.maxHp}`,
+      `민첩 → 방어 ${Number(d.defense || 10) + equipmentBonusFor(p,'민첩')}`,
+      Number(d.strengthDamage || 0) ? `근력 → 공격 피해 +${d.strengthDamage}` : '',
+      d.insight ? '지능 → 선택 결과 추론' : '',
+      d.dangerSense ? '지혜 → 위험 여파 감지' : '',
+      d.shopDiscount ? `매력 → 상점/휴식 ${d.shopDiscount}코인 할인` : '',
+      d.statusResistance ? `체력 → 상태이상 ${d.statusResistance}장면 단축` : '',
+    ].filter(Boolean);
+    const passives = Array.isArray(d.passives) ? d.passives : [];
+    return `<div class="ability-impact"><span>ABILITY IMPACT</span>${traits.map(t=>`<small>${esc(t)}</small>`).join('')}${passives.length ? `<div class="passive-traits">${passives.map(t=>`<b class="passive-trait ${t.key || ''}" title="${esc(t.effect || '')}">${esc(t.label)}<i>${esc(t.effect || '')}</i></b>`).join('')}</div>` : ''}</div>`;
+  })() : '<div class="inventory-empty">능력치 정보가 아직 없습니다.</div>';
+  renderEconomyPanel(p, storyItems);
+}
+
 function renderParallelStory() {
   const c=currentCampaign();
   const p=me();
@@ -1267,6 +1307,7 @@ function renderParallelStory() {
   const isMyTurn=state?.turnPlayerId===playerToken && state?.phase==='story';
   const inResolution=state?.phase==='resolution';
   if(!scene||!ps) return;
+  renderCharacterHud(p, scene.storyItems || []);
 
   $('#deckCount').textContent='—';
   $('#eventCadence').textContent='심야 진행 · 종료 시점 미정';
@@ -1370,35 +1411,7 @@ function renderStory() {
   const totalActs = Math.max(1, Number(c?.acts?.length || 5));
   const actProgress = beat?.act ? ((Number(beat.act) - 1) / totalActs) * 100 : 0;
   $('#storyFill').style.width = Math.max(4, Math.min(100, actProgress + 8)) + '%';
-  $('#partyRail').innerHTML = `<div class="panel-title"><span>PARTY</span><small>${state.players.length}/4</small></div>` + state.players.map(member => {
-    const injuryCount = (member.statuses || []).reduce((n,s)=>n+Math.max(1,Number(s.stacks||1)),0);
-    const passiveBadges = (member.derived?.passives || []).map(t => `<span class="status-pill passive ${esc(t.key || '')}" title="${esc(t.effect || '')}">${esc(t.label)}</span>`).join('');
-    const statuses = `<div class="status-strip">${injuryCount ? `<span class="status-pill injury" title="누적 실패로 인한 부상">부상 ${injuryCount}</span>` : `<span class="status-pill ok">정상</span>`}${passiveBadges}</div>`;
-    const defense = Number(member.derived?.defense || 10) + equipmentBonusFor(member,'민첩');
-    return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '')}</small><small class="party-defense">방어 ${defense}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}</div>`;
-  }).join('');
-  $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
-  $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => {
-    const gear = equipmentBonusFor(p, k);
-    const total = effectiveStatTotal(p, k, v);
-    const baseMod = rawMod(total);
-    const finalMod = effectiveStatMod(p, k, v);
-    return `<div class="stat-line"><span>${k}</span><b>${total} <i>${finalMod >= 0 ? '+' : ''}${finalMod}</i></b>${gear ? `<small class="gear-stat">기본 보정 ${baseMod >= 0 ? '+' : ''}${baseMod} · 장비 +${gear}</small>` : ''}</div>`;
-  }).join('') + (() => {
-    const d = p?.derived || {};
-    const traits = [
-      `체력 → 최대 HP ${p.maxHp}`,
-      `민첩 → 방어 ${Number(d.defense || 10) + equipmentBonusFor(p,'민첩')}`,
-      Number(d.strengthDamage || 0) ? `근력 → 공격 피해 +${d.strengthDamage}` : '',
-      d.insight ? '지능 → 선택 결과 추론' : '',
-      d.dangerSense ? '지혜 → 위험 여파 감지' : '',
-      d.shopDiscount ? `매력 → 상점/휴식 ${d.shopDiscount}코인 할인` : '',
-      d.statusResistance ? `체력 → 상태이상 ${d.statusResistance}장면 단축` : '',
-    ].filter(Boolean);
-    const passives = Array.isArray(d.passives) ? d.passives : [];
-    return `<div class="ability-impact"><span>ABILITY IMPACT</span>${traits.map(t=>`<small>${esc(t)}</small>`).join('')}${passives.length ? `<div class="passive-traits">${passives.map(t=>`<b class="passive-trait ${t.key || ''}" title="${esc(t.effect || '')}">${esc(t.label)}<i>${esc(t.effect || '')}</i></b>`).join('')}</div>` : ''}</div>`;
-  })() : '';
-  renderEconomyPanel(p);
+  renderCharacterHud(p);
   renderFacilityPanel(ev, p);
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
   $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}${beat?.route ? ` · ${esc(beat.route.name)}` : ''}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';

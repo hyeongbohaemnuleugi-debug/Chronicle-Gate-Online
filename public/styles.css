@@ -391,3 +391,14 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 
 /* v5.7.1: dice-to-story handoff. The narrative result lives in the scene instead of a duplicate modal. */
 .inline-resolution{border:1px solid var(--line);border-radius:16px;padding:18px 20px;background:rgba(255,255,255,.035);display:grid;gap:10px;line-height:1.85}.inline-resolution.success{border-color:color-mix(in srgb,var(--good) 55%,var(--line))}.inline-resolution.failure{border-color:color-mix(in srgb,var(--danger) 55%,var(--line))}.inline-resolution .eyebrow{margin:0}.inline-resolution>b{font-size:16px}.inline-resolution p{margin:0;white-space:pre-line}.inline-resolution small{display:block;color:var(--muted);padding-top:8px;border-top:1px solid var(--line)}
+
+/* v6.2 MAX AGENCY: many context-valid choices without turning the screen into a wall of text */
+.choice-area{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));max-height:46vh;overflow:auto;padding-right:4px;align-content:start}.choice-area .story-choice{min-height:86px}.story-choice .choice-title-line b{font-size:11px}.choice-forecast{display:none}@media(max-width:900px){.choice-area{grid-template-columns:repeat(2,minmax(0,1fr));max-height:48vh}}@media(max-width:620px){.choice-area{grid-template-columns:1fr}}
+
+/* v6.6.2 - parallel story HUD + story inventory */
+.story-item-list{display:grid;gap:6px;padding:0 8px 9px}
+.story-item-chip{display:grid;gap:3px;padding:8px 9px;border:1px solid rgba(126,208,255,.18);border-radius:9px;background:rgba(126,208,255,.045)}
+.story-item-chip b{font-size:11px;color:var(--text)}
+.story-item-chip small{font-size:9px;color:var(--muted);line-height:1.35}
+.story-inventory summary{color:var(--accent2)}
+[data-theme="light"] .story-item-chip{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.09)}

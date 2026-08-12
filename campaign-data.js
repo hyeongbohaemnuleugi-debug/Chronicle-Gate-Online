@@ -1862,6 +1862,68 @@ const JOB_SKILL_DEFS = {
   ];
 })();
 
+
+// v6.6.0 - LIVING INVENTORY / ROUTE GATING
+// Expands 「막차 이후」 so items are acquired through multiple methods and can unlock or block entire routes.
+(function expandAfterLastTrainInventoryRoutes(){
+  const c=campaigns.find(item=>item.id==='echo');
+  if(!c?.parallelStory?.enabled) return;
+  const ps=c.parallelStory;
+  Object.assign(ps.locations,{
+    sealedroom:'폐쇄 점검실',
+    oldcontrol:'구형 신호 제어실'
+  });
+  Object.assign(ps.nodes,{
+    sealedroom:{location:'sealedroom',act:3,title:'봉인된 점검실',phase:'아이템 전용 구역',objective:'평소에는 열리지 않는 점검실에서 0번 운행과 관련된 물건을 찾는다.',text:[
+      '역무실 안쪽의 이중 잠금문은 마스터키와 보안카드가 모두 맞아야 열렸다. 안에는 오래된 운행 장비와 폐기된 노선도가 그대로 남아 있다.',
+      '벽에는 “비상시 두 운행표를 동시에 제어하지 말 것”이라는 경고가 붙어 있고, 잠긴 금속함 안에서 희미한 녹색 불빛이 새어 나온다.'
+    ],choices:[
+      {label:'금속함을 조사한다',stat:'지능',dc:8,next:'sealedroom',success:'금속함이 현재 신호실과 같은 보조 회로에 물려 있음을 알아냈다.',failure:'연결은 확인했지만 잠금 구조까지는 읽지 못했다.',flag:'root_box_seen'},
+      {label:'역무실로 돌아간다',stat:'민첩',dc:7,next:'office',success:'열어 둔 이중 잠금문을 통해 역무실로 돌아왔다.',failure:'문이 한 번 닫혔지만 다시 빠져나왔다.'},
+      {label:'구형 제어실로 간다',stat:'지혜',dc:8,next:'oldcontrol',success:'점검실 뒤 배선 통로가 구형 신호 제어실로 이어진다.',failure:'통로가 꼬였지만 신호 릴레이 소리를 따라 도착했다.',requiredTag:'root_key',choiceBadge:'핵심 아이템 루트'}
+    ]},
+    oldcontrol:{location:'oldcontrol',act:4,title:'구형 신호 제어실',phase:'숨겨진 결정 장면',objective:'정상 운행표와 0번 운행표가 처음 갈라진 지점을 직접 제어한다.',text:[
+      '벽 전체를 차지한 오래된 신호판에는 현재 시스템에 없는 0번 계통이 물리 스위치로 남아 있다. 최신 신호실보다 느리지만, 이 방에서는 두 운행표를 동시에 볼 수 있다.',
+      '여기까지 들어오려면 신호 복구키와 회로 장비가 필요하거나, 폐쇄 점검실에서 루트 코어키를 확보해야 한다. 아무 준비 없이 우연히 들어올 수 있는 장소가 아니다.'
+    ],choices:[
+      {label:'정상선만 살린다',stat:'지능',dc:10,next:'signal',success:'정상 첫차 계통을 우선해 지상 출구 쪽 신호를 안정시켰다.',failure:'일부만 복구됐지만 정상선이 우선권을 얻었다.',worldFlag:'normal_signal'},
+      {label:'0번 계통만 끊는다',stat:'지능',dc:11,next:'platform0gate',success:'구형 릴레이에서 0번 계통을 직접 분리했다.',failure:'완전 차단은 실패했지만 0번 신호가 크게 약해졌다.',worldFlag:'zero_sealed'},
+      {label:'두 계통을 관찰한다',stat:'지혜',dc:9,next:'oldcontrol',success:'두 운행표가 충돌하는 순간의 패턴을 기록했다.',failure:'원인은 못 찾았지만 충돌 시각 하나를 남겼다.',worldFlag:'evidence'},
+      {label:'신호실로 돌아간다',stat:'민첩',dc:8,next:'signal',success:'점검 계단을 통해 현재 신호실로 돌아왔다.',failure:'한 번 길을 잃었지만 신호실에 도착했다.'}
+    ]}
+  });
+
+  const node=(id)=>ps.nodes[id];
+  const choice=(nodeId,label)=>node(nodeId)?.choices?.find(x=>x.label===label);
+  const set=(nodeId,label,props)=>{ const ch=choice(nodeId,label); if(ch) Object.assign(ch,props); };
+
+  // Tool/role dependent choices: these never appear to players who cannot actually perform them.
+  set('courier_start','무전 주파수를 듣는다',{requiredAnyTags:['radio','scanner'],choiceBadge:'무전 장비'});
+  set('eng_start','역무실에 무전한다',{requiredTag:'radio',choiceBadge:'무전 장비'});
+  set('medic_start','역무실에 연락한다',{requiredTag:'radio',choiceBadge:'무전 장비'});
+  set('office','비상키를 찾는다',{requiredAnyTags:['authority','tool'],grantItem:'echo_story_master_key',choiceBadge:'접근 권한'});
+  set('lostfound','327번을 연다',{requiredAnyTags:['locker_token','keycard','master_key','tool'],grantItem:'echo_story_future_drive',worldFlag:'evidence',choiceBadge:'아이템 필요'});
+
+  // Gated late-game routes and endings. The story length is not a fixed chapter count: endings appear only when the world/player state makes them possible.
+  set('exit','밖으로 나간다',{requiredAnyWorldFlags:['exit_open','outside_contact'],minClockTick:6});
+  set('train','첫차를 타고 떠난다',{requiredWorldFlag:'normal_signal',minClockTick:14});
+  set('train','지상으로 나간다',{requiredAnyWorldFlags:['exit_open','outside_contact'],minClockTick:8});
+  set('train','0번 기록을 남긴다',{requiredWorldFlag:'evidence',minClockTick:10});
+  set('train','0번을 끝까지 막는다',{requiredWorldFlag:'zero_sealed',minClockTick:12});
+  set('train','0번 열차를 지켜본다',{requiredFlag:'entered_zero',minClockTick:12});
+
+  node('exit').choices.push(
+    {label:'훔친 키로 비상문을 연다',stat:'민첩',dc:8,next:'train',success:'마스터키로 비상문을 열고 누구보다 먼저 실제 바깥 통로를 확보했다. 하지만 키를 가져간 기록도 남아 있다.',ending:'thief_escape',requiredFlag:'stole_master_key',requiredTag:'master_key',minClockTick:6,choiceBadge:'행동의 대가'},
+    {label:'역의 균형을 지키러 돌아간다',stat:'지혜',dc:9,next:'oldcontrol',success:'나가는 대신 구형 제어실로 돌아가 다른 사람들의 탈출 경로를 유지하기로 했다.',requiredWorldFlag:'root_signal',requiredTag:'root_key',choiceBadge:'희귀 루트'}
+  );
+  node('oldcontrol').choices.push(
+    {label:'다른 사람을 먼저 내보낸다',stat:'체력',dc:10,next:'oldcontrol',success:'두 계통을 붙잡은 채 다른 사람들의 출구와 첫차 경로를 유지했다.',ending:'station_keeper',requiredWorldFlag:'root_signal',minClockTick:12,choiceBadge:'희귀 엔딩'}
+  );
+
+  // The original first-train urgency still exists in the fiction, but it no longer acts like a visible fixed chapter timer.
+  ps.clockLimit=999;
+})();
+
 export const CAMPAIGNS = campaigns.map(c => ({
   ...c,
   jobs: c.jobs.map((j, i) => ({roll:i+1,name:j[0],prime:j[1],skill:j[2],skillDef:JOB_SKILL_DEFS[j[0]],baseHp:10 + (i%3)*2})),

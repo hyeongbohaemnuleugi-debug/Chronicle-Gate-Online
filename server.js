@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '6.6.3-story-flow-evolution';
+const APP_VERSION = '6.7.0-shared-world-sandbox';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -114,7 +114,6 @@ async function reserveRoomCode() {
   for (let attempts = 0; attempts < 12; attempts += 1) {
     const candidate = randomRoomCode();
     if (rooms.has(candidate)) continue;
-    if (await roomSnapshotExists(candidate)) continue;
     return candidate;
   }
   throw new Error('고유한 방 코드를 생성하지 못했습니다.');
@@ -735,17 +734,7 @@ async function createRoom(hostName, socketId) {
   return { room, player };
 }
 
-async function getOrLoadRoom(roomCode) {
-  if (rooms.has(roomCode)) return rooms.get(roomCode);
-  if (loadLocks.has(roomCode)) return loadLocks.get(roomCode);
-  const promise = (async () => {
-    const loaded = await loadRoomSnapshot(roomCode);
-    if (loaded) { normalizeLoadedRoom(loaded); rooms.set(roomCode, loaded); armVoteTimer(loaded); }
-    return loaded;
-  })().finally(() => loadLocks.delete(roomCode));
-  loadLocks.set(roomCode, promise);
-  return promise;
-}
+async function getOrLoadRoom(roomCode) { return rooms.get(roomCode) || null; }
 
 function currentTurnPlayer(room) {
   if (!room?.players?.length) return null;
@@ -1063,7 +1052,17 @@ function parallelDynamicChoices(room,campaign,player,node){
   return dynamic.filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
 }
 function parallelSceneNarrative(room,campaign,player,node){
-  if(campaign?.id!=='echo' || !node) return [...(node?.text||[])];
+  if(!node) return [];
+  if(campaign?.id!=='echo'){
+    const out=[...(node?.text||[])];
+    const prime=player?.job?.prime;
+    const hook=node?.roleHooks?.[prime];
+    if(hook) out.push(`${player.job?.name || '당신'}의 관점에서는 ${hook}`);
+    const nearby=parallelNearby(room,player);
+    if(nearby.length) out.push(`이 장소에는 ${nearby.map(p=>p.name).join(', ')}도 도착해 있다. 함께 움직일지, 잠깐 역할을 나눌지, 다시 각자의 길로 갈지는 자동으로 정해지지 않는다.`);
+    else out.push('아직 이 장소에는 다른 플레이어가 보이지 않는다. 지금 선택한 길이 다른 사람의 동선과 겹치면 뒤의 장면에서 자연스럽게 마주칠 수 있다.');
+    return out.filter(Boolean).slice(0,6);
+  }
   const ps=parallelPlayerState(room,player);
   const loc=ps?.location || node.location;
   const job=player?.job?.name || '플레이어';
@@ -1134,9 +1133,9 @@ function parallelCurateChoices(room,campaign,player,node,dynamic,base){
   const inspect=ordinary.find(c=>/확인|조사|살핀|듣|분석|기록/.test(String(c.label||'')));
   const move=ordinary.find(c=>/간다|돌아|들어간|나간|향한다|따라/.test(String(c.label||'')));
   pushUnique(inspect); pushUnique(move);
-  ordinary.forEach(c=>{ if(selected.length<7) pushUnique(c); });
-  special.slice(2).forEach(c=>{ if(selected.length<7) pushUnique(c); });
-  return selected.slice(0,7);
+  ordinary.forEach(c=>{ if(selected.length<10) pushUnique(c); });
+  special.slice(2).forEach(c=>{ if(selected.length<10) pushUnique(c); });
+  return selected.slice(0,10);
 }
 
 function parallelRenderedScene(room,campaign,player){
@@ -1150,7 +1149,7 @@ function parallelRenderedScene(room,campaign,player){
   const dynamic=parallelDynamicChoices(room,campaign,player,node);
   // v6.6.4: valid contextual choices must never collapse to an empty scene.
   // Keep role/item-gated choices when available, but always preserve ordinary scene actions as a safe baseline.
-  const choices=[...dynamic,...base].slice(0,14);
+  const choices=parallelCurateChoices(room,campaign,player,node,dynamic,base);
   if(!choices.length){
     const fallback=(node.choices||[])
       .filter(choice=>!choice.requiredJob && !choice.requiredJobs && !choice.requiredTag && !choice.requiredTags && !choice.requiredAnyTag && !choice.requiredAnyTags && !choice.requiredFlag && !choice.requiredFlags && !choice.requiredWorldFlag && !choice.requiredWorldFlags)
@@ -1253,7 +1252,9 @@ function parallelEvaluateEnding(room,campaign){
   const lines=room.players.map(p=>parallelPlayerState(room,p)?.endingText || `${p.name}의 행방은 기록에 남지 않았다.`);
   const survivors=room.players.filter(p=>p.hp>0).length;
   room.storyComplete=true; room.phase='ending';
-  room.ending={victory:survivors>0,title:'막차 이후 · 각자의 아침',text:`같은 청명역에서 시작했지만 모두가 같은 길을 걷지는 않았다.\n\n${lines.join('\n')}\n\n${parallelWorldSummary(room).join(' ')}`};
+  const endingTitle=campaign?.id==='echo' ? '종착역 0번선 · 각자의 아침' : `${campaign?.title || '연대기'} · 서로 다른 결말`;
+  const endingLead=campaign?.id==='echo' ? '같은 역 안에 있었지만 모두가 같은 길을 걷지는 않았다.' : '같은 세계에서 시작했지만 각자의 선택과 동선은 달랐고, 만남과 이별 역시 플레이어들의 결정으로 남았다.';
+  room.ending={victory:survivors>0,title:endingTitle,text:`${endingLead}\n\n${lines.join('\n')}\n\n${parallelWorldSummary(room).join(' ')}`};
   return true;
 }
 function parallelAdvance(room,campaign,player,payload,ack){
@@ -1283,7 +1284,12 @@ function parallelAdvance(room,campaign,player,payload,ack){
     if(storyPass && choice.worldFlag) room.parallel.worldFlags[choice.worldFlag]=true;
     if(storyPass && choice.buff) ps.support=Math.min(2,Number(ps.support||0)+1);
     const rewardNotes=storyPass?parallelApplyChoiceRewards(room,campaign,player,choice):[];
-    if(choice.next) parallelSetNode(room,campaign,player,choice.next);
+    const nextId=storyPass ? (choice.nextSuccess || choice.next) : (choice.nextFailure || choice.nextSuccess || choice.next);
+    if(nextId==='__ENDING__'){
+      ps.ended=true; ps.ending='completed';
+      ps.endingText=`${player.name}은(는) 자신의 선택으로 ${campaign?.title || '이 이야기'}의 한 결말에 도달했다.`;
+      narrative=`${narrative} ${ps.endingText}`;
+    } else if(nextId) parallelSetNode(room,campaign,player,nextId);
     if(choice.combat) parallelStartEncounter(room,campaign,player,choice.combat);
     if(choice.ending){ ps.ended=true; ps.ending=choice.ending; ps.endingText=parallelEndingText(choice.ending,player,room); narrative=`${narrative} ${ps.endingText}`; }
     if(success){ room.threat=Math.max(0,room.threat-(roll===20?1:0)); consequence=roll===20?'대성공 · 위협 -1':'성공'; }
@@ -1295,11 +1301,13 @@ function parallelAdvance(room,campaign,player,payload,ack){
   room.parallel.clockTick=Number(room.parallel.clockTick||0)+1;
   room.parallel.incidentLog.push({playerId:player.id,playerName:player.name,location:ps.location,choice:choice.label,text:narrative,ts:Date.now()}); if(room.parallel.incidentLog.length>40)room.parallel.incidentLog.splice(0,room.parallel.incidentLog.length-40);
   room.story=Object.values(room.parallel.playerStates).reduce((sum,s)=>sum+Number(s.progress||0),0);
-  room.lastResolution={source:'parallel-story',ok:success||grade==='mixed',outcomeGrade:grade,result:roll,total,dc,playerId:player.id,playerName:player.name,choiceLabel:choice.label,text:narrative,consequence,continueLabel:'결과를 확인하고 다음 사람의 턴으로'};
-  room.phase='resolution'; room.pendingContinue={source:'parallel-story',actorId:player.id};
+  room.lastResolution={source:'parallel-story',ok:success||grade==='mixed',outcomeGrade:grade,result:roll,total,dc,playerId:player.id,playerName:player.name,choiceLabel:choice.label,text:narrative,consequence};
+  room.phase='story'; room.pendingContinue=null;
   pushChat(room,{type:'action',author:player.name,text:`${parallelLocationLabel(campaign,scene.location)} · ${choice.label}`});
   pushChat(room,{type:success?'success':'failure',author:'GM',text:automatic?'플레이어의 관계·이동 선택이 그대로 반영되었습니다.':`${choice.stat} 판정 ${total} / DC ${dc} → ${grade==='critical'?'대성공':grade==='success'?'성공':grade==='mixed'?'부분 성공':grade==='disaster'?'큰 실패':'실패'}`});
+  advanceSkillClock(room,1);
   if(parallelEvaluateEnding(room,campaign)){ sync(room); return ack?.({ok:true,ending:true}); }
+  advanceTurn(room);
   sync(room); ack?.({ok:true,result:ps.lastPersonalResult});
 }
 
@@ -2331,8 +2339,8 @@ function publicRoom(room) {
     facilityUses: room.facilityUses || {},
     agencyMemory: room.agencyMemory || { actions:[], clues:0, position:0, rapport:0, scars:0 },
     maxThreat: MAX_THREAT,
-    resumeBarrier: Boolean(room.resumeBarrier),
-    resumeMissingNames: room.resumeBarrier ? room.players.filter(player => (room.resumeRequiredIds || []).includes(player.id) && !player.connected).map(player => player.name) : [],
+    resumeBarrier: false,
+    resumeMissingNames: [],
     parallel: room.parallel?.enabled && campaign?.parallelStory?.enabled ? {
       enabled:true, mode:room.parallel.mode || 'split-party', clockStart:room.parallel.clockStart, clockTick:Number(room.parallel.clockTick||0), clockLimit:Number(room.parallel.clockLimit||30),
       worldFlags:{...(room.parallel.worldFlags||{})}, worldSummary:parallelWorldSummary(room), links:{...(room.parallel.links||{})}, offers:{...(room.parallel.offers||{})},
@@ -2356,7 +2364,6 @@ function sync(room) {
   room.lastActiveAt = Date.now();
   room.revision = Number(room.revision || 0) + 1;
   io.to(room.code).emit('state', publicRoom(room));
-  scheduleRoomSave(room);
 }
 
 function pushChat(room, entry) {
@@ -3131,12 +3138,7 @@ function reconcileResumeBarrier(room) {
   }
   return false;
 }
-function resumeBlocked(room, ack) {
-  if (!room?.resumeBarrier) return false;
-  const missing = room.players.filter(player => (room.resumeRequiredIds || []).includes(player.id) && !player.connected).map(player => player.name);
-  ack?.({ ok:false, error:`이어하기 대기 중입니다. 기존 참가자 전원이 접속해야 진행할 수 있습니다.${missing.length ? ` 기다리는 중: ${missing.join(', ')}` : ''}` });
-  return true;
-}
+function resumeBlocked(){ return false; }
 async function resumableCandidates(name) {
   const exact = sanitize(name || '', 18);
   if (!exact) return [];
@@ -3198,40 +3200,8 @@ function resolveAbandonVoteIfReady(room) {
 io.on('connection', socket => {
   socket.emit('campaigns', campaignPublic());
 
-  socket.on('session:lookup', async (payload = {}, ack) => {
-    const name = sanitize(payload.name || '', 18);
-    if (!name) return ack?.({ ok:false, error:'진행 중이던 닉네임을 입력하세요.' });
-    const candidates = await resumableCandidates(name);
-    const now = Date.now();
-    return ack?.({ ok:true, candidates:candidates.map(candidate => ({
-      ...candidate,
-      updatedLabel: candidate.updatedAt ? new Date(candidate.updatedAt).toLocaleString('ko-KR', { timeZone:'Asia/Seoul', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '저장됨',
-    })) });
-  });
-
-  socket.on('session:resume', async (payload = {}, ack) => {
-    const name = sanitize(payload.name || '', 18);
-    const roomCode = String(payload.roomCode || '').toUpperCase().trim();
-    if (!name || !ROOM_PATTERN.test(roomCode)) return ack?.({ ok:false, error:'이어할 기록을 다시 선택하세요.' });
-    const room = await getOrLoadRoom(roomCode);
-    if (!room || !isResumableRoom(room)) return ack?.({ ok:false, error:'이미 종료되었거나 이어할 수 없는 세션입니다.' });
-    const player = exactNamePlayer(room, name);
-    if (!player) return ack?.({ ok:false, error:'해당 진행 기록에서 닉네임을 정확히 찾지 못했습니다.' });
-    const oldSocketId = player.socketId;
-    if (oldSocketId && oldSocketId !== socket.id) io.sockets.sockets.get(oldSocketId)?.leave(room.code);
-    player.socketId = socket.id;
-    player.connected = true;
-    room.strictPartyResume = true;
-    socket.join(room.code);
-    armResumeBarrier(room);
-    reconcileResumeBarrier(room);
-    reconcileCombatRound(room);
-    pushChat(room, { type:'system', text:`${player.name} 님이 저장된 연대기로 돌아왔습니다.` });
-    sync(room);
-    scheduleRoomSave(room, 0);
-    void appendSessionEvent(room.code, 'session_resumed', { playerName:player.name });
-    return ack?.({ ok:true, resumed:true, roomCode:room.code, playerToken:player.id, state:publicRoom(room) });
-  });
+  socket.on('session:lookup', (_payload, ack) => ack?.({ok:false,error:'이어하기 기능은 제거되었습니다.'}));
+  socket.on('session:resume', (_payload, ack) => ack?.({ok:false,error:'이어하기 기능은 제거되었습니다.'}));
 
   socket.on('room:create', async (payload = {}, ack) => {
     try {
@@ -3239,7 +3209,6 @@ io.on('connection', socket => {
       const { room, player } = await createRoom(name, socket.id);
       socket.join(room.code);
       pushChat(room, { type: 'system', text: `${name} 님이 방을 만들었습니다.` });
-      scheduleRoomSave(room, 0);
       void appendSessionEvent(room.code, 'room_created', { hostName: name });
       ack?.({ ok: true, roomCode: room.code, playerToken: player.id, state: publicRoom(room) });
     } catch (error) {
@@ -3265,7 +3234,6 @@ io.on('connection', socket => {
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);
       resolveAbandonVoteIfReady(room);
-      reconcileResumeBarrier(room);
       sync(room);
       void appendSessionEvent(room.code, 'player_reconnected', { playerName: existing.name });
       return ack?.({ ok: true, roomCode: room.code, playerToken: existing.id, state: publicRoom(room) });
@@ -3435,7 +3403,7 @@ io.on('connection', socket => {
       room.deck = [];
       initializeParallelStory(room, campaign);
       currentTurnPlayer(room);
-      pushChat(room, { type:'system', text:'「막차 이후」는 각자 다른 장소에서 시작합니다. 만나거나 헤어지는 것도 이야기 도중 플레이어들의 선택으로 결정됩니다.' });
+      pushChat(room, { type:'system', text:`「${campaign.title}」는 각 플레이어가 서로 다른 시작점에서 이야기를 시작합니다. 진행 중 같은 장소에 도착하면 만나고, 함께 다니거나 다시 헤어지는 것도 각자의 선택으로 결정됩니다.` });
       sync(room);
       void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name), mode:'parallel-story' });
       return ack?.({ ok:true, parallel:true });
@@ -4036,7 +4004,6 @@ io.on('connection', socket => {
     if (!text) return ack?.({ ok: false, error: '메시지가 비어 있습니다.' });
     pushChat(room, { type: player.host && payload.narration ? 'narration' : 'chat', author: player.name, text });
     io.to(room.code).emit('chat:new', room.chat[room.chat.length - 1]);
-    scheduleRoomSave(room);
     ack?.({ ok: true });
   });
 
@@ -4082,13 +4049,11 @@ io.on('connection', socket => {
       const player = room.players.find(member => member.socketId === socket.id);
       if (!player) continue;
       player.connected = false;
-        if (room.strictPartyResume) armResumeBarrier(room);
       player.socketId = null;
       pushChat(room, { type: 'system', text: `${player.name} 님의 연결이 끊겼습니다.` });
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);
       resolveAbandonVoteIfReady(room);
-      reconcileResumeBarrier(room);
       sync(room);
       break;
     }

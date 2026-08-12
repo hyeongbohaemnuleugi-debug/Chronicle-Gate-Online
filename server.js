@@ -1148,9 +1148,15 @@ function parallelRenderedScene(room,campaign,player){
     .map((choice,index)=>({id:`base:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}))
     .filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
   const dynamic=parallelDynamicChoices(room,campaign,player,node);
-  // v6.6.3: preserve every choice that is actually valid for this exact scene/player.
-  // The previous seven-choice curation could hide legitimate item, route, or interaction options.
+  // v6.6.4: valid contextual choices must never collapse to an empty scene.
+  // Keep role/item-gated choices when available, but always preserve ordinary scene actions as a safe baseline.
   const choices=[...dynamic,...base].slice(0,14);
+  if(!choices.length){
+    const fallback=(node.choices||[])
+      .filter(choice=>!choice.requiredJob && !choice.requiredJobs && !choice.requiredTag && !choice.requiredTags && !choice.requiredAnyTag && !choice.requiredAnyTags && !choice.requiredFlag && !choice.requiredFlags && !choice.requiredWorldFlag && !choice.requiredWorldFlags)
+      .map((choice,index)=>({id:`fallback:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
+    choices.push(...fallback.slice(0,8));
+  }
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,

@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '6.5.0-parallel-chronicle';
+const APP_VERSION = '6.6.0-living-inventory';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -638,8 +638,12 @@ function normalizeLoadedRoom(room) {
       if (!room.parallel.playerStates?.[player.id]) {
         const nodeId=campaign.parallelStory.startByJob?.[player.job?.name] || campaign.parallelStory.startFallback;
         const node=campaign.parallelStory.nodes?.[nodeId];
-        room.parallel.playerStates[player.id]={nodeId,location:node?.location||'concourse',previousLocation:null,progress:0,history:[],flags:{},ended:false,ending:null,endingText:null,pendingTravel:null,support:0,lastPersonalResult:null};
+        room.parallel.playerStates[player.id]={nodeId,location:node?.location||'concourse',previousLocation:null,progress:0,history:[],flags:{},items:parallelStartItemsFor(player),ended:false,ending:null,endingText:null,pendingTravel:null,support:0,lastPersonalResult:null};
       }
+      const ps=room.parallel.playerStates[player.id];
+      ps.flags ||= {}; ps.items = Array.isArray(ps.items) ? [...new Set(ps.items.filter(id=>PARALLEL_STORY_ITEM_DEFS[id]))] : parallelStartItemsFor(player);
+      // v6.5.1 migration: remove accidental story-item objects from the generic equipment inventory.
+      if(Array.isArray(player.inventory)) player.inventory = player.inventory.filter(item=>typeof item==='string');
     }
   }
   if (!campaign || room.phase === 'lobby') {
@@ -787,6 +791,170 @@ function storyEligiblePlayers(room) {
 
 // v6.5.0 - AFTER LAST TRAIN parallel-character sandbox
 function pairKey(a,b){ return [String(a),String(b)].sort().join(':'); }
+const PARALLEL_STORY_ITEM_DEFS={
+  echo_story_toolkit:{id:'echo_story_toolkit',name:'절연 공구 세트',tags:['tool','circuit','maintenance'],value:2},
+  echo_story_tester:{id:'echo_story_tester',name:'휴대용 회로 테스터',tags:['tool','circuit','tester'],value:3},
+  echo_story_flashlight:{id:'echo_story_flashlight',name:'점검용 손전등',tags:['tool','light'],value:2},
+  echo_story_battery:{id:'echo_story_battery',name:'예비 건전지',tags:['battery','trade'],value:1},
+  echo_story_radio:{id:'echo_story_radio',name:'역무용 무전기',tags:['radio','authority'],value:3},
+  echo_story_scanner:{id:'echo_story_scanner',name:'주파수 스캐너',tags:['radio','scanner','delivery'],value:3},
+  echo_story_keyring:{id:'echo_story_keyring',name:'직원 키링',tags:['key','authority'],value:2},
+  echo_story_master_key:{id:'echo_story_master_key',name:'비상 마스터키',tags:['master_key','key','authority'],value:5},
+  echo_story_keycard:{id:'echo_story_keycard',name:'보안카드',tags:['keycard','key','security'],value:4},
+  echo_story_signal_key:{id:'echo_story_signal_key',name:'신호 복구키',tags:['signal_key','key','signal'],value:5},
+  echo_story_access_token:{id:'echo_story_access_token',name:'구형 점검 토큰',tags:['access_token','key','trade'],value:3},
+  echo_story_locker_token:{id:'echo_story_locker_token',name:'327번 보관함 토큰',tags:['locker_token','key'],value:2},
+  echo_story_medkit:{id:'echo_story_medkit',name:'휴대용 구급가방',tags:['medical','tool'],value:3},
+  echo_story_water:{id:'echo_story_water',name:'생수',tags:['consumable','trade'],value:1},
+  echo_story_bar:{id:'echo_story_bar',name:'셔터 고정봉',tags:['bar','force','tool'],value:2},
+  echo_story_route_note:{id:'echo_story_route_note',name:'배달 경로 메모',tags:['route','delivery'],value:1},
+  echo_story_parcel:{id:'echo_story_parcel',name:'0번 승강장 배송물',tags:['parcel','delivery'],value:4},
+  echo_story_future_drive:{id:'echo_story_future_drive',name:'미래 기록 저장장치',tags:['evidence_drive','evidence','data'],value:5},
+  echo_story_zero_ticket:{id:'echo_story_zero_ticket',name:'0번 승차권',tags:['zero_ticket','ticket','anomaly'],value:6},
+  echo_story_root_key:{id:'echo_story_root_key',name:'운행 루트 코어키',tags:['root_key','signal','anomaly'],value:7},
+};
+const PARALLEL_JOB_START_ITEMS={
+  '시설기사':['echo_story_toolkit','echo_story_tester','echo_story_radio'],
+  '야간 역무원':['echo_story_radio','echo_story_keyring'],
+  '보안요원':['echo_story_keyring','echo_story_bar','echo_story_flashlight'],
+  '심야 배달원':['echo_story_route_note','echo_story_scanner'],
+  '민원 상담사':[],
+  '응급구조사':['echo_story_medkit','echo_story_radio'],
+};
+const PARALLEL_JOB_TAGS={
+  '시설기사':['engineer','tool','circuit','maintenance'],
+  '야간 역무원':['staff','authority','radio'],
+  '보안요원':['security','key','force'],
+  '심야 배달원':['courier','delivery','route'],
+  '민원 상담사':['social','negotiation'],
+  '응급구조사':['medical','rescue'],
+};
+function parallelStoryItem(id){ return PARALLEL_STORY_ITEM_DEFS[id] || null; }
+function parallelStartItemsFor(player){ return [...(PARALLEL_JOB_START_ITEMS[player?.job?.name]||[])]; }
+function parallelStoryItems(room,player){
+  const ps=parallelPlayerState(room,player);
+  if(!ps) return [];
+  ps.items = Array.isArray(ps.items) ? [...new Set(ps.items.filter(id=>PARALLEL_STORY_ITEM_DEFS[id]))] : parallelStartItemsFor(player);
+  return ps.items;
+}
+function parallelHasStoryItem(room,player,id){ return parallelStoryItems(room,player).includes(id); }
+function parallelGrantStoryItem(room,player,id){
+  if(!parallelStoryItem(id)) return false;
+  const items=parallelStoryItems(room,player);
+  if(items.includes(id)) return false;
+  items.push(id); parallelPlayerState(room,player).items=items; return true;
+}
+function parallelConsumeStoryItem(room,player,id){
+  const items=parallelStoryItems(room,player); const idx=items.indexOf(id);
+  if(idx<0) return false; items.splice(idx,1); parallelPlayerState(room,player).items=items; return true;
+}
+function parallelPlayerTags(room,player){
+  const ps=parallelPlayerState(room,player);
+  const world=room?.parallel?.worldFlags || {};
+  const tags=new Set([...(PARALLEL_JOB_TAGS[player?.job?.name]||[])]);
+  for(const id of parallelStoryItems(room,player)) for(const tag of (parallelStoryItem(id)?.tags||[])) tags.add(String(tag));
+  for(const id of (player?.inventory||[])){
+    const lower=String(id||'').toLowerCase();
+    if(lower.includes('radio')) tags.add('radio');
+    if(lower.includes('key')) tags.add('key');
+    if(lower.includes('med')) tags.add('medical');
+    if(lower.includes('tool')||lower.includes('tester')||lower.includes('flash')) tags.add('tool');
+  }
+  if(world.master_key) tags.add('master_key'), tags.add('key');
+  if(world.future_item) tags.add('parcel');
+  if(ps?.flags?.locker327 || ps?.flags?.locker327_open) tags.add('locker_token'), tags.add('key');
+  return tags;
+}
+function parallelChoiceVisible(room,campaign,player,choice,node=null){
+  if(!choice) return false;
+  const ps=parallelPlayerState(room,player); const tags=parallelPlayerTags(room,player); const world=room?.parallel?.worldFlags||{};
+  const list=v=>Array.isArray(v)?v:(v==null||v==='')?[]:[v];
+  const reqJobs=list(choice.requiredJobs||choice.requiredJob); if(reqJobs.length&&!reqJobs.includes(player?.job?.name)) return false;
+  const reqTags=list(choice.requiredTags||choice.requiredTag); if(reqTags.some(tag=>!tags.has(String(tag)))) return false;
+  const anyTags=list(choice.requiredAnyTag||choice.requiredAnyTags); if(anyTags.length&&!anyTags.some(tag=>tags.has(String(tag)))) return false;
+  const forbid=list(choice.forbiddenTags||choice.forbiddenTag); if(forbid.some(tag=>tags.has(String(tag)))) return false;
+  const reqItems=list(choice.requiredItems||choice.requiredItem); if(reqItems.some(id=>!parallelHasStoryItem(room,player,id))) return false;
+  const reqFlags=list(choice.requiredFlags||choice.requiredFlag); if(reqFlags.some(flag=>!ps?.flags?.[flag])) return false;
+  const reqWorld=list(choice.requiredWorldFlags||choice.requiredWorldFlag); if(reqWorld.some(flag=>!world?.[flag])) return false;
+  const anyWorld=list(choice.requiredAnyWorldFlag||choice.requiredAnyWorldFlags); if(anyWorld.length&&!anyWorld.some(flag=>world?.[flag])) return false;
+  const hideFlags=list(choice.hideIfFlags||choice.hideIfFlag); if(hideFlags.some(flag=>ps?.flags?.[flag])) return false;
+  if(Number.isFinite(Number(choice.minClockTick)) && Number(room.parallel?.clockTick||0)<Number(choice.minClockTick)) return false;
+  if(Number.isFinite(Number(choice.maxClockTick)) && Number(room.parallel?.clockTick||0)>Number(choice.maxClockTick)) return false;
+  if(Number(choice.costCoins||0)>Number(player?.coins||0)) return false;
+  return true;
+}
+function parallelAddAcquisitionChoices(room,campaign,player,node){
+  if(campaign?.id!=='echo') return [];
+  const ps=parallelPlayerState(room,player); if(!ps||!node) return [];
+  const tags=parallelPlayerTags(room,player); const world=room.parallel?.worldFlags||{}; const loc=ps.location||node.location; const out=[];
+  const add=c=>out.push({kind:c.kind||'parallel-base',path:c.path||statPath(c.stat||'지혜'),choiceBadge:c.choiceBadge||'아이템',automatic:c.automatic!==false,...c});
+  if(loc==='concourse'){
+    if(!parallelHasStoryItem(room,player,'echo_story_water') && Number(player.coins||0)>=1) add({id:'shop:water',label:'자판기에서 생수를 산다',stat:'매력',dc:7,next:'concourse',costCoins:1,grantItem:'echo_story_water',success:'자판기에서 생수를 한 병 뽑았다.',choiceBadge:'구매'});
+    if(!parallelHasStoryItem(room,player,'echo_story_battery') && Number(player.coins||0)>=1) add({id:'shop:battery',label:'자판기에서 건전지를 산다',stat:'지능',dc:7,next:'concourse',costCoins:1,grantItem:'echo_story_battery',success:'비상용 건전지를 확보했다.',choiceBadge:'구매'});
+    if((world.public_call||ps.flags?.missing_passenger) && parallelHasStoryItem(room,player,'echo_story_water') && !parallelHasStoryItem(room,player,'echo_story_access_token')) add({id:'barter:cleaner',label:'청소원과 물물교환한다',stat:'매력',dc:7,next:'concourse',consumeItem:'echo_story_water',grantItem:'echo_story_access_token',success:'생수를 건네고 오래된 점검 토큰을 받았다. 직원용 설비 일부가 이 토큰에 반응한다.',choiceBadge:'물물교환'});
+  }
+  if(loc==='service'){
+    if(!parallelHasStoryItem(room,player,'echo_story_flashlight')&&!ps.flags?.picked_flashlight) add({id:'pickup:flashlight',automatic:false,label:'바닥의 손전등을 줍는다',stat:'지혜',dc:7,next:'service',grantItem:'echo_story_flashlight',flag:'picked_flashlight',success:'벽 아래 굴러간 점검용 손전등을 주웠다.',failure:'손전등은 찾았지만 켜지지 않는다. 배터리를 바꾸면 쓸 수 있을 것 같다.',choiceBadge:'줍기'});
+    if(!parallelHasStoryItem(room,player,'echo_story_battery')&&!ps.flags?.picked_battery) add({id:'pickup:battery',automatic:false,label:'공구함에서 건전지를 찾는다',stat:'지능',dc:8,next:'service',grantItem:'echo_story_battery',flag:'picked_battery',success:'공구함 안쪽에서 밀봉된 예비 건전지를 찾았다.',failure:'건전지는 하나뿐이고 상태가 좋지 않다. 그래도 한 번은 쓸 수 있다.',choiceBadge:'탐색 획득'});
+  }
+  if(loc==='maintenance'){
+    if((tags.has('access_token')||tags.has('keycard')||tags.has('master_key'))&&!parallelHasStoryItem(room,player,'echo_story_tester')) add({id:'cabinet:tester',label:'점검 캐비닛을 연다',stat:'지능',dc:7,next:'maintenance',grantItem:'echo_story_tester',success:'점검 토큰이 승인되며 회로 테스터가 든 캐비닛이 열렸다.',choiceBadge:'아이템 해금'});
+  }
+  if(loc==='office'){
+    if(tags.has('authority')&&!parallelHasStoryItem(room,player,'echo_story_master_key')) add({id:'legal:masterkey',label:'키 보관함을 연다',stat:'지혜',dc:7,next:'office',grantItem:'echo_story_master_key',success:'직원 권한으로 비상 마스터키를 꺼냈다.',choiceBadge:'직업 권한'});
+    if(!tags.has('authority')&&tags.has('tool')&&!parallelHasStoryItem(room,player,'echo_story_master_key')&&!ps.flags?.stole_master_key) add({id:'steal:masterkey',automatic:false,label:'키 보관함을 몰래 연다',stat:'민첩',dc:10,next:'office',grantItem:'echo_story_master_key',flag:'stole_master_key',worldFlag:'theft_recorded',threatDelta:2,success:'잠금 장치를 건드려 마스터키를 가져왔다. CCTV 기록에는 이 행동이 남았다.',failure:'보관함은 열었지만 경보 기록도 함께 남았다.',choiceBadge:'훔치기'});
+  }
+  if(loc==='platform1'){
+    if(tags.has('medical')&&!parallelHasStoryItem(room,player,'echo_story_keycard')&&!world.rescued_passenger) add({id:'rescue:keycard',automatic:false,label:'쓰러진 사람을 치료한다',stat:'체력',dc:8,next:'platform1',grantItem:'echo_story_keycard',worldFlag:'rescued_passenger',heal:1,success:'호흡을 안정시키자 그는 시설팀 보안카드를 건넸다. “신호실 문에 이게 필요할 겁니다.”',failure:'의식은 돌아왔고 보안카드를 건네받았지만 환자는 움직이기 어렵다.',choiceBadge:'구조 보상'});
+  }
+  if(loc==='lostfound'){
+    if((tags.has('locker_token')||tags.has('keycard')||tags.has('master_key')||tags.has('tool'))&&!parallelHasStoryItem(room,player,'echo_story_future_drive')) add({id:'locker:future',automatic:false,label:'327번 보관함을 연다',stat:'지능',dc:8,next:'lostfound',grantItem:'echo_story_future_drive',flag:'locker327_open',worldFlag:'evidence',success:'327번 안에서 아직 생성되지 않은 CCTV 파일이 든 저장장치를 확보했다.',failure:'잠금은 풀었지만 파일 일부가 깨져 있다. 그래도 시간 정보는 남았다.',choiceBadge:'아이템 해금'});
+    if(!parallelHasStoryItem(room,player,'echo_story_keycard')&&tags.has('tool')&&!ps.flags?.stole_keycard) add({id:'steal:keycard',automatic:false,label:'보관된 보안카드를 챙긴다',stat:'민첩',dc:9,next:'lostfound',grantItem:'echo_story_keycard',flag:'stole_keycard',worldFlag:'theft_recorded',threatDelta:1,success:'분실물 봉투에서 보안카드를 빼냈다. 당장은 쓸 수 있지만 기록에는 남는다.',failure:'카드는 얻었지만 봉투 훼손 흔적을 감출 수 없었다.',choiceBadge:'훔치기'});
+  }
+  if(loc==='platform0'){
+    if(!parallelHasStoryItem(room,player,'echo_story_zero_ticket')&&!ps.flags?.picked_zero_ticket) add({id:'pickup:zero-ticket',automatic:false,label:'빈 좌석의 승차권을 줍는다',stat:'지혜',dc:9,next:'platform0',grantItem:'echo_story_zero_ticket',flag:'picked_zero_ticket',success:'목적지가 없는 0번 승차권을 주웠다. 표면에는 현재 시간과 다른 시각이 번갈아 나타난다.',failure:'승차권을 집는 순간 열차 문이 한 번 닫혔다 열렸다. 표는 손에 남았다.',choiceBadge:'위험한 줍기'});
+  }
+  if(loc==='signal'){
+    if(tags.has('signal_key')&&tags.has('circuit')&&!world.root_signal) add({id:'route:oldcontrol',label:'복구키로 폐쇄 제어실을 연다',stat:'지능',dc:7,next:'oldcontrol',success:'복구키와 회로 테스터가 동시에 반응하며 지도에 없던 제어실 문이 열렸다.',choiceBadge:'특수 루트'});
+  }
+  if(loc==='sealedroom' && !parallelHasStoryItem(room,player,'echo_story_root_key')) add({id:'pickup:rootkey',automatic:false,label:'루트 코어키를 회수한다',stat:'지능',dc:9,next:'sealedroom',grantItem:'echo_story_root_key',worldFlag:'root_key_found',success:'보관함에서 운행 루트 코어키를 꺼냈다. 정상 운행표와 0번 운행표를 모두 건드릴 수 있는 물건이다.',failure:'경보가 켜졌지만 코어키는 손에 넣었다.',choiceBadge:'핵심 아이템'});
+  return out;
+}
+function parallelEchoCapabilityChoices(room,campaign,player,node){
+  if(campaign?.id!=='echo') return [];
+  const ps=parallelPlayerState(room,player); if(!ps||!node) return [];
+  const tags=parallelPlayerTags(room,player); const loc=ps.location||node.location; const extra=[];
+  const add=c=>extra.push({kind:'parallel-base',path:c.path||statPath(c.stat),choiceBadge:c.choiceBadge||'상황 대응',...c});
+  if(tags.has('radio')&&['service','office','signal','concourse','track'].includes(loc)&&!ps.flags?.[`radio_scan_${loc}`]) add({id:`echo:radio:${loc}`,label:'무전 주파수를 듣는다',stat:'지혜',dc:8,next:loc==='track'?'signal':loc==='service'?'office':loc,success:'잡음 사이로 실제 동선과 겹치지 않는 한 문장이 잡혔다. 무전망이 역 안의 다른 경로를 가리킨다.',failure:'내용은 흐렸지만 같은 채널이 반복 송신되고 있음을 확인했다.',flag:`radio_scan_${loc}`,worldFlag:'radio_link',choiceBadge:'무전 장비'});
+  if((tags.has('master_key')||tags.has('key')||tags.has('keycard'))&&loc==='platform0gate'&&!room.parallel?.worldFlags?.zero_gate_open) add({id:'echo:key:platform0',automatic:true,label:tags.has('master_key')?'마스터키로 0번 방화문을 연다':'열쇠로 0번 방화문을 연다',stat:'지혜',dc:7,next:'platform0',success:'잠금 장치가 해제되며 0번 방화문이 먼저 열렸다.',worldFlag:'zero_gate_open',flag:'used_key_platform0',choiceBadge:'열쇠 사용'});
+  if((tags.has('tool')||tags.has('circuit'))&&['maintenance','signal','platform0gate','cctv'].includes(loc)&&!ps.flags?.[`diagnose_${loc}`]) add({id:`echo:tool:${loc}`,label:'장비로 설비를 진단한다',stat:'지능',dc:8,next:loc==='platform0gate'?'service':loc,success:'배선과 장치의 실제 연결이 드러나며 숨은 경로를 읽어냈다.',failure:'완전한 원인은 못 찾았지만 이상 설비가 어디와 이어지는지는 확인했다.',flag:`diagnose_${loc}`,worldFlag:loc==='signal'?'normal_signal':'evidence',choiceBadge:'장비 사용'});
+  if(tags.has('medical')&&['platform1','concourse','track','exit'].includes(loc)&&!ps.flags?.[`medical_${loc}`]) add({id:`echo:medical:${loc}`,label:'구급가방으로 상태를 안정시킨다',stat:'체력',dc:8,next:loc,success:'호흡과 동선을 정리해 더 큰 혼란을 막았다.',failure:'완벽한 처치는 아니지만 당장 버틸 수 있을 만큼 상태를 붙잡았다.',flag:`medical_${loc}`,heal:1,choiceBadge:'응급 장비',path:'bond'});
+  if(tags.has('bar')&&['exit','concourse','platform0gate'].includes(loc)&&!ps.flags?.[`brace_${loc}`]) add({id:`echo:brace:${loc}`,label:'고정봉으로 문을 버틴다',stat:'근력',dc:8,next:loc,success:'셔터와 문이 잠시 멈추며 다른 사람도 지나갈 시간을 벌었다.',failure:'완전 고정은 아니지만 닫히는 속도를 늦췄다.',flag:`brace_${loc}`,worldFlag:loc==='exit'?'exit_open':(loc==='concourse'?'gate_open':'zero_gate_open'),choiceBadge:'도구 사용',path:'survival'});
+  if(tags.has('parcel')&&['platform0','signal','lostfound'].includes(loc)&&!ps.flags?.[`parcel_${loc}`]) add({id:`echo:parcel:${loc}`,label:'배송물의 수령 정보를 대조한다',stat:'지능',dc:8,next:loc==='lostfound'?'signal':loc,success:'배송지 표기가 현재 역사 구조와 어긋난다는 점이 단서가 되었다.',failure:'인쇄 일부만 읽혔지만 0번 경로와 연결된 주소라는 건 확실하다.',flag:`parcel_${loc}`,worldFlag:'evidence',choiceBadge:'소지품 활용'});
+  if(tags.has('master_key')&&tags.has('keycard')&&loc==='office'&&!ps.flags?.sealed_room_found) add({id:'echo:sealed-room',label:'이중 잠금문을 연다',stat:'지능',dc:7,next:'sealedroom',success:'마스터키와 보안카드가 동시에 승인되며 폐쇄 점검실이 열렸다.',flag:'sealed_room_found',choiceBadge:'아이템 전용 루트'});
+  if(tags.has('root_key')&&loc==='oldcontrol'&&!room.parallel?.worldFlags?.root_signal) add({id:'echo:root-route',label:'코어키로 두 운행표를 묶는다',stat:'지능',dc:10,next:'oldcontrol',success:'정상 첫차와 0번 운행표가 하나의 제어 화면에 잡혔다. 이제 어느 쪽도 일방적으로 역을 덮어쓰지 못한다.',worldFlag:'root_signal',choiceBadge:'핵심 아이템'});
+  if(tags.has('evidence_drive')&&['signal','cctv'].includes(loc)&&!ps.flags?.future_drive_used) add({id:'echo:future-drive',label:'미래 기록을 대조한다',stat:'지능',dc:7,next:loc,success:'저장장치의 미래 타임코드와 현재 신호를 겹쳐 안전한 조작 순서를 찾아냈다.',flag:'future_drive_used',worldFlag:'evidence',choiceBadge:'단서 아이템'});
+  if(tags.has('zero_ticket')&&loc==='platform0'&&Number(room.parallel?.clockTick||0)>=10) add({id:'ending:zero-passenger',label:'0번 승차권으로 열차에 탄다',stat:'지혜',dc:10,next:'train',success:'승차권이 개찰되자 빈 열차가 처음으로 목적지를 표시했다.',ending:'zero_passenger',choiceBadge:'비밀 엔딩'});
+  if(room.parallel?.worldFlags?.root_signal&&room.parallel?.worldFlags?.normal_signal&&room.parallel?.worldFlags?.zero_sealed&&room.parallel?.worldFlags?.evidence&&loc==='oldcontrol') add({id:'ending:all-clear',label:'청명역 운행을 완전히 정상화한다',stat:'지능',dc:11,next:'train',success:'두 운행표의 충돌이 멈추고 역의 모든 시계가 같은 시간을 가리켰다.',ending:'all_clear',choiceBadge:'진엔딩 조건'});
+  return extra;
+}
+function parallelApplyChoiceRewards(room,campaign,player,choice){
+  if(!player||!choice) return [];
+  const notes=[];
+  const cost=Math.max(0,Number(choice.costCoins||0)); if(cost){ player.coins=Math.max(0,Number(player.coins||0)-cost); notes.push(`코인 -${cost}`); }
+  const consume=[...(choice.consumeItems||[])]; if(choice.consumeItem) consume.push(choice.consumeItem);
+  for(const id of consume) if(parallelConsumeStoryItem(room,player,id)) notes.push(`${parallelStoryItem(id)?.name||id} 사용`);
+  const grants=[...(choice.grantItems||[])]; if(choice.grantItem) grants.push(choice.grantItem);
+  for(const id of grants) if(parallelGrantStoryItem(room,player,id)) notes.push(`${parallelStoryItem(id)?.name||id} 획득`);
+  const heal=Math.max(0,Number(choice.heal||0)); if(heal){ player.hp=Math.min(Number(player.maxHp||player.hp||0),Number(player.hp||0)+heal); notes.push(`HP +${heal}`); }
+  const threat=Number(choice.threatDelta||0); if(threat){ room.threat=Math.max(0,Math.min(MAX_THREAT,Number(room.threat||0)+threat)); notes.push(`위협 ${threat>0?'+':''}${threat}`); }
+  return notes;
+}
+function parallelTransferItem(room,from,to,itemId){
+  if(!parallelHasStoryItem(room,from,itemId)) return false;
+  if(!parallelConsumeStoryItem(room,from,itemId)) return false;
+  parallelGrantStoryItem(room,to,itemId); return true;
+}
 function parallelEnabled(room,campaign=CAMPAIGNS.find(c=>c.id===room?.campaignId)){
   return Boolean(room?.parallel?.enabled && campaign?.parallelStory?.enabled);
 }
@@ -798,7 +966,7 @@ function initializeParallelStory(room,campaign){
     const nodeId=cfg.startByJob?.[player.job?.name] || cfg.startFallback;
     const node=cfg.nodes?.[nodeId] || cfg.nodes?.[cfg.startFallback];
     playerStates[player.id]={
-      nodeId, location:node?.location || 'concourse', previousLocation:null, progress:0, history:[], flags:{},
+      nodeId, location:node?.location || 'concourse', previousLocation:null, progress:0, history:[], flags:{}, items:parallelStartItemsFor(player),
       ended:false, ending:null, endingText:null, pendingTravel:null, support:0, lastPersonalResult:null,
     };
   }
@@ -877,18 +1045,31 @@ function parallelDynamicChoices(room,campaign,player,node){
     dynamic.unshift({id:`travel:follow:${ps.pendingTravel.from}`,kind:'parallel-social',automatic:true,action:'follow',targetId:ps.pendingTravel.from,label:`${leader?.name||'동료'}를 따라 ${parallelLocationLabel(campaign,ps.pendingTravel.location)}로 간다`,stat:'민첩',dc:7,path:'bond'});
     dynamic.unshift({id:'travel:stay',kind:'parallel-social',automatic:true,action:'stay',label:'여기 남아 따로 움직인다',stat:'지혜',dc:7,path:'survival'});
   }
-  if(Number(room.parallel?.clockTick||0)>=24 && node?.location!=='train'){
+  dynamic.push(...parallelAddAcquisitionChoices(room,campaign,player,node));
+  dynamic.push(...parallelEchoCapabilityChoices(room,campaign,player,node));
+  const ownTransferable=parallelStoryItems(room,player).filter(id=>!['echo_story_root_key'].includes(id)).slice(0,2);
+  for(const other of nearby){
+    for(const itemId of ownTransferable){
+      if(parallelHasStoryItem(room,other,itemId)) continue;
+      const item=parallelStoryItem(itemId);
+      dynamic.push({id:`transfer:${other.id}:${itemId}`,kind:'parallel-item-transfer',automatic:true,targetId:other.id,itemId,label:`${other.name}에게 ${item?.name||'물건'}을 건넨다`,stat:'매력',dc:7,path:'bond',choiceBadge:'아이템 전달'});
+      break;
+    }
+  }
+  if(Number(room.parallel?.clockTick||0)>=18 && node?.location!=='train'){
     dynamic.push({id:'urgent:firsttrain',kind:'parallel-move',label:'첫차 안내를 따라간다',stat:'지혜',dc:9,next:'train',path:'survival'});
     if(node?.location!=='signal') dynamic.push({id:'urgent:signal',kind:'parallel-move',label:'신호실로 향한다',stat:'민첩',dc:9,next:'signal',path:'truth'});
   }
-  return dynamic;
+  return dynamic.filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
 }
 function parallelRenderedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player);
   if(!ps) return null;
   const node=parallelNode(room,campaign,player);
   if(!node) return null;
-  const base=(node.choices||[]).map((choice,index)=>({id:`base:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
+  const base=(node.choices||[])
+    .map((choice,index)=>({id:`base:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}))
+    .filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
   const dynamic=parallelDynamicChoices(room,campaign,player,node);
   const choices=[...dynamic,...base].slice(0,14);
   return {
@@ -898,6 +1079,7 @@ function parallelRenderedScene(room,campaign,player){
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
     linked:parallelLinkedPlayers(room,player).map(p=>({id:p.id,name:p.name,location:room.parallel.playerStates?.[p.id]?.location,locationLabel:parallelLocationLabel(campaign,room.parallel.playerStates?.[p.id]?.location)})),
     worldSummary:parallelWorldSummary(room), clockTick:Number(room.parallel.clockTick||0), ended:Boolean(ps.ended), ending:ps.ending,
+    storyItems:parallelStoryItems(room,player).map(id=>({id,name:parallelStoryItem(id)?.name||id,tags:[...(parallelStoryItem(id)?.tags||[])]})),
   };
 }
 function parallelSetNode(room,campaign,player,nextId){
@@ -956,7 +1138,12 @@ function parallelCombatAction(room,campaign,player,choice,roll,total,dc){
     if(success){ const damage=3+(roll===20?2:0)+(enc.exposed?1:0); enc.hp=Math.max(0,enc.hp-damage); enc.exposed=false; enc.assist=Math.max(0,Number(enc.assist||0)-1); text=`${enc.name}의 빈틈을 파고들어 ${damage} 피해를 입혔다.`; consequence=`적 HP ${enc.hp}/${enc.maxHp}`; }
     else text=`공격을 시도했지만 ${enc.name}이 몸을 비틀어 피했다.`;
   }
-  if(enc.hp<=0){ delete room.parallel.encounters[ps.location]; room.parallel.worldFlags[`cleared_${enc.key}`]=true; room.threat=Math.max(0,room.threat-1); return {ok:true,text:`${text} ${enc.name}은 더 이상 길을 막지 못했다.`,consequence:'전투 승리 · 위협 -1',success:true}; }
+  if(enc.hp<=0){
+    delete room.parallel.encounters[ps.location]; room.parallel.worldFlags[`cleared_${enc.key}`]=true; room.threat=Math.max(0,room.threat-1);
+    const lootMap={shadow:'echo_story_access_token',conductor:'echo_story_zero_ticket',maintenanceTrain:'echo_story_signal_key'};
+    const loot=lootMap[enc.key]; const got=loot?parallelGrantStoryItem(room,player,loot):false;
+    return {ok:true,text:`${text} ${enc.name}은 더 이상 길을 막지 못했다.${got?` ${parallelStoryItem(loot)?.name}을 확보했다.`:''}`,consequence:`전투 승리 · 위협 -1${got?` · ${parallelStoryItem(loot)?.name} 획득`:''}`,success:true};
+  }
   if(!fled){
     const guard=Math.max(0,Number(player.skillState?.guard||0)); const raw=Math.max(1,Number(enc.damage||2)-(success&&choice.action==='defend'?2:0)); const taken=Math.max(0,raw-guard);
     player.skillState.guard=Math.max(0,guard-raw);
@@ -970,7 +1157,7 @@ function parallelCombatAction(room,campaign,player,choice,roll,total,dc){
 function parallelEndingText(code,player,room){
   const f=room.parallel?.worldFlags||{};
   const bond=parallelLinkedPlayers(room,player).map(p=>p.name);
-  const base={escaped:'셔터 너머 실제 아침 거리로 빠져나왔다.',first_train:'04시 58분 정상 첫차에 올라 청명역을 벗어났다.',witness:'0번 운행의 기록을 손에 쥔 채 역을 빠져나왔다.',sealed:'0번 경로를 닫는 데 끝까지 남았다가 마지막 순간 밖으로 나왔다.',observer:'두 열차가 겹치지 않고 사라지는 순간을 끝까지 지켜봤다.'}[code]||'청명역의 새벽을 살아서 맞았다.';
+  const base={escaped:'셔터 너머 실제 아침 거리로 빠져나왔다.',first_train:'정상 첫차에 올라 청명역을 벗어났다.',witness:'0번 운행의 기록을 손에 쥔 채 역을 빠져나왔다.',sealed:'0번 경로를 닫는 데 끝까지 남았다가 마지막 순간 밖으로 나왔다.',observer:'두 열차가 겹치지 않고 사라지는 순간을 끝까지 지켜봤다.',zero_passenger:'0번 승차권을 사용해 지도에 없는 열차에 올랐다. 그 뒤의 도착 기록은 남지 않았다.',all_clear:'정상 운행표와 0번 경로를 모두 정리해 청명역을 하나의 현실로 되돌렸다.',thief_escape:'훔친 접근 수단으로 가장 빠른 길을 열어 역을 빠져나왔지만 CCTV 기록은 지워지지 않았다.',station_keeper:'루트 코어를 직접 붙잡고 다른 사람들이 나갈 때까지 역의 두 경로를 유지했다.'}[code]||'청명역의 새벽을 살아서 맞았다.';
   const shared=[]; if(f.zero_sealed)shared.push('0번 신호는 봉쇄됐다'); if(f.evidence)shared.push('증거가 남았다'); if(f.rescued_passenger)shared.push('남은 승객을 구했다'); if(bond.length)shared.push(`${bond.join(', ')}와 끝까지 연결된 선택을 남겼다`);
   return `${player.name}은(는) ${base}${shared.length?` ${shared.join(' · ')}.`:''}`;
 }
@@ -997,6 +1184,10 @@ function parallelAdvance(room,campaign,player,payload,ack){
   let narrative=''; let consequence='';
   if(choice.kind==='parallel-social'){
     narrative=parallelApplySocial(room,campaign,player,choice); consequence='관계와 동선이 갱신됨';
+  } else if(choice.kind==='parallel-item-transfer'){
+    const target=room.players.find(p=>p.id===choice.targetId); const item=parallelStoryItem(choice.itemId);
+    if(target&&parallelTransferItem(room,player,target,choice.itemId)){ narrative=`${target.name}에게 ${item?.name||'물건'}을 건넸다. 이제 그 플레이어의 선택지에도 이 물건을 쓰는 방법이 열릴 수 있다.`; consequence='아이템 전달'; }
+    else { narrative='물건을 전달하지 못했다.'; consequence='변화 없음'; }
   } else if(choice.kind==='parallel-combat'){
     const r=parallelCombatAction(room,campaign,player,choice,roll,total,dc); narrative=r.text; consequence=r.consequence;
   } else {
@@ -1006,11 +1197,13 @@ function parallelAdvance(room,campaign,player,payload,ack){
     if(storyPass && choice.flag) ps.flags[choice.flag]=true;
     if(storyPass && choice.worldFlag) room.parallel.worldFlags[choice.worldFlag]=true;
     if(storyPass && choice.buff) ps.support=Math.min(2,Number(ps.support||0)+1);
+    const rewardNotes=storyPass?parallelApplyChoiceRewards(room,campaign,player,choice):[];
     if(choice.next) parallelSetNode(room,campaign,player,choice.next);
     if(choice.combat) parallelStartEncounter(room,campaign,player,choice.combat);
     if(choice.ending){ ps.ended=true; ps.ending=choice.ending; ps.endingText=parallelEndingText(choice.ending,player,room); narrative=`${narrative} ${ps.endingText}`; }
     if(success){ room.threat=Math.max(0,room.threat-(roll===20?1:0)); consequence=roll===20?'대성공 · 위협 -1':'성공'; }
     else { room.threat=Math.min(MAX_THREAT,room.threat+1); consequence=grade==='mixed'?'부분 성공 · 위협 +1':'실패 · 위협 +1'; if(roll===1){ player.hp=Math.max(0,player.hp-1); consequence+=' · HP -1'; } }
+    if(rewardNotes.length) consequence=[consequence,...rewardNotes].filter(Boolean).join(' · ');
   }
   ps.progress=Number(ps.progress||0)+1; ps.history.push({nodeId:scene.id,choice:choice.label,success,roll,total,dc,ts:Date.now()}); if(ps.history.length>20)ps.history.splice(0,ps.history.length-20);
   ps.lastPersonalResult={choiceLabel:choice.label,text:narrative,consequence,success:success||grade==='mixed',grade};

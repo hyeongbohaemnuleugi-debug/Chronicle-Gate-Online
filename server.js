@@ -1149,6 +1149,68 @@ function parallelDynamicChoices(room,campaign,player,node){
   }
   return dynamic.filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
 }
+function parallelAffordanceSummary(node){
+  const aff=node?.affordances || {};
+  const parts=[];
+  if(aff.hasClue && aff.clue) parts.push(`조사 가능한 단서로 ${aff.clue}가 남아 있다`);
+  if(aff.hasPerson && aff.person) parts.push(`${aff.person}이(가) 이 장면 안에 있어 직접 말을 걸거나 반응을 살필 수 있다`);
+  if(aff.hasHostile && aff.hostile) parts.push(`${aff.hostile}이(가) 현재 이동이나 행동을 위협하고 있다`);
+  if(aff.hasObstacle && aff.obstacle) parts.push(`${aff.obstacle}이(가) 진행 경로를 막거나 다른 접근을 요구한다`);
+  if(aff.hasRescue && aff.rescue) parts.push(`${aff.rescue}이(가) 도움을 필요로 하는 상태다`);
+  if(aff.hasItem && aff.item) parts.push(`${aff.item}이(가) 현장에서 확인하거나 확보할 수 있는 위치에 있다`);
+  return parts.join('. ')+(parts.length?' .':'');
+}
+function parallelSceneContext(node,campaign){
+  const aff=node?.affordances || {};
+  const visible=[];
+  if(aff.hasClue && aff.clue) visible.push(`단서: ${aff.clue}`);
+  if(aff.hasPerson && aff.person) visible.push(`인물: ${aff.person}`);
+  if(aff.hasHostile && aff.hostile) visible.push(`위협: ${aff.hostile}`);
+  if(aff.hasObstacle && aff.obstacle) visible.push(`장애물: ${aff.obstacle}`);
+  if(aff.hasRescue && aff.rescue) visible.push(`구조 대상: ${aff.rescue}`);
+  if(aff.hasItem && aff.item) visible.push(`물건: ${aff.item}`);
+  if(!visible.length) return `${node?.title || campaign?.title || '현재 장면'} · ${node?.phase || '진행'}`;
+  return `${node?.title || campaign?.title || '현재 장면'} · ${visible.slice(0,4).join(' · ')}`;
+}
+function parallelChoiceReason(choice,node){
+  const aff=node?.affordances || {};
+  const type=String(choice?.actionType || choice?.type || '');
+  const label=String(choice?.label || '');
+  if(choice?.kind==='parallel-social') return '같은 장소에 실제로 다른 플레이어가 있어 합류·협력·분리를 선택할 수 있다.';
+  if(choice?.kind==='parallel-item-transfer') return '같은 장소의 플레이어에게 현재 가진 스토리 아이템을 직접 넘길 수 있다.';
+  if(choice?.choiceBadge && /아이템|열쇠|장비|도구|소지품/.test(String(choice.choiceBadge))) return '현재 소지한 물건과 이 장소의 장치 또는 장애물이 서로 맞아 사용할 수 있다.';
+  if(/investigate|inspect-item/.test(type) || /로그|기록|단서|조사|살핀|본다/.test(label)){
+    if(aff.clue) return `${aff.clue}가 이 현장에 실제로 남아 있어 직접 확인할 수 있다.`;
+    if(aff.item) return `${aff.item}이 눈앞에 있어 상태와 용도를 확인할 수 있다.`;
+    return '현재 장면에 눈으로 확인할 수 있는 흔적이나 기록이 남아 있다.';
+  }
+  if(/question|persuade|trade|tail|threaten/.test(type) || /묻는다|말한다|설득|거래|따라간|압박/.test(label)){
+    if(aff.person) return `${aff.person}이 현재 이 장소에 있으므로 직접 대화하거나 행동을 추적할 수 있다.`;
+    return '현재 장면에 상호작용할 수 있는 인물이 있다.';
+  }
+  if(/fight/.test(type) || /싸운다|공격|막는다/.test(label)){
+    if(aff.hostile) return `${aff.hostile}이 지금 이 장소의 진행을 위협하고 있다.`;
+    return '현재 장면에 실제 적대 대상이 있다.';
+  }
+  if(/help|protect/.test(type) || /돕는다|지킨다|구조/.test(label)){
+    if(aff.rescue) return `${aff.rescue}이 위험에 처해 있어 지금 개입할 수 있다.`;
+    if(aff.person) return `${aff.person}이 위험에 노출되어 있어 보호하거나 도울 수 있다.`;
+    return '현재 장면에 도움을 필요로 하는 대상이 있다.';
+  }
+  if(/bypass|break|sneak|hide|distract|trap/.test(type) || /우회|부순|몰래|숨긴|시선을|함정/.test(label)){
+    if(aff.obstacle) return `${aff.obstacle}이 길을 막고 있어 우회·돌파·은밀 접근 같은 방법을 고려할 수 있다.`;
+    if(aff.hostile) return `${aff.hostile}의 경계가 있어 정면 대응 외의 접근도 가능하다.`;
+    return '현재 이동 경로에 경계나 장애 요소가 있어 다른 접근 방식을 택할 수 있다.';
+  }
+  if(/take-item|steal/.test(type) || /챙긴다|훔친다|가져간다/.test(label)){
+    if(aff.item) return `${aff.item}이 현재 접근 가능한 위치에 있지만, 확보 방식에 따라 위험이나 대가가 생길 수 있다.`;
+    return '현재 장면에 확보 가능한 물건이 있다.';
+  }
+  if(/observe|listen|wait/.test(type) || /주변|듣는다|기다린다/.test(label)) return '주변 상황이 계속 변하고 있어 즉시 움직이지 않고 관찰해도 새로운 정보가 나올 수 있다.';
+  if(/travel/.test(type) || /간다|향한다|돌아간다|들어간다|나간다/.test(label)) return '현재 장면에서 연결된 이동 경로가 확인되어 다음 장소로 움직일 수 있다.';
+  if(choice?.reason) return String(choice.reason);
+  return '현재 장면의 사람·단서·위험·이동 경로 중 하나와 직접 연결된 행동이다.';
+}
 function parallelSceneNarrative(room,campaign,player,node){
   if(!node) return [];
   if(campaign?.id!=='echo'){
@@ -1156,11 +1218,13 @@ function parallelSceneNarrative(room,campaign,player,node){
     const prime=player?.job?.prime;
     const hook=node?.roleHooks?.[prime];
     if(hook) out.push(`${player.job?.name || '당신'}의 관점에서는 ${hook}`);
+    const affordance=parallelAffordanceSummary(node);
+    if(affordance) out.push(`지금 현장에서 행동으로 이어질 만한 요소도 분명하다. ${affordance}`);
     const nearby=parallelNearby(room,player); const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===parallelPlayerState(room,player)?.location);
     if(linked.length) out.push(`${linked.map(p=>p.name).join(', ')}와 함께 움직이는 중이다. 헤어지기를 선택하기 전까지 같은 사건과 같은 장면을 공유하지만, 각자의 턴과 판정은 따로 진행된다.`);
     else if(nearby.length) out.push(`이 장소에는 ${nearby.map(p=>p.name).join(', ')}도 도착해 있다. 함께 움직일지, 잠깐 역할을 나눌지, 다시 각자의 길로 갈지는 플레이어들이 직접 정한다.`);
     else out.push('아직 이 장소에는 다른 플레이어가 보이지 않는다. 지금 선택한 길이 다른 사람의 동선과 겹치면 뒤의 장면에서 자연스럽게 마주칠 수 있다.');
-    return out.filter(Boolean).slice(0,6);
+    return out.filter(Boolean).slice(0,7);
   }
   const ps=parallelPlayerState(room,player);
   const loc=ps?.location || node.location;
@@ -1255,10 +1319,12 @@ function parallelRenderedScene(room,campaign,player){
       .map((choice,index)=>({id:`fallback:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
     choices.push(...fallback.slice(0,8));
   }
+  const explainedChoices=choices.map(choice=>({...choice,reason:parallelChoiceReason(choice,node)}));
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
-    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices, freeActionAllowed:false,
+    sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node),
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:false,
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
     linked:parallelLinkedPlayers(room,player).map(p=>({id:p.id,name:p.name,location:room.parallel.playerStates?.[p.id]?.location,locationLabel:parallelLocationLabel(campaign,room.parallel.playerStates?.[p.id]?.location)})),
     worldSummary:parallelWorldSummary(room), clockTick:Number(room.parallel.clockTick||0), ended:Boolean(ps.ended), ending:ps.ending,

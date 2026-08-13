@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '6.7.2-choice-render';
+const APP_VERSION = '6.8.0-shared-story-items';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -818,6 +818,69 @@ const PARALLEL_JOB_TAGS={
   '민원 상담사':['social','negotiation'],
   '응급구조사':['medical','rescue'],
 };
+
+function parallelStoryItemTagsFromName(name=''){
+  const t=String(name);
+  const tags=new Set(['story-item']);
+  if(/키|열쇠|카드|배지|인장|권한|토큰|초대장/.test(t)) tags.add('key'), tags.add('access');
+  if(/지도|나침반|항로|좌표|경로|스코프/.test(t)) tags.add('route'), tags.add('navigation');
+  if(/무전|신호|소나|스캐너|전파|안테나/.test(t)) tags.add('signal'), tags.add('radio');
+  if(/로그|기록|장부|데이터|메시지|증거|쪽지|명령서/.test(t)) tags.add('evidence'), tags.add('data');
+  if(/약|구급|산소|회복|진주|씨앗/.test(t)) tags.add('medical');
+  if(/검$|검날|검편|칼|폭파|무기|챔피언 파편|망치|고정봉/.test(t)) tags.add('force');
+  if(/반지|부적|왕관|리본|목걸이|매듭/.test(t)) tags.add('charm');
+  if(/공구|테스터|렌즈|도구/.test(t)) tags.add('tool');
+  if(/시계|태엽|시간/.test(t)) tags.add('temporal');
+  if(/캡슐|표본|별|핵|조각|씨앗|진주|뿔|파편|왕관/.test(t) || tags.size===1) tags.add('artifact');
+  return [...tags];
+}
+function parallelStableItemId(campaignId,name){
+  let h=2166136261;
+  for(const ch of String(name)){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619)>>>0; }
+  return `story_${campaignId}_${h.toString(36)}`;
+}
+function parallelRegisterCampaignStoryItems(){
+  for(const campaign of CAMPAIGNS){
+    if(campaign.id==='echo') continue;
+    for(const node of Object.values(campaign.parallelStory?.nodes||{})){
+      const name=String(node?.affordances?.item||'').trim();
+      if(!name) continue;
+      const id=parallelStableItemId(campaign.id,name);
+      if(!PARALLEL_STORY_ITEM_DEFS[id]) PARALLEL_STORY_ITEM_DEFS[id]={
+        id,name,campaignId:campaign.id,tags:parallelStoryItemTagsFromName(name),value:3,storyOnly:true
+      };
+    }
+  }
+}
+parallelRegisterCampaignStoryItems();
+function parallelCampaignSceneItem(campaign,node){
+  const name=String(node?.affordances?.item||'').trim();
+  if(!name) return null;
+  const id=parallelStableItemId(campaign.id,name);
+  return PARALLEL_STORY_ITEM_DEFS[id] || null;
+}
+function parallelItemUseKind(item,node){
+  const tags=new Set(item?.tags||[]);
+  const text=`${node?.title||''} ${node?.phase||''} ${node?.objective||''} ${(node?.text||[]).join(' ')} ${node?.affordances?.obstacle||''} ${node?.affordances?.clue||''} ${node?.affordances?.person||''}`;
+  if(tags.has('access') && /문|잠금|봉인|관문|출입|격리|방벽|게이트|수용소|교실|요새|통로|코어/.test(text)) return 'access';
+  if((tags.has('radio')||tags.has('signal')) && /신호|무전|방송|통신|전파|소나|관제|CCTV|전광판|서버|AI|드론|열차|선로/.test(text)) return 'signal';
+  if(tags.has('navigation') && /길|통로|숲|항로|선로|협곡|사막|경로|추적|지도|폐허|산|바다/.test(text)) return 'route';
+  if((tags.has('evidence')||tags.has('data')) && (node?.affordances?.hasClue || /기록|단서|진실|증언|대화|협상|조사|원인/.test(text))) return 'evidence';
+  if(tags.has('medical') && (node?.affordances?.hasRescue || /부상|다친|구조|환자|생존자|피난|산소|치료/.test(text))) return 'medical';
+  if(tags.has('force') && (node?.affordances?.hasHostile || node?.affordances?.hasObstacle || /적|괴물|전투|방벽|문|장애|봉쇄/.test(text))) return 'force';
+  if(tags.has('charm') && /망령|저주|마법|별|시간|기억|왕관|봉인|균열|정령|신수/.test(text)) return 'charm';
+  if(tags.has('tool') && /장치|기계|설비|회로|문|잠금|서버|신호|장비|유적/.test(text)) return 'tool';
+  if(tags.has('temporal') && /시간|시계|루프|과거|미래|종|초침|기억/.test(text)) return 'artifact';
+  if(tags.has('artifact') && String(node?.affordances?.item||'')===String(item?.name||'') && (node?.affordances?.hasClue||node?.affordances?.hasObstacle||node?.affordances?.hasPerson)) return 'artifact';
+  return null;
+}
+function parallelItemRouteChoice(node,kind){
+  const choices=node?.choices||[];
+  const patterns={
+    access:/우회|열|통과|들어|문|봉인/, signal:/듣|신호|분석|확인|기록|소나|방송/, route:/우회|간다|향한다|따라|길|추적/, evidence:/조사|확인|분석|묻|말|설득|기록/, medical:/돕|구조|보호|치료/, force:/싸|부수|돌파|막|연다/, charm:/확인|조사|말|봉인|진실/, tool:/분석|조사|열|우회|장치/, artifact:/확인|조사|분석|진실|봉인|대조/
+  };
+  return choices.find(c=>patterns[kind]?.test(String(c.label||''))) || choices[0] || null;
+}
 function parallelStoryItem(id){ return PARALLEL_STORY_ITEM_DEFS[id] || null; }
 function parallelStartItemsFor(player){ return [...(PARALLEL_JOB_START_ITEMS[player?.job?.name]||[])]; }
 function parallelStoryItems(room,player){
@@ -909,6 +972,40 @@ function parallelAddAcquisitionChoices(room,campaign,player,node){
   if(loc==='sealedroom' && !parallelHasStoryItem(room,player,'echo_story_root_key')) add({id:'pickup:rootkey',automatic:false,label:'루트 코어키를 회수한다',stat:'지능',dc:9,next:'sealedroom',grantItem:'echo_story_root_key',worldFlag:'root_key_found',success:'보관함에서 운행 루트 코어키를 꺼냈다. 정상 운행표와 0번 운행표를 모두 건드릴 수 있는 물건이다.',failure:'경보가 켜졌지만 코어키는 손에 넣었다.',choiceBadge:'핵심 아이템'});
   return out;
 }
+function parallelUniversalItemChoices(room,campaign,player,node){
+  if(!campaign || campaign.id==='echo' || !node) return [];
+  const ps=parallelPlayerState(room,player); if(!ps) return [];
+  const out=[]; const sceneItem=parallelCampaignSceneItem(campaign,node); const aff=node.affordances||{};
+  const add=c=>out.push({kind:c.kind||'parallel-base',path:c.path||statPath(c.stat||'지혜'),...c});
+  if(sceneItem && !parallelHasStoryItem(room,player,sceneItem.id)){
+    const hasPerson=Boolean(aff.hasPerson||aff.person); const hasHostile=Boolean(aff.hasHostile||aff.hostile);
+    if(!hasPerson && !hasHostile){
+      add({id:`pickup:${sceneItem.id}`,label:`${sceneItem.name}을 챙긴다`,stat:'지혜',dc:7,automatic:false,grantItem:sceneItem.id,
+        success:`주변을 확인한 뒤 ${sceneItem.name}을 확보했다. 이후 맞는 상황에서는 이 물건을 이용한 해결법이 열린다.`,
+        failure:`${sceneItem.name}을 확보했지만 손대는 과정에서 소리와 흔적을 남겼다.`,choiceBadge:'스토리 아이템'});
+    } else {
+      if(Number(player?.coins||0)>=1 && hasPerson) add({id:`trade:${sceneItem.id}`,label:`${sceneItem.name}을 거래한다`,stat:'매력',dc:8,automatic:false,costCoins:1,grantItem:sceneItem.id,
+        success:`대가를 치르고 ${sceneItem.name}을 넘겨받았다.`,failure:`거래가 성사되지 않았다. 상대가 원하는 대가와 ${sceneItem.name}의 가치를 알아냈다.`,choiceBadge:'거래'});
+      add({id:`steal:${sceneItem.id}`,label:`${sceneItem.name}을 몰래 챙긴다`,stat:'민첩',dc:hasHostile?10:9,automatic:false,grantItem:sceneItem.id,threatDelta:1,
+        success:`눈을 피해 ${sceneItem.name}을 확보했다. 들키지 않았더라도 이 선택의 흔적은 남는다.`,failure:`손을 뻗는 순간 들킬 위험이 커져 ${sceneItem.name}을 가져오지 못했다.`,choiceBadge:'위험한 획득'});
+    }
+  }
+  for(const id of parallelStoryItems(room,player)){
+    const item=parallelStoryItem(id); if(!item || item.campaignId!==campaign.id) continue;
+    const kind=parallelItemUseKind(item,node); if(!kind) continue;
+    if(ps.flags?.[`used_${id}_${ps.nodeId}`]) continue;
+    const route=parallelItemRouteChoice(node,kind); if(!route) continue;
+    const target=aff.obstacle||aff.clue||aff.person||aff.hostile||'현재 문제';
+    const labels={access:`${item.name}으로 ${target}을 해결한다`,signal:`${item.name}으로 신호를 확인한다`,route:`${item.name}으로 길을 찾는다`,evidence:`${item.name}을 단서와 대조한다`,medical:`${item.name}으로 사람을 돕는다`,force:`${item.name}을 이용해 돌파한다`,charm:`${item.name}의 반응을 확인한다`,tool:`${item.name}으로 장치를 다룬다`,artifact:`${item.name}을 현재 단서에 사용한다`};
+    add({id:`use:${id}:${ps.nodeId}`,label:labels[kind],stat:route.stat||'지능',dc:Math.max(7,Number(route.dc||9)-2),automatic:false,
+      nextSuccess:route.nextSuccess||route.next?.success||route.next, nextFailure:route.nextFailure||route.next?.failure||route.nextSuccess||route.next,
+      flag:`used_${id}_${ps.nodeId}`,choiceBadge:'아이템 활용',
+      success:`${item.name}이 이 상황에 정확히 맞았다. ${target}을 훨씬 유리한 조건에서 해결했다.`,
+      failure:`${item.name}을 활용해 시도했지만 완전히 해결하지는 못했다. 그래도 맨손으로 시도했을 때보다 위험을 줄였다.`});
+  }
+  return out;
+}
+
 function parallelEchoCapabilityChoices(room,campaign,player,node){
   if(campaign?.id!=='echo') return [];
   const ps=parallelPlayerState(room,player); if(!ps||!node) return [];
@@ -1034,9 +1131,10 @@ function parallelDynamicChoices(room,campaign,player,node){
     dynamic.unshift({id:`travel:follow:${ps.pendingTravel.from}`,kind:'parallel-social',automatic:true,action:'follow',targetId:ps.pendingTravel.from,label:`${leader?.name||'동료'}를 따라 ${parallelLocationLabel(campaign,ps.pendingTravel.location)}로 간다`,stat:'민첩',dc:7,path:'bond'});
     dynamic.unshift({id:'travel:stay',kind:'parallel-social',automatic:true,action:'stay',label:'여기 남아 따로 움직인다',stat:'지혜',dc:7,path:'survival'});
   }
+  dynamic.push(...parallelUniversalItemChoices(room,campaign,player,node));
   dynamic.push(...parallelAddAcquisitionChoices(room,campaign,player,node));
   dynamic.push(...parallelEchoCapabilityChoices(room,campaign,player,node));
-  const ownTransferable=parallelStoryItems(room,player).filter(id=>!['echo_story_root_key'].includes(id)).slice(0,2);
+  const ownTransferable=parallelStoryItems(room,player).filter(id=>!['echo_story_root_key'].includes(id)).slice(0,3);
   for(const other of nearby){
     for(const itemId of ownTransferable){
       if(parallelHasStoryItem(room,other,itemId)) continue;
@@ -1058,8 +1156,9 @@ function parallelSceneNarrative(room,campaign,player,node){
     const prime=player?.job?.prime;
     const hook=node?.roleHooks?.[prime];
     if(hook) out.push(`${player.job?.name || '당신'}의 관점에서는 ${hook}`);
-    const nearby=parallelNearby(room,player);
-    if(nearby.length) out.push(`이 장소에는 ${nearby.map(p=>p.name).join(', ')}도 도착해 있다. 함께 움직일지, 잠깐 역할을 나눌지, 다시 각자의 길로 갈지는 자동으로 정해지지 않는다.`);
+    const nearby=parallelNearby(room,player); const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===parallelPlayerState(room,player)?.location);
+    if(linked.length) out.push(`${linked.map(p=>p.name).join(', ')}와 함께 움직이는 중이다. 헤어지기를 선택하기 전까지 같은 사건과 같은 장면을 공유하지만, 각자의 턴과 판정은 따로 진행된다.`);
+    else if(nearby.length) out.push(`이 장소에는 ${nearby.map(p=>p.name).join(', ')}도 도착해 있다. 함께 움직일지, 잠깐 역할을 나눌지, 다시 각자의 길로 갈지는 플레이어들이 직접 정한다.`);
     else out.push('아직 이 장소에는 다른 플레이어가 보이지 않는다. 지금 선택한 길이 다른 사람의 동선과 겹치면 뒤의 장면에서 자연스럽게 마주칠 수 있다.');
     return out.filter(Boolean).slice(0,6);
   }
@@ -1166,18 +1265,34 @@ function parallelRenderedScene(room,campaign,player){
     storyItems:parallelStoryItems(room,player).map(id=>({id,name:parallelStoryItem(id)?.name||id,tags:[...(parallelStoryItem(id)?.tags||[])]})),
   };
 }
-function parallelSetNode(room,campaign,player,nextId){
-  const ps=parallelPlayerState(room,player); if(!ps) return;
-  const next=campaign?.parallelStory?.nodes?.[nextId]; if(!next) return;
+function parallelSetNodeRaw(room,campaign,player,nextId){
+  const ps=parallelPlayerState(room,player); if(!ps) return false;
+  const next=campaign?.parallelStory?.nodes?.[nextId]; if(!next) return false;
   const oldLocation=ps.location;
-  ps.previousLocation=oldLocation;
-  ps.nodeId=nextId;
-  ps.location=next.location || ps.location;
-  if(oldLocation!==ps.location){
+  ps.previousLocation=oldLocation; ps.nodeId=nextId; ps.location=next.location||ps.location; ps.pendingTravel=null;
+  return oldLocation!==ps.location;
+}
+function parallelSetNode(room,campaign,player,nextId,{syncLinked=false}={}){
+  const ps=parallelPlayerState(room,player); if(!ps) return;
+  const oldLocation=ps.location;
+  const companions=syncLinked ? parallelLinkedPlayers(room,player).filter(other=>{
+    const ops=parallelPlayerState(room,other); return ops && !ops.ended && ops.location===oldLocation;
+  }) : [];
+  const moved=parallelSetNodeRaw(room,campaign,player,nextId);
+  if(syncLinked){
+    for(const other of companions) parallelSetNodeRaw(room,campaign,other,nextId);
+  } else if(moved){
     for(const linked of parallelLinkedPlayers(room,player)){
       const lps=parallelPlayerState(room,linked);
-      if(lps && !lps.ended && lps.location===oldLocation) lps.pendingTravel={from:player.id,location:ps.location,nodeId:nextId};
+      if(lps && !lps.ended && lps.location===oldLocation) lps.pendingTravel={from:player.id,location:parallelPlayerState(room,player)?.location,nodeId:nextId};
     }
+  }
+}
+function parallelSyncLinkedScene(room,campaign,player){
+  const ps=parallelPlayerState(room,player); if(!ps) return;
+  for(const other of parallelLinkedPlayers(room,player)){
+    const ops=parallelPlayerState(room,other); if(!ops||ops.ended||ops.location!==ps.location) continue;
+    ops.nodeId=ps.nodeId; ops.location=ps.location; ops.pendingTravel=null;
   }
 }
 function parallelStartEncounter(room,campaign,player,key){
@@ -1192,7 +1307,12 @@ function parallelStartEncounter(room,campaign,player,key){
 function parallelApplySocial(room,campaign,player,choice){
   const ps=parallelPlayerState(room,player); const target=room.players.find(p=>p.id===choice.targetId); const key=target?pairKey(player.id,target.id):null;
   if(choice.action==='offer' && target){ room.parallel.offers[key]={from:player.id,to:target.id,location:ps.location}; return `${target.name}에게 함께 움직이자고 제안했다. 결정은 ${target.name}의 차례에 맡겨진다.`; }
-  if(choice.action==='accept' && target){ room.parallel.links[key]='together'; delete room.parallel.offers[key]; return `${target.name}와 같은 길을 함께 보기로 했다. 같은 장소에 있어도 각자의 턴과 행동은 따로 유지된다.`; }
+  if(choice.action==='accept' && target){
+    room.parallel.links[key]='together'; delete room.parallel.offers[key];
+    const tps=parallelPlayerState(room,target);
+    if(tps && tps.location===ps.location){ ps.nodeId=tps.nodeId; ps.location=tps.location; ps.pendingTravel=null; parallelSyncLinkedScene(room,campaign,target); }
+    return `${target.name}와 같은 길을 함께 가기로 했다. 이제 헤어지기를 선택하기 전까지 두 사람은 같은 장면과 이동 경로를 공유하며, 각자의 턴과 행동은 따로 진행된다.`;
+  }
   if(choice.action==='assist' && target){ delete room.parallel.offers[key]; ps.support=Math.min(2,Number(ps.support||0)+1); const tps=parallelPlayerState(room,target); if(tps)tps.support=Math.min(2,Number(tps.support||0)+1); return `${target.name}와 이번 문제만 함께 해결하기로 했다. 두 사람은 다음 판정에 도움을 얻는다.`; }
   if(choice.action==='decline' && target){ delete room.parallel.offers[key]; return `${target.name}와 지금은 각자 움직이기로 했다. 서로의 이야기는 다른 길에서 계속된다.`; }
   if(choice.action==='split' && target){ delete room.parallel.links[key]; delete room.parallel.offers[key]; return `${target.name}와 여기서 헤어져 각자 다른 방향을 맡기로 했다.`; }
@@ -1283,17 +1403,28 @@ function parallelAdvance(room,campaign,player,payload,ack){
     if(storyPass && choice.flag) ps.flags[choice.flag]=true;
     if(storyPass && choice.worldFlag) room.parallel.worldFlags[choice.worldFlag]=true;
     if(storyPass && choice.buff) ps.support=Math.min(2,Number(ps.support||0)+1);
+    if(storyPass && campaign.id!=='echo' && ['take-item','steal'].includes(String(choice.actionType||''))){
+      const sceneItem=parallelCampaignSceneItem(campaign,parallelNode(room,campaign,player));
+      if(sceneItem) choice.grantItem ||= sceneItem.id;
+    }
     const rewardNotes=storyPass?parallelApplyChoiceRewards(room,campaign,player,choice):[];
+    if(Number(choice.threatDelta||0)) room.threat=Math.max(0,Math.min(MAX_THREAT,room.threat+Number(choice.threatDelta||0)));
+    if(!success && grade!=='mixed'){
+      const status=storyFailureStatus(choice,room,player); const applied=applyStatus(player,status);
+      consequence=[consequence,`${applied.label} ${applied.stacks>1?`x${applied.stacks}`:''}`.trim()].filter(Boolean).join(' · ');
+      if(grade==='disaster' && roll!==1){ player.hp=Math.max(0,player.hp-1); consequence=[consequence,'큰 실패 HP -1'].filter(Boolean).join(' · '); }
+    }
     const nextId=storyPass ? (choice.nextSuccess || choice.next) : (choice.nextFailure || choice.nextSuccess || choice.next);
     if(nextId==='__ENDING__'){
       ps.ended=true; ps.ending='completed';
       ps.endingText=`${player.name}은(는) 자신의 선택으로 ${campaign?.title || '이 이야기'}의 한 결말에 도달했다.`;
       narrative=`${narrative} ${ps.endingText}`;
-    } else if(nextId) parallelSetNode(room,campaign,player,nextId);
+    } else if(nextId) parallelSetNode(room,campaign,player,nextId,{syncLinked:true});
     if(choice.combat) parallelStartEncounter(room,campaign,player,choice.combat);
     if(choice.ending){ ps.ended=true; ps.ending=choice.ending; ps.endingText=parallelEndingText(choice.ending,player,room); narrative=`${narrative} ${ps.endingText}`; }
-    if(success){ room.threat=Math.max(0,room.threat-(roll===20?1:0)); consequence=roll===20?'대성공 · 위협 -1':'성공'; }
-    else { room.threat=Math.min(MAX_THREAT,room.threat+1); consequence=grade==='mixed'?'부분 성공 · 위협 +1':'실패 · 위협 +1'; if(roll===1){ player.hp=Math.max(0,player.hp-1); consequence+=' · HP -1'; } }
+    const priorConsequence=consequence;
+    if(success){ room.threat=Math.max(0,room.threat-(roll===20?1:0)); consequence=[roll===20?'대성공 · 위협 -1':'성공',priorConsequence].filter(Boolean).join(' · '); }
+    else { room.threat=Math.min(MAX_THREAT,room.threat+1); consequence=[grade==='mixed'?'부분 성공 · 위협 +1':'실패 · 위협 +1',priorConsequence].filter(Boolean).join(' · '); if(roll===1){ player.hp=Math.max(0,player.hp-1); consequence+=' · HP -1'; } }
     if(rewardNotes.length) consequence=[consequence,...rewardNotes].filter(Boolean).join(' · ');
   }
   ps.progress=Number(ps.progress||0)+1; ps.history.push({nodeId:scene.id,choice:choice.label,success,roll,total,dc,ts:Date.now()}); if(ps.history.length>20)ps.history.splice(0,ps.history.length-20);

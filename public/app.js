@@ -1372,13 +1372,14 @@ function renderParallelStory() {
     <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
       <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
       <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
-      ${choice.reason?`<div class="choice-context" title="${esc(choice.reason)}"><span>가능한 이유</span>${esc(choice.reason)}</div>`:''}
+      ${choice.reason?`<div class="choice-context"><strong>가능한 이유</strong> · ${esc(choice.reason)}</div>`:''}
     </button>`).join('');
   choiceBox.style.setProperty('display','grid','important');
   choiceBox.style.setProperty('visibility','visible','important');
   choiceBox.style.setProperty('opacity','1','important');
   choiceBox.style.minHeight=choices.length ? '120px' : '90px';
   choiceBox.innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'지금 이 장소에서 실제로 할 수 있는 행동들입니다. 직업·장비·소지품이 있으면 특별한 방법이 추가됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 턴을 기다리는 중입니다.`}</div></div>${emptyNotice}${renderedChoices}`;
+  forceChoiceLayout(choiceBox);
   requestAnimationFrame(()=>{
     choiceBox.style.setProperty('display','grid','important');
     choiceBox.style.setProperty('visibility','visible','important');
@@ -1403,6 +1404,95 @@ function renderParallelStory() {
   $('#continueBtn').disabled=true;
   $('#facilityPanel')?.classList.add('hidden');
   updateVoteCountdown();
+}
+
+
+function forceChoiceLayout(root = document) {
+  const area = root?.matches?.('#choiceArea') ? root : root?.querySelector?.('#choiceArea') || document.getElementById('choiceArea');
+  if (!area) return;
+  const set = (el, prop, value) => el?.style?.setProperty(prop, value, 'important');
+  set(area, 'display', 'grid');
+  set(area, 'grid-template-columns', 'repeat(auto-fit,minmax(250px,1fr))');
+  set(area, 'grid-auto-flow', 'row');
+  set(area, 'grid-auto-rows', 'max-content');
+  set(area, 'align-items', 'start');
+  set(area, 'align-content', 'start');
+  set(area, 'gap', '12px');
+  set(area, 'overflow-x', 'hidden');
+  set(area, 'overflow-y', 'auto');
+  set(area, 'max-height', '50vh');
+  area.querySelectorAll('.choice-card').forEach(card => {
+    set(card, 'position', 'relative');
+    set(card, 'display', 'flex');
+    set(card, 'flex-direction', 'column');
+    set(card, 'align-items', 'stretch');
+    set(card, 'justify-content', 'flex-start');
+    set(card, 'width', '100%');
+    set(card, 'height', 'auto');
+    set(card, 'min-height', '150px');
+    set(card, 'max-height', 'none');
+    set(card, 'padding', '14px');
+    set(card, 'overflow', 'hidden');
+    set(card, 'white-space', 'normal');
+    set(card, 'box-sizing', 'border-box');
+    Array.from(card.children).forEach(child => {
+      set(child, 'position', 'static');
+      set(child, 'float', 'none');
+      set(child, 'transform', 'none');
+      set(child, 'width', 'auto');
+      set(child, 'max-width', '100%');
+      set(child, 'box-sizing', 'border-box');
+    });
+    const title = card.querySelector('.choice-title-line');
+    if (title) {
+      set(title, 'display', 'flex');
+      set(title, 'align-items', 'flex-start');
+      set(title, 'justify-content', 'space-between');
+      set(title, 'gap', '8px');
+      set(title, 'margin', '0');
+      set(title, 'min-height', '0');
+    }
+    const titleText = title?.querySelector('b');
+    if (titleText) {
+      set(titleText, 'display', 'block');
+      set(titleText, 'margin', '0');
+      set(titleText, 'font-size', '12px');
+      set(titleText, 'line-height', '1.5');
+      set(titleText, 'white-space', 'normal');
+      set(titleText, 'word-break', 'keep-all');
+      set(titleText, 'overflow-wrap', 'anywhere');
+    }
+    const meta = card.querySelector('.story-choice-meta');
+    if (meta) {
+      set(meta, 'display', 'flex');
+      set(meta, 'flex-wrap', 'wrap');
+      set(meta, 'justify-content', 'space-between');
+      set(meta, 'align-items', 'center');
+      set(meta, 'gap', '6px');
+      set(meta, 'margin', '9px 0 0');
+      set(meta, 'padding', '0');
+      set(meta, 'min-height', '0');
+      meta.querySelectorAll('*').forEach(el => {
+        set(el, 'position', 'static');
+        set(el, 'line-height', '1.4');
+      });
+    }
+    const reason = card.querySelector('.choice-context');
+    if (reason) {
+      set(reason, 'display', 'block');
+      set(reason, 'margin', '10px 0 0');
+      set(reason, 'padding', '9px 0 0');
+      set(reason, 'border-top', '1px solid rgba(255,255,255,.08)');
+      set(reason, 'font-size', '10px');
+      set(reason, 'line-height', '1.65');
+      set(reason, 'white-space', 'normal');
+      set(reason, 'word-break', 'keep-all');
+      set(reason, 'overflow-wrap', 'anywhere');
+      set(reason, 'height', 'auto');
+      set(reason, 'max-height', 'none');
+      set(reason, 'overflow', 'visible');
+    }
+  });
 }
 
 function renderStory() {
@@ -1576,6 +1666,7 @@ function renderMainStoryChoices(beat) {
       ${beat?.statInsight?.dangerSense ? `<div class="choice-forecast">위험 · ${esc(choice.risk || '보통')}${choice.consequenceHint?.failure ? ` · ${esc(choice.consequenceHint.failure)}` : ''}</div>` : ''}
     </button>
   `).join('');
+  forceChoiceLayout(box);
   box.querySelectorAll('.story-choice').forEach(button => button.onclick = () => {
     if (button.disabled) return;
     const choiceIndex = Number(button.dataset.choiceIndex);
@@ -1606,6 +1697,7 @@ function renderChoices(ev) {
     const lockText = jobLocked ? `<div class="job-choice-lock">🔒 ${esc(c.requiredJob)}만 이 상황의 전문 선택을 사용할 수 있습니다.</div>` : '';
     return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><div class="choice-title-line"><b>${i + 1}. ${esc(c.label)}</b>${specialBadge}</div><small>${c.stat} · ${esc(c.difficulty || '')}${c.difficulty ? ' · ' : ''}DC ${c.dc + (state.dcPenalty || 0)}</small>${lockText}<div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
   }).join('');
+  forceChoiceLayout(box);
   box.querySelectorAll('.choice-card').forEach((b, i) => b.onclick = () => {
     if (b.disabled) return;
     if (voteSecondsLeft() <= 0) return toast('투표 시간이 종료되었습니다.');

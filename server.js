@@ -839,6 +839,18 @@ const PARALLEL_STORY_ITEM_DEFS={
   guardian_rune_scope_story:{id:'guardian_rune_scope_story',name:'룬 판독경',campaignId:'guardian',tags:['story-item','tool','evidence'],value:4,storyOnly:true},
   guardian_royal_letter:{id:'guardian_royal_letter',name:'왕실 긴급서신',campaignId:'guardian',tags:['story-item','access','evidence','trade'],value:4,storyOnly:true},
   guardian_field_medbag:{id:'guardian_field_medbag',name:'야전 구급낭',campaignId:'guardian',tags:['story-item','medical'],value:3,storyOnly:true},
+
+  aurora_polar_scope:{id:'aurora_polar_scope',name:'극광 편광경',campaignId:'aurora',tags:['story-item','tool','evidence','signal'],value:4,storyOnly:true},
+  aurora_ice_probe:{id:'aurora_ice_probe',name:'빙핵 채취봉',campaignId:'aurora',tags:['story-item','tool','evidence'],value:4,storyOnly:true},
+  aurora_shortwave_receiver:{id:'aurora_shortwave_receiver',name:'아날로그 단파수신기',campaignId:'aurora',tags:['story-item','signal','radio','evidence'],value:5,storyOnly:true},
+  aurora_rescue_reel:{id:'aurora_rescue_reel',name:'구난 로프릴',campaignId:'aurora',tags:['story-item','tool','force','navigation'],value:4,storyOnly:true},
+  aurora_heat_marker:{id:'aurora_heat_marker',name:'열표식 막대',campaignId:'aurora',tags:['story-item','navigation','signal'],value:3,storyOnly:true},
+
+  masque_blank_mask:{id:'masque_blank_mask',name:'빈 배역가면',campaignId:'masque',tags:['story-item','charm','access','trade'],value:4,storyOnly:true},
+  masque_mercury_lens:{id:'masque_mercury_lens',name:'수은 복원경',campaignId:'masque',tags:['story-item','tool','evidence'],value:4,storyOnly:true},
+  masque_star_sand_map:{id:'masque_star_sand_map',name:'별모래 지도천',campaignId:'masque',tags:['story-item','navigation','evidence'],value:4,storyOnly:true},
+  masque_stage_key:{id:'masque_stage_key',name:'무대 도르래키',campaignId:'masque',tags:['story-item','tool','access','force'],value:4,storyOnly:true},
+  masque_prop_pouch:{id:'masque_prop_pouch',name:'소품 바꿔치기 주머니',campaignId:'masque',tags:['story-item','trade','tool'],value:3,storyOnly:true},
 };
 const PARALLEL_JOB_START_ITEMS={
   '시설기사':['echo_story_toolkit','echo_story_tester','echo_story_radio'],
@@ -866,6 +878,14 @@ const PARALLEL_JOB_START_ITEMS={
   '캔터베리 수호기사':['guardian_royal_seal_story'], '왕실 정찰병':['guardian_field_map'],
   '고대유적 연구원':['guardian_rune_scope_story'], '숲의 길잡이':[], '왕실 외교관':['guardian_royal_letter'],
   '야전 의무병':['guardian_field_medbag'],
+
+  '극지 기상관':['aurora_polar_scope'], '빙하 지질학자':['aurora_ice_probe'],
+  '단파 통신기사':['aurora_shortwave_receiver'], '설상 구조대원':['aurora_rescue_reel'],
+  '설원 길잡이':['aurora_heat_marker'], '극지 의무연구원':[],
+
+  '유랑 배우':['masque_blank_mask'], '가면 복원사':['masque_mercury_lens'],
+  '사막 길잡이':['masque_star_sand_map'], '무대 장치공':['masque_stage_key'],
+  '소품 도둑':['masque_prop_pouch'], '등불 수호자':[],
 };
 const PARALLEL_CAMPAIGN_SUPPLY_POOL={
   ember:['ember_rune_wedge','ember_ember_cup','ember_blood_thread','ember_grave_hook','ember_silver_oil'],
@@ -874,6 +894,8 @@ const PARALLEL_CAMPAIGN_SUPPLY_POOL={
   clock:['clock_afterchalk','clock_gear_key','clock_sealed_notebook','clock_empty_minute_bottle','clock_tower_pass'],
   wild:['wild_star_compass','wild_tree_knot','wild_calm_sachet','wild_star_tongs','wild_healing_herbs'],
   guardian:['guardian_royal_seal_story','guardian_field_map','guardian_rune_scope_story','guardian_royal_letter','guardian_field_medbag'],
+  aurora:['aurora_polar_scope','aurora_ice_probe','aurora_shortwave_receiver','aurora_rescue_reel','aurora_heat_marker'],
+  masque:['masque_blank_mask','masque_mercury_lens','masque_star_sand_map','masque_stage_key','masque_prop_pouch'],
 };
 
 const PARALLEL_JOB_TAGS={
@@ -929,13 +951,13 @@ function parallelItemUseKind(item,node){
   const tags=new Set(item?.tags||[]);
   const text=`${node?.title||''} ${node?.phase||''} ${node?.objective||''} ${(node?.text||[]).join(' ')} ${node?.affordances?.obstacle||''} ${node?.affordances?.clue||''} ${node?.affordances?.person||''}`;
   if(tags.has('access') && /문|잠금|봉인|관문|출입|격리|방벽|게이트|수용소|교실|요새|통로|코어/.test(text)) return 'access';
-  if((tags.has('radio')||tags.has('signal')) && /신호|무전|방송|통신|전파|소나|관제|CCTV|전광판|서버|AI|드론|열차|선로/.test(text)) return 'signal';
-  if(tags.has('navigation') && /길|통로|숲|항로|선로|협곡|사막|경로|추적|지도|폐허|산|바다/.test(text)) return 'route';
+  if((tags.has('radio')||tags.has('signal')) && /신호|무전|방송|통신|전파|소나|관제|CCTV|전광판|서버|AI|드론|열차|선로|안테나|극광|자기장|송신|관측/.test(text)) return 'signal';
+  if(tags.has('navigation') && /길|통로|숲|항로|선로|협곡|사막|경로|추적|지도|폐허|산|바다|빙하|설원|사구|극장|도시/.test(text)) return 'route';
   if((tags.has('evidence')||tags.has('data')) && (node?.affordances?.hasClue || /기록|단서|진실|증언|대화|협상|조사|원인/.test(text))) return 'evidence';
   if(tags.has('medical') && (node?.affordances?.hasRescue || /부상|다친|구조|환자|생존자|피난|산소|치료/.test(text))) return 'medical';
   if(tags.has('force') && (node?.affordances?.hasHostile || node?.affordances?.hasObstacle || /적|괴물|전투|방벽|문|장애|봉쇄/.test(text))) return 'force';
-  if(tags.has('charm') && /망령|저주|마법|별|시간|기억|왕관|봉인|균열|정령|신수/.test(text)) return 'charm';
-  if(tags.has('tool') && /장치|기계|설비|회로|문|잠금|서버|신호|장비|유적|격벽|배관|제단|대장간/.test(text)) return 'tool';
+  if(tags.has('charm') && /망령|저주|마법|별|시간|기억|왕관|봉인|균열|정령|신수|가면|배역|공연|극장|월식|본명/.test(text)) return 'charm';
+  if(tags.has('tool') && /장치|기계|설비|회로|문|잠금|서버|신호|장비|유적|격벽|배관|제단|대장간|관측|안테나|시추|빙핵|무대|도르래|가면|등불/.test(text)) return 'tool';
   if(tags.has('trade') && (node?.affordances?.hasPerson || /상인|브로커|귀족|부족|대표|주민|협상|거래|시장/.test(text))) return 'evidence';
   if(tags.has('temporal') && /시간|시계|루프|과거|미래|종|초침|기억/.test(text)) return 'artifact';
   if(tags.has('artifact') && String(node?.affordances?.item||'')===String(item?.name||'') && (node?.affordances?.hasClue||node?.affordances?.hasObstacle||node?.affordances?.hasPerson)) return 'artifact';
@@ -956,31 +978,95 @@ const PARALLEL_ITEM_CAMPAIGN_USE={
   clock:'시계·루프·시간 흔적·보존된 기록이 있는 장면에서 사용할 수 있습니다.',
   wild:'숲의 길·정령·짐승·별빛 생태와 직접 상호작용할 때 사용할 수 있습니다.',
   guardian:'지역 이동·유적·왕실 권한·동료 구조처럼 여행 중 생기는 실제 문제에 사용합니다.',
-  echo:'역무 설비·잠금 장치·무전·신호·구조처럼 현실적인 지하철 상황에서만 사용할 수 있습니다.'
+  echo:'역무 설비·잠금 장치·무전·신호·구조처럼 현실적인 지하철 상황에서만 사용할 수 있습니다.',
+  aurora:'극지 관측·구조·통신·빙하 조사 현장에서 실제 장비가 필요한 상황에 사용합니다.',
+  masque:'가면·무대·사막 이동·공연 기록과 이름의 규칙을 다루는 상황에 사용합니다.'
+};
+const PARALLEL_STORY_ITEM_LORE={
+  echo_story_toolkit:'절연 손잡이가 달린 드라이버, 니퍼, 접점 집게를 한 주머니에 묶은 역 시설용 공구 세트다. 전기가 완전히 내려가지 않은 설비를 급히 점검하거나 배선과 패널을 손볼 때 역 시설팀이 들고 다닌다.',
+  echo_story_tester:'전선이나 배전함에 대면 전압과 회로 연결 상태를 작은 표시창으로 보여 주는 휴대 계측기다. 겉보기에는 멀쩡한 설비가 실제로 살아 있는지 확인할 때 쓰인다.',
+  echo_story_flashlight:'역무원과 보안 인력이 야간 점검 때 쓰는 긴 손전등이다. 좁은 점검구와 선로 가장자리까지 비추도록 빛이 멀리 뻗고, 바닥에 세워 비상등처럼 사용할 수도 있다.',
+  echo_story_battery:'역 안의 휴대 장비에 공통으로 들어가는 예비 건전지 묶음이다. 오래된 무전기나 손전등이 갑자기 꺼졌을 때 몇 분이라도 더 버티게 해 주는 소모품이다.',
+  echo_story_radio:'역무원끼리 승강장, 역무실, 시설실 상황을 주고받는 업무용 무전기다. 일반 휴대전화가 잡히지 않는 지하 구역에서도 역 내부 중계기를 통해 짧은 음성 연락을 주고받을 수 있다.',
+  echo_story_scanner:'여러 주파수를 빠르게 훑어 현재 송신 중인 채널을 찾아내는 소형 스캐너다. 정해진 채널표가 없을 때도 누군가 보내는 전파나 반복 신호를 잡아낼 수 있다.',
+  echo_story_keyring:'직원 전용문과 간단한 설비함에 쓰이는 여러 열쇠가 번호표와 함께 묶여 있다. 어떤 열쇠가 어느 문 것인지는 오래 근무한 직원들이 번호만 보고도 구분한다.',
+  echo_story_master_key:'비상 시 여러 직원 구역을 한 번에 열 수 있도록 역장이 보관하는 공용 열쇠다. 평소에는 봉인된 보관함에 들어가 있으며 분실 시 전 구역 잠금 교체가 필요할 정도로 중요한 물건이다.',
+  echo_story_keycard:'보안실, CCTV실, 일부 기계실의 전자 잠금을 해제하는 직원용 출입 카드다. 카드 안에는 발급 부서와 권한 단계가 기록되어 있어 리더기에 접촉하면 출입 기록도 남는다.',
+  echo_story_signal_key:'고장 난 신호 설비를 수동 복구 모드로 전환할 때 꽂는 금속 키다. 일반 직원은 만질 일이 거의 없고, 신호 담당자가 점검이나 비상 복구 때만 사용한다.',
+  echo_story_access_token:'오래된 점검 설비에서 직원 인증 대신 쓰던 금속 토큰이다. 신형 카드 시스템으로 바뀐 뒤 대부분 폐기됐지만 일부 구형 장치에는 아직 이 규격이 남아 있다.',
+  echo_story_locker_token:'327번 보관함의 기계식 잠금을 여는 작은 황동 토큰이다. 분실물 보관 체계가 전산화되기 전부터 쓰이던 오래된 물건이라 지금은 거의 남아 있지 않다.',
+  echo_story_medkit:'붕대, 소독제, 압박 패드, 기도 확보 도구가 들어 있는 휴대용 응급 가방이다. 구급대가 도착하기 전 출혈과 쇼크를 막는 데 필요한 기본 처치품이 한 세트로 들어 있다.',
+  echo_story_water:'역 자판기에서 흔히 파는 생수 한 병이다. 특별한 장비는 아니지만 오래 걷거나 긴장으로 탈수된 사람에게는 생각보다 중요한 물건이 된다.',
+  echo_story_bar:'셔터가 내려오거나 비상문이 닫힐 때 틈을 고정하기 위해 쓰는 두꺼운 금속 봉이다. 정비 중 문이 갑자기 움직이지 않도록 받쳐 두는 용도로 제작됐다.',
+  echo_story_route_note:'배달원이 손으로 적어 둔 심야 배송 동선 메모다. 직원 통로, 엘리베이터, 일반인이 모르는 지름길이 짧은 기호와 시간표로 정리되어 있다.',
+  echo_story_parcel:'수취 장소가 ‘0번 승강장’으로 적힌 밀봉 배송 상자다. 보통 역 주소 표기와 형식이 다르고, 발신인 정보도 제대로 남아 있지 않아 내용물보다 배송 기록 자체가 수상하다.',
+  echo_story_future_drive:'아직 기록되지 않았어야 할 시간대의 CCTV와 운행 로그가 저장된 소형 저장장치다. 파일 시간 정보가 현재 시각보다 앞서 있어 정상적인 장비로는 설명하기 어렵다.',
+  echo_story_zero_ticket:'노선도에도 없는 0번 승강장이 인쇄된 낡은 승차권이다. 종이 재질과 인쇄 방식은 오래됐지만 날짜 부분만 현재 시각에 맞춰 선명하게 찍혀 있다.',
+  echo_story_root_key:'역의 운행 경로를 직접 지정하던 구형 제어 장치의 핵심 키다. 정상 노선과 점검선을 구분하는 물리적 설정을 바꿀 수 있어 오래전부터 일반 직원의 접근이 금지됐다.',
+
+  ember_rune_wedge:'왕실 석문과 제단에 새겨진 룬 홈에 끼우는 검은 금속 쐐기다. 왕가의 장인들이 봉인 상태를 고정하거나 잠깐 해제할 때 사용했으며, 표면에는 왕실 문장과 오래된 서약문이 새겨져 있다.',
+  ember_ember_cup:'바닥에 남은 재와 불씨를 담아 색과 연기의 변화를 읽는 작은 은잔이다. 궁정 마도사들은 화재인지 주술인지, 혹은 망령이 지나간 흔적인지를 구분할 때 이 잔을 사용했다.',
+  ember_blood_thread:'성흔에 반응하도록 축성된 가느다란 은실이다. 피나 오래된 맹세의 흔적 가까이 가져가면 미세하게 당겨지는 성질이 있어 실종자나 서약의 흔적을 추적하는 데 쓰인다.',
+  ember_grave_hook:'왕묘 관리인들이 무너진 석관 뚜껑과 좁은 납골실 문을 당겨 여는 데 쓰던 짧은 갈고리다. 두꺼운 줄과 결합하면 사람이 들어가기 어려운 틈의 물건도 끌어낼 수 있다.',
+  ember_silver_oil:'백은 가루와 성유를 섞어 만든 사제용 기름이다. 상처를 씻거나 제단과 무기에 바르면 망령의 냉기와 사악한 잔재가 가까이 있을 때 표면이 희미하게 빛난다.',
+
+  neon_ghost_deck_story:'외부망과 물리적으로 끊긴 보안 장치에 직접 연결하도록 만든 불법 침투 단말기다. 케이블을 꽂으면 내부 메모리와 권한 구조를 로컬에서 분석할 수 있어 고스트 해커들이 흔적을 남기지 않으려 할 때 사용한다.',
+  neon_value_meter:'기억 조각과 데이터 계약의 진위, 복제 횟수, 암시장 시세를 빠르게 비교해 주는 손바닥 크기의 감정 장치다. 브로커들은 거래 전에 캡슐을 여기에 대어 위조 여부와 가치부터 확인한다.',
+  neon_scout_drone:'손바닥보다 조금 큰 접이식 정찰드론이다. 좁은 환기구와 위험 구역을 먼저 날아다니며 영상과 거리 정보를 조종자에게 보내도록 설계됐다.',
+  neon_nanopatch:'상처 위에 붙이면 미세 섬유가 피부를 조이고 출혈을 막는 일회용 의료 패치 세트다. 거리 메딕들은 병원에 갈 수 없는 사람의 응급 처치에 이걸 자주 사용한다.',
+  neon_trace_jammer:'근처 위치 태그와 추적 비콘에 짧은 잡음을 뿌려 신호를 흐리게 만드는 휴대 장치다. 완전히 흔적을 지우지는 못하지만 추적자의 위치 계산을 잠시 틀리게 만들 수 있다.',
+
+  abyss_oxygen_reel:'얇은 산소 호스와 소형 보조 탱크가 릴에 감겨 있는 비상 호흡 장비다. 주 호흡선이 끊겼을 때 대원 한두 명이 가까운 격벽이나 잠수정까지 이동할 시간을 벌어 준다.',
+  abyss_bio_sampler:'물이나 점액, 조직을 오염 없이 채취해 밀봉하는 심해 연구용 샘플러다. 끝부분의 작은 흡입관으로 위험한 생물에 직접 손대지 않고도 시료를 얻을 수 있다.',
+  abyss_pressure_kit:'고압 배관과 잠수정 외벽을 임시로 손볼 수 있는 렌치, 실링 패치, 압력 게이지가 들어 있는 정비 키트다. 누수와 균열을 완전히 고치기보다는 붕괴까지의 시간을 벌기 위한 장비다.',
+  abyss_sonar_pinger:'짧은 음파를 발사하고 돌아오는 반향을 작은 화면에 표시하는 휴대 소나 장비다. 시야가 거의 없는 심해에서 벽의 거리, 빈 통로, 움직이는 물체의 방향을 확인하기 위해 사용한다.',
+  abyss_trauma_pack:'저체온, 감압 손상, 심한 출혈에 대응하도록 압박 붕대와 보온제, 자동 주입기가 들어 있는 심해용 응급키트다. 일반 구급가방보다 밀폐와 방수에 특화되어 있다.',
+
+  clock_afterchalk:'바닥이나 벽에 선을 그어 두면 시간이 되감겨도 희미한 잔상이 남는 특수 분필이다. 시간 감식관들은 반복된 공간에서 이전 루프와 현재 위치를 비교할 때 이 흔적을 기준으로 삼는다.',
+  clock_gear_key:'시계탑 내부의 태엽 장치와 오래된 자동문을 조정하는 정밀 키다. 끝부분 톱니가 여러 단계로 변형되어 하나의 키로 다양한 크기의 태엽축을 돌릴 수 있다.',
+  clock_sealed_notebook:'적은 글자가 시간이 되감겨도 쉽게 사라지지 않도록 특수 잉크와 봉인지를 사용한 기록 노트다. 예언 기록자들은 반복되는 하루에서 반드시 다음 루프까지 남겨야 할 사실을 여기에 적는다.',
+  clock_empty_minute_bottle:'안쪽이 은빛 막으로 코팅된 작은 유리병이다. 시간 밀수꾼들은 특정 순간의 잔향을 잠시 가둬 두었다가 거래하거나 다른 장소에서 풀어내기 위해 이런 병을 사용한다.',
+  clock_tower_pass:'종탑 관리인에게 지급되는 황동 순찰패다. 일반 시민이 들어갈 수 없는 계단과 기계실을 드나들 수 있다는 신분 표식이자, 야간 순찰 기록을 남기는 표찰이기도 하다.',
+
+  wild_star_compass:'자기 북쪽이 아니라 하늘의 별흔과 숲의 미세한 빛을 따라 바늘이 움직이는 나침반이다. 별사냥꾼들은 길이 사라지는 깊은 숲에서 밤하늘이 보이지 않아도 방향을 잡기 위해 사용한다.',
+  wild_tree_knot:'서로 다른 나무껍질 끈을 특정 순서로 묶어 만든 주술 매듭이다. 숲의 주술사들은 나무의 상처나 오래된 수목령 앞에 걸어 두고 바람과 떨림의 변화를 읽어 숲의 반응을 살핀다.',
+  wild_calm_sachet:'달콤한 수액, 말린 별꽃, 짐승이 익숙해하는 약초를 넣은 향낭이다. 길잡이들은 놀란 야수에게 사람 냄새를 덜 자극적으로 느끼게 하거나 부상한 동물을 진정시키는 데 쓴다.',
+  wild_star_tongs:'유성에서 떨어진 금속을 집어 올릴 수 있도록 끝부분이 두껍게 보강된 대장장이 집게다. 뜨겁거나 마력이 남은 별철을 맨손으로 건드리지 않고 옮기고 가공할 때 사용한다.',
+  wild_healing_herbs:'별빛을 오래 받은 약초를 말려 작은 가죽낭에 넣어 둔 치료 재료다. 짓이겨 상처에 붙이거나 뜨거운 물에 우려 마시면 통증과 열을 가라앉히는 데 도움이 된다.',
+
+  guardian_royal_seal_story:'캔터베리 왕실이 긴급 명령에 사용하는 작은 금속 인장이다. 경비대와 지방 관리에게 왕실의 공식 권한을 증명할 때 사용되며, 전쟁 중에는 피난로와 보급 창고를 열도록 명령하는 표식이 된다.',
+  guardian_field_map:'캔터베리 주변의 숲길, 옛 성벽, 군용 보급로가 손으로 표시된 접이식 야전지도다. 일반 지도에 없는 정찰대 길과 위험 구역이 메모되어 있어 이동 계획을 짤 때 유용하다.',
+  guardian_rune_scope_story:'유적 표면의 희미한 마력 흔적과 지워진 룬을 확대해 보는 단안경이다. 연구원들은 오래된 문양이 장식인지 실제 장치의 일부인지 구분하기 위해 렌즈를 여러 겹 돌려 맞춘다.',
+  guardian_royal_letter:'왕실 봉인이 찍힌 긴급 서신이다. 각 지역의 관리와 동맹 세력에게 지원을 요청하거나 왕실의 의도를 설명하기 위해 작성된 공식 문서라 함부로 개봉하거나 위조하기 어렵다.',
+  guardian_field_medbag:'전투 중 기사와 민간인을 급히 치료하기 위한 붕대, 소독약, 지혈끈, 진통제가 들어 있는 야전 구급낭이다. 무겁지 않아 이동하면서도 응급 처치를 할 수 있게 구성되어 있다.'
+  aurora_polar_scope:'적색 극광이 내는 여러 방향의 빛을 겹쳐 보도록 만든 두꺼운 편광 관측경이다. 기상관들은 눈으로는 한 덩어리처럼 보이는 극광을 층별로 나누고, 자기폭풍이 어느 방향에서 번지는지 읽을 때 사용한다.',
+  aurora_ice_probe:'빙하 깊은 층을 깨뜨리지 않고 길쭉한 얼음 시료를 뽑아내는 채취봉이다. 손잡이에는 층의 깊이와 온도를 기록하는 눈금이 붙어 있어 오래된 기포와 광물 띠가 언제 생겼는지 현장에서 바로 비교할 수 있다.',
+  aurora_shortwave_receiver:'디지털 중계망과 독립적으로 작동하는 낡은 단파 수신기다. 주파수 다이얼을 손으로 돌려 먼 기지의 송신이나 수십 년 전 방식의 비상 방송을 잡아내며, 배터리와 안테나만 살아 있으면 통신망이 끊겨도 소리를 들을 수 있다.',
+  aurora_rescue_reel:'얼음벽과 크레바스 구조용 강선 로프가 자동 감김 장치에 들어 있는 장비다. 구조대원이 허리 고리에 걸고 사용하며, 눈보라 속에서 사람을 끌어올리거나 미끄러운 경사를 안전하게 건널 때 몸을 고정한다.',
+  aurora_heat_marker:'눈 속에서도 몇 시간 동안 붉은 열을 내는 극지용 표식 막대다. 길이 묻히는 설원에서 돌아갈 방향을 남기거나, 구조 대상의 위치를 멀리서 식별하도록 일정 간격으로 꽂아 둔다.',
+  masque_blank_mask:'아직 어떤 배역의 표정도 새기지 않은 흰 목제 가면이다. 나실라트의 배우들은 첫 공연 전 이 가면을 쓰고 자신의 이름을 잠시 내려놓으며, 이후 맡게 된 역할에 맞춰 색과 문양을 더한다.',
+  masque_mercury_lens:'가면 표면의 덧칠과 균열 아래를 비춰 보는 작은 은빛 렌즈다. 복원사들은 수은을 입힌 얇은 유리판을 기울여 오래된 안료층과 지워진 배우의 서명을 찾아낸다.',
+  masque_star_sand_map:'밤하늘의 별자리와 사구의 높낮이를 금실로 수놓은 검은 천 지도다. 모래바람 때문에 길이 매일 바뀌는 사막에서 천을 별빛에 맞춰 펼치면 다음 우물과 폐허의 방향을 잡을 수 있다.',
+  masque_stage_key:'대형 원형극장의 도르래와 무대문을 돌리는 굵은 황동 키다. 무대 장치공은 이 키를 축에 꽂아 커튼, 승강판, 지하 통로를 움직이며 공연 중에도 장치를 손으로 복구할 수 있다.',
+  masque_prop_pouch:'바닥이 두 겹으로 된 배우용 소품 주머니다. 겉칸에는 동전과 작은 소품을, 안쪽 숨은 칸에는 바꿔치기할 가면 조각이나 쪽지를 넣을 수 있어 오래된 유랑극단과 소매치기 모두 애용한다.',
+
 };
 function parallelStoryItemDescription(item){
   if(!item) return '';
+  if(PARALLEL_STORY_ITEM_LORE[item.id]) return PARALLEL_STORY_ITEM_LORE[item.id];
   const tags=new Set(item.tags||[]); const n=String(item.name||'이 물건');
-  if(tags.has('medical')) return `${n}은(는) 부상자·생존자·산소 부족처럼 실제 구조 상황에서 피해나 위험을 줄이는 스토리 도구입니다.`;
-  if(tags.has('access')||tags.has('key')||tags.has('master_key')||tags.has('keycard')) return `${n}은(는) 맞는 권한·잠금·봉인 장치가 있을 때만 새로운 출입 루트나 안전한 통과 방법을 엽니다.`;
-  if(tags.has('signal')||tags.has('radio')) return `${n}은(는) 통신·관제·소나·전파·신호가 존재하는 장소에서 정보를 얻거나 추적을 피하는 데 쓰입니다.`;
-  if(tags.has('navigation')||tags.has('route')) return `${n}은(는) 실제로 갈림길·항로·숲길·통로가 있는 장면에서 우회로나 안전한 경로를 찾게 해 줍니다.`;
-  if(tags.has('evidence')||tags.has('data')) return `${n}은(는) 현재 장면의 기록·증언·단서와 대조해 숨은 사실이나 협상 근거를 만드는 물건입니다.`;
-  if(tags.has('force')) return `${n}은(는) 실제 적·장벽·문·잔해가 있을 때 정면 돌파의 위험을 낮추는 도구입니다.`;
-  if(tags.has('charm')||tags.has('artifact')||tags.has('temporal')) return `${n}은(는) 이 세계의 초자연적 규칙과 반응하는 물건으로, 맞는 현상 앞에서만 특별한 선택지를 만듭니다.`;
-  return `${n}은(는) 현재 장면의 문제와 직접 연결될 때만 특별한 해결 선택지를 추가하는 스토리 전용 물건입니다.`;
+  if(tags.has('medical')) return `${n}은(는) 현장에서 부상자나 지친 사람을 응급 처치하기 위해 챙기는 휴대 의료품이다.`;
+  if(tags.has('access')||tags.has('key')||tags.has('master_key')||tags.has('keycard')) return `${n}은(는) 특정 문이나 설비를 열 수 있도록 발급되거나 제작된 출입용 물건이다.`;
+  if(tags.has('signal')||tags.has('radio')) return `${n}은(는) 눈에 보이지 않는 신호를 듣거나 보내기 위해 사용하는 휴대 통신 장비다.`;
+  if(tags.has('navigation')||tags.has('route')) return `${n}은(는) 익숙하지 않은 장소에서 길과 위치를 파악하기 위해 사용하는 이동 보조 물건이다.`;
+  if(tags.has('evidence')||tags.has('data')) return `${n}은(는) 현장에서 얻은 기록이나 흔적을 보관하고 다른 정보와 비교하기 위한 물건이다.`;
+  if(tags.has('force')) return `${n}은(는) 무거운 장치나 장애물을 다루기 위해 현장 작업자가 사용하는 튼튼한 도구다.`;
+  if(tags.has('charm')||tags.has('artifact')||tags.has('temporal')) return `${n}은(는) 이 세계의 특수한 현상과 관련되어 전승이나 전문 작업에 사용되는 물건이다.`;
+  return `${n}은(는) 이 세계의 사람들이 특정 작업을 위해 실제로 휴대하거나 거래하는 물건이다.`;
 }
 function parallelStoryItemUsableWhen(item){
-  if(!item) return '';
-  const tags=new Set(item.tags||[]); const bits=[];
-  if(tags.has('medical')) bits.push('부상·구조·산소');
-  if(tags.has('access')||tags.has('key')||tags.has('keycard')||tags.has('master_key')) bits.push('잠긴 문·봉인·권한');
-  if(tags.has('signal')||tags.has('radio')) bits.push('통신·신호·소나');
-  if(tags.has('navigation')||tags.has('route')) bits.push('갈림길·추적·이동');
-  if(tags.has('evidence')||tags.has('data')) bits.push('기록·단서·협상');
-  if(tags.has('force')) bits.push('적·장벽·잔해');
-  if(tags.has('charm')||tags.has('artifact')||tags.has('temporal')) bits.push('초자연 현상');
-  return bits.length ? `사용 조건 · ${bits.join(' / ')}` : (PARALLEL_ITEM_CAMPAIGN_USE[item.campaignId]||'상황과 직접 맞을 때만 사용 가능');
+  // Internal scene matching still uses tags. This text is intentionally no longer exposed as a game-rule description.
+  return '';
 }
 function parallelStartItemsFor(player){ return [...(PARALLEL_JOB_START_ITEMS[player?.job?.name]||[])]; }
 function parallelStoryItems(room,player){
@@ -1108,7 +1194,7 @@ function parallelUniversalItemChoices(room,campaign,player,node){
         failure:`도움은 줬지만 지금 당장 물건을 넘겨받지는 못했다. 대신 다음에 다시 부탁할 명분이 생겼다.`,choiceBadge:'구조 보상'});
     }
     // Theft only appears when an item is plausibly physically present and there is someone/something to hide it from.
-    if((hasPerson||hasHostile) && /보관|장부|열쇠|키|배지|조각|표본|캡슐|장비|상인|브로커|연회|시장|초소|연구|보급|창고|가방|서랍|제단|수레/.test(sceneText)){
+    if((hasPerson||hasHostile) && /보관|장부|열쇠|키|배지|조각|표본|캡슐|장비|상인|브로커|연회|시장|초소|연구|보급|창고|가방|서랍|제단|수레|공방|극장|무대|관측소|시추|격납고/.test(sceneText)){
       add({id:`steal:${sceneItem.id}`,label:`${sceneItem.name}을 몰래 챙긴다`,stat:'민첩',dc:hasHostile?10:9,automatic:false,grantItem:sceneItem.id,threatDelta:1,
         success:`시선을 피해 ${sceneItem.name}을 확보했다. 물건은 얻었지만 누군가 없어졌다는 사실을 나중에 알아챌 수 있다.`,
         failure:`손을 뻗는 순간 경계가 높아졌다. 물건은 얻지 못했고 이 장소에서의 행동이 더 어려워졌다.`,choiceBadge:'훔치기'});
@@ -1122,7 +1208,7 @@ function parallelUniversalItemChoices(room,campaign,player,node){
     const supplyId=pool[(actIndex + Number(ps.progress||0)) % pool.length];
     const supply=parallelStoryItem(supplyId);
     const guarded=/경비|검문|감시|봉쇄|수용소|경계|병사|추적|순찰|보안|경매/.test(sceneText);
-    const cache=/창고|보급|연구실|정비|격납고|초소|여관|대장간|작업실|유적|캠프|폐허|사무실/.test(sceneText);
+    const cache=/창고|보급|연구실|정비|격납고|초소|여관|대장간|작업실|유적|캠프|폐허|사무실|관측소|시추|공방|극장|무대|분장실|등불회랑/.test(sceneText);
     const merchant=/상인|브로커|시장|행상|상점|경매|공방|거래|보급관|주민|대표/.test(sceneText);
     if(supply && merchant && Number(player?.coins||0)>=Math.max(1,Math.min(2,Number(supply.value||2)))){
       const price=Math.max(1,Math.min(2,Number(supply.value||2)));
@@ -1895,6 +1981,17 @@ CAMPAIGN_ENDING_VARIANTS.echo = {
   bold:{title:'깨진 성좌 아래의 새벽',text:'기억 편집 시스템의 중심을 끊어 도시가 스스로 기억을 되찾게 했습니다. 일부 기록은 사라졌지만 누구도 다시 한 사람의 원본에 종속되지 않습니다.'},
   empathetic:{title:'기억은 서로에게 남는다',text:'삭제된 주민과 죽은 탐사대, 현재의 파티가 서로의 증언을 보존하도록 연결했습니다. 유리별이 없어도 기억이 사람 사이에서 살아남는 도시가 시작됩니다.'}
 };
+CAMPAIGN_ENDING_VARIANTS.aurora = {
+  careful:{title:'붉은 하늘의 보관소',text:'빙하의 기억층을 파괴하지 않고 관측소의 기록과 함께 봉인하는 길을 택했습니다. 수십 년의 목소리는 사라지지 않았고, 누구도 마음대로 소유할 수 없는 공동 기록으로 남았습니다.'},
+  bold:{title:'극광 아래 공개된 밤',text:'제7관측소가 숨겨 온 연구와 창설 원정대의 기록을 전 세계 송신망에 공개했습니다. 관측소는 기능을 잃었지만 붉은 하늘 아래 감춰졌던 진실은 다시 지워질 수 없게 되었습니다.'},
+  empathetic:{title:'살아 있는 사람부터',text:'완벽한 연구 성과보다 눈보라 속 생존자와 구조대를 우선했습니다. 기억층의 일부는 잃었지만, 살아 돌아온 사람들이 서로의 증언을 이어 다음 조사와 책임을 시작했습니다.'},
+};
+CAMPAIGN_ENDING_VARIANTS.masque = {
+  careful:{title:'이름을 되찾은 월식',text:'가면과 원고의 규칙을 끝까지 추적해 마지막 장면을 원래의 형태로 복원했습니다. 월식이 끝나자 사람들은 맡은 배역이 아니라 자신의 이름으로 서로를 부르기 시작했습니다.'},
+  bold:{title:'찢어진 마지막 장',text:'천 년 동안 도시를 묶어 둔 마지막 원고를 무대 위에서 찢고 즉흥적인 결말을 선택했습니다. 나실라트의 오래된 질서는 무너졌지만 누구도 다시 정해진 배역으로 돌아가지 않았습니다.'},
+  empathetic:{title:'사막을 걷는 새 극단',text:'도시를 끝내거나 영원히 보존하는 대신, 주민들이 원하는 이름과 배역을 스스로 고르게 했습니다. 월식 뒤에도 극단은 남았고, 움직이는 공연과 함께 도시의 기억을 사막 밖으로 옮기기 시작했습니다.'},
+};
+
 
 function actionLegacy(room) {
   const history = room.storyHistory || [];
@@ -2042,6 +2139,24 @@ WORLD_PROSE.guardian3 = WORLD_PROSE.guardian || WORLD_PROSE.clock;
 WORLD_ROUTE_WORDS.guardian = { threat:'침략자와 갈라진 세계, 그리고 무너진 미래', ally:'작은 공주·챔피언·미래 공주와 여정에서 지킨 사람들', medium:'챔피언 소드·세계별 증언·10년의 기록' };
 WORLD_ROUTE_WORDS.echo = { threat:'기억을 훔치는 성좌와 편집된 도시 기록', ally:'죽은 탐사대의 증언과 삭제된 구역의 주민들', medium:'유리별·원본 기억·서로 모순되는 증언' };
 WORLD_PROSE.echo = WORLD_PROSE.clock || WORLD_PROSE.neon || WORLD_PROSE.ember;
+WORLD_ROUTE_WORDS.aurora = { threat:'적색 자기폭풍과 반복되는 창설 원정대의 기억', ally:'구조대·생존 연구원·기록 속 원정대', medium:'극광 스펙트럼·빙핵·아날로그 송신' };
+WORLD_ROUTE_WORDS.masque = { threat:'강요되는 배역과 월식이 끝날수록 닫히는 도시', ally:'가면 없는 아이·유랑 배우·야시장 사람들', medium:'가면 조각·원고·본명표와 무대 장치' };
+WORLD_PROSE.aurora = {
+  carefulSuccess:'붉은 극광을 층별로 나누고 관측 로그를 맞대자, 잡음처럼 보이던 파형이 43년 전 원정대의 송신 순서와 정확히 겹쳤다.',
+  carefulFail:'관측값 하나를 현재 시각으로 착각했다. 안테나가 다시 울릴 때서야 그 파형이 지금이 아니라 오래된 기억층에서 재생된 것임을 알아챘다.',
+  boldSuccess:'눈보라가 관측소를 덮기 전에 위험 구역을 가로질렀다. 얼음 아래 장치와 구조 대상에 먼저 닿으면서 사건의 주도권을 잡았다.',
+  boldFail:'서둘러 얼음층을 건드린 순간 붉은 섬광과 함께 지층 전체가 공명했다. 길은 열렸지만 다른 구역의 기록과 사람들까지 동시에 깨어났다.',
+  empatheticSuccess:'혼란스러운 생존자의 말에서 시간 순서가 맞지 않는 부분을 차분히 골라냈다. 그의 기억과 오래된 무전이 같은 사건을 서로 다른 시점에서 말하고 있었다.',
+  empatheticFail:'사람을 진정시키는 데는 성공했지만 그가 들었다는 목소리를 누구의 것으로 믿어야 할지는 남았다. 잘못된 이름 하나가 다음 구조 경로를 흔들었다.',
+};
+WORLD_PROSE.masque = {
+  carefulSuccess:'가면 안쪽의 긁힌 이름과 원고의 지워진 대사를 맞추자, 현재 공연이 천 년 전 초연의 순서를 일부러 바꾸고 있다는 사실이 드러났다.',
+  carefulFail:'복원한 문장 하나가 배우의 대사가 아니라 무대 지시문이었다. 잘못 읽은 순간 주변 사람들이 새로운 배역으로 반응하기 시작했다.',
+  boldSuccess:'공연의 순서를 무시하고 무대 뒤 통로를 먼저 열었다. 관객들이 술렁였지만 아무도 보지 못했던 마지막 장의 일부를 확보했다.',
+  boldFail:'막을 억지로 올리자 도시 전체의 종이 울렸다. 가면 쓴 사람들이 동시에 고개를 돌렸고, 파티는 즉흥극이 아니라 공식 배역으로 기록되기 시작했다.',
+  empatheticSuccess:'상대에게 배역 대신 이름을 물었을 때 처음으로 표정이 달라졌다. 가면 아래 사람이 기억하던 삶이 짧게 돌아오며 도시의 규칙 하나가 느슨해졌다.',
+  empatheticFail:'상대는 자신의 이름을 떠올리려 했지만 끝내 다른 배우의 이름을 말했다. 그 착오는 새로운 관계를 만들면서도 원래 기억을 더 깊이 숨겼다.',
+};
 
 function proseOutcome(campaign, beat, prev) {
   if (!prev?.branchValue) return '';
@@ -2174,6 +2289,16 @@ const LIVING_NOVEL = {
   },
 };
 
+LIVING_NOVEL.aurora = {
+  detours:{careful:['뒤섞인 43년 전 관측값','거꾸로 재생되는 구조 신호'],bold:['빙붕 균열','자기폭풍 속 장비 정지'],empathetic:['기억이 겹친 생존자','구조 우선순위 충돌']},
+  opening:{careful:'현재 관측값과 오래된 기록 사이에 같은 파형이 다시 나타났다.',bold:'설원은 방금 연 길을 그대로 두지 않았다. 붉은 극광과 눈보라가 뒤에서 경로를 삼켰다.',empathetic:'누군가의 기억을 끝까지 들은 덕분에 무전 속 목소리 하나의 주인이 분명해졌다.'},
+};
+LIVING_NOVEL.masque = {
+  detours:{careful:['뒤바뀐 원고 장면','가면 속 잘못된 이름'],bold:['갑자기 시작된 공개 공연','무너지는 무대 승강판'],empathetic:['배역을 놓지 못하는 배우','본명을 잊은 관객']},
+  opening:{careful:'원고의 여백과 가면 안쪽의 이름이 같은 장면을 서로 다르게 기억하고 있었다.',bold:'무대의 순서를 깨뜨린 대가로 도시 전체가 다음 장면을 앞당겨 연기하기 시작했다.',empathetic:'한 사람을 배역이 아닌 이름으로 불러 준 일이 주변 배우들의 태도까지 조금 바꾸었다.'},
+};
+
+
 function routeName(route) {
   return route === 'bold' ? '돌파' : route === 'empathetic' ? '신뢰' : '추적';
 }
@@ -2212,6 +2337,16 @@ function detourChoices(campaign, route, dangerName, room) {
       ['별가루와 뿌리의 방향을 다시 읽어 진짜 길을 찾는다','지혜','careful'],
       ['닫히는 숲길을 앞질러 위험 지역을 돌파한다','민첩','bold'],
       ['야수와 숲의 반응을 진정시키며 안전한 길을 연다','매력','empathetic'],
+    ],
+    aurora: [
+      ['현재 관측값과 오래된 송신을 분리해 안전한 방향을 계산한다','지능','careful'],
+      ['무너지기 전 빙붕을 가로질러 다음 격벽까지 이동한다','민첩','bold'],
+      ['혼란에 빠진 생존자의 기억을 정리해 구조 경로를 다시 맞춘다','지혜','empathetic'],
+    ],
+    masque: [
+      ['원고와 무대 표시를 대조해 지금 장면의 진짜 출구를 찾는다','지능','careful'],
+      ['막이 닫히기 전에 무대 장치를 넘어 뒤편 통로로 빠진다','민첩','bold'],
+      ['배역에 갇힌 사람들에게 본명을 물어 군중의 흐름을 바꾼다','매력','empathetic'],
     ],
   };
   const base = tables[world] || tables.ember;
@@ -2300,6 +2435,19 @@ const JOB_STORY_SIGNATURES = {
   '왕실 외교관': { route:'empathetic', motif:'공주의 이름과 캔터베리의 약속을 사람들에게 전하며', discovery:'로레인이 공주에게 접근한 진짜 이유와 숨은 계산', ally:'로레인과 왕국 생존자들', ending:'무너진 왕국의 첫 동맹을 만든 외교관' },
   '야전 의무병': { route:'empathetic', motif:'상처 입은 수호자와 주민을 살리며', discovery:'숲의 여러 사건이 같은 침공의 여파로 이어진다는 사실', ally:'부상자와 여관의 피난민들', ending:'한 사람도 버리지 않은 캔터베리 의무병' },
 
+  '극지 기상관': { route:'careful', motif:'극광의 색과 자기장 변화를 시간대별로 겹쳐 보며', discovery:'붉은 극광이 43년 전 관측 파형을 반복하고 있다는 사실', ally:'외부 기상 관측팀과 기록 속 창설 대원', ending:'붉은 하늘의 진짜 주기를 세상에 남긴 기상관' },
+  '빙하 지질학자': { route:'careful', motif:'빙핵의 기포와 검은 광물층을 읽으며', discovery:'얼음 속 자성 광물이 전자기 흔적을 수십 년간 보존한다는 증거', ally:'시추반 생존자와 창설 원정대의 시료 기록', ending:'기억을 품은 빙하를 증명한 지질학자' },
+  '단파 통신기사': { route:'bold', motif:'죽은 주파수와 낡은 송신기를 직접 되살리며', discovery:'현재 무전망에 43년 전 호출부호가 실제로 끼어드는 경로', ally:'고립된 외부 중계소와 기록 속 통신대원', ending:'두 시대의 송신을 끊어내고 연결한 통신기사' },
+  '설상 구조대원': { route:'empathetic', motif:'눈보라 속 사람과 로프의 무게를 먼저 확인하며', discovery:'실종자들이 같은 환청을 따라 위험 구역으로 이동했다는 사실', ally:'구조대와 고립 연구원들', ending:'기록보다 사람을 먼저 끌어낸 구조대원' },
+  '설원 길잡이': { route:'bold', motif:'바람이 지운 발자국과 열표식을 이어 길을 만들며', discovery:'관측소 지도에는 없는 오래된 창설 원정대 이동로', ally:'설상 운송대와 바깥 기지 안내원', ending:'붉은 설원에 돌아오는 길을 남긴 길잡이' },
+  '극지 의무연구원': { route:'empathetic', motif:'저체온과 기억 혼선을 함께 살피며', discovery:'환청처럼 보이던 증상이 자기폭풍과 신경 기억의 공명이라는 단서', ally:'의료실 생존자와 혼란에 빠진 연구원들', ending:'기억과 몸을 함께 치료한 의무연구원' },
+  '유랑 배우': { route:'empathetic', motif:'대사보다 상대의 호흡과 관객의 반응을 읽으며', discovery:'도시 사람들이 맡은 배역을 반복할수록 본명을 잊는다는 사실', ally:'가면 없는 아이와 이름을 기억하는 늙은 배우', ending:'배역 밖에서 첫 대사를 한 배우' },
+  '가면 복원사': { route:'careful', motif:'덧칠 아래 표정과 지워진 서명을 복원하며', discovery:'가면마다 여러 세대 배우의 기억 습관이 겹쳐 있다는 증거', ally:'폐공방 장인과 수집가들', ending:'가면 속 사람의 이름을 복원한 장인' },
+  '사막 길잡이': { route:'careful', motif:'별자리와 사구의 그림자로 움직이는 도시의 위치를 읽으며', discovery:'나실라트가 월식 때마다 같은 자리로 돌아오는 것이 아니라 이동한다는 사실', ally:'유목민과 외곽 우물지기', ending:'사라지는 도시의 진짜 길을 그린 길잡이' },
+  '무대 장치공': { route:'bold', motif:'도르래와 승강판을 직접 움직여 장면의 순서를 바꾸며', discovery:'무대 장치가 도시의 문과 거리 구조까지 함께 움직인다는 원리', ally:'무대 뒤 기술자와 지하 작업반', ending:'천 년의 무대를 멈춘 장치공' },
+  '소품 도둑': { route:'bold', motif:'배우가 눈치채기 전에 소품과 원고 조각을 바꿔치기하며', discovery:'마지막 장의 핵심 소품이 왕가 보물보다 평범한 본명표라는 사실', ally:'야시장 소매치기와 어린 심부름꾼', ending:'마지막 장면을 훔쳐 자유를 돌려준 도둑' },
+  '등불 수호자': { route:'empathetic', motif:'공연이 끝나도 꺼지지 않는 등불과 사람의 이름을 지키며', discovery:'월식의 등불이 배우의 기억을 무대 밖까지 붙잡아 둔다는 사실', ally:'등불 회랑의 노인들과 이름 없는 관객들', ending:'마지막 등불을 스스로 끈 수호자' },
+
 };
 
 const CAUSAL_WORLD = {
@@ -2333,6 +2481,17 @@ const CAUSAL_WORLD = {
     empathetic:{gain:'공주·로레인·숲 주민과 하얀 짐승이 건넨 신뢰와 증언', cost:'지켜야 할 사람과 약속이 늘어나 이동과 선택의 부담이 커진다'},
   },
 
+  aurora:{
+    careful:{gain:'현재 관측과 43년 전 기록 사이의 정확한 차이',cost:'분석하는 동안 체온과 구조 가능 시간이 줄어든다'},
+    bold:{gain:'붕괴 전에 확보한 현장 장비와 기억층의 직접 증거',cost:'빙하와 자기장이 더 크게 공명해 다른 구역까지 흔들린다'},
+    empathetic:{gain:'생존자의 뒤섞인 기억에서 건져 낸 이름과 구조 정보',cost:'구해야 할 사람과 보호해야 할 기록이 동시에 늘어난다'},
+  },
+  masque:{
+    careful:{gain:'가면·원고·무대 표시 사이의 진짜 공연 순서',cost:'장면을 오래 조사할수록 도시가 파티의 배역을 구체적으로 정한다'},
+    bold:{gain:'공연 순서를 깨고 확보한 무대 뒤 통로와 마지막 장 조각',cost:'관객과 배우가 파티를 즉흥 참가자가 아닌 공식 등장인물로 인식한다'},
+    empathetic:{gain:'사람들이 배역 아래 숨겨 둔 본명과 개인적인 기억',cost:'되찾아 준 이름만큼 기존 공연의 관계와 약속이 흔들린다'},
+  },
+
 };
 
 const JOB_SPECIAL_CHAPTERS = {
@@ -2347,6 +2506,11 @@ const JOB_SPECIAL_CHAPTERS = {
   '별사냥꾼':[3,10,21,29], '숲의 주술사':[4,14,20,28], '야수 길잡이':[2,11,16,27],
   '유성 대장장이':[5,9,19,29], '꿈의 방랑자':[3,12,17,28], '별빛 치유사':[4,10,22,29],  '캔터베리 수호기사':[3,10,21,29], '왕실 정찰병':[4,14,20,28], '고대유적 연구원':[2,11,16,27],
   '숲의 길잡이':[5,9,19,29], '왕실 외교관':[3,12,17,28], '야전 의무병':[4,10,22,29],
+
+  '극지 기상관':[3,10,21,29], '빙하 지질학자':[4,14,20,28], '단파 통신기사':[2,11,16,27],
+  '설상 구조대원':[5,9,19,29], '설원 길잡이':[3,12,17,28], '극지 의무연구원':[4,10,22,29],
+  '유랑 배우':[3,10,21,29], '가면 복원사':[4,14,20,28], '사막 길잡이':[2,11,16,27],
+  '무대 장치공':[5,9,19,29], '소품 도둑':[3,12,17,28], '등불 수호자':[4,10,22,29],
 
 };
 
@@ -2390,6 +2554,8 @@ function routeShiftBridge(campaign, history) {
     clock:'루프는 같은 방법을 반복할수록 더 교묘하게 비틀렸다. 이전 반복에서 통했던 방식이 이번에는 다른 결과를 낳았고, 남겨 둔 기억과 사람의 반응이 새로운 길을 요구했다.',
     wild:'숲은 선택을 기억했다. 억지로 연 길에는 상처가 남았고, 조심스럽게 읽은 흔적에는 누군가의 발자국이 겹쳤다. 파티는 그 변화에 맞춰 다음 걸음을 바꿀 수밖에 없었다.',
     guardian:'캔터베리 숲에서는 누구를 도왔고 무엇을 먼저 지켰는지가 다음 길을 바꿨다. 고블린을 쫓던 길이 유적의 단서로 이어지고, 여관에서 만든 신뢰가 숲 깊은 곳의 도움으로 돌아오면서 파티는 같은 방법만 고집할 수 없었다.',
+    aurora:'극지에서는 한 번의 관측과 구조가 서로 분리되지 않았다. 빙핵에서 찾은 기록이 생존자의 기억을 바로잡고, 위험하게 연 통로가 새로운 안테나 시야를 만들면서 다음 판단 기준이 달라졌다.',
+    masque:'나실라트에서는 한 장면의 행동이 다음 배역을 바꿨다. 훔친 소품이 원고의 빈칸을 메우고, 한 사람에게 되찾아 준 이름이 무대 뒤 길을 열면서 같은 방식만 반복할 수 없게 되었다.',
   };
   const why=b.success
     ? `${b.playerName || '파티'}가 방금 얻은 성과가 앞서 놓친 부분을 보완해 주었다.`
@@ -2700,6 +2866,33 @@ PROLOGUE_META.guardian3 = {
   ...(PROLOGUE_META.guardian || PROLOGUE_META.ember),
   opening:'라 제국의 국경에서 시작된 긴장은 곧 시간 자체를 찢는 사건으로 이어질 준비를 하고 있었다.',
   meet:'라 제국의 어두운 검문소에서 다시 모인 수호자들은 자신들이 곧 10년이라는 시간을 건너게 될 줄 아직 알지 못했다.'
+};
+
+PROLOGUE_META.aurora = {
+  opening:'남극권의 밤하늘이 붉게 갈라진 날, 제7관측소는 43년 전에 폐기된 창설 원정대 호출부호를 다시 수신하기 시작했다.',
+  places:{근력:'눈에 파묻힌 외부 격납고',지능:'빙핵 분석실',지혜:'극광 관측돔',민첩:'안테나 능선의 설상로',매력:'고립 연구원 대기실',체력:'저체온 치료실'},
+  hooks:{
+    근력:'얼어붙은 셔터를 열어 구조 장비를 꺼내다 안쪽에서 43년 전 날짜가 찍힌 젖은 장갑을 발견한다.',
+    지능:'새 빙핵의 검은 광물층을 분석하다 자기 기록과 똑같은 파형이 수십 년 전 층에도 남아 있음을 확인한다.',
+    지혜:'적색 극광의 편광 방향을 기록하던 중 하늘의 파형이 오래된 구조 신호의 모스 부호와 일치한다는 사실을 알아챈다.',
+    민첩:'눈보라가 덮치기 전에 안테나 능선을 확인하다 현재 지도에 없는 오래된 열표식 줄을 발견한다.',
+    매력:'서로 다른 기억을 주장하는 연구원들을 진정시키며 모두가 같은 여성 대원의 목소리를 들었다는 공통점을 찾아낸다.',
+    체력:'저체온 환자의 떨림과 기억 혼선을 기록하다 증상이 극광이 강해지는 순간마다 동시에 악화된다는 사실을 붙잡는다.',
+  },
+  meet:'각자 다른 구역에서 같은 호출부호를 쫓던 이들은 중앙 발전실에서 마주친다. 관측 기록, 빙핵, 무전과 사람의 기억이 모두 43년 전 같은 밤을 가리키고 있었다.',
+};
+PROLOGUE_META.masque = {
+  opening:'개기월식이 시작되자 지도에 없던 사막도시 나실라트가 모래바람 속에서 모습을 드러냈다. 성문을 지난 사람에게는 이름 대신 오늘 밤의 배역이 주어졌다.',
+  places:{근력:'원형극장 무대장치실',지능:'폐쇄된 가면 복원공방',지혜:'월식 성문 앞 별모래 사구',민첩:'가면 야시장 뒤편 소품골목',매력:'첫 공연을 기다리는 입장광장',체력:'밤새 꺼지지 않는 등불회랑'},
+  hooks:{
+    근력:'고장 난 무대 승강판을 밀어 올리다 그 아래에 도시의 거리 이름이 적힌 거대한 도르래 지도를 발견한다.',
+    지능:'금이 간 가면을 복원하다 여러 겹의 안료 아래 서로 다른 세 사람의 본명이 겹쳐 적혀 있음을 확인한다.',
+    지혜:'별모래 지도를 펴 보니 도시가 월식 때마다 같은 폐허가 아니라 조금씩 다른 사구 위에 나타난다는 사실을 읽는다.',
+    민첩:'야시장에서 소품 하나가 바뀌는 순간 근처 배우들의 대사까지 달라지는 것을 목격하고 무대와 도시가 연결되어 있음을 직감한다.',
+    매력:'입장광장에서 배우의 대사를 받아 주다가 상대가 자신의 배역은 기억하지만 본명은 말하지 못한다는 사실을 알아챈다.',
+    체력:'등불을 밤새 지키는 노인에게서 마지막 등불이 꺼지면 도시 사람들의 이름이 돌아온다는 금지된 이야기를 듣는다.',
+  },
+  meet:'서로 다른 배역을 받은 이들은 이름 없는 원형극장의 첫 막 직전 무대 뒤에서 마주친다. 각자가 가진 가면, 지도, 소품과 증언은 모두 사라진 마지막 원고 한 장을 가리킨다.',
 };
 
 function buildPlayerPrologue(campaign, player) {

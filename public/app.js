@@ -421,6 +421,8 @@ const WORLD_META = {
   wild: { motif: 'STAR-EATEN WOODS', scene: ['별가루 숲길', '말하는 고목', '유성 대장간', '숲의 심장', '마지막 별이 뜬 밤하늘'], boss: '별빛을 삼킨 거대한 신수와 숲의 오오라' },
   guardian: { motif: 'FALL OF THE ROYAL CAPITAL', scene: ['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길','셴 시티','거대한 여관','던전 왕국','쉬버링 산','라 제국 국경','라 제국 수용소','10년 뒤의 폐허','미래 공주의 저항군','헤븐홀드 탈환전','기록되지 않은 세계의 새벽'], boss: '월드 1부터 미래의 헤븐홀드까지 이어진 선택과 인연이 한꺼번에 되돌아오는 연대기의 마지막 시련' },
   echo: { motif:'TERMINAL TRACK ZERO', scene:['불 꺼진 청명역 대합실','직원 통로의 회색 화살표','0번 승강장','3분 17초 뒤의 CCTV','04시 58분 첫차'], boss:'운행이 끝난 역에서 정상 시간표와 존재하지 않는 0번 운행이 충돌하며 만들어진 마지막 이상 현상' },
+  aurora: { motif:'CRIMSON AURORA', scene:['붉은 극광 아래 관측소','빙하 시추 갱도','창설 원정대 기록실','자기장 기억층','마지막 송신실'], boss:'기억을 저장한 얼음층과 관측소의 자기장 코어가 충돌하며 만들어진 적색광 공명' },
+  masque: { motif:'ECLIPSE MASQUERADE', scene:['월식의 성문','가면 야시장','이름 없는 원형극장','붉은 막 뒤 기록실','달이 지는 마지막 무대'], boss:'천 년 동안 마지막 장을 끝내지 못한 도시와 배역들이 만들어 낸 월식의 마지막 공연' },
   guardian1: { motif:'GUARDIAN TALES I', scene:['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길'], boss:'월드 1~4의 인연과 침략의 흔적이 겹쳐진 첫 연대기의 마지막 시련' },
   guardian2: { motif:'GUARDIAN TALES II', scene:['셴 시티','작아진 여관','던전 왕국','쉬버링 산','라 제국 국경'], boss:'월드 5~8의 챔피언과 진실을 시험하는 두 번째 연대기의 마지막 시련' },
   guardian3: { motif:'GUARDIAN TALES III', scene:['라 제국','10년 뒤의 폐허','저항군 기지','점령된 헤븐홀드','차원의 문'], boss:'미래 공주와 저항군이 맞서는 기록되지 않은 세계의 최종 결전' },
@@ -437,6 +439,8 @@ const STORY_ART_FILES = {
   guardian2: { profile:'/art/guardian_part2_profile.png?v=661', early:'/art/guardian_part2_profile.png?v=661', late:'/art/guardian_part2_profile.png?v=661' },
   guardian3: { profile:'/art/guardian_part3_profile.png?v=661', early:'/art/guardian_part3_profile.png?v=661', late:'/art/guardian_part3_profile.png?v=661' },
   echo: { profile:'/art/echo_profile.png?v=661', early:'/art/echo_profile.png?v=661', late:'/art/echo_profile.png?v=661' },
+  aurora: { profile:'/art/aurora_profile.png?v=7200', early:'/art/aurora_profile.png?v=7200', late:'/art/aurora_profile.png?v=7200' },
+  masque: { profile:'/art/masque_profile.png?v=7200', early:'/art/masque_profile.png?v=7200', late:'/art/masque_profile.png?v=7200' },
 };
 
 function toast(msg) {

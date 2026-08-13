@@ -1350,9 +1350,9 @@ const JOB_SKILL_DEFS = {
     const mergedTitles = [...g1.titles, ...g2.titles, ...g3.titles];
     const mergedMonsters = [...g1.monsters, ...g2.monsters, ...g3.monsters];
     g1.id = 'guardian';
-    g1.title = '인베이더의 침공';
+    g1.title = '왕도의 종언';
     g1.genre = '팬 어댑테이션 · 월드 1~11 통합';
-    g1.subtitle = '무너진 캔터베리에서 시작된 침공. 여러 세계를 집어삼키는 인베이더에 맞서 끝까지 살아남아라.';
+    g1.subtitle = '무너진 왕도에서 시작된 긴 여정. 잃어버린 세계와 사람들을 지나 마지막 왕국의 운명을 마주한다.';
     g1.intro = '침략으로 무너진 캔터베리에서 시작한 기사와 작은 공주의 여정은 숲, 티탄 왕국, 마법학교, 광기의 사막, 셴 시티, 거대한 여관, 던전 왕국, 쉬버링 산, 라 제국과 10년 뒤의 미래까지 끊기지 않고 이어진다. 앞 월드에서 누구를 도왔고 무엇을 포기했는지가 뒤 월드의 동맹, 위험, 선택 난이도와 마지막 시간의 선택까지 실제 조건으로 남는 하나의 장편 연대기다.';
     g1.acts = mergedActs;
     g1.titles = mergedTitles;
@@ -2045,8 +2045,10 @@ function buildUniversalParallelStory(c, storyBeats){
         `지금 내리는 선택은 단순한 프롤로그가 아니다. 이동 경로와 사건 처리 방식에 따라 다른 플레이어와 예상보다 빨리 마주칠 수도 있고, 한동안 전혀 다른 사건을 겪다가 뒤늦게 같은 장소에서 만날 수도 있다.`
       ],
       choices:baseChoices,
-      roleHooks:entry?.roleHooks || {},
-      affordances:entry?.affordances || {},
+      roleHooks:route?.roleHooks || entry?.roleHooks || {},
+      affordances:route?.affordances || entry?.affordances || {},
+      reveal:route?.reveal,
+      stakes:route?.stakes,
       campaignBeat:false,
     };
     startByJob[name]=key;

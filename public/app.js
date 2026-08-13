@@ -419,7 +419,7 @@ const WORLD_META = {
   abyss: { motif: 'LAST LIGHTHOUSE', scene: ['침수 통로', '관측창 심연', '해저 균열', '압력문 격납고', '상승용 잠수정 갑판'], boss: '깊은 바다의 거대한 촉수와 푸른 눈을 지닌 심연체' },
   clock: { motif: 'THIRTEENTH BELL', scene: ['시계광장', '사라지는 거리', '시간 밀수 시장', '열세 번째 탑', '루프가 끝나는 새벽'], boss: '금빛 톱니와 검은 망토로 된 시간의 파수꾼' },
   wild: { motif: 'STAR-EATEN WOODS', scene: ['별가루 숲길', '말하는 고목', '유성 대장간', '숲의 심장', '마지막 별이 뜬 밤하늘'], boss: '별빛을 삼킨 거대한 신수와 숲의 오오라' },
-  guardian: { motif: 'GUARDIAN TALES CHRONICLE', scene: ['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길','셴 시티','거대한 여관','던전 왕국','쉬버링 산','라 제국 국경','라 제국 수용소','10년 뒤의 폐허','미래 공주의 저항군','헤븐홀드 탈환전','기록되지 않은 세계의 새벽'], boss: '월드 1부터 미래의 헤븐홀드까지 이어진 선택과 인연이 한꺼번에 되돌아오는 연대기의 마지막 시련' },
+  guardian: { motif: 'FALL OF THE ROYAL CAPITAL', scene: ['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길','셴 시티','거대한 여관','던전 왕국','쉬버링 산','라 제국 국경','라 제국 수용소','10년 뒤의 폐허','미래 공주의 저항군','헤븐홀드 탈환전','기록되지 않은 세계의 새벽'], boss: '월드 1부터 미래의 헤븐홀드까지 이어진 선택과 인연이 한꺼번에 되돌아오는 연대기의 마지막 시련' },
   echo: { motif:'TERMINAL TRACK ZERO', scene:['불 꺼진 청명역 대합실','직원 통로의 회색 화살표','0번 승강장','3분 17초 뒤의 CCTV','04시 58분 첫차'], boss:'운행이 끝난 역에서 정상 시간표와 존재하지 않는 0번 운행이 충돌하며 만들어진 마지막 이상 현상' },
   guardian1: { motif:'GUARDIAN TALES I', scene:['캔터베리 숲','티탄 왕국','마법학교','광기의 사막','셴으로 향하는 길'], boss:'월드 1~4의 인연과 침략의 흔적이 겹쳐진 첫 연대기의 마지막 시련' },
   guardian2: { motif:'GUARDIAN TALES II', scene:['셴 시티','작아진 여관','던전 왕국','쉬버링 산','라 제국 국경'], boss:'월드 5~8의 챔피언과 진실을 시험하는 두 번째 연대기의 마지막 시련' },
@@ -432,7 +432,7 @@ const STORY_ART_FILES = {
   abyss: { early: '/art/abyss_early.png?v=661', late: '/art/abyss_late.png?v=661' },
   clock: { early: '/art/clock_early.png?v=661', late: '/art/clock_late.png?v=661' },
   wild: { early: '/art/wild_early.png?v=661', late: '/art/wild_late.png?v=661' },
-  guardian: { early: '/art/guardian_early.png?v=661', late: '/art/guardian_late.png?v=661' },
+  guardian: { profile:'/art/guardian_profile.png?v=6900', early: '/art/guardian_early.png?v=661', late: '/art/guardian_late.png?v=661' },
   guardian1: { profile:'/art/guardian_part1_profile.png?v=661', early:'/art/guardian_part1_profile.png?v=661', late:'/art/guardian_part1_profile.png?v=661' },
   guardian2: { profile:'/art/guardian_part2_profile.png?v=661', early:'/art/guardian_part2_profile.png?v=661', late:'/art/guardian_part2_profile.png?v=661' },
   guardian3: { profile:'/art/guardian_part3_profile.png?v=661', early:'/art/guardian_part3_profile.png?v=661', late:'/art/guardian_part3_profile.png?v=661' },
@@ -1344,7 +1344,7 @@ function renderParallelStory() {
   $('#actLabel').textContent=encounter?`LOCAL ENCOUNTER · ACT ${scene.act}`:`PARALLEL STORY · ACT ${scene.act}`;
   $('#eventTitle').textContent=encounter?`${scene.title} · ${encounter.name}`:scene.title;
   $('#storyClarity').classList.add('clean-main');
-  $('#storySituation').textContent=`${scene.locationLabel} · ${scene.phase}`;
+  $('#storySituation').textContent=scene.sceneContext || `${scene.locationLabel} · ${scene.phase}`;
   $('#storyObjective').textContent=encounter?`${encounter.name}이 이 장소의 길을 막고 있습니다. 싸우거나, 약점을 찾거나, 빠져나갈 수 있습니다.`:scene.objective;
   const world=(scene.worldSummary||[]).join(' ');
   const social=nearby.length
@@ -1357,7 +1357,8 @@ function renderParallelStory() {
   const lastResult=last?.source==='parallel-story' ? `<div class="inline-resolution ${last.ok?'success':'failure'}"><div class="eyebrow">LAST ACTION</div><b>${esc(last.playerName||'플레이어')} · ${esc(last.choiceLabel||'행동')}</b><p>${esc(last.text||'')}</p>${last.consequence?`<small>게임 효과 · ${esc(last.consequence)}</small>`:''}</div>` : '';
   const encounterInfo=encounter?`<div class="story-inline-help danger"><b>지역 전투</b> · ${esc(encounter.name)} · HP ${encounter.hp}/${encounter.maxHp}${encounter.weak?` · 약점: ${esc(encounter.weak)}`:''}<br>이 장소에 들어온 다른 플레이어도 자기 턴에 같은 전투에 참가할 수 있습니다.</div>`:'';
   const nearbyInfo=nearby.length?`<div class="story-inline-help"><b>우연한 조우</b> · ${nearby.map(x=>`${esc(x.name)}(${esc(x.job||'')})`).join(' · ')}<br>자동으로 파티가 되지 않습니다. 아래 선택으로 같이 다니거나, 잠깐 협력하거나, 계속 각자 움직일 수 있습니다.</div>`:'';
-  $('#eventText').innerHTML=lastResult+paragraphs+encounterInfo+nearbyInfo;
+  const affordanceInfo=scene.affordanceSummary?`<div class="story-inline-help"><b>지금 눈앞에 있는 것</b><br>${esc(scene.affordanceSummary)}</div>`:'';
+  $('#eventText').innerHTML=lastResult+paragraphs+affordanceInfo+encounterInfo+nearbyInfo;
 
   $('#storyActionBox').style.display='none';
   $('#storyActionInput').disabled=true;
@@ -1371,6 +1372,7 @@ function renderParallelStory() {
     <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
       <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
       <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
+      ${choice.reason?`<small class="choice-context">가능한 이유 · ${esc(choice.reason)}</small>`:''}
     </button>`).join('');
   choiceBox.style.setProperty('display','grid','important');
   choiceBox.style.setProperty('visibility','visible','important');

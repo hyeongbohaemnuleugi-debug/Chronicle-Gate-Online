@@ -402,4 +402,125 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 .story-item-chip small{font-size:9px;color:var(--muted);line-height:1.35}
 .story-inventory summary{color:var(--accent2)}
 [data-theme="light"] .story-item-chip{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.09)}
-\n\n/* v7.1.2 - choice card layout safety: context text must never overlap sibling cards */\n.choice-area{\n  grid-auto-rows:max-content!important;\n  align-items:stretch!important;\n}\n.choice-area .story-choice{\n  display:flex!important;\n  flex-direction:column!important;\n  align-items:stretch!important;\n  justify-content:flex-start!important;\n  width:100%!important;\n  height:auto!important;\n  min-height:132px!important;\n  max-height:none!important;\n  overflow:hidden!important;\n  white-space:normal!important;\n  word-break:keep-all!important;\n  overflow-wrap:anywhere!important;\n}\n.story-choice .choice-title-line{\n  display:flex!important;\n  align-items:flex-start!important;\n  justify-content:space-between!important;\n  gap:8px!important;\n  min-width:0!important;\n}\n.story-choice .choice-title-line b{\n  min-width:0!important;\n  flex:1 1 auto!important;\n  font-size:11px!important;\n  line-height:1.45!important;\n  white-space:normal!important;\n  word-break:keep-all!important;\n  overflow-wrap:anywhere!important;\n}\n.story-choice .story-choice-meta{\n  display:flex!important;\n  flex:0 0 auto!important;\n  justify-content:space-between!important;\n  align-items:center!important;\n  gap:8px!important;\n  width:100%!important;\n  margin-top:8px!important;\n  line-height:1.35!important;\n}\n.story-choice .choice-context{\n  position:static!important;\n  display:block!important;\n  flex:0 0 auto!important;\n  width:100%!important;\n  margin:9px 0 0!important;\n  padding:8px 0 0!important;\n  border-top:1px solid rgba(255,255,255,.075)!important;\n  color:#b8bdc7!important;\n  font-size:10px!important;\n  font-weight:500!important;\n  line-height:1.55!important;\n  letter-spacing:0!important;\n  white-space:normal!important;\n  word-break:keep-all!important;\n  overflow-wrap:anywhere!important;\n}\n.story-choice .choice-context span{\n  display:inline!important;\n  margin-right:5px!important;\n  color:var(--accent)!important;\n  font-weight:800!important;\n}\n@media(max-width:1100px){\n  .choice-area{grid-template-columns:repeat(2,minmax(0,1fr))!important;}\n  .choice-area .story-choice{min-height:126px!important;}\n}\n@media(max-width:680px){\n  .choice-area{grid-template-columns:1fr!important;}\n  .choice-area .story-choice{min-height:0!important;}\n}\n
+
+/* v7.1.3 - definitive choice layout fix */
+.choice-area {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  grid-auto-flow: row !important;
+  grid-auto-rows: auto !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  max-height: 48vh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 2px 6px 8px 2px !important;
+}
+.choice-area > .story-choice {
+  box-sizing: border-box !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  align-self: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 14px 14px 13px !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+}
+.story-choice .choice-title-line {
+  position: static !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+.story-choice .choice-title-line b {
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  white-space: normal !important;
+  word-break: keep-all !important;
+  overflow-wrap: anywhere !important;
+}
+.story-choice .job-choice-badge {
+  flex: 0 0 auto !important;
+  position: static !important;
+}
+.story-choice .story-choice-meta {
+  position: static !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  gap: 6px 10px !important;
+  margin: 9px 0 0 !important;
+  padding: 0 !important;
+  line-height: 1.4 !important;
+}
+.story-choice .story-choice-meta span {
+  position: static !important;
+  display: inline-block !important;
+  font-size: 9px !important;
+  line-height: 1.4 !important;
+  white-space: normal !important;
+}
+.story-choice .choice-context {
+  position: static !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  margin: 10px 0 0 !important;
+  padding: 9px 0 0 !important;
+  border-top: 1px solid rgba(255,255,255,.08) !important;
+  color: #bfc3cc !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+  letter-spacing: 0 !important;
+  white-space: normal !important;
+  word-break: keep-all !important;
+  overflow-wrap: anywhere !important;
+  overflow: visible !important;
+}
+.story-choice .choice-context span {
+  position: static !important;
+  display: inline !important;
+  margin-right: 5px !important;
+  color: var(--accent) !important;
+  font-size: inherit !important;
+  font-weight: 800 !important;
+  line-height: inherit !important;
+}
+.choice-area > .vote-strip,
+.choice-area > .action-lock {
+  grid-column: 1 / -1 !important;
+}
+@media (max-width: 1100px) {
+  .choice-area {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 700px) {
+  .choice-area {
+    grid-template-columns: 1fr !important;
+    max-height: none !important;
+  }
+}

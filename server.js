@@ -801,6 +801,43 @@ const PARALLEL_STORY_ITEM_DEFS={
   echo_story_future_drive:{id:'echo_story_future_drive',name:'미래 기록 저장장치',tags:['evidence_drive','evidence','data'],value:5},
   echo_story_zero_ticket:{id:'echo_story_zero_ticket',name:'0번 승차권',tags:['zero_ticket','ticket','anomaly'],value:6},
   echo_story_root_key:{id:'echo_story_root_key',name:'운행 루트 코어키',tags:['root_key','signal','anomaly'],value:7},
+
+  // v7.0.0 - job-bound story tools for every main chronicle.
+  ember_rune_wedge:{id:'ember_rune_wedge',name:'왕실 룬 쐐기',campaignId:'ember',tags:['story-item','tool','access','charm'],value:4,storyOnly:true},
+  ember_ember_cup:{id:'ember_ember_cup',name:'불씨 판독잔',campaignId:'ember',tags:['story-item','evidence','charm','tool'],value:3,storyOnly:true},
+  ember_blood_thread:{id:'ember_blood_thread',name:'성흔 은실',campaignId:'ember',tags:['story-item','evidence','navigation'],value:3,storyOnly:true},
+  ember_grave_hook:{id:'ember_grave_hook',name:'왕묘 갈고리',campaignId:'ember',tags:['story-item','tool','access','force'],value:3,storyOnly:true},
+  ember_silver_oil:{id:'ember_silver_oil',name:'백은 성유',campaignId:'ember',tags:['story-item','medical','charm'],value:3,storyOnly:true},
+
+  neon_ghost_deck_story:{id:'neon_ghost_deck_story',name:'망분리 침투덱',campaignId:'neon',tags:['story-item','tool','data','access','signal'],value:5,storyOnly:true},
+  neon_value_meter:{id:'neon_value_meter',name:'감정 가치계',campaignId:'neon',tags:['story-item','data','evidence','trade'],value:3,storyOnly:true},
+  neon_scout_drone:{id:'neon_scout_drone',name:'초소형 정찰드론',campaignId:'neon',tags:['story-item','signal','navigation','tool'],value:4,storyOnly:true},
+  neon_nanopatch:{id:'neon_nanopatch',name:'나노패치 키트',campaignId:'neon',tags:['story-item','medical','tool'],value:3,storyOnly:true},
+  neon_trace_jammer:{id:'neon_trace_jammer',name:'추적 차단기',campaignId:'neon',tags:['story-item','signal','tool'],value:4,storyOnly:true},
+
+  abyss_oxygen_reel:{id:'abyss_oxygen_reel',name:'예비 산소 릴',campaignId:'abyss',tags:['story-item','medical','route'],value:4,storyOnly:true},
+  abyss_bio_sampler:{id:'abyss_bio_sampler',name:'생체 샘플러',campaignId:'abyss',tags:['story-item','evidence','tool'],value:3,storyOnly:true},
+  abyss_pressure_kit:{id:'abyss_pressure_kit',name:'압력 공구 키트',campaignId:'abyss',tags:['story-item','tool','access','force'],value:4,storyOnly:true},
+  abyss_sonar_pinger:{id:'abyss_sonar_pinger',name:'휴대 소나 핑거',campaignId:'abyss',tags:['story-item','signal','navigation'],value:4,storyOnly:true},
+  abyss_trauma_pack:{id:'abyss_trauma_pack',name:'고압 응급키트',campaignId:'abyss',tags:['story-item','medical'],value:3,storyOnly:true},
+
+  clock_afterchalk:{id:'clock_afterchalk',name:'잔상 분필',campaignId:'clock',tags:['story-item','temporal','evidence'],value:3,storyOnly:true},
+  clock_gear_key:{id:'clock_gear_key',name:'정밀 태엽키',campaignId:'clock',tags:['story-item','temporal','tool','access'],value:4,storyOnly:true},
+  clock_sealed_notebook:{id:'clock_sealed_notebook',name:'봉인 잉크 노트',campaignId:'clock',tags:['story-item','temporal','evidence','data'],value:3,storyOnly:true},
+  clock_empty_minute_bottle:{id:'clock_empty_minute_bottle',name:'빈 시간병',campaignId:'clock',tags:['story-item','temporal','trade','artifact'],value:4,storyOnly:true},
+  clock_tower_pass:{id:'clock_tower_pass',name:'종탑 순찰패',campaignId:'clock',tags:['story-item','access','temporal'],value:4,storyOnly:true},
+
+  wild_star_compass:{id:'wild_star_compass',name:'별궤적 나침침',campaignId:'wild',tags:['story-item','navigation','charm'],value:3,storyOnly:true},
+  wild_tree_knot:{id:'wild_tree_knot',name:'수목언어 매듭',campaignId:'wild',tags:['story-item','charm','evidence'],value:3,storyOnly:true},
+  wild_calm_sachet:{id:'wild_calm_sachet',name:'진정 향낭',campaignId:'wild',tags:['story-item','charm','medical'],value:3,storyOnly:true},
+  wild_star_tongs:{id:'wild_star_tongs',name:'별철 집게',campaignId:'wild',tags:['story-item','tool','force'],value:3,storyOnly:true},
+  wild_healing_herbs:{id:'wild_healing_herbs',name:'별빛 약초낭',campaignId:'wild',tags:['story-item','medical','charm'],value:3,storyOnly:true},
+
+  guardian_royal_seal_story:{id:'guardian_royal_seal_story',name:'왕실 비상인장',campaignId:'guardian',tags:['story-item','access','evidence'],value:4,storyOnly:true},
+  guardian_field_map:{id:'guardian_field_map',name:'캔터베리 야전지도',campaignId:'guardian',tags:['story-item','navigation'],value:3,storyOnly:true},
+  guardian_rune_scope_story:{id:'guardian_rune_scope_story',name:'룬 판독경',campaignId:'guardian',tags:['story-item','tool','evidence'],value:4,storyOnly:true},
+  guardian_royal_letter:{id:'guardian_royal_letter',name:'왕실 긴급서신',campaignId:'guardian',tags:['story-item','access','evidence','trade'],value:4,storyOnly:true},
+  guardian_field_medbag:{id:'guardian_field_medbag',name:'야전 구급낭',campaignId:'guardian',tags:['story-item','medical'],value:3,storyOnly:true},
 };
 const PARALLEL_JOB_START_ITEMS={
   '시설기사':['echo_story_toolkit','echo_story_tester','echo_story_radio'],
@@ -809,7 +846,35 @@ const PARALLEL_JOB_START_ITEMS={
   '심야 배달원':['echo_story_route_note','echo_story_scanner'],
   '민원 상담사':[],
   '응급구조사':['echo_story_medkit','echo_story_radio'],
+
+  '룬 기사':['ember_rune_wedge'], '재의 마도사':['ember_ember_cup'], '성흔 추적자':['ember_blood_thread'],
+  '왕묘 도굴꾼':['ember_grave_hook'], '백은 사제':['ember_silver_oil'], '검은 숲 사냥꾼':[],
+
+  '고스트 해커':['neon_ghost_deck_story'], '증강 집행자':[], '기억 브로커':['neon_value_meter'],
+  '드론 조종사':['neon_scout_drone'], '스트리트 메딕':['neon_nanopatch'], '데이터 사냥꾼':['neon_trace_jammer'],
+
+  '심해 잠수사':['abyss_oxygen_reel'], '해양 생물학자':['abyss_bio_sampler'], '잠수정 기관사':['abyss_pressure_kit'],
+  '소나 관측관':['abyss_sonar_pinger'], '해군 구조요원':[], '심해 의무관':['abyss_trauma_pack'],
+
+  '시간 감식관':['clock_afterchalk'], '기계 시계공':['clock_gear_key'], '역행 검사':[],
+  '예언 기록자':['clock_sealed_notebook'], '시간 밀수꾼':['clock_empty_minute_bottle'], '종소리 파수꾼':['clock_tower_pass'],
+
+  '별사냥꾼':['wild_star_compass'], '숲의 주술사':['wild_tree_knot'], '야수 길잡이':['wild_calm_sachet'],
+  '유성 대장장이':['wild_star_tongs'], '꿈의 방랑자':[], '별빛 치유사':['wild_healing_herbs'],
+
+  '캔터베리 수호기사':['guardian_royal_seal_story'], '왕실 정찰병':['guardian_field_map'],
+  '고대유적 연구원':['guardian_rune_scope_story'], '숲의 길잡이':[], '왕실 외교관':['guardian_royal_letter'],
+  '야전 의무병':['guardian_field_medbag'],
 };
+const PARALLEL_CAMPAIGN_SUPPLY_POOL={
+  ember:['ember_rune_wedge','ember_ember_cup','ember_blood_thread','ember_grave_hook','ember_silver_oil'],
+  neon:['neon_ghost_deck_story','neon_value_meter','neon_scout_drone','neon_nanopatch','neon_trace_jammer'],
+  abyss:['abyss_oxygen_reel','abyss_bio_sampler','abyss_pressure_kit','abyss_sonar_pinger','abyss_trauma_pack'],
+  clock:['clock_afterchalk','clock_gear_key','clock_sealed_notebook','clock_empty_minute_bottle','clock_tower_pass'],
+  wild:['wild_star_compass','wild_tree_knot','wild_calm_sachet','wild_star_tongs','wild_healing_herbs'],
+  guardian:['guardian_royal_seal_story','guardian_field_map','guardian_rune_scope_story','guardian_royal_letter','guardian_field_medbag'],
+};
+
 const PARALLEL_JOB_TAGS={
   '시설기사':['engineer','tool','circuit','maintenance'],
   '야간 역무원':['staff','authority','radio'],
@@ -869,7 +934,8 @@ function parallelItemUseKind(item,node){
   if(tags.has('medical') && (node?.affordances?.hasRescue || /부상|다친|구조|환자|생존자|피난|산소|치료/.test(text))) return 'medical';
   if(tags.has('force') && (node?.affordances?.hasHostile || node?.affordances?.hasObstacle || /적|괴물|전투|방벽|문|장애|봉쇄/.test(text))) return 'force';
   if(tags.has('charm') && /망령|저주|마법|별|시간|기억|왕관|봉인|균열|정령|신수/.test(text)) return 'charm';
-  if(tags.has('tool') && /장치|기계|설비|회로|문|잠금|서버|신호|장비|유적/.test(text)) return 'tool';
+  if(tags.has('tool') && /장치|기계|설비|회로|문|잠금|서버|신호|장비|유적|격벽|배관|제단|대장간/.test(text)) return 'tool';
+  if(tags.has('trade') && (node?.affordances?.hasPerson || /상인|브로커|귀족|부족|대표|주민|협상|거래|시장/.test(text))) return 'evidence';
   if(tags.has('temporal') && /시간|시계|루프|과거|미래|종|초침|기억/.test(text)) return 'artifact';
   if(tags.has('artifact') && String(node?.affordances?.item||'')===String(item?.name||'') && (node?.affordances?.hasClue||node?.affordances?.hasObstacle||node?.affordances?.hasPerson)) return 'artifact';
   return null;
@@ -977,31 +1043,83 @@ function parallelUniversalItemChoices(room,campaign,player,node){
   const ps=parallelPlayerState(room,player); if(!ps) return [];
   const out=[]; const sceneItem=parallelCampaignSceneItem(campaign,node); const aff=node.affordances||{};
   const add=c=>out.push({kind:c.kind||'parallel-base',path:c.path||statPath(c.stat||'지혜'),...c});
+  const hasPerson=Boolean(aff.hasPerson||aff.person);
+  const hasHostile=Boolean(aff.hasHostile||aff.hostile);
+  const hasRescue=Boolean(aff.hasRescue||aff.rescue);
+  const sceneText=`${node.title||''} ${node.objective||''} ${(node.text||[]).join(' ')} ${aff.person||''} ${aff.item||''}`;
+
+  // Scene-authored items are obtained in ways that make sense for the current situation.
   if(sceneItem && !parallelHasStoryItem(room,player,sceneItem.id)){
-    const hasPerson=Boolean(aff.hasPerson||aff.person); const hasHostile=Boolean(aff.hasHostile||aff.hostile);
     if(!hasPerson && !hasHostile){
-      add({id:`pickup:${sceneItem.id}`,label:`${sceneItem.name}을 챙긴다`,stat:'지혜',dc:7,automatic:false,grantItem:sceneItem.id,
-        success:`주변을 확인한 뒤 ${sceneItem.name}을 확보했다. 이후 맞는 상황에서는 이 물건을 이용한 해결법이 열린다.`,
-        failure:`${sceneItem.name}을 확보했지만 손대는 과정에서 소리와 흔적을 남겼다.`,choiceBadge:'스토리 아이템'});
-    } else {
-      if(Number(player?.coins||0)>=1 && hasPerson) add({id:`trade:${sceneItem.id}`,label:`${sceneItem.name}을 거래한다`,stat:'매력',dc:8,automatic:false,costCoins:1,grantItem:sceneItem.id,
-        success:`대가를 치르고 ${sceneItem.name}을 넘겨받았다.`,failure:`거래가 성사되지 않았다. 상대가 원하는 대가와 ${sceneItem.name}의 가치를 알아냈다.`,choiceBadge:'거래'});
+      add({id:`pickup:${sceneItem.id}`,label:`${sceneItem.name}을 찾아 챙긴다`,stat:'지혜',dc:7,automatic:false,grantItem:sceneItem.id,
+        success:`현장을 뒤져 ${sceneItem.name}을 확보했다. 맞는 장소에서 쓰면 일반 행동보다 훨씬 안전한 해결법이 열린다.`,
+        failure:`${sceneItem.name}은 손에 넣었지만 찾는 동안 흔적과 시간을 남겼다.`,choiceBadge:'현장 획득'});
+    }
+    if(hasPerson && Number(player?.coins||0)>=Math.max(1,Math.min(3,Number(sceneItem.value||2)))){
+      const price=Math.max(1,Math.min(3,Number(sceneItem.value||2)));
+      add({id:`buy:${sceneItem.id}`,label:`${sceneItem.name}을 구매한다`,stat:'매력',dc:7,automatic:true,costCoins:price,grantItem:sceneItem.id,
+        success:`코인 ${price}개를 내고 ${sceneItem.name}을 정식으로 넘겨받았다. 거래 기록 덕분에 이후 소유권을 문제 삼기 어렵다.`,choiceBadge:`구매 · ${price}코인`});
+    }
+    const barter=parallelStoryItems(room,player)
+      .map(id=>parallelStoryItem(id)).filter(item=>item && item.id!==sceneItem.id && item.campaignId===campaign.id && Number(item.value||0)<=Number(sceneItem.value||3))
+      .sort((a,b)=>Number(a.value||0)-Number(b.value||0))[0];
+    if(hasPerson && barter){
+      add({id:`barter:${sceneItem.id}:${barter.id}`,label:`${barter.name}과 물물교환한다`,stat:'매력',dc:8,automatic:false,consumeItem:barter.id,grantItem:sceneItem.id,
+        success:`상대는 ${barter.name}의 쓰임을 알아보고 ${sceneItem.name}과 맞바꿨다. 돈 대신 이전 선택에서 얻은 물건이 새 길을 만들었다.`,
+        failure:`교환 조건이 맞지 않았다. ${barter.name}은 잃지 않았지만 상대가 무엇을 원하는지는 알아냈다.`,choiceBadge:'물물교환'});
+    }
+    if(hasRescue && hasPerson){
+      add({id:`reward:${sceneItem.id}`,label:`사람을 도와 ${sceneItem.name}을 부탁한다`,stat:'체력',dc:8,automatic:false,grantItem:sceneItem.id,
+        success:`눈앞의 사람을 먼저 도운 대가로 ${sceneItem.name}을 넘겨받았다.`,
+        failure:`도움은 줬지만 지금 당장 물건을 넘겨받지는 못했다. 대신 다음에 다시 부탁할 명분이 생겼다.`,choiceBadge:'구조 보상'});
+    }
+    // Theft only appears when an item is plausibly physically present and there is someone/something to hide it from.
+    if((hasPerson||hasHostile) && /보관|장부|열쇠|키|배지|조각|표본|캡슐|장비|상인|브로커|연회|시장|초소|연구|보급|창고|가방|서랍|제단|수레/.test(sceneText)){
       add({id:`steal:${sceneItem.id}`,label:`${sceneItem.name}을 몰래 챙긴다`,stat:'민첩',dc:hasHostile?10:9,automatic:false,grantItem:sceneItem.id,threatDelta:1,
-        success:`눈을 피해 ${sceneItem.name}을 확보했다. 들키지 않았더라도 이 선택의 흔적은 남는다.`,failure:`손을 뻗는 순간 들킬 위험이 커져 ${sceneItem.name}을 가져오지 못했다.`,choiceBadge:'위험한 획득'});
+        success:`시선을 피해 ${sceneItem.name}을 확보했다. 물건은 얻었지만 누군가 없어졌다는 사실을 나중에 알아챌 수 있다.`,
+        failure:`손을 뻗는 순간 경계가 높아졌다. 물건은 얻지 못했고 이 장소에서의 행동이 더 어려워졌다.`,choiceBadge:'훔치기'});
     }
   }
+
+  // In addition to the scene's key item, one practical tool can surface through a context-appropriate acquisition route.
+  const pool=(PARALLEL_CAMPAIGN_SUPPLY_POOL[campaign.id]||[]).filter(id=>!parallelHasStoryItem(room,player,id));
+  if(pool.length){
+    const actIndex=Math.max(0,Number(node.act||1)-1);
+    const supplyId=pool[(actIndex + Number(ps.progress||0)) % pool.length];
+    const supply=parallelStoryItem(supplyId);
+    const guarded=/경비|검문|감시|봉쇄|수용소|경계|병사|추적|순찰|보안|경매/.test(sceneText);
+    const cache=/창고|보급|연구실|정비|격납고|초소|여관|대장간|작업실|유적|캠프|폐허|사무실/.test(sceneText);
+    const merchant=/상인|브로커|시장|행상|상점|경매|공방|거래|보급관|주민|대표/.test(sceneText);
+    if(supply && merchant && Number(player?.coins||0)>=Math.max(1,Math.min(2,Number(supply.value||2)))){
+      const price=Math.max(1,Math.min(2,Number(supply.value||2)));
+      add({id:`supply-buy:${supply.id}:${ps.nodeId}`,label:`${supply.name}을 산다`,stat:'매력',dc:7,automatic:true,costCoins:price,grantItem:supply.id,
+        success:`이 장소에서 실제로 취급하는 ${supply.name}을 코인 ${price}개에 샀다. 이후 맞는 상황에서만 전용 선택지가 열린다.`,choiceBadge:`도구 구매 · ${price}코인`});
+    } else if(supply && hasPerson){
+      const offer=parallelStoryItems(room,player).map(id=>parallelStoryItem(id)).filter(x=>x&&x.campaignId===campaign.id&&x.id!==supply.id).sort((a,b)=>Number(a.value||0)-Number(b.value||0))[0];
+      if(offer) add({id:`supply-barter:${supply.id}:${offer.id}:${ps.nodeId}`,label:`${offer.name}과 ${supply.name}을 바꾼다`,stat:'매력',dc:8,automatic:false,consumeItem:offer.id,grantItem:supply.id,
+        success:`상대가 ${offer.name}의 가치를 인정해 ${supply.name}과 교환했다.`,failure:'상대가 교환을 거절했다. 두 물건은 그대로 남았다.',choiceBadge:'도구 물물교환'});
+    } else if(supply && cache && !guarded){
+      add({id:`supply-find:${supply.id}:${ps.nodeId}`,label:`주변에서 ${supply.name}을 찾는다`,stat:'지혜',dc:8,automatic:false,grantItem:supply.id,
+        success:`현장의 보급품과 잔해를 뒤져 ${supply.name}을 확보했다.`,failure:`도구는 찾았지만 상태를 확인하느라 시간을 썼다.`,choiceBadge:'도구 발견'});
+    } else if(supply && cache && guarded){
+      add({id:`supply-steal:${supply.id}:${ps.nodeId}`,label:`${supply.name}을 몰래 빼낸다`,stat:'민첩',dc:10,automatic:false,grantItem:supply.id,threatDelta:1,
+        success:`감시가 느슨해진 순간 ${supply.name}을 빼냈다. 도구는 얻었지만 분실 사실이 뒤늦게 드러날 수 있다.`,failure:'감시에 걸릴 뻔해 손을 뗐다. 이 장소의 경계만 더 높아졌다.',choiceBadge:'도구 훔치기'});
+    }
+  }
+
+  // Owned story tools only surface when the scene actually gives them something relevant to interact with.
   for(const id of parallelStoryItems(room,player)){
     const item=parallelStoryItem(id); if(!item || item.campaignId!==campaign.id) continue;
     const kind=parallelItemUseKind(item,node); if(!kind) continue;
     if(ps.flags?.[`used_${id}_${ps.nodeId}`]) continue;
     const route=parallelItemRouteChoice(node,kind); if(!route) continue;
     const target=aff.obstacle||aff.clue||aff.person||aff.hostile||'현재 문제';
-    const labels={access:`${item.name}으로 ${target}을 해결한다`,signal:`${item.name}으로 신호를 확인한다`,route:`${item.name}으로 길을 찾는다`,evidence:`${item.name}을 단서와 대조한다`,medical:`${item.name}으로 사람을 돕는다`,force:`${item.name}을 이용해 돌파한다`,charm:`${item.name}의 반응을 확인한다`,tool:`${item.name}으로 장치를 다룬다`,artifact:`${item.name}을 현재 단서에 사용한다`};
+    const labels={access:`${item.name}으로 ${target}을 연다`,signal:`${item.name}으로 신호를 확인한다`,route:`${item.name}으로 안전한 길을 잡는다`,evidence:`${item.name}을 현재 단서와 대조한다`,medical:`${item.name}으로 구조를 돕는다`,force:`${item.name}으로 ${target}을 돌파한다`,charm:`${item.name}의 반응을 확인한다`,tool:`${item.name}으로 ${target}을 다룬다`,artifact:`${item.name}을 현상에 시험한다`};
     add({id:`use:${id}:${ps.nodeId}`,label:labels[kind],stat:route.stat||'지능',dc:Math.max(7,Number(route.dc||9)-2),automatic:false,
       nextSuccess:route.nextSuccess||route.next?.success||route.next, nextFailure:route.nextFailure||route.next?.failure||route.nextSuccess||route.next,
-      flag:`used_${id}_${ps.nodeId}`,choiceBadge:'아이템 활용',
-      success:`${item.name}이 이 상황에 정확히 맞았다. ${target}을 훨씬 유리한 조건에서 해결했다.`,
-      failure:`${item.name}을 활용해 시도했지만 완전히 해결하지는 못했다. 그래도 맨손으로 시도했을 때보다 위험을 줄였다.`});
+      flag:`used_${id}_${ps.nodeId}`,choiceBadge:'스토리 도구',
+      success:`${item.name}이 지금 상황에 정확히 맞았다. ${target}을 맨손으로 해결할 때보다 낮은 위험으로 처리했고, 그 방식 자체가 이후 기록에 남는다.`,
+      failure:`${item.name}을 써도 완전히 해결되지는 않았다. 하지만 도구가 없었을 때보다 손실을 줄였고 다음 시도에 쓸 정보를 남겼다.`});
   }
   return out;
 }

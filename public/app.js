@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=6722';
 
-const CLIENT_BUILD = '6.7.2-choice-render';
+const CLIENT_BUILD = '6.8.0-shared-story-items';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });

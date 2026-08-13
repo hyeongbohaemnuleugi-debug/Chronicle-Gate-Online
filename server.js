@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '6.8.0-shared-story-items';
+const APP_VERSION = '7.2.2-complete-replacement';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -1038,7 +1038,7 @@ const PARALLEL_STORY_ITEM_LORE={
   guardian_field_map:'캔터베리 주변의 숲길, 옛 성벽, 군용 보급로가 손으로 표시된 접이식 야전지도다. 일반 지도에 없는 정찰대 길과 위험 구역이 메모되어 있어 이동 계획을 짤 때 유용하다.',
   guardian_rune_scope_story:'유적 표면의 희미한 마력 흔적과 지워진 룬을 확대해 보는 단안경이다. 연구원들은 오래된 문양이 장식인지 실제 장치의 일부인지 구분하기 위해 렌즈를 여러 겹 돌려 맞춘다.',
   guardian_royal_letter:'왕실 봉인이 찍힌 긴급 서신이다. 각 지역의 관리와 동맹 세력에게 지원을 요청하거나 왕실의 의도를 설명하기 위해 작성된 공식 문서라 함부로 개봉하거나 위조하기 어렵다.',
-  guardian_field_medbag:'전투 중 기사와 민간인을 급히 치료하기 위한 붕대, 소독약, 지혈끈, 진통제가 들어 있는 야전 구급낭이다. 무겁지 않아 이동하면서도 응급 처치를 할 수 있게 구성되어 있다.'
+  guardian_field_medbag:'전투 중 기사와 민간인을 급히 치료하기 위한 붕대, 소독약, 지혈끈, 진통제가 들어 있는 야전 구급낭이다. 무겁지 않아 이동하면서도 응급 처치를 할 수 있게 구성되어 있다.',
   aurora_polar_scope:'적색 극광이 내는 여러 방향의 빛을 겹쳐 보도록 만든 두꺼운 편광 관측경이다. 기상관들은 눈으로는 한 덩어리처럼 보이는 극광을 층별로 나누고, 자기폭풍이 어느 방향에서 번지는지 읽을 때 사용한다.',
   aurora_ice_probe:'빙하 깊은 층을 깨뜨리지 않고 길쭉한 얼음 시료를 뽑아내는 채취봉이다. 손잡이에는 층의 깊이와 온도를 기록하는 눈금이 붙어 있어 오래된 기포와 광물 띠가 언제 생겼는지 현장에서 바로 비교할 수 있다.',
   aurora_shortwave_receiver:'디지털 중계망과 독립적으로 작동하는 낡은 단파 수신기다. 주파수 다이얼을 손으로 돌려 먼 기지의 송신이나 수십 년 전 방식의 비상 방송을 잡아내며, 배터리와 안테나만 살아 있으면 통신망이 끊겨도 소리를 들을 수 있다.',

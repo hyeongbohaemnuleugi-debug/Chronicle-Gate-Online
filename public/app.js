@@ -557,7 +557,7 @@ function renderEconomyPanel(player, storyItems = []) {
   const storyInventory = Array.isArray(storyItems) && storyItems.length ? `
     <details class="inventory-drawer story-inventory" open>
       <summary>STORY ITEMS · ${storyItems.length}개</summary>
-      <div class="story-item-list">${storyItems.map(item => `<div class="story-item-chip"><b>${esc(item.name)}</b><small>${esc(item.description || ((item.tags || []).slice(0,3).join(' · ') || '스토리 아이템'))}</small>${item.usableWhen?`<small style="display:block;margin-top:4px;opacity:.82">${esc(item.usableWhen)}</small>`:''}${Number(item.value||0)?`<small style="display:block;margin-top:3px;opacity:.66">교환 가치 · ${Number(item.value||0)}</small>`:''}</div>`).join('')}</div>
+      <div class="story-item-list">${storyItems.map(item => `<div class="story-item-chip"><b>${esc(item.name)}</b><small>${esc(item.description || ((item.tags || []).slice(0,3).join(' · ') || '스토리 아이템'))}</small>${Number(item.value||0)?`<small style="display:block;margin-top:3px;opacity:.66">교환 가치 · ${Number(item.value||0)}</small>`:''}</div>`).join('')}</div>
     </details>` : '';
   panel.innerHTML = `
     <div class="economy-head"><span>COINS</span><b>◈ ${Number(player.coins || 0)}</b></div>
@@ -1364,8 +1364,7 @@ function renderParallelStory() {
   $('#storyActionInput').disabled=true;
   $('#actionSuggestions').innerHTML='';
   const storyItems=(scene.storyItems||[]).map(item=>esc(item.name)).join(' · ');
-  const storyToolHint=(scene.storyItems||[]).slice(0,2).map(item=>item.usableWhen?`${esc(item.name)}: ${esc(item.usableWhen)}`:'').filter(Boolean).join('<br>');
-  $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>각 플레이어는 독립된 위치·진행·턴을 가집니다.</b><small>${storyItems?`현재 소지품 · ${storyItems}<br>`:''}${storyToolHint?`${storyToolHint}<br>`:''}스토리 도구는 아무 데서나 쓰이지 않고, 실제 대상·장치·인물·위험이 맞을 때만 전용 선택지가 열립니다.</small>`;
+  $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>각 플레이어는 독립된 위치·진행·턴을 가집니다.</b><small>${storyItems?`현재 소지품 · ${storyItems}<br>`:''}스토리 도구는 현재 인물이 실제로 소지하고 있는 물건입니다. 각 물건의 용도와 배경은 오른쪽 STORY ITEMS에서 확인할 수 있습니다.</small>`;
 
   const choices=Array.isArray(scene.choices) ? scene.choices.filter(choice=>choice && choice.label) : [];
   const emptyNotice=choices.length ? '' : `<div class="action-lock"><div><div class="eyebrow">CHOICE DATA ERROR</div><b>서버에서 현재 장면의 선택지가 전달되지 않았습니다.</b><small>새 패치에서는 이 상태가 생기지 않도록 서버가 기본 행동을 항상 보장합니다. 화면이 계속 이 상태라면 서버도 함께 재배포했는지 확인하세요.</small></div></div>`;
@@ -1373,7 +1372,7 @@ function renderParallelStory() {
     <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
       <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
       <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
-      ${choice.reason?`<small class="choice-context">가능한 이유 · ${esc(choice.reason)}</small>`:''}
+      ${choice.reason?`<div class="choice-context" title="${esc(choice.reason)}"><span>가능한 이유</span>${esc(choice.reason)}</div>`:''}
     </button>`).join('');
   choiceBox.style.setProperty('display','grid','important');
   choiceBox.style.setProperty('visibility','visible','important');

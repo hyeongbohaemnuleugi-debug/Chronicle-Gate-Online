@@ -2531,21 +2531,42 @@ function releaseChoiceLabel(c, beat, choice, index){
 }
 function releaseSceneDialogue(c, beat, index){
   const d=releaseDirectorFor(c); const act=Math.max(0,Number(beat.act||1)-1); const phase=String(beat.phase||'도입');
-  const kit=(SCENE_KITS[c.id]||[])[act]||{}; const lead=kit.person || d.leads[act%d.leads.length] || '현장의 생존자';
-  const lines={
-    도입:`“잠깐. ${kit.clue?`${kit.clue}부터 보세요.`:'지금 보이는 것부터 확인해요.'} 이건 평소의 사고가 아닙니다.”`,
-    탐색:`“${kit.clue||'이 흔적'}와 ${kit.obstacle||'막힌 길'}이 같은 시각에 생겼다면 우연일 리 없어요.”`,
-    대면:`“${kit.hostile||'눈앞의 위협'}만 보고 덤비면 중요한 걸 놓칩니다. ${kit.rescue?`${kit.rescue}도 여기 있어요.`:'뒤쪽 상황도 봐야 해요.'}”`,
-    진실:`“그럼 지금까지 우리가 믿은 설명 중 하나는 틀렸다는 뜻이군요. 누가 그 거짓을 필요로 했죠?”`,
-    위기:`“시간이 없습니다. ${beat.stakes||'모든 것을 한 번에 지킬 수는 없습니다.'} 먼저 무엇을 지킬지 정하세요.”`,
-    결단:`“여기서 내리는 결정은 끝나고 사라지지 않을 겁니다. 다음에 누굴 만나는지도 바뀔 테니까요.”`
+  const kit=(SCENE_KITS[c.id]||[])[act]||{}; const lead=kit.person || d.leads[act%d.leads.length] || '현장의 사람';
+  const variants={
+    도입:[
+      `“${kit.clue||'저것'}… 원래 저기 있던 겁니까?”`,
+      `“잠깐만요. ${kit.clue||'저 흔적'}부터 보세요. 아까와 달라졌어요.”`,
+      `“다들 멈춰요. ${kit.clue||'눈앞의 단서'}를 건드린 사람 있습니까?”`],
+    탐색:[
+      `“${kit.clue||'이 흔적'}를 믿는다면 ${kit.obstacle||'막힌 길'} 쪽 설명이 안 맞아요.”`,
+      `“누군가 이걸 숨기려 했다면, 없앤 것보다 남겨 둔 걸 봐야 해요.”`,
+      `“제가 본 건 여기까지입니다. 그다음은… 직접 확인하는 편이 낫겠어요.”`],
+    대면:[
+      `“${kit.hostile||'저것'}이 우리만 보고 있는 게 아닙니다. ${kit.rescue||'뒤쪽 사람'}도 위험해요!”`,
+      `“싸울 거면 지금입니다. 아니면 길을 열어 주세요. 둘 다 기다려주진 않아요.”`,
+      `“저 움직임, 반복됩니다. 한 번만 버티면 빈틈이 생겨요.”`],
+    진실:[
+      `“그럼 처음부터 누군가가 거짓말한 게 아니라… 진실을 반만 보여준 거군요.”`,
+      `“이걸 알면서도 계속 숨겼다면 이유가 있었겠죠. 좋은 이유인지는 모르겠지만.”`,
+      `“잠깐. 이 사실을 밖에 알리면 가장 먼저 다치는 사람이 누굽니까?”`],
+    위기:[
+      `“시간 없습니다. ${kit.rescue||'사람'}부터 볼지, ${kit.clue||'증거'}를 챙길지 지금 정해야 해요.”`,
+      `“전부 가져갈 수는 없어요. 뭘 놓고 갈 겁니까?”`,
+      `“여기서 망설이면 상황이 대신 선택합니다.”`],
+    결단:[
+      `“저는 제 답을 정했습니다. 당신은요?”`,
+      `“끝내는 방법은 하나가 아니에요. 어떤 결과를 감당할지가 문제죠.”`,
+      `“지금 정하면 되돌릴 수 없을 겁니다. 그래도 정해야 합니다.”`]
   };
-  const second=d.leads[(act+1)%d.leads.length];
-  const secondLine=phase==='결단'
-    ? '“여기까지 오면서 무엇을 지키고 무엇을 놓쳤는지 봤습니다. 마지막 선택도 그 연장선에서 하세요.”'
-    : `“${kit.clue||'지금 남은 흔적'}부터 끝까지 확인합시다. 지금 섣불리 결론을 내리면 누군가가 원한 방향으로 움직이게 됩니다.”`;
-  return [{speaker:lead,text:lines[phase]||lines.도입},{speaker:second,text:secondLine}];
+  const lines=[{speaker:lead,text:(variants[phase]||variants.도입)[index%3]}];
+  if((phase==='진실'||phase==='결단'||phase==='위기') && index%2===1){
+    const second=d.leads[(act+1)%d.leads.length];
+    const extra=phase==='위기' ? `“${kit.rescue||'누군가'}는 기다릴 수 없습니다.”` : phase==='진실' ? '“진실을 알아낸 것과 무엇을 할지는 다른 문제예요.”' : '“결정하면 제가 그 결과를 기억하겠습니다.”';
+    lines.push({speaker:second,text:extra});
+  }
+  return lines;
 }
+
 function releaseSceneQuestion(c, beat){
   const act=Math.max(0,Number(beat.act||1)-1); const kit=(SCENE_KITS[c.id]||[])[act]||{};
   if(beat.phase==='도입') return `${releaseKo(kit.clue||'첫 단서','은','는')} 왜 하필 지금 나타났는가?`;
@@ -2558,23 +2579,25 @@ function releaseSceneQuestion(c, beat){
 
 function releaseChoiceReason(c, beat, choice){
   const act=Math.max(0,Number(beat.act||1)-1); const kit=(SCENE_KITS[c.id]||[])[act]||{}; const t=String(choice.label||'');
-  if(/말|설득|묻|협상|대화|증언|고발/.test(t)) return `${releaseKo(kit.person||'이 장면의 인물','이','가')} 바로 눈앞에 있고, 그 반응에 따라 다음 정보나 통로가 달라질 수 있다.`;
-  if(/조사|확인|분석|읽|기록|대조|복원|흔적/.test(t)) return `${releaseKo(kit.clue||'현장에 남은 단서','이','가')} 현재 사건과 직접 연결되어 있어, 지금 확인하면 다음 판단의 근거가 된다.`;
-  if(/구조|돕|치료|보호|살린|구한다|안전한 위치/.test(t)) return `${releaseKo(kit.rescue||'도움이 필요한 대상','이','가')} 현재 위험에 놓여 있어, 늦으면 다음 장면에서 구할 기회를 잃을 수 있다.`;
-  if(/공격|싸|막|제압|돌파|움직임을 끊/.test(t)) return `${releaseKo(kit.hostile||kit.obstacle||'눈앞의 위협','이','가')} 실제로 진행을 막고 있어, 지금 제압하면 다른 행동을 할 시간을 벌 수 있다.`;
-  if(/이동|따라|향|들어|올라|내려|통과|우회|다른 통로/.test(t)) return `${releaseKo(kit.obstacle||kit.clue||'현재 단서','이','가')} 다음 장소로 이어지는 구체적인 방향을 보여 주고 있다.`;
-  return `현재 목표인 “${beat.objective||'눈앞의 문제 해결'}”와 직접 연결되는 행동이며, 결과가 다음 장면의 조건을 바꾼다.`;
+  if(/말|설득|묻|협상|대화|증언|고발/.test(t)) return `${releaseKo(kit.person||'상대','이','가')} 바로 여기 있다.`;
+  if(/조사|확인|분석|읽|기록|대조|복원|흔적/.test(t)) return `${releaseKo(kit.clue||'단서','이','가')} 눈앞에 남아 있다.`;
+  if(/구조|돕|치료|보호|살린|구한다|안전한 위치/.test(t)) return `${releaseKo(kit.rescue||'구조 대상','이','가')} 지금 위험하다.`;
+  if(/공격|싸|막|제압|돌파|움직임을 끊/.test(t)) return `${releaseKo(kit.hostile||kit.obstacle||'위협','이','가')} 길을 막고 있다.`;
+  if(/이동|따라|향|들어|올라|내려|통과|우회|다른 통로/.test(t)) return `${releaseKo(kit.clue||kit.obstacle||'흔적','이','가')} 그 방향으로 이어진다.`;
+  return '지금 눈앞에서 바로 시도할 수 있다.';
 }
 
 function decorateReleaseStory(c, beats){
   const d=releaseDirectorFor(c);
   return beats.map((beat,index)=>{
     const dialogue=releaseSceneDialogue(c,beat,index);
-    const playerVoices={}; for(const [stat,text] of Object.entries(d.thoughts)) playerVoices[stat]=`${text} 지금 내 앞의 문제는 “${releaseSceneQuestion(c,beat)}”다.`;
-    const choices=(beat.choices||[]).filter(x=>x&&x.label).slice(0,5).map((ch,i)=>({...ch,label:releaseChoiceLabel(c,beat,ch,i),reason:releaseChoiceReason(c,beat,{...ch,label:releaseChoiceLabel(c,beat,ch,i)})}));
-    const sceneQuestion=releaseSceneQuestion(c,beat);
-    const playerSpeech={도입:'좋아. 먼저 눈앞에서 확실히 확인할 수 있는 것부터 보자.',탐색:'처음 보인 답이 맞는지, 다른 흔적과 대조해 보자.',대면:'싸우든 물러서든, 누굴 지킬지부터 정하고 움직이자.',진실:'방금 드러난 사실이 진짜라면 앞선 판단도 다시 봐야 해.',위기:'전부 지킬 수 없다면 무엇을 절대 포기하지 않을지 정하자.',결단:'여기까지 온 이유를 잊지 말자. 마지막 선택도 우리가 직접 책임진다.'}[beat.phase]||'지금 할 수 있는 것부터 하나씩 확인하자.';
-    return {...beat,releaseTone:d.tone,dialogue,playerVoices,playerSpeech,sceneQuestion,immediatePressure:beat.stakes||beat.why||'',choices};
+    const playerVoices={};
+    for(const [stat,text] of Object.entries(d.thoughts)) playerVoices[stat]=String(text).split(/(?<=[.!?…])\s+/)[0];
+    const choices=(beat.choices||[]).filter(x=>x&&x.label).slice(0,6).map((ch,i)=>{
+      const label=releaseChoiceLabel(c,beat,ch,i);
+      return {...ch,label,reason:releaseChoiceReason(c,beat,{...ch,label})};
+    });
+    return {...beat,releaseTone:d.tone,dialogue,playerVoices,playerSpeech:'',sceneQuestion:releaseSceneQuestion(c,beat),immediatePressure:beat.stakes||'',choices};
   });
 }
 

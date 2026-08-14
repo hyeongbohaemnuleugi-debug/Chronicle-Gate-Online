@@ -920,3 +920,52 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 #choiceArea .choice-check{font-size:11.5px!important;color:rgba(255,255,255,.56)!important}
 #choiceArea{scroll-snap-type:y mandatory!important;scroll-padding-top:8px!important}
 @media(max-width:760px){.story-now-strip{padding:11px 12px}.actual-play-story-v770 .actual-play-opening{font-size:15.5px!important}.actual-play-story-v770 .scene-narration{font-size:14.5px!important}#choiceArea .choice-card.choice-row{min-height:132px!important;padding:15px!important}}
+
+
+/* v7.8.0 FICTION-FIRST RELEASE — scene first, logs last, player agency visible */
+#storyClarity.story-recap-v780{margin:0 0 8px!important;padding:0!important;background:none!important;border:0!important}
+#storyClarity.story-recap-v780 .story-recap-details{margin:0!important;padding:0!important;border:0!important}
+#storyClarity.story-recap-v780 .story-recap-details>summary{display:inline-flex;align-items:center;gap:6px;padding:5px 8px!important;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.025);font-size:10.5px!important;color:rgba(255,255,255,.45)!important;letter-spacing:.02em}
+#storyClarity.story-recap-v780 .story-recap-details>div{max-width:760px;padding:8px 10px 2px!important}
+#storyClarity.story-recap-v780 .story-recap-details p{font-size:11px!important;line-height:1.55!important;color:rgba(255,255,255,.48)!important}
+.actual-play-story-v780{display:flex;flex-direction:column;gap:13px;max-width:960px}
+.actual-play-story-v780 .scene-narration{margin:0!important;font-size:16px!important;line-height:1.9!important;color:rgba(246,244,239,.9)!important;letter-spacing:-.01em}
+.actual-play-story-v780 .actual-play-opening{font-size:17.5px!important;line-height:1.92!important;color:#fff!important;font-weight:520}
+.actual-play-story-v780 .actual-play-detail{color:rgba(239,236,229,.82)!important}
+.actual-play-story-v780 .actual-play-dialogue{display:grid;gap:9px;margin:3px 0}
+.actual-play-story-v780 .story-dialogue{padding:12px 14px!important;border-left:2px solid rgba(231,186,91,.74)!important;background:rgba(255,255,255,.025)!important}
+.actual-play-story-v780 .story-dialogue span{font-size:11px!important;color:#e7ba5b!important}
+.actual-play-story-v780 .story-dialogue p{font-size:15px!important;line-height:1.72!important;color:rgba(255,255,255,.93)!important}
+.actual-play-story-v780 .actual-play-instinct{margin:1px 0 0!important;padding:8px 11px!important;border-left:2px solid rgba(120,177,221,.42);background:rgba(120,177,221,.025);font-size:12px!important;line-height:1.55!important;color:rgba(199,216,229,.72)!important}
+.actual-play-story-v780 .actual-play-pressure{display:flex!important;align-items:flex-start!important;gap:10px!important;margin:1px 0 0!important;padding:9px 11px!important;border-radius:9px!important;background:rgba(219,91,65,.045)!important;border:1px solid rgba(219,91,65,.12)!important}
+.actual-play-story-v780 .actual-play-pressure span{font:800 9px Orbitron,sans-serif!important;letter-spacing:.12em!important;color:#e68b70!important;padding-top:2px}
+.actual-play-story-v780 .actual-play-pressure b{font-size:12px!important;line-height:1.55!important;color:rgba(245,218,207,.82)!important;font-weight:600!important}
+.recent-result-details{margin:5px 0 2px;color:rgba(255,255,255,.5)}
+.recent-result-details>summary{cursor:pointer;display:inline-flex;padding:5px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;font-size:10.5px;color:rgba(255,255,255,.43);list-style:none}
+.recent-result-details>summary::-webkit-details-marker{display:none}
+.recent-result-details>div{padding:8px 10px;max-width:760px;font-size:11.5px;line-height:1.55}
+.recent-result-details p{margin:5px 0 0;color:rgba(255,255,255,.62)}
+#storyActionBox{display:none!important}
+#storyActionBox[style*="display: block"]{display:block!important}
+#storyActionBox:not(.disabled){margin:14px 0 10px!important;padding:14px 15px!important;border:1px solid rgba(117,184,226,.26)!important;background:rgba(53,111,150,.045)!important;box-shadow:none!important}
+#storyActionBox:not(.disabled) label{color:#8ec9ed!important;font-size:10px!important}
+#storyActionBox:not(.disabled)>small{color:rgba(255,255,255,.48)!important;line-height:1.5!important}
+#storyActionBox .story-action-row input{min-height:44px!important;font-size:13px!important}
+#storyRoleContext{margin:8px 0 10px!important;padding:9px 11px!important}
+#storyRoleContext span{font-size:9px!important}
+#storyRoleContext b{font-size:12px!important;line-height:1.5!important}
+#choiceArea{scroll-snap-type:y mandatory!important;overscroll-behavior:contain!important;max-height:66vh!important;padding:0 6px 38vh 0!important;gap:12px!important;scroll-padding-top:8px!important;scroll-padding-bottom:28vh!important}
+#choiceArea>.vote-strip.actual-play-choice-head{position:static!important;flex:0 0 auto!important;margin:0 0 2px!important;padding:9px 12px!important;border-radius:10px!important;background:rgba(11,12,15,.96)!important}
+#choiceArea>.vote-strip.actual-play-choice-head b{font-size:11.5px!important;color:rgba(255,255,255,.68)!important}
+#choiceArea .choice-card.choice-row{scroll-snap-align:start!important;scroll-snap-stop:always!important;min-height:112px!important;padding:18px 20px!important;grid-template-columns:42px minmax(0,1fr) 92px!important;gap:14px!important;background:rgba(15,16,20,.98)!important;border:1px solid rgba(255,255,255,.11)!important}
+#choiceArea .choice-card.choice-row .choice-copy b{font-size:15px!important;line-height:1.55!important;color:rgba(255,255,255,.95)!important;font-weight:720!important}
+#choiceArea .choice-card.choice-row .choice-check{font-size:10.5px!important;color:rgba(255,255,255,.5)!important}
+#choiceArea .choice-card.choice-row .choice-number{font-size:16px!important;color:#e7ba5b!important}
+#choiceArea .choice-card.choice-row:hover{border-color:rgba(231,186,91,.6)!important;background:rgba(231,186,91,.05)!important}
+@media(max-width:760px){
+  .actual-play-story-v780 .actual-play-opening{font-size:16px!important}
+  .actual-play-story-v780 .scene-narration{font-size:14.7px!important}
+  #choiceArea{max-height:70vh!important;padding-bottom:42vh!important}
+  #choiceArea .choice-card.choice-row{grid-template-columns:34px minmax(0,1fr)!important;min-height:126px!important;padding:16px!important}
+  #choiceArea .choice-card.choice-row .choice-check{grid-column:2!important;justify-self:start!important;margin-top:3px!important}
+}

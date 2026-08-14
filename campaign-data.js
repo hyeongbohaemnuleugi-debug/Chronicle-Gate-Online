@@ -550,20 +550,9 @@ function enrichStoryProse(c, guide, baseText, act, step) {
   const texture = STORY_TEXTURE[c.id] || STORY_TEXTURE.ember;
   const sense = texture.sense[(act * 2 + step) % texture.sense.length];
   const npc = texture.npc[(act * 3 + step + 1) % texture.npc.length];
-  const omen = texture.omen[(act * 4 + step + 2) % texture.omen.length];
-  // v6.6.3 STORY FLOW EVOLUTION
-  // Every chronicle gets a fuller scene, but its own texture remains dominant so the campaigns do not blur together.
-  // We deliberately add only two supporting paragraphs: enough atmosphere/context to roleplay from, without turning a turn into a wall of text.
-  const second = step === 0 ? sense : step === 1 ? npc : step === 2 ? omen : step === 3 ? sense : step === 4 ? omen : npc;
-  const third = step === 0 ? npc : step === 1 ? sense : step === 2 ? sense : step === 3 ? omen : step === 4 ? npc : omen;
-  const extra = step % 3 === 0
-    ? texture.omen[(act + step + 1) % texture.omen.length]
-    : step % 3 === 1
-      ? texture.npc[(act + step + 2) % texture.npc.length]
-      : texture.sense[(act + step + 3) % texture.sense.length];
-  const voice = STORY_DECISION_VOICE[c.id] || STORY_DECISION_VOICE.ember;
-  const pressure = voice[step % voice.length];
-  return [baseText, second, third, extra, pressure].filter(Boolean).join('\n\n');
+  const support = step % 2 === 0 ? sense : npc;
+  // One strong scene paragraph plus one sensory/human beat. Avoid stacking exposition blocks.
+  return [baseText, support].filter(Boolean).join('\n\n');
 }
 
 // v6.1.0 - LIVING STORY: explicit scene affordances.
@@ -786,9 +775,18 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
   const rank=new Map(priority.map((type,i)=>[type,i]));
   candidates.sort((a,b)=>(rank.get(a.type)??99)-(rank.get(b.type)??99));
   const richness=[hasPerson,hasHostile,hasObstacle,hasClue,hasRescue,hasItem,hasStealth].filter(Boolean).length;
-  // Usually 7-9 choices: enough freedom to feel like a system GM, without dumping every mechanically legal action at once.
-  const desired=Math.max(6,Math.min(9,6+Math.ceil(richness/2)));
-  const defs=candidates.slice(0,desired);
+  // v7.4.0: one strong option per intent family first. This prevents near-duplicates such as
+  // '묻는다 / 설득한다 / 소리를 듣는다' from crowding out genuinely different approaches.
+  const familyOf=(type)=>({investigate:'inspect','inspect-item':'inspect',observe:'observe',listen:'observe',wait:'observe',question:'social',persuade:'social',trade:'social',threaten:'social',help:'help',protect:'help',fight:'force',break:'force',sneak:'stealth',hide:'stealth',tail:'stealth',distract:'stealth',bypass:'move',retreat:'move','travel-a':'move','take-item':'item',steal:'item',trap:'plan'}[type]||type);
+  const desired=4;
+  const defs=[]; const families=new Set();
+  for(const candidate of candidates){
+    const family=familyOf(candidate.type);
+    if(families.has(family)) continue;
+    defs.push(candidate); families.add(family);
+    if(defs.length>=desired) break;
+  }
+  if(defs.length<desired){ for(const candidate of candidates){ if(!defs.includes(candidate)){defs.push(candidate); if(defs.length>=desired)break;} } }
 
   return defs.map((d,i)=>{
     const risk=d.risk||actionRisk(d.type);
@@ -797,10 +795,10 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
     return {
       id:`${beat.id}-${String(d.type).toUpperCase()}-${i+1}`,
       label:[...d.label].length<=18?d.label:[...d.label].slice(0,18).join(''),
-      detail:`${focus}와 직접 연결된 행동. 성공과 실패 모두 다음 장면에 영향을 준다.`,
+      detail:'',
       stat:d.stat,dc,path:d.path,branchKey:`act${actNo}`,branchValue:d.route,actionType:d.type,
       startsCombat:Boolean(d.startsCombat),fatalRisk:Boolean(d.fatalRisk),isTravel:Boolean(d.isTravel),opportunity:actionOpportunity(d.type),risk,
-      success:`${d.success} 이 결과는 다음 장면에 남는다.`,failure:`${d.failure} 이 결과는 다음 장면에 남는다.`,
+      success:d.success,failure:d.failure,
       consequenceHint:{success:`${actionOpportunity(d.type)} 확보`,failure:risk==='높음'?'큰 대가 또는 적대 증가':'다른 정보 또는 우회로 발생'}
     };
   });
@@ -827,7 +825,7 @@ function buildBridgeScene(c, guide, act) {
     const scene=custom[c.id][act]||custom[c.id][0];
     return `${scene}
 
-지금 파티의 목표는 “${guide.goal}”이다. 이 세계에서는 눈앞의 현상을 피하는 것보다 그 현상이 어떤 규칙으로 작동하는지 이해해야 다음 선택이 자연스럽게 이어진다. ${guide.stakes}`;
+${guide.stakes}`;
   }
   if (c.id==='echo') {
     const echoScenes=[
@@ -840,7 +838,7 @@ function buildBridgeScene(c, guide, act) {
     const goal=String(guide.goal||'').replace(/[.!?]+$/g,'');
     const stakes=String(guide.stakes||'').replace(/[.!?]+$/g,'');
     const scene=echoScenes[act]||echoScenes[0];
-    return `${scene}\n\n지금 파티의 목표는 “${goal}”이다. 하지만 막차가 끝난 역에서는 서두르는 것만이 정답이 아니다. ${stakes} 작은 선택 하나가 어떤 통로가 열리고 어떤 안내가 거짓이 되는지를 바꾼다.`;
+    return `${scene}\n\n${stakes}`;
   }
   const scenes = {
     ember: [
@@ -1033,9 +1031,7 @@ function buildStoryBeats(c){
     const guide=guides[act];
     const script=scripts[act];
     const rawProse=[script.intro, buildBridgeScene(c, guide, act), buildExplorationScene(c, guide, act), script.discovery, script.crisis, script.climax];
-    const prose=rawProse.map((text,step)=>`${enrichStoryProse(c, guide, text, act, step)}
-
-${immersiveStoryLayer(c, guide, act, step)}`);
+    const prose=rawProse.map((text,step)=>enrichStoryProse(c, guide, text, act, step));
     for(let step=0;step<6;step++){
       const index=act*6+step;
       const chapter=index+1;
@@ -2217,9 +2213,8 @@ function buildUniversalParallelStory(c, storyBeats){
       phase:'개인 시작',
       objective:`${c.acts?.[0]||'첫 사건'} 안에서 자신이 놓인 상황을 파악하고 다음 행동을 정한다.`,
       text:[
-        `${name}인 당신은 다른 플레이어들과 같은 세계에 있지만 처음부터 같은 장소에 있지는 않다. ${hook}`,
-        ...String(route?.text || c.intro || '').split(/\n\n+/).filter(Boolean).slice(0,3),
-        `지금 내리는 선택은 단순한 프롤로그가 아니다. 이동 경로와 사건 처리 방식에 따라 다른 플레이어와 예상보다 빨리 마주칠 수도 있고, 한동안 전혀 다른 사건을 겪다가 뒤늦게 같은 장소에서 만날 수도 있다.`
+        `${hook}`,
+        ...String(route?.text || c.intro || '').split(/\n\n+/).filter(Boolean).slice(0,2)
       ],
       choices:baseChoices,
       roleHooks:route?.roleHooks || entry?.roleHooks || {},

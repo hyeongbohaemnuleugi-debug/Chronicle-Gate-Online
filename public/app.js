@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '7.8.0-fiction-first-release';
+const CLIENT_BUILD = '7.8.1-story-render-hotfix';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -957,7 +957,11 @@ function setStoryTrail(before = '', bridge = '', now = '') {
   const prev = conciseSceneText(before, 105);
   const why = conciseSceneText(bridge, 120);
   clarity.className = 'story-clarity story-recap-compact story-recap-v780';
-  if(!prev && !why){ clarity.innerHTML=''; clarity.style.display='none'; return; }
+  if(!prev && !why){
+    clarity.replaceChildren();
+    clarity.style.display='none';
+    return;
+  }
   clarity.style.display='block';
   clarity.innerHTML = `<details class="story-recap-details"><summary>지난 이야기</summary><div>${prev?`<p>${esc(prev)}</p>`:''}${why?`<p>${esc(why)}</p>`:''}</div></details>`;
 }
@@ -1440,9 +1444,12 @@ function renderParallelStory() {
     $('#storySceneCaption').textContent=`${c?.title || '막차 이후'} · ${p?.job?.name || ''}의 결말`;
     $('#actLabel').textContent='PERSONAL ENDING';
     $('#eventTitle').textContent='당신이 선택한 아침';
-    $('#storySituation').textContent=ps.endingText || `${c?.title || '이 연대기'}에서의 당신 이야기는 여기서 한 결말에 도달했습니다.`;
-    $('#storyObjective').textContent='다른 플레이어는 아직 각자의 위치에서 이야기를 진행하고 있습니다.';
-    $('#storyWhy').textContent=(state.parallel.worldSummary||[]).join(' ') || '같은 세계 안에서도 서로 다른 선택과 결말이 동시에 만들어질 수 있습니다.';
+    const endingClarity = $('#storyClarity');
+    if (endingClarity) {
+      endingClarity.className = 'story-clarity story-recap-compact story-recap-v780';
+      endingClarity.style.display = 'block';
+      endingClarity.innerHTML = `<div class="ending-context-card"><span>당신의 결말</span><p>${esc(ps.endingText || `${c?.title || '이 연대기'}에서의 당신 이야기는 여기서 한 결말에 도달했습니다.`)}</p></div>`;
+    }
     $('#storyPrompt').innerHTML='<b>당신은 더 이상 턴을 사용하지 않습니다.</b> 다른 플레이어들이 어떤 선택으로 아침을 맞는지 지켜볼 수 있습니다.';
     $('#eventText').innerHTML=`<div class="inline-resolution success"><div class="eyebrow">YOUR ENDING</div><p>${esc(ps.endingText || '')}</p></div>`;
     $('#choiceArea').innerHTML='<div class="action-lock"><div><div class="eyebrow">PERSONAL STORY COMPLETE</div><b>다른 플레이어의 개인 진행이 끝날 때까지 기다립니다.</b></div></div>';
@@ -1469,7 +1476,6 @@ function renderParallelStory() {
   const social=nearby.length
     ? `현재 같은 장소에 ${nearby.map(x=>`${x.name}${x.linked?'(동행 중)':''}`).join(', ')}이(가) 있습니다. 만난 뒤에도 같이 갈지 헤어질지는 선택입니다.`
     : linked.length ? `동행 관계: ${linked.map(x=>`${x.name}(${x.locationLabel})`).join(', ')}. 서로 다른 길로 갈 경우 다음 턴에 따라갈지 남을지 다시 선택합니다.` : '현재 이 장소에는 다른 플레이어가 보이지 않습니다.';
-  $('#storyWhy').style.display='block';
   $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}</b> · ${esc(scene.sceneQuestion || scene.objective || '지금 무엇을 할지 정한다')}`;
   const paragraphs=parallelNarrationHTML(scene.paragraphs||[]);
   const pPrime=p?.job?.prime||'지혜';
@@ -1688,8 +1694,7 @@ function renderStory() {
       `${p?.name || '당신'}은(는) 아직 다른 플레이어를 만나지 못한 채 자기 위치에서 사건의 첫 단서를 마주했다.`,
       `${myScene?.lead || '각 플레이어는 서로 다른 장소에서 이야기를 시작한다.'} 지금 해야 할 일은 ${myScene?.objective || '자기 앞의 상황을 이해하고 첫 행동을 정하는 것'}이다.`
     );
-    $('#storyWhy').style.display='block';
-    $('#storyPrompt').innerHTML = `<b>${esc(p?.name||'당신')}</b>은(는) 아직 다른 이들이 어디에 있는지 모른다.`;
+      $('#storyPrompt').innerHTML = `<b>${esc(p?.name||'당신')}</b>은(는) 아직 다른 이들이 어디에 있는지 모른다.`;
     $('#eventText').innerHTML = parallelNarrationHTML((myScene?.paragraphs||[]).slice(0,4));
     $('#storyActionBox').style.display = 'none';
     $('#storyActionInput').disabled = true;
@@ -1747,8 +1752,7 @@ function renderStory() {
     $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `${beat.title}`) : '연대기가 이어집니다.';
     const trail = mainStoryTrail(c, beat, inResolution);
     setStoryTrail(trail.before, trail.bridge, trail.now);
-    $('#storyWhy').style.display='block';
-    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '당신')}</b> · ${esc(beat?.sceneQuestion || beat?.objective || '지금 무엇을 할지 정한다')}`;
+      $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '당신')}</b> · ${esc(beat?.sceneQuestion || beat?.objective || '지금 무엇을 할지 정한다')}`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
     if (inResolution && lastResolution) {
       const resultTrail = mainStoryTrail(c, beat, true);

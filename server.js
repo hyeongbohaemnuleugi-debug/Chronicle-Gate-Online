@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '7.2.2-complete-replacement';
+const APP_VERSION = '7.4.0-immersive-room-browser';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -703,14 +703,20 @@ function normalizeLoadedRoom(room) {
   return room;
 }
 
-async function createRoom(hostName, socketId) {
+async function createRoom(hostName, socketId, options = {}) {
   const roomCode = await reserveRoomCode();
   const player = {
     id: token(), socketId, name: hostName, host: true, connected: true,
     ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
   };
+  const roomName = sanitize(options.roomName || `${hostName}의 연대기`, 28) || `${hostName}의 연대기`;
+  const accessMode = options.accessMode === 'locked' ? 'locked' : 'public';
+  const rawPassword = String(options.password || '');
+  if (accessMode === 'locked' && rawPassword.length < 2) throw new Error('ROOM_PASSWORD_REQUIRED');
+  const passwordHash = accessMode === 'locked' ? crypto.createHash('sha256').update(rawPassword).digest('hex') : '';
   const room = {
     code: roomCode,
+    roomName, accessMode, passwordHash,
     createdAt: Date.now(),
     lastActiveAt: Date.now(),
     campaignId: null,
@@ -1523,111 +1529,59 @@ function parallelSceneContext(node,campaign){
   return `${node?.title || campaign?.title || '현재 장면'} · ${visible.slice(0,4).join(' · ')}`;
 }
 function parallelChoiceReason(choice,node){
-  const aff=node?.affordances || {};
-  const type=String(choice?.actionType || choice?.type || '');
-  const label=String(choice?.label || '');
-  if(choice?.kind==='parallel-social') return '같은 장소에 실제로 다른 플레이어가 있어 합류·협력·분리를 선택할 수 있다.';
-  if(choice?.kind==='parallel-item-transfer') return '같은 장소의 플레이어에게 현재 가진 스토리 아이템을 직접 넘길 수 있다.';
-  if(choice?.choiceBadge && /아이템|열쇠|장비|도구|소지품/.test(String(choice.choiceBadge))) return '현재 소지한 물건과 이 장소의 장치 또는 장애물이 서로 맞아 사용할 수 있다.';
-  if(/investigate|inspect-item/.test(type) || /로그|기록|단서|조사|살핀|본다/.test(label)){
-    if(aff.clue) return `${aff.clue}가 이 현장에 실제로 남아 있어 직접 확인할 수 있다.`;
-    if(aff.item) return `${aff.item}이 눈앞에 있어 상태와 용도를 확인할 수 있다.`;
-    return '현재 장면에 눈으로 확인할 수 있는 흔적이나 기록이 남아 있다.';
-  }
-  if(/question|persuade|trade|tail|threaten/.test(type) || /묻는다|말한다|설득|거래|따라간|압박/.test(label)){
-    if(aff.person) return `${aff.person}이 현재 이 장소에 있으므로 직접 대화하거나 행동을 추적할 수 있다.`;
-    return '현재 장면에 상호작용할 수 있는 인물이 있다.';
-  }
-  if(/fight/.test(type) || /싸운다|공격|막는다/.test(label)){
-    if(aff.hostile) return `${aff.hostile}이 지금 이 장소의 진행을 위협하고 있다.`;
-    return '현재 장면에 실제 적대 대상이 있다.';
-  }
-  if(/help|protect/.test(type) || /돕는다|지킨다|구조/.test(label)){
-    if(aff.rescue) return `${aff.rescue}이 위험에 처해 있어 지금 개입할 수 있다.`;
-    if(aff.person) return `${aff.person}이 위험에 노출되어 있어 보호하거나 도울 수 있다.`;
-    return '현재 장면에 도움을 필요로 하는 대상이 있다.';
-  }
-  if(/bypass|break|sneak|hide|distract|trap/.test(type) || /우회|부순|몰래|숨긴|시선을|함정/.test(label)){
-    if(aff.obstacle) return `${aff.obstacle}이 길을 막고 있어 우회·돌파·은밀 접근 같은 방법을 고려할 수 있다.`;
-    if(aff.hostile) return `${aff.hostile}의 경계가 있어 정면 대응 외의 접근도 가능하다.`;
-    return '현재 이동 경로에 경계나 장애 요소가 있어 다른 접근 방식을 택할 수 있다.';
-  }
-  if(/take-item|steal/.test(type) || /챙긴다|훔친다|가져간다/.test(label)){
-    if(aff.item) return `${aff.item}이 현재 접근 가능한 위치에 있지만, 확보 방식에 따라 위험이나 대가가 생길 수 있다.`;
-    return '현재 장면에 확보 가능한 물건이 있다.';
-  }
-  if(/observe|listen|wait/.test(type) || /주변|듣는다|기다린다/.test(label)) return '주변 상황이 계속 변하고 있어 즉시 움직이지 않고 관찰해도 새로운 정보가 나올 수 있다.';
-  if(/travel/.test(type) || /간다|향한다|돌아간다|들어간다|나간다/.test(label)) return '현재 장면에서 연결된 이동 경로가 확인되어 다음 장소로 움직일 수 있다.';
-  if(choice?.reason) return String(choice.reason);
-  return '현재 장면의 사람·단서·위험·이동 경로 중 하나와 직접 연결된 행동이다.';
+  const aff=node?.affordances||{};
+  const intent=parallelChoiceIntent(choice,node).split('|')[0];
+  if(choice?.kind==='parallel-social') return '같은 장소에 있는 동료와 직접 결정할 수 있다.';
+  if(choice?.kind==='parallel-item-transfer') return '지금 곁에 있는 동료에게 가진 물건을 건넬 수 있다.';
+  if(intent==='inspect') return aff.clue ? `${aff.clue}가 눈앞에 남아 있다.` : aff.item ? `${aff.item}을 직접 확인할 수 있다.` : '';
+  if(intent==='talk') return aff.person ? `${aff.person}이 바로 이 장면에 있다.` : '';
+  if(intent==='combat') return aff.hostile ? `${aff.hostile}이 길을 막고 있다.` : '';
+  if(intent==='help') return aff.rescue ? `${aff.rescue}이 지금 도움을 필요로 한다.` : '';
+  if(/^acquire:/.test(intent)) return aff.item ? `${aff.item}이 손이 닿는 곳에 있다.` : '';
+  if(intent==='move') return '현재 위치에서 이어지는 실제 경로다.';
+  if(aff.obstacle && /우회|돌파|문|통로|길/.test(String(choice?.label||''))) return `${aff.obstacle} 때문에 다른 접근이 필요하다.`;
+  return '';
 }
 function parallelSceneNarrative(room,campaign,player,node){
   if(!node) return [];
-  if(campaign?.id!=='echo'){
-    const out=[...(node?.text||[])];
-    const prime=player?.job?.prime;
-    const hook=node?.roleHooks?.[prime];
-    if(hook) out.push(`${player.job?.name || '당신'}의 관점에서는 ${hook}`);
-    const affordance=parallelAffordanceSummary(node);
-    if(affordance) out.push(`지금 현장에서 행동으로 이어질 만한 요소도 분명하다. ${affordance}`);
-    const nearby=parallelNearby(room,player); const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===parallelPlayerState(room,player)?.location);
-    if(linked.length) {
-      out.push(`${linked.map(p=>p.name).join(', ')}와 함께 움직이는 중이다. 헤어지기를 선택하기 전까지 같은 사건과 같은 장면을 공유하지만, 각자의 턴과 판정은 따로 진행된다.`);
-      const groupIds=new Set([player.id,...linked.map(p=>p.id)]);
-      const shared=[...(room.parallel?.sharedSceneLog||[])].reverse().find(x=>groupIds.has(x.by) && x.to===node?.id);
-      if(shared?.from && shared.from!==shared.to){ const prev=campaign?.parallelStory?.nodes?.[shared.from]; out.push(`조금 전 ${shared.byName||'동료'}의 선택으로 “${prev?.title||'이전 장면'}”에서 지금의 “${node.title}”로 상황이 넘어왔다. 동행 중이어도 이야기는 매 행동 뒤 계속 전진한다.`); }
-    }
-    else if(nearby.length) out.push(`이 장소에는 ${nearby.map(p=>p.name).join(', ')}도 도착해 있다. 함께 움직일지, 잠깐 역할을 나눌지, 다시 각자의 길로 갈지는 플레이어들이 직접 정한다.`);
-    else out.push('아직 이 장소에는 다른 플레이어가 보이지 않는다. 지금 선택한 길이 다른 사람의 동선과 겹치면 뒤의 장면에서 자연스럽게 마주칠 수 있다.');
-    return out.filter(Boolean).slice(0,9);
-  }
   const ps=parallelPlayerState(room,player);
-  const loc=ps?.location || node.location;
-  const job=player?.job?.name || '플레이어';
-  const world=room.parallel?.worldFlags || {};
-  const ambient={
-    maintenance:'형광등 한 줄이 낮게 떨리고, 분전반 안쪽에서는 전원이 끊긴 뒤에도 작은 릴레이 소리가 일정한 간격으로 이어진다. 바닥의 케이블 표시와 실제 배선 방향이 미묘하게 어긋나 있다.',
-    office:'유리창 너머 대합실은 비어 있는데 역무실 내부 장비 몇 개만 퇴근 처리를 무시한 채 켜져 있다. 프린터에는 뽑힌 적 없는 점검표 한 장이 반쯤 걸려 있고, 시계 초침은 움직이지 않는다.',
-    concourse:'광고판 불빛이 꺼진 대합실은 낮보다 훨씬 넓어 보인다. 자동 개찰구의 붉은 X가 사람의 움직임과 상관없이 순서대로 켜졌다 꺼지고, 셔터 너머에서는 역 바깥 소리 대신 같은 역사 안의 잔향이 돌아온다.',
-    service:'직원 통로는 폭이 좁고 천장이 낮다. 비상등 사이사이에 원래 없던 회색 화살표가 이어지고, 한쪽 벽에는 최근 누군가 밀고 지나간 듯 공구함 자국이 길게 남아 있다.',
-    platform1:'운행이 끝난 승강장에는 열차가 없지만 선로 쪽 바람은 아직 멈추지 않았다. 전광판의 두 시간이 번갈아 나타날 때마다 안전문 유리에 다른 방향의 터널 불빛이 잠깐 비친다.',
-    platform0gate:'0번 방화문 앞 공기는 다른 층보다 한결 차갑다. 문틀과 경첩은 분명 실제 설비인데 자산 번호만 깔끔하게 비어 있다. 안쪽 안내음은 정상 승강장과 같은 박자로 반복된다.',
-    platform0:'0번 승강장은 지나치게 정상적이다. 깨끗한 바닥, 켜진 안전문, 규칙적인 안내음까지 모두 익숙하지만 광고판의 날짜와 선로 방향은 청명역의 어느 기록과도 맞지 않는다.',
-    cctv:'모니터 여러 대가 서로 다른 시간을 비춘다. 대부분은 현재와 같지만 4번 화면만 정확히 몇 분 앞서 움직이고, 화면 속 문이 열릴 때 실제 방 안에서도 아주 약한 전자음이 따라온다.',
-    lostfound:'분실물 보관실에는 이름표와 접수 시간이 붙은 봉투들이 빼곡하다. 이상한 것은 몇 장의 접수 시간이 아직 오지 않은 시각이라는 점이다. 금속 보관함 손잡이는 방금 누가 잡았던 것처럼 미지근하다.',
-    signal:'신호실 벽을 가득 채운 선로도가 두 개의 경로를 동시에 표시한다. 정상 첫차 노선 위로 회색 0번 경로가 얇게 겹쳐지고, 둘 중 하나를 건드릴 때마다 역 다른 곳의 조명이 반응한다.',
-    track:'점검선은 사람 한 명이 겨우 비킬 폭이다. 멀리 작업등이 천천히 가까워지고, 레일 옆 표지판은 정상 번호와 회색 0을 번갈아 보여 준다. 여기서는 선택 하나가 실제 선로 안전과 직결된다.',
-    exit:'셔터 틈 사이로 들어오는 빛은 처음으로 진짜 새벽빛처럼 보인다. 하지만 역 안쪽 무전과 발소리는 여전히 이어지고, 지금 밖으로 나가면 다시 들어올 수 있을지 누구도 확신할 수 없다.',
-    train:'첫차의 전조등이 터널 끝에서 커지고 있다. 정상 안내방송과 아주 낮은 0번 방송이 겹쳐 들리며, 지금까지 열어 둔 문과 남겨 둔 사람, 확보한 물건이 마지막 선택의 의미를 바꾼다.',
-    sealedroom:'폐쇄 점검실은 오래 사용되지 않은 먼지 냄새와 새 전자 장비의 열기가 동시에 난다. 선반에는 폐기된 신호 부품과 봉인 스티커가 붙은 기록 상자가 놓여 있다.',
-    oldcontrol:'구형 신호 제어실의 화면은 현대 신호실과 다르게 물리 스위치와 오래된 CRT로 구성돼 있다. 그런데 그 낡은 화면에도 0번 경로가 선명하게 들어와 있다.'
-  }[loc];
-  const role={
-    '시설기사':'시설기사인 당신에게는 작은 차이가 더 먼저 보인다. 정상 설비라면 있어야 할 표시와 소리가 몇 군데 빠져 있고, 반대로 없어야 할 전원이 살아 있다.',
-    '야간 역무원':'야간 역무원인 당신은 평소 막차 뒤의 역사 소리를 알고 있다. 그래서 지금 들리는 안내음과 장비 반응 중 무엇이 평소와 다른지 더 선명하게 구분된다.',
-    '보안요원':'보안요원인 당신은 먼저 퇴로와 사각지대를 확인한다. 누군가 숨어 있을 만한 곳과 문이 갑자기 닫혔을 때 버틸 위치가 자연스럽게 눈에 들어온다.',
-    '심야 배달원':'심야 배달원인 당신은 출입문과 지름길부터 본다. 안내 표지보다 실제로 사람이 드나들 법한 흔적이 더 믿을 만하게 느껴진다.',
-    '민원 상담사':'민원 상담사인 당신은 장비보다 사람이 남긴 흔적과 말의 모순에 먼저 민감하다. 누군가 있었다면 무엇을 보고 당황했을지, 어디로 움직였을지 생각하게 된다.',
-    '응급구조사':'응급구조사인 당신은 위험보다 먼저 사람의 상태와 이동 가능성을 본다. 피난 경로와 쉬어 갈 공간, 다쳤을 때 버틸 수 있는 장소가 자연스럽게 눈에 들어온다.'
-  }[job];
-  const shared=[];
-  if(world.power_restored) shared.push('누군가 복구한 비상 전원 덕분에 멀리 있는 표지 몇 개가 다시 읽힌다.');
-  if(world.public_call) shared.push('조금 전 사용된 역사 방송의 잔향이 다른 스피커에서도 늦게 따라 나온다.');
-  if(world.evidence) shared.push('이미 확보된 기록과 지금 눈앞의 상황을 비교하면 같은 숫자와 시간이 반복되고 있음을 알 수 있다.');
-  if(world.zero_gate_open) shared.push('0번 승강장 방화문이 완전히 닫히지 않은 상태라 역의 공기 흐름과 소리가 이전과 달라졌다.');
-  const out=[...(node.text||[])];
-  const carry=parallelThreadNarrative(room,campaign,player); if(carry) out.push(carry);
-  if(ambient) out.push(ambient);
-  if(role) out.push(role);
-  if(shared.length) out.push(shared.slice(-2).join(' '));
-  const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===ps?.location);
-  if(linked.length){
-    out.push(`${linked.map(p=>p.name).join(', ')}와 같은 구역을 함께 이동하고 있다. 누구의 턴에서든 새 장면으로 넘어가면 동행자 전원의 최신 장면도 함께 바뀐다.`);
-    const groupIds=new Set([player.id,...linked.map(p=>p.id)]);
-    const move=[...(room.parallel?.sharedSceneLog||[])].reverse().find(x=>groupIds.has(x.by) && x.to===node?.id && x.from && x.from!==x.to);
-    if(move){ const prev=campaign?.parallelStory?.nodes?.[move.from]; out.push(`조금 전 ${move.byName||'동료'}의 선택으로 “${prev?.title||'이전 장면'}”에서 “${node.title}”로 상황이 넘어왔다. 역은 같은 장면을 반복하는 대신 그 선택에 맞춰 다음 경로를 다시 만들고 있다.`); }
+  const aff=node.affordances||{};
+  const source=[...(node.text||[])].map(x=>String(x).trim()).filter(Boolean);
+  const out=[];
+  // Keep the scene itself first. Two compact paragraphs are enough; the rest should come from people and decisions.
+  out.push(...source.slice(0,2));
+
+  const person=aff.hasPerson&&aff.person ? aff.person : '';
+  if(person){
+    const lines={
+      ember:'“여기서 한 걸음 더 가면, 누군가는 왕을 얻고 누군가는 이름을 잃습니다.”',
+      neon:'“기록이 사실이라고 믿지 마. 누가 그 기억의 주인인지부터 확인해.”',
+      abyss:'“산소보다 먼저 바닥나는 건 판단력이야. 보고 싶은 것만 보지 마.”',
+      clock:'“이번에도 같은 선택을 할 건가요? 나는 당신을 전에도 본 것 같아요.”',
+      wild:'“숲은 길을 막지 않아. 네가 숨긴 소원 쪽으로 길을 바꿀 뿐이지.”',
+      guardian:'“우리가 누구를 데리고 여기까지 왔는지, 그게 다음 길을 정할 거예요.”',
+      aurora:'“무전에서 들린 목소리… 죽은 사람이라면, 왜 지금 우리 이름을 알고 있죠?”',
+      masque:'“가면을 벗는다고 네 배역이 끝나는 건 아니야. 마지막 장면을 누가 썼는지가 중요하지.”',
+      echo:'“방금 그 안내방송, 정상 시간표에는 없는 문장이었어요.”'
+    };
+    out.push(`${person}: ${lines[campaign?.id]||'“지금 보이는 것만 믿으면 늦습니다. 먼저 무엇이 바뀌었는지 보세요.”'}`);
   }
-  return out.filter(Boolean).slice(0,8);
+
+  const objective=String(node.objective||'').replace(/[.。]$/,'');
+  const thoughtLead={
+    ember:'왕관이 원하는 대로 움직이면 안 된다', neon:'기억보다 행동의 흔적이 더 믿을 만하다', abyss:'더 알아내는 동안 누군가의 산소가 줄고 있다',
+    clock:'이번 선택도 다음 반복에 남을 수 있다', wild:'내 소원 때문에 숲의 길이 달라질 수도 있다', guardian:'지금 돕는 사람이 나중에 다른 세계의 길을 열 수도 있다',
+    aurora:'이 신호가 구조 요청인지 유인인지 아직 모른다', masque:'내가 고른 배역이 아니라 내가 고른 행동으로 끝을 정해야 한다', echo:'이 역에서 정상처럼 보이는 것이 오히려 가장 수상하다'
+  }[campaign?.id] || '지금 선택은 다음 장면을 바꾼다';
+  if(objective) out.push(`내 생각: ${thoughtLead}. 우선 ${objective}.`);
+
+  const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===ps?.location);
+  if(linked.length) out.push(`${linked.map(p=>p.name).join(', ')}도 바로 곁에 있다. 짧게 눈을 맞추는 것만으로도, 이번 선택은 혼자 감당할 일이 아니라는 걸 알 수 있다.`);
+  else {
+    const nearby=parallelNearby(room,player);
+    if(nearby.length) out.push(`${nearby.map(p=>p.name).join(', ')}의 인기척이 같은 구역 안에서 들린다. 아직 함께 갈지 정한 것은 아니다.`);
+  }
+  return out.filter(Boolean).slice(0,5);
 }
 function parallelChoiceScore(choice,node){
   const label=String(choice?.label||'');
@@ -1673,10 +1627,30 @@ function parallelChoiceIntent(choice,node){
   if(action==='combat' && aff.hostile) target=aff.hostile;
   return `${action}|${target}`;
 }
+
+function parallelChoiceFitsCurrentScene(room,campaign,player,choice,node){
+  if(!choice || !node) return false;
+  if(choice.kind==='parallel-social' || choice.kind==='parallel-item-transfer') return true;
+  const intent=parallelChoiceIntent(choice,node).split('|')[0];
+  const aff=node.affordances||{};
+  const label=String(choice.label||'');
+  const context=`${node.title||''} ${node.objective||''} ${(node.text||[]).join(' ')} ${aff.clue||''} ${aff.person||''} ${aff.hostile||''} ${aff.obstacle||''} ${aff.rescue||''} ${aff.item||''}`;
+  if(intent==='talk' && !(aff.hasPerson&&aff.person)) return false;
+  if(intent==='combat' && !(aff.hasHostile&&aff.hostile) && !room.parallel?.encounters?.[parallelPlayerState(room,player)?.location]) return false;
+  if(intent==='help' && !((aff.hasRescue&&aff.rescue)||(aff.hasPerson&&aff.person))) return false;
+  if(intent==='inspect' && !((aff.hasClue&&aff.clue)||(aff.hasItem&&aff.item)||label.split(/\s+/).some(w=>w.length>1&&context.includes(w)))) return false;
+  if(/^acquire:/.test(intent) && !(aff.hasItem&&aff.item) && !choice.grantItem) return false;
+  if(intent==='move') {
+    const next=choice.nextSuccess||choice.nextFailure||choice.next;
+    if(!next || next===node.id) return /돌아|남아|기다/.test(label);
+  }
+  return true;
+}
+
 function parallelCurateChoices(room,campaign,player,node,dynamic,base){
   const encounter=room.parallel?.encounters?.[parallelPlayerState(room,player)?.location];
   if(encounter?.hp>0) return dynamic.slice(0,7);
-  const all=[...dynamic,...base].filter(Boolean);
+  const all=[...dynamic,...base].filter(choice=>choice && parallelChoiceFitsCurrentScene(room,campaign,player,choice,node));
   const ranked=[...all].sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
   const bestByIntent=new Map();
   for(const choice of ranked){
@@ -1689,21 +1663,21 @@ function parallelCurateChoices(room,campaign,player,node,dynamic,base){
   let acquisition=0, social=0; const selected=[];
   for(const c of pool){
     const intent=parallelChoiceIntent(c,node);
-    if(/^(trade|acquire):/.test(intent) && acquisition>=2) continue;
-    if(/^social:/.test(intent) && social>=3) continue;
+    if(/^(trade|acquire):/.test(intent) && acquisition>=1) continue;
+    if(/^social:/.test(intent) && social>=2) continue;
     if(/^(trade|acquire):/.test(intent)) acquisition++;
     if(/^social:/.test(intent)) social++;
     selected.push(c);
-    if(selected.length>=10) break;
+    if(selected.length>=5) break;
   }
   // Preserve meaningful action diversity when the scene has it.
   const categories=new Set(selected.map(c=>parallelChoiceIntent(c,node).split('|')[0]));
   for(const wanted of ['inspect','talk','move','help','combat']){
     if(categories.has(wanted)) continue;
     const candidate=pool.find(c=>parallelChoiceIntent(c,node).startsWith(`${wanted}|`) && !selected.includes(c));
-    if(candidate && selected.length<10){ selected.push(candidate); categories.add(wanted); }
+    if(candidate && selected.length<5){ selected.push(candidate); categories.add(wanted); }
   }
-  return selected.slice(0,10);
+  return selected.slice(0,5);
 }
 function parallelRenderedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player);
@@ -1721,9 +1695,9 @@ function parallelRenderedScene(room,campaign,player){
     const fallback=(node.choices||[])
       .filter(choice=>!choice.requiredJob && !choice.requiredJobs && !choice.requiredTag && !choice.requiredTags && !choice.requiredAnyTag && !choice.requiredAnyTags && !choice.requiredFlag && !choice.requiredFlags && !choice.requiredWorldFlag && !choice.requiredWorldFlags)
       .map((choice,index)=>({id:`fallback:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
-    choices.push(...fallback.slice(0,8));
+    choices.push(...fallback.filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node)).slice(0,5));
   }
-  const explainedChoices=choices.map(choice=>({...choice,reason:parallelChoiceReason(choice,node)}));
+  const explainedChoices=choices.slice(0,5).map(choice=>({...choice,reason:parallelChoiceReason(choice,node)}));
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
@@ -3083,6 +3057,9 @@ function publicRoom(room) {
     : currentTurnPlayer(room);
   return {
     code: room.code,
+    roomName: room.roomName || `${room.players?.[0]?.name || '방장'}의 연대기`,
+    accessMode: room.accessMode || 'public',
+    locked: (room.accessMode || 'public') === 'locked',
     phase: room.phase,
     campaignId: room.campaignId,
     campaign: campaign ? {
@@ -4066,8 +4043,40 @@ function resolveAbandonVoteIfReady(room) {
   return true;
 }
 
+
+function roomDirectoryEntry(room) {
+  const campaign = CAMPAIGNS.find(c => c.id === room.campaignId);
+  const connected = connectedPlayers(room).length;
+  return {
+    roomCode: room.code,
+    roomName: room.roomName || `${room.players?.[0]?.name || '방장'}의 연대기`,
+    locked: (room.accessMode || 'public') === 'locked',
+    players: connected,
+    maxPlayers: MAX_PLAYERS,
+    campaignTitle: campaign?.title || '연대기 선택 중',
+    phase: room.phase,
+    joinable: room.phase === 'lobby' && room.players.length < MAX_PLAYERS,
+    createdAt: room.createdAt || Date.now(),
+  };
+}
+function liveRoomDirectory() {
+  return [...rooms.values()]
+    .filter(room => room && room.players?.length)
+    .map(roomDirectoryEntry)
+    .sort((a,b) => Number(b.joinable)-Number(a.joinable) || b.createdAt-a.createdAt)
+    .slice(0,60);
+}
+function emitRoomDirectory() { io.emit('room:list:update', liveRoomDirectory()); }
+function passwordMatches(room, supplied='') {
+  if ((room.accessMode || 'public') !== 'locked') return true;
+  const hash = crypto.createHash('sha256').update(String(supplied || '')).digest('hex');
+  return Boolean(room.passwordHash) && crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(room.passwordHash));
+}
+
 io.on('connection', socket => {
   socket.emit('campaigns', campaignPublic());
+  socket.emit('room:list:update', liveRoomDirectory());
+  socket.on('room:list', (_payload, ack) => ack?.({ok:true, rooms:liveRoomDirectory()}));
 
   socket.on('session:lookup', (_payload, ack) => ack?.({ok:false,error:'이어하기 기능은 제거되었습니다.'}));
   socket.on('session:resume', (_payload, ack) => ack?.({ok:false,error:'이어하기 기능은 제거되었습니다.'}));
@@ -4075,11 +4084,16 @@ io.on('connection', socket => {
   socket.on('room:create', async (payload = {}, ack) => {
     try {
       const name = sanitize(payload.name || '방장', 18) || '방장';
-      const { room, player } = await createRoom(name, socket.id);
+      const roomName = sanitize(payload.roomName || `${name}의 연대기`, 28) || `${name}의 연대기`;
+      const accessMode = payload.accessMode === 'locked' ? 'locked' : 'public';
+      const password = String(payload.password || '').slice(0,40);
+      if (accessMode === 'locked' && password.length < 2) return ack?.({ok:false,error:'비밀번호 방은 2자 이상 비밀번호가 필요합니다.'});
+      const { room, player } = await createRoom(name, socket.id, {roomName,accessMode,password});
       socket.join(room.code);
       pushChat(room, { type: 'system', text: `${name} 님이 방을 만들었습니다.` });
       void appendSessionEvent(room.code, 'room_created', { hostName: name });
       ack?.({ ok: true, roomCode: room.code, playerToken: player.id, state: publicRoom(room) });
+      emitRoomDirectory();
     } catch (error) {
       console.error('[room:create]', error);
       ack?.({ ok: false, error: '방 생성 중 오류가 발생했습니다. 잠시 후 다시 시도하세요.' });
@@ -4108,6 +4122,7 @@ io.on('connection', socket => {
       return ack?.({ ok: true, roomCode: room.code, playerToken: existing.id, state: publicRoom(room) });
     }
 
+    if (!passwordMatches(room, payload.password)) return ack?.({ok:false,error:'방 비밀번호가 올바르지 않습니다.', passwordRequired:true});
     if (room.players.length >= MAX_PLAYERS) return ack?.({ ok: false, error: '이 방은 이미 4명입니다.' });
     if (room.phase !== 'lobby') return ack?.({ ok: false, error: '이미 모험이 시작된 방입니다. 기존 플레이어만 재접속할 수 있습니다.' });
     const name = sanitize(payload.name || `플레이어 ${room.players.length + 1}`, 18) || `플레이어 ${room.players.length + 1}`;
@@ -4120,6 +4135,7 @@ io.on('connection', socket => {
     pushChat(room, { type: 'system', text: `${name} 님이 참가했습니다.` });
     sync(room);
     void appendSessionEvent(room.code, 'player_joined', { playerName: name });
+    emitRoomDirectory();
     return ack?.({ ok: true, roomCode: room.code, playerToken: player.id, state: publicRoom(room) });
   });
 
@@ -4131,12 +4147,14 @@ io.on('connection', socket => {
     socket.leave(room.code);
     if (!room.players.length) {
       rooms.delete(room.code);
+      emitRoomDirectory();
       return ack?.({ ok: true });
     }
     pushChat(room, { type: 'system', text: `${player.name} 님이 방을 나갔습니다.` });
     promoteHostIfNeeded(room);
     currentTurnPlayer(room);
     sync(room);
+    emitRoomDirectory();
     ack?.({ ok: true });
   });
 
@@ -4170,6 +4188,7 @@ io.on('connection', socket => {
     room.ending = null;
     pushChat(room, { type: 'system', text: `캠페인이 「${campaign.title}」로 선택되었습니다.` });
     sync(room);
+    emitRoomDirectory();
     void appendSessionEvent(room.code, 'campaign_selected', { campaignId: campaign.id });
     ack?.({ ok: true });
   });
@@ -4274,12 +4293,14 @@ io.on('connection', socket => {
       currentTurnPlayer(room);
       pushChat(room, { type:'system', text:`「${campaign.title}」는 각 플레이어가 서로 다른 시작점에서 이야기를 시작합니다. 진행 중 같은 장소에 도착하면 만나고, 함께 다니거나 다시 헤어지는 것도 각자의 선택으로 결정됩니다.` });
       sync(room);
+      emitRoomDirectory();
       void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name), mode:'parallel-story' });
       return ack?.({ ok:true, parallel:true });
     }
     room.storyMemory.prologueMeeting = room.prologue.meetingText;
     pushChat(room, { type: 'system', text: '각 플레이어의 개인 프롤로그가 시작되었습니다. 모두가 합류 준비를 마치면 메인 스토리가 열립니다.' });
     sync(room);
+    emitRoomDirectory();
     void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name) });
     ack?.({ ok: true });
   });

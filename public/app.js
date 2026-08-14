@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '7.7.0-actual-play-director';
+const CLIENT_BUILD = '7.8.0-fiction-first-release';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -919,17 +919,18 @@ function storyNarrationHTML(c, beat, player, hints = []) {
   const dialogue = Array.isArray(beat?.dialogue) ? beat.dialogue.filter(x=>x?.text) : [];
   const prime = player?.job?.prime || '지혜';
   const instinct = String(beat?.playerVoices?.[prime] || '').split(/(?<=[.!?…])\s+/)[0] || '';
+  const pivotal = ['진실','위기','결단'].includes(String(beat?.phase||''));
+  const showInstinct = pivotal || Number(beat?.chapter||0)%3===0;
   const blocks=[];
   if(paragraphs[0]) blocks.push(`<p class="scene-narration lead actual-play-opening">${storyParagraphHTML(paragraphs[0],0)}</p>`);
   if(paragraphs[1]) blocks.push(`<p class="scene-narration actual-play-detail">${storyParagraphHTML(paragraphs[1],1)}</p>`);
   if(dialogue.length){
-    blocks.push(`<section class="actual-play-dialogue">${dialogue.slice(0,2).map((line,i)=>`<div class="story-dialogue release-dialogue ${i===1?'secondary':''}"><span>${esc(line.speaker||'등장인물')}</span><p>${esc(line.text)}</p></div>`).join('')}</section>`);
+    blocks.push(`<section class="actual-play-dialogue">${dialogue.slice(0,pivotal?2:1).map((line,i)=>`<div class="story-dialogue release-dialogue ${i===1?'secondary':''}"><span>${esc(line.speaker||'등장인물')}</span><p>${esc(line.text)}</p></div>`).join('')}</section>`);
   }
   if(paragraphs[2]) blocks.push(`<p class="scene-narration sensory actual-play-change">${storyParagraphHTML(paragraphs[2],2)}</p>`);
-  if(instinct) blocks.push(`<p class="actual-play-instinct"><span>${esc(player?.job?.name || '직감')}</span>${esc(instinct)}</p>`);
-  if(beat?.immediatePressure) blocks.push(`<p class="actual-play-pressure"><span>지금</span>${esc(conciseSceneText(beat.immediatePressure,120))}</p>`);
-  const hook=beat?.continuityHook ? `<p class="continuity-hook"><span>눈에 남는 것</span><strong>${esc(conciseSceneText(beat.continuityHook,120))}</strong></p>` : '';
-  return `<article class="narration-rich cinematic-story actual-play-story-v770">${blocks.join('')}${hook}</article>`;
+  if(showInstinct && instinct) blocks.push(`<p class="actual-play-instinct"><span>${esc(player?.job?.name || '직감')}</span>${esc(instinct)}</p>`);
+  if(beat?.immediatePressure) blocks.push(`<div class="actual-play-pressure"><span>위험</span><b>${esc(conciseSceneText(beat.immediatePressure,96))}</b></div>`);
+  return `<article class="narration-rich cinematic-story actual-play-story-v780">${blocks.join('')}</article>`;
 }
 
 function parallelNarrationHTML(lines=[]){
@@ -953,13 +954,12 @@ function conciseSceneText(text = '', max = 180) {
 function setStoryTrail(before = '', bridge = '', now = '') {
   const clarity = $('#storyClarity');
   if (!clarity) return;
-  const current = conciseSceneText(now || bridge || before, 170) || '지금 눈앞의 상황부터 확인한다.';
-  const prev = conciseSceneText(before, 150);
-  const why = conciseSceneText(bridge, 180);
-  clarity.className = 'story-clarity story-recap-compact';
-  clarity.innerHTML = `
-    <div class="story-now-strip"><span>NOW</span><b>${esc(current)}</b></div>
-    ${(prev||why)?`<details class="story-recap-details"><summary>지난 상황이 필요하면 펼쳐보기</summary><div>${prev?`<p><span>직전</span>${esc(prev)}</p>`:''}${why?`<p><span>연결</span>${esc(why)}</p>`:''}</div></details>`:''}`;
+  const prev = conciseSceneText(before, 105);
+  const why = conciseSceneText(bridge, 120);
+  clarity.className = 'story-clarity story-recap-compact story-recap-v780';
+  if(!prev && !why){ clarity.innerHTML=''; clarity.style.display='none'; return; }
+  clarity.style.display='block';
+  clarity.innerHTML = `<details class="story-recap-details"><summary>지난 이야기</summary><div>${prev?`<p>${esc(prev)}</p>`:''}${why?`<p>${esc(why)}</p>`:''}</div></details>`;
 }
 
 function mainStoryTrail(c, beat, inResolution = false) {
@@ -1495,7 +1495,7 @@ function renderParallelStory() {
   const renderedChoices=choices.map((choice,index)=>`
     <button class="choice-card story-choice choice-row" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
       <span class="choice-number">${index+1}</span>
-      <span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span>
+      <span class="choice-copy" ${choice.reason?`title="${esc(choice.reason)}"`:''}><b>${esc(choice.label)}</b></span>
       <span class="choice-check">${choice.choiceBadge?`<em>${esc(choice.choiceBadge)}</em>`:''}${choice.automatic?'선택':`${esc(choice.stat||'지혜')} · DC ${Number(choice.dc||8)}`}</span>
     </button>`).join('');
   choiceBox.style.setProperty('display','flex','important');
@@ -1672,14 +1672,7 @@ function renderStory() {
 
   const lastResolution = state.lastResolution?.source === 'story' ? state.lastResolution : null;
   const last = lastResolution || state.lastStoryAction;
-  $('#lastActionResult').innerHTML = last ? `
-    <div class="eyebrow">최근 장면 결과</div>
-    ${last.choiceLabel ? `<div><b>${esc(last.choiceLabel)}</b></div>` : ''}
-    ${last.success === undefined || last.success === null ? '' : `<span class="${last.success ? 'success' : 'failure'}">${last.success ? '성공' : '실패'}${last.stat ? ` · ${esc(last.stat)} ${last.total}/${last.dc}` : ''}</span>`}
-    <p>${esc(last.text || last.narrative || '')}</p>
-    ${last.consequence ? `<p class="failure">${esc(last.consequence)}</p>` : ''}
-    ${last.status ? `<p class="failure">상태이상: ${esc(last.status.label)} — ${esc(last.status.desc || '')}</p>` : ''}
-  ` : '';
+  $('#lastActionResult').innerHTML = last ? `<details class="recent-result-details"><summary>직전 결과 보기</summary><div>${last.success === undefined || last.success === null ? '' : `<span class="${last.success ? 'success' : 'failure'}">${last.success ? '성공' : '실패'}${last.stat ? ` · ${esc(last.stat)} ${last.total}/${last.dc}` : ''}</span>`}<p>${esc(conciseSceneText(last.text || last.narrative || '',150))}</p>${last.status ? `<small>${esc(last.status.label)} · ${esc(last.status.desc || '')}</small>` : ''}</div></details>` : '';
 
   if (state.phase === 'prologue') {
     const myScene = state.prologue?.scenes?.[playerToken];
@@ -1766,22 +1759,14 @@ function renderStory() {
 
     const freeActionAllowed = Boolean(beat?.freeActionAllowed);
     const myTurn = state.phase === 'story' && state.turnPlayerId === playerToken;
-    $('#storyActionBox').style.display = freeActionAllowed ? 'block' : 'none';
+    $('#storyActionBox').style.setProperty('display', freeActionAllowed ? 'block' : 'none', 'important');
     $('#storyActionInput').disabled = !(freeActionAllowed && myTurn);
     $('#storyActionBox').classList.toggle('disabled', !(freeActionAllowed && myTurn));
     $('#storyActionInput').placeholder = freeActionAllowed
-      ? '하고 싶은 행동을 직접 적으세요. 예: 경비에게 말을 걸어 안쪽 상황을 묻는다.'
+      ? '선택지에 없는 방법이 떠오르면 직접 적으세요.'
       : '이 장면에서는 아래 선택으로 진행합니다.';
-    $('#storyRoleContext').innerHTML = `<span>${esc(beat?.importance?.label || '장면')}</span><b>이 장면에서 실제로 가능한 행동들을 최대한 넓게 준비했습니다. 직접 행동 입력은 보조 수단입니다.</b>${beat?.statInsight?.text ? `<small>${esc(beat.statInsight.text)}</small>` : ''}`;
-    $('#actionSuggestions').innerHTML = freeActionAllowed ? [
-      ['주변을 살핀다','지혜'],['사람에게 말을 건다','매력'],['다른 길로 간다','민첩']
-    ].map(([label,stat])=>`<button class="action-suggestion" type="button" data-free-suggestion="${esc(label)}"><b>${esc(label)}</b><small>${stat} 계열 자유 행동 예시</small></button>`).join('') : '';
-    $('#actionSuggestions').querySelectorAll?.('[data-free-suggestion]').forEach(btn => btn.onclick = () => {
-      if ($('#storyActionInput').disabled) return;
-      $('#storyActionInput').value = btn.dataset.freeSuggestion;
-      $('#storyActionInput').dispatchEvent(new Event('input'));
-      $('#storyActionInput').focus();
-    });
+    $('#storyRoleContext').innerHTML = `<span>${esc(p?.job?.name || '당신')}</span><b>${esc(beat?.objective || '눈앞의 상황에 대응한다')}</b>`;
+    $('#actionSuggestions').innerHTML = '';
     renderMainStoryChoices(beat);
   }
 
@@ -1811,10 +1796,10 @@ function renderMainStoryChoices(beat) {
   }
   const myJob = me()?.job?.name;
   const visibleChoices = beat.choices.map((choice, originalIndex) => ({ choice, originalIndex })).filter(({ choice }) => !choice.requiredJob || choice.requiredJob === myJob);
-  box.innerHTML = `<div class="vote-strip actual-play-choice-head"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${isMyTurn ? '당신의 차례' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례`} · ${visibleChoices.length}가지 행동</b></div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
+  box.innerHTML = `<div class="vote-strip actual-play-choice-head"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${isMyTurn ? '무엇을 할까?' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례`} · 선택지는 제안일 뿐, 직접 행동도 가능합니다</b></div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
     <button class="choice-card story-choice choice-row ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
       <span class="choice-number">${displayIndex + 1}</span>
-      <span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span>
+      <span class="choice-copy" ${choice.reason?`title="${esc(choice.reason)}"`:''}><b>${esc(choice.label)}</b></span>
       <span class="choice-check">${choice.jobSpecial?`<em>${esc(choice.requiredJob)} 전용</em>`:''}${beat?.statInsight?.insight?`${esc(choice.stat)}${beat?.statInsight?.insightDeep?` · DC ${Number(choice.dc||0)+Number(state.dcPenalty||0)}`:''}`:'판정'}</span>
     </button>`).join('');
   forceChoiceLayout(box);

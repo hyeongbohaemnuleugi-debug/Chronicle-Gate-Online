@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '8.0.2-client-module-fix';
+const CLIENT_BUILD = '8.1.0-stable-story';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -914,18 +914,24 @@ function playerInnerVoice(beat, player){
   return `${cue||'지금 상황을 한 번 더 정리해야 한다.'} ${beat?.objective||''}`.trim();
 }
 function storyNarrationHTML(c, beat, player, hints = []) {
-  const raw=String(beat?.text||c?.intro||'').trim();
-  const paragraphs=proseParagraphs(raw).slice(0,2);
-  const dialogue=Array.isArray(beat?.dialogue)?beat.dialogue.filter(x=>x?.text).slice(0,1):[];
+  const raw=String(beat?.text||beat?.situation||c?.intro||'').trim();
+  const paragraphs=proseParagraphs(raw).slice(0,5);
+  const dialogue=Array.isArray(beat?.dialogue)?beat.dialogue.filter(x=>x?.text).slice(0,2):[];
   const a=beat?.affordances||{};
-  const seen=[a.person,a.clue,a.obstacle||a.rescue].filter(Boolean).slice(0,3);
+  const seen=[a.person,a.clue,a.item,a.obstacle,a.rescue,a.hostile].filter(Boolean).filter((v,i,arr)=>arr.indexOf(v)===i).slice(0,4);
   const blocks=[];
-  if(paragraphs[0]) blocks.push(`<p class="scene-narration lead table-scene-opening">${storyParagraphHTML(paragraphs[0],0)}</p>`);
-  if(paragraphs[1]) blocks.push(`<p class="scene-narration table-scene-detail">${storyParagraphHTML(paragraphs[1],1)}</p>`);
-  if(dialogue.length) blocks.push(`<div class="story-dialogue table-npc-line"><span>${esc(dialogue[0].speaker||'등장인물')}</span><p>${esc(dialogue[0].text)}</p></div>`);
-  if(seen.length) blocks.push(`<div class="scene-affordances"><span>눈앞에 있는 것</span>${seen.map(x=>`<b>${esc(x)}</b>`).join('')}</div>`);
-  if(beat?.immediatePressure) blocks.push(`<div class="table-pressure"><span>상황이 움직인다</span><p>${esc(conciseSceneText(beat.immediatePressure,120))}</p></div>`);
-  return `<article class="narration-rich cinematic-story tabletop-first-story">${blocks.join('')}</article>`;
+  const isOpening=Number(beat?.chapter||0)<=1 && (beat?.phase==='도입' || /도입/.test(String(beat?.title||'')));
+  if(isOpening && c?.intro){
+    blocks.push(`<section class="campaign-premise"><span>이 이야기의 시작</span><p>${esc(c.intro)}</p></section>`);
+  }
+  paragraphs.forEach((p,i)=>blocks.push(`<p class="scene-narration ${i===0?'lead table-scene-opening':'table-scene-detail'}">${storyParagraphHTML(p,i)}</p>`));
+  dialogue.forEach(d=>blocks.push(`<div class="story-dialogue table-npc-line"><span>${esc(d.speaker||'등장인물')}</span><p>${esc(d.text)}</p></div>`));
+  if(beat?.phase==='진실' && beat?.reveal) blocks.push(`<div class="story-reveal"><span>드러난 사실</span><p>${esc(beat.reveal)}</p></div>`);
+  const pressure=beat?.immediatePressure || ((beat?.phase==='위기'||beat?.phase==='결단') ? beat?.stakes : '');
+  if(pressure) blocks.push(`<div class="table-pressure"><span>눈앞의 위험</span><p>${esc(conciseSceneText(pressure,220))}</p></div>`);
+  if(seen.length) blocks.push(`<div class="scene-affordances"><span>지금 활용할 수 있는 것</span>${seen.map(x=>`<b>${esc(x)}</b>`).join('')}</div>`);
+  if(beat?.objective) blocks.push(`<div class="scene-objective"><span>지금 중요한 것</span><p>${esc(beat.objective)}</p></div>`);
+  return `<article class="narration-rich cinematic-story tabletop-first-story stable-story-v810">${blocks.join('')}</article>`;
 }
 
 function parallelNarrationHTML(lines=[]){
@@ -1740,7 +1746,7 @@ function renderStory() {
     $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `${beat.title}`) : '연대기가 이어집니다.';
     const trail = mainStoryTrail(c, beat, inResolution);
     setStoryTrail(trail.before, trail.bridge, trail.now);
-      $('#storyPrompt').innerHTML = `<strong>${state.turnPlayerId===playerToken?'당신은 어떻게 하나요?':`${esc(state.turnPlayerName||'다른 플레이어')}의 행동을 기다리는 중`}</strong><span>말을 걸어도, 살펴봐도, 물건을 써도, 떠오른 방법을 그대로 시도해도 됩니다.</span>`;
+      $('#storyPrompt').innerHTML = `<strong>${state.turnPlayerId===playerToken?'상황을 읽고 행동을 고르세요.':`${esc(state.turnPlayerName||'다른 플레이어')}의 행동을 기다리는 중`}</strong><span>아래 선택지는 현재 장면에 맞는 대표적인 접근입니다. 선택지 밖 방법은 보조 입력으로 시도할 수 있습니다.</span>`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
     if (inResolution && lastResolution) {
       const resultTrail = mainStoryTrail(c, beat, true);
@@ -1756,9 +1762,9 @@ function renderStory() {
     $('#storyActionSubmitBtn').disabled = !(freeActionAllowed && myTurn);
     $('#storyActionBox').classList.toggle('disabled', !(freeActionAllowed && myTurn));
     $('#storyActionInput').placeholder = freeActionAllowed
-      ? '선택지에 없는 방법이 떠오르면 직접 적으세요.'
+      ? '선택지에 없는 방법을 시도하고 싶을 때만 적으세요.'
       : '이 장면에서는 아래 선택으로 진행합니다.';
-    $('#storyRoleContext').innerHTML = `<b>${esc(p?.job?.name || '당신')}</b><span>무엇을 하려는지와 어떻게 하는지만 적으면 됩니다.</span>`;
+    $('#storyRoleContext').innerHTML = `<b>선택지 밖 행동 · 선택사항</b><span>현재 장면의 인물·물건·통로와 연결된 행동만 처리됩니다. 이해되지 않으면 위 선택지만 사용해도 됩니다.</span>`;
     $('#actionSuggestions').innerHTML = '';
     renderMainStoryChoices(beat);
   }
@@ -1781,15 +1787,18 @@ function renderMainStoryChoices(beat) {
   const isMyTurn=state.turnPlayerId===playerToken && state.phase==='story' && !state.resumeBarrier;
   if(state.phase==='resolution') { box.innerHTML=''; return; }
   const myJob=me()?.job?.name;
-  const suggestions=(beat?.choices||[]).filter(choice=>!choice.requiredJob||choice.requiredJob===myJob).slice(0,3);
-  if(!suggestions.length){ box.innerHTML=''; return; }
-  const open=Number(beat?.chapter||0)<=1?' open':'';
-  box.innerHTML=`<details class="action-examples"${open}><summary><span>행동 예시</span><small>막막할 때만 펼쳐보세요 · 그대로 고르지 않아도 됩니다</small></summary><div class="action-example-list">${suggestions.map((choice,i)=>`<button type="button" class="action-example" data-suggest-index="${i}" ${isMyTurn?'':'disabled'}><span>${i+1}</span><b>${esc(choice.label)}</b></button>`).join('')}</div></details>`;
-  box.querySelectorAll('[data-suggest-index]').forEach(btn=>btn.onclick=()=>{
+  const indexed=(beat?.choices||[]).map((choice,index)=>({choice,index})).filter(({choice})=>!choice.requiredJob||choice.requiredJob===myJob).slice(0,4);
+  if(!indexed.length){ box.innerHTML='<div class="choice-empty">지금 선택할 수 있는 행동을 준비하는 중입니다.</div>'; return; }
+  box.innerHTML=`<div class="main-choice-head"><div><span>어떻게 할까?</span><b>현재 상황에서 가능한 행동</b></div><small>선택마다 접근법과 이후 장면이 달라집니다.</small></div>`+
+    indexed.map(({choice,index},i)=>`<button type="button" class="choice-card choice-row main-story-choice" data-main-choice-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${i+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b></span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)+(Number(state.dcPenalty||0))}`}</small></span></button>`).join('');
+  forceChoiceLayout(box);
+  if($('#storyActionBox') && box.nextElementSibling !== $('#storyActionBox')) box.after($('#storyActionBox'));
+  box.querySelectorAll('[data-main-choice-index]').forEach(btn=>btn.onclick=()=>{
     if(btn.disabled)return;
-    const choice=suggestions[Number(btn.dataset.suggestIndex)];
-    const input=$('#storyActionInput'); input.value=choice?.label||''; input.focus();
-    const max=Number(input.maxLength||220); $('#storyActionCount').textContent=`${input.value.length}/${max}`;
+    btn.disabled=true;
+    socket.emit('story:advance',{roomCode,playerToken,choiceIndex:Number(btn.dataset.mainChoiceIndex)},r=>{
+      if(!r?.ok){btn.disabled=false; showActionFeedback(r?.error||'행동을 처리하지 못했습니다.',true);}
+    });
   });
 }
 
@@ -1829,12 +1838,14 @@ $('#jobSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, pla
 $('#combatSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 
 $('#storyActionInput').addEventListener('input', () => { const max = Number($('#storyActionInput').maxLength || 220); $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${max}`; });
+function showActionFeedback(message,isError=false){ const box=$('#lastActionResult'); if(!box)return; box.className=`last-action-result ${isError?'action-error':'action-info'}`; box.innerHTML=`<b>${isError?'이 행동은 그대로 진행하기 어렵습니다':'장면 반응'}</b><p>${esc(message||'')}</p>${isError?'<small>게임은 멈추지 않았습니다. 위의 상황 선택지를 고르거나 표현을 조금 바꿔 다시 시도할 수 있습니다.</small>':''}`; }
 const submitStoryDeclaration=()=>{
   const input=$('#storyActionInput'); const declaration=input.value.trim();
   if(state?.phase!=='story') return;
   if(!declaration) return toast('무엇을 하려는지 한 문장으로 적어주세요.');
   socket.emit('story:advance',{roomCode,playerToken,declaration},r=>{
-    if(!r?.ok) return toast(r.error);
+    if(!r?.ok){ showActionFeedback(r?.error||'지금 장면에서는 그 행동을 바로 처리하기 어렵습니다.',true); return; }
+    showActionFeedback(r?.inquiry ? (r?.result?.narrative||'조사 결과가 장면에 반영되었습니다.') : '행동이 처리되었습니다.',false);
     input.value=''; const max=Number(input.maxLength||220); $('#storyActionCount').textContent=`0/${max}`;
   });
 };

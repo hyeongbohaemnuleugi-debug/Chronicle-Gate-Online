@@ -887,25 +887,48 @@ function dialogueSpeaker(sentence = '', fallback = '등장인물') {
 function stripSpeaker(sentence = '') {
   return String(sentence).replace(/^([^:]{1,18}):\s*/, '').trim();
 }
+const STORY_VOICE = {
+  ember:{도입:'“문을 닫아도 재는 들어옵니다. 문제는 재가 아니라, 그 재를 따라오는 이름이에요.”',탐색:'“왕가 기록은 거짓말을 할 수 있어도, 급히 지운 흔적은 거짓말을 못 합니다.”',대면:'“지금 물러서면 저들이 먼저 왕좌의 의미를 정할 겁니다.”',진실:'“우리가 지키던 건 왕이 아니었군요. 왕관이었어.”',위기:'“한 명을 살리려다 왕국을 잃을 수도 있습니다. 그래도 사람부터 보십시오.”',결단:'“정답은 없습니다. 다만 누가 대가를 치르는지는 우리가 정할 수 있습니다.”'},
+  neon:{도입:'“당신 얼굴이 도시 전체에 떠 있어요. 문제는 당신이 왜 그걸 원했는지 기억하지 못한다는 거죠.”',탐색:'“삭제된 데이터보다 삭제한 사람의 습관을 보세요. 흔적은 남습니다.”',대면:'“여기서 한 번 잘못 움직이면 카메라보다 시민들이 먼저 우리를 신고해요.”',진실:'“기억을 되찾는 게 곧 진실을 되찾는 건 아니군.”',위기:'“백업 하나를 살리면 다른 누군가의 삶이 지워질 수 있어요.”',결단:'“도시가 누구의 기억을 진짜라고 부를지, 결국 우리가 정하게 됐네요.”'},
+  abyss:{도입:'“산소는 충분합니다. 시간이 부족한 겁니다. 둘은 완전히 다른 문제예요.”',탐색:'“이 발자국, 물에 젖은 게 아니라 바깥에서 들어온 염분이에요.”',대면:'“창문 밖 저 사람을 사람이라고 믿는 순간부터 구조 계획이 바뀝니다.”',진실:'“우리가 괴물의 소리를 들은 게 아니라, 구조 요청을 괴물 소리로 분류했던 거군요.”',위기:'“기지와 생존자, 둘 다 살릴 시간은 줄고 있습니다.”',결단:'“무엇을 구조했다고 보고할지는, 무엇을 사람으로 인정했는지와 같은 말이 될 겁니다.”'},
+  clock:{도입:'“이 말… 전에도 했던 것 같습니다. 당신도 기억합니까?”',탐색:'“같은 하루라면 같은 실수가 반복돼야 해요. 그런데 오늘은 다릅니다.”',대면:'“사라지는 건 시간이 아니라 가능성일지도 모릅니다.”',진실:'“우리가 내일을 만들고 있는 게 아니라, 누군가 내일을 하나만 남기고 있어요.”',위기:'“한 사람을 기억하게 만들면 다른 누군가가 밀려납니다.”',결단:'“완벽한 내일보다, 한 번뿐인 내일을 선택할 준비가 됐습니까?”'},
+  wild:{도입:'“숲은 길을 숨기지 않아요. 우리가 원하는 길을 너무 잘 보여 줄 뿐이죠.”',탐색:'“발자국보다 별가루를 보세요. 짐승이 아니라 숲 자체가 움직였습니다.”',대면:'“저 신수도 우리만큼 겁먹었습니다. 먼저 공격하면 이유를 영영 못 듣겠죠.”',진실:'“별을 삼킨 게 숲이 아니라면, 우리가 막으려던 것이 오히려 보호막일 수 있어요.”',위기:'“사람에게 안전한 길이 숲에게도 안전하다는 보장은 없습니다.”',결단:'“누구도 완벽하게 이기는 답은 없겠지만, 모두가 살아남는 약속은 만들 수 있습니다.”'},
+  guardian:{도입:'“공주님을 살리는 것만으로는 끝나지 않아요. 우리가 누구를 두고 가는지도 기억될 겁니다.”',탐색:'“고블린이 지나간 길과 침략자가 지나간 길이 겹치지 않아요. 누군가 일부러 빈 길을 만들었습니다.”',대면:'“챔피언 소드는 강한 사람보다, 무엇을 지킬지 아는 사람에게 반응한다는 기록이 있습니다.”',진실:'“이 여정은 다음 세계로 도망치는 길이 아니라, 지나온 세계가 우리를 다시 부르는 길이군요.”',위기:'“모두를 구할 수 없다는 말은 쉽죠. 누구를 남길지 말하는 순간부터 어렵습니다.”',결단:'“다음 세계로 가기 전에, 여기서 한 약속을 끝까지 가져가죠.”'},
+  echo:{도입:'“막차는 끝났는데 개찰구 기록은 계속 늘고 있어요. 누군가 아직 도착하고 있다는 뜻입니다.”',탐색:'“표지판이 틀린 게 아니라, 역이 서로 다른 시간표를 동시에 보여 주고 있습니다.”',대면:'“저 문을 열면 나갈 수는 있어요. 대신 누가 안쪽에 남는지는 확인 못 합니다.”',진실:'“0번선은 숨겨진 승강장이 아니라, 어디에도 배치되지 못한 시간일지도 모르겠군요.”',위기:'“첫차가 오기 전에 해결하지 못하면 이상한 선로와 실제 선로가 겹칩니다.”',결단:'“우리만 나가는 것과 역을 정상으로 돌리는 건 같은 엔딩이 아닙니다.”'},
+  aurora:{도입:'“저 주파수에서 제 이름이 들렸습니다. 그런데 그 기록은 43년 전 겁니다.”',탐색:'“빙핵의 자성층이 목소리뿐 아니라 기억 반응까지 저장한 것 같습니다.”',대면:'“저 목소리가 과거라면 현재를 알아선 안 됩니다. 그런데 방금 제 질문에 대답했어요.”',진실:'“우리가 유령을 듣는 게 아니라, 얼음이 사람을 재생하고 있는 걸지도 모릅니다.”',위기:'“연구를 더 하면 사람을 잃고, 구조부터 하면 증거가 녹아 사라질 수 있습니다.”',결단:'“이걸 세상에 알리는 순간 발견이 아니라 기술이 됩니다. 그 책임까지 감당해야 합니다.”'},
+  masque:{도입:'“대본대로 움직이지 마. 마지막 장면은 아직 비어 있으니까.”',탐색:'“가면 안쪽 이름이 덧칠돼 있어요. 이 도시가 사람보다 배역을 오래 기억한 겁니다.”',대면:'“무대 장치를 움직이면 거리 자체가 바뀝니다. 여긴 도시가 아니라 공연장이에요.”',진실:'“마지막 장이 사라진 게 아니라 누군가 끝내지 않으려고 숨긴 겁니다.”',위기:'“사람들에게 이름을 돌려주면 도시가 사라질 수도 있어요. 자유와 고향이 충돌합니다.”',결단:'“정해진 결말을 복원할지, 우리 손으로 새 결말을 쓸지 이제 고르면 됩니다.”'}
+};
+function storyVoiceLine(c, beat){
+  const world=STORY_VOICE[c?.id]||STORY_VOICE.guardian;
+  return world[beat?.phase]||world.도입||'“지금 보이는 것만으로 결론 내리면 안 됩니다.”';
+}
+function playerInnerVoice(beat, player){
+  const last=state?.lastStoryAction;
+  const name=player?.name||'나';
+  if(last?.playerId===playerToken){
+    const result=last.success?'통했다':'뜻대로 되지 않았다';
+    return `${last.declaration||'방금 선택'}는 ${result}. 하지만 그 결과 때문에 지금 보이는 장면의 의미가 달라졌다. ${beat?.objective||'다음 행동을 정해야 한다'}`;
+  }
+  const phase=beat?.phase||'장면';
+  const cue={도입:'아직 답을 고를 때가 아니다. 먼저 이곳에서 무엇이 평범하지 않은지 잡아야 한다.',탐색:'겉으로 가장 눈에 띄는 단서가 진짜라는 보장은 없다. 서로 맞지 않는 부분부터 봐야 한다.',대면:'이제 보고만 있을 수는 없다. 누구를 먼저 믿고 무엇을 먼저 건드릴지 결정해야 한다.',진실:'방금 알게 된 사실이 맞다면 앞선 장면의 의미까지 바뀐다. 틀리다면 누군가가 이 믿음을 만들었다.',위기:'모든 걸 지킬 수 없을 수도 있다. 그렇다면 무엇을 잃지 않을지 먼저 정해야 한다.',결단:'여기서 고른 답은 다음 장면만이 아니라 마지막에 돌아볼 이유가 될 것이다.'}[phase];
+  return `${cue||'지금 상황을 한 번 더 정리해야 한다.'} ${beat?.objective||''}`.trim();
+}
 function storyNarrationHTML(c, beat, player, hints = []) {
   const raw = String(beat?.text || c?.intro || '').trim();
-  const paragraphs = proseParagraphs(raw).slice(0,3);
+  const paragraphs = proseParagraphs(raw).slice(0,5);
   const aff=beat?.affordances||{};
   const blocks=[];
   if(paragraphs[0]) blocks.push(`<p class="scene-narration lead">${storyParagraphHTML(paragraphs[0],0)}</p>`);
-  if(aff.hasPerson && aff.person){
-    const line={
-      ember:'“왕좌보다 먼저, 누가 이 봉인을 열었는지 보십시오.”', neon:'“기억은 팔 수 있어도 그 행동의 흔적까지 지울 순 없어.”', abyss:'“결정하기 전에 산소계부터 봐요. 시간은 우리 편이 아닙니다.”',
-      clock:'“이 말을 전에도 했던 것 같군요. 당신도 기억합니까?”', wild:'“숲이 네게 보여 주는 길은 네가 숨긴 소원과 닮아 있어.”', guardian:'“이번에 누구를 돕느냐가 다음 세계에서 우리를 기억하게 만들 거예요.”',
-      aurora:'“저 주파수에서 제 이름이 들렸습니다. 그런데 그 기록은 43년 전 거예요.”', masque:'“대본대로 움직이지 마. 마지막 장면은 아직 비어 있으니까.”', echo:'“저 문은 어제까지만 해도 여기 없었습니다.”'
-    }[c?.id]||'“지금 보이는 것만으로 결론 내리면 안 됩니다.”';
-    blocks.push(`<div class="story-dialogue"><span>${esc(aff.person)}</span><p>${esc(line)}</p></div>`);
-  }
   if(paragraphs[1]) blocks.push(`<p class="scene-narration">${storyParagraphHTML(paragraphs[1],1)}</p>`);
-  const thoughtBase=String(beat?.objective||beat?.prompt||'다음 행동을 정해야 한다').replace(/[.。]$/,'');
-  blocks.push(`<p class="story-thought"><span>${esc(player?.name||'나')}</span>${esc(`지금 중요한 건 ${thoughtBase}. 무엇을 먼저 건드리느냐에 따라 다음 길이 달라질 거다.`)}</p>`);
-  if(paragraphs[2]) blocks.push(`<p class="scene-narration afterthought">${storyParagraphHTML(paragraphs[2],2)}</p>`);
-  return `<article class="narration-rich clean-narration dialogue-page cinematic-story">${blocks.join('')}${beat?.continuityHook?`<p class="continuity-hook"><span>남은 기척</span><strong>${esc(beat.continuityHook)}</strong></p>`:''}</article>`;
+  if(aff.hasPerson && aff.person){
+    blocks.push(`<div class="story-dialogue"><span>${esc(aff.person)}</span><p>${esc(storyVoiceLine(c,beat))}</p></div>`);
+  }
+  if(paragraphs[2]) blocks.push(`<p class="scene-narration sensory">${storyParagraphHTML(paragraphs[2],2)}</p>`);
+  blocks.push(`<p class="story-thought"><span>${esc(player?.name||'나')}</span>${esc(playerInnerVoice(beat,player))}</p>`);
+  if(paragraphs[3]) blocks.push(`<p class="scene-narration consequence">${storyParagraphHTML(paragraphs[3],3)}</p>`);
+  if(paragraphs[4]) blocks.push(`<p class="scene-narration afterthought">${storyParagraphHTML(paragraphs[4],4)}</p>`);
+  const hook=beat?.continuityHook ? `<p class="continuity-hook"><span>아직 풀리지 않은 것</span><strong>${esc(beat.continuityHook)}</strong></p>` : '';
+  return `<article class="narration-rich clean-narration dialogue-page cinematic-story public-quality-story">${blocks.join('')}${hook}</article>`;
 }
 
 function parallelNarrationHTML(lines=[]){
@@ -951,20 +974,20 @@ function mainStoryTrail(c, beat, inResolution = false) {
   let bridge = '';
   let now = '';
   if (!last) {
-    before = `${c?.title || '이 연대기'}의 시작. ${conciseSceneText(c?.intro || beat?.text || '')}`;
-    bridge = `아직 이전 선택은 없다. 지금 처음 마주한 사건에서 무엇을 먼저 할지 결정해야 한다.`;
+    before = `사건의 발단 — ${conciseSceneText(c?.intro || beat?.text || '', 220)}`;
+    bridge = `이 사건을 직접 확인하기 위해 ${beat?.actName || '첫 현장'}까지 왔다. 아직 아무 결론도 확정되지 않았고, 지금부터의 선택이 첫 번째 사실을 만든다.`;
   } else if (inResolution) {
-    before = `${last.title || beat?.title || '이 장면'}에서 ${actor}이(가) 「${action}」을 선택했다.`;
-    bridge = `${last.success ? '시도는 뜻대로 풀렸다.' : '시도는 뜻대로 풀리지 않았고 대가가 남았다.'} ${conciseSceneText(last.narrative || state?.lastResolution?.text || '')}`;
+    before = `${last.title || beat?.title || '직전 장면'}에서 ${actor}이(가) 「${action}」을 시도했다.`;
+    bridge = `${last.success ? '그 행동은 원하는 결과를 만들었다.' : '그 행동은 뜻대로 풀리지 않았고 새로운 문제를 남겼다.'} ${conciseSceneText(last.narrative || state?.lastResolution?.text || '', 220)}`;
   } else {
     before = `${last.title || '직전 장면'}에서 ${actor}이(가) 「${action}」을 선택했다.`;
-    bridge = `${last.success ? '그 선택이 길을 열어' : '그 선택의 실패와 여파 때문에'} 지금의 「${beat?.title || '다음 장면'}」까지 이어졌다.`;
+    bridge = `${last.success ? '그 선택으로 이전에 닫혀 있던 정보나 길이 열렸다.' : '그 실패를 수습하는 과정에서 예상하지 못한 길이나 위험이 드러났다.'} 그래서 지금 「${beat?.title || '다음 장면'}」에 도착했다.`;
   }
   if (inResolution) {
-    now = `${state?.lastResolution?.ok ? '현재 선택의 결과가 확정됐다.' : '현재 선택의 실패가 확정됐다.'} ${state?.lastResolution?.consequence || ''}`.trim();
+    now = `${state?.lastResolution?.ok ? '현재 행동의 결과가 확정됐다.' : '현재 행동의 실패와 대가가 확정됐다.'} ${state?.lastResolution?.consequence || ''}`.trim();
   } else {
-    const scene = conciseSceneText(beat?.text || beat?.sceneContext || '');
-    now = `${beat?.title ? `${beat.title}. ` : ''}${scene}${beat?.objective ? ` 지금 해야 할 일은 ${beat.objective}` : ''}`.trim();
+    const scene = conciseSceneText(beat?.text || beat?.sceneContext || '', 240);
+    now = `${scene} 지금 당장 필요한 것은 “${beat?.objective || '다음 행동을 정하는 것'}”이다.`.trim();
   }
   return { before, bridge, now };
 }
@@ -1786,7 +1809,7 @@ function renderMainStoryChoices(beat) {
   const visibleChoices = beat.choices
     .map((choice, originalIndex) => ({ choice, originalIndex }))
     .filter(({ choice }) => !choice.requiredJob || choice.requiredJob === myJob);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>상황별 행동 6~12개 · 직접 행동은 보조</b></div><div>${isMyTurn ? '당신의 차례입니다. 상황에 맞는 행동을 고르세요. 목록에 없을 때만 직접 적어도 됩니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>지금 가능한 행동 ${visibleChoices.length}개</b></div><div>${isMyTurn ? '현재 장면에서 실제로 가능한 행동만 표시됩니다. 하나를 골라 진행하거나, 목록에 없는 방법이 떠오르면 직접 행동을 적어도 됩니다.' : `${esc(state.turnPlayerName || '다른 플레이어')}의 차례를 기다리는 중입니다.`}</div></div>` + visibleChoices.map(({ choice, originalIndex }, displayIndex) => `
     <button class="choice-card story-choice ${choice.jobSpecial ? 'job-choice' : ''}" type="button" data-choice-index="${originalIndex}" ${isMyTurn ? '' : 'disabled'}>
       <div class="choice-title-line"><b>${displayIndex + 1}. ${esc(choice.label)}</b>${choice.jobSpecial ? `<span class="job-choice-badge">${choice.rareJobMoment ? '희귀 기회 · ' : ''}${esc(choice.requiredJob)} 전용</span>` : ''}</div>
       <div class="story-choice-meta">${beat?.statInsight?.insight ? `<span>${esc(choice.stat)} 판정</span>` : '<span>판정 방식은 선택 후 공개</span>'}${beat?.statInsight?.insightDeep ? `<span class="difficulty ${esc(choice.difficulty || '')}">${esc(choice.difficulty || '')} · DC ${Number(choice.dc || 0) + Number(state.dcPenalty || 0)}</span>` : ''}</div>

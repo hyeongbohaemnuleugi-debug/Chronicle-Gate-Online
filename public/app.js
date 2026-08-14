@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=7220';
+import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '7.2.2-complete-replacement';
+const CLIENT_BUILD = '7.4.0-immersive-room-browser';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -9,8 +9,8 @@ const $$ = s => [...document.querySelectorAll(s)];
 
 const REQUIRED_IDS = [
   'app', 'hudTop', 'connectionText', 'roomCodeTop', 'leaveRoomBtn', 'homeView', 'entryView', 'lobbyView', 'storyView', 'combatView', 'endingView',
-  'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'entrySubmit', 'resumeCandidates', 'entryError',
-  'roomCodeLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
+  'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'createRoomFields', 'roomNameInput', 'passwordCreateField', 'roomPasswordCreate', 'joinPasswordField', 'joinPasswordInput', 'roomBrowser', 'roomList', 'refreshRooms', 'entrySubmit', 'resumeCandidates', 'entryError',
+  'roomCodeLobby', 'roomNameLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
   'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
   'myJobMini', 'myStatsMini', 'economyPanel', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
@@ -889,35 +889,33 @@ function stripSpeaker(sentence = '') {
 }
 function storyNarrationHTML(c, beat, player, hints = []) {
   const raw = String(beat?.text || c?.intro || '').trim();
-  const sentences = raw.split(/(?<=[.!?…])\s+/).map(v => v.trim()).filter(Boolean);
-  const blocks = [];
-  let prose = [];
-  const flushProse = () => {
-    if (!prose.length) return;
-    const text = prose.join(' ');
-    blocks.push(`<p class="scene-narration">${storyParagraphHTML(text, blocks.length)}</p>`);
-    prose = [];
-  };
-  sentences.forEach((sentence, index) => {
-    const kind = classifyStorySentence(sentence);
-    if (kind === 'narration') { prose.push(sentence); return; }
-    flushProse();
-    if (kind === 'dialogue') {
-      const speaker = dialogueSpeaker(sentence, beat?.speaker || '등장인물');
-      blocks.push(`<div class="story-dialogue"><span>${esc(speaker)}</span><p>${storyParagraphHTML(stripSpeaker(sentence), index)}</p></div>`);
-    } else {
-      blocks.push(`<p class="story-thought"><span>속마음</span>${storyParagraphHTML(sentence, index)}</p>`);
-    }
-  });
-  flushProse();
-  if (!blocks.some(block => block.includes('story-dialogue')) && beat?.prompt) {
-    blocks.push(`<div class="story-dialogue scene-question"><span>${esc(beat?.speaker || '장면')}</span><p>“${esc(String(beat.prompt).replace(/[.。]$/,''))}”</p></div>`);
+  const paragraphs = proseParagraphs(raw).slice(0,3);
+  const aff=beat?.affordances||{};
+  const blocks=[];
+  if(paragraphs[0]) blocks.push(`<p class="scene-narration lead">${storyParagraphHTML(paragraphs[0],0)}</p>`);
+  if(aff.hasPerson && aff.person){
+    const line={
+      ember:'“왕좌보다 먼저, 누가 이 봉인을 열었는지 보십시오.”', neon:'“기억은 팔 수 있어도 그 행동의 흔적까지 지울 순 없어.”', abyss:'“결정하기 전에 산소계부터 봐요. 시간은 우리 편이 아닙니다.”',
+      clock:'“이 말을 전에도 했던 것 같군요. 당신도 기억합니까?”', wild:'“숲이 네게 보여 주는 길은 네가 숨긴 소원과 닮아 있어.”', guardian:'“이번에 누구를 돕느냐가 다음 세계에서 우리를 기억하게 만들 거예요.”',
+      aurora:'“저 주파수에서 제 이름이 들렸습니다. 그런데 그 기록은 43년 전 거예요.”', masque:'“대본대로 움직이지 마. 마지막 장면은 아직 비어 있으니까.”', echo:'“저 문은 어제까지만 해도 여기 없었습니다.”'
+    }[c?.id]||'“지금 보이는 것만으로 결론 내리면 안 됩니다.”';
+    blocks.push(`<div class="story-dialogue"><span>${esc(aff.person)}</span><p>${esc(line)}</p></div>`);
   }
-  return `
-    <article class="narration-rich clean-narration dialogue-page">
-      ${blocks.join('')}
-      ${beat?.continuityHook ? `<p class="continuity-hook"><span>이어지는 기척</span><strong>${esc(beat.continuityHook)}</strong></p>` : ''}
-    </article>`;
+  if(paragraphs[1]) blocks.push(`<p class="scene-narration">${storyParagraphHTML(paragraphs[1],1)}</p>`);
+  const thoughtBase=String(beat?.objective||beat?.prompt||'다음 행동을 정해야 한다').replace(/[.。]$/,'');
+  blocks.push(`<p class="story-thought"><span>${esc(player?.name||'나')}</span>${esc(`지금 중요한 건 ${thoughtBase}. 무엇을 먼저 건드리느냐에 따라 다음 길이 달라질 거다.`)}</p>`);
+  if(paragraphs[2]) blocks.push(`<p class="scene-narration afterthought">${storyParagraphHTML(paragraphs[2],2)}</p>`);
+  return `<article class="narration-rich clean-narration dialogue-page cinematic-story">${blocks.join('')}${beat?.continuityHook?`<p class="continuity-hook"><span>남은 기척</span><strong>${esc(beat.continuityHook)}</strong></p>`:''}</article>`;
+}
+
+function parallelNarrationHTML(lines=[]){
+  return `<article class="parallel-prose cinematic-story">${(lines||[]).map((text,index)=>{
+    const s=String(text||'').trim();
+    const m=s.match(/^([^:]{1,24}):\s*(.+)$/);
+    if(m && m[1] !== '내 생각') return `<div class="story-dialogue"><span>${esc(m[1])}</span><p>${esc(m[2])}</p></div>`;
+    if(m && m[1]==='내 생각') return `<p class="story-thought"><span>${esc(state?.players?.find(p=>p.id===playerToken)?.name||'나')}</span>${esc(m[2])}</p>`;
+    return `<p class="scene-narration ${index===0?'lead':''}">${storyParagraphHTML(s,index)}</p>`;
+  }).join('')}</article>`;
 }
 
 function bossArtCandidates(c, monster='') {
@@ -969,18 +967,47 @@ function everyoneVoted(choiceVotes = {}) {
   return state?.players?.filter(p => p.connected && p.hp > 0).every(p => Number.isInteger(Number(choiceVotes[p.id])));
 }
 
+
+let roomDirectory=[];
+function roomAccessMode(){ return document.querySelector('input[name="roomAccess"]:checked')?.value || 'public'; }
+function updateRoomPasswordField(){ $('#passwordCreateField').classList.toggle('hidden',roomAccessMode()!=='locked'); }
+document.querySelectorAll('input[name="roomAccess"]').forEach(r=>r.addEventListener('change',updateRoomPasswordField));
+function requestRoomDirectory(){ socket.emit('room:list',{},res=>{ if(res?.ok){roomDirectory=res.rooms||[];renderRoomDirectory();} }); }
+function renderRoomDirectory(){
+  const box=$('#roomList'); if(!box) return;
+  if(!roomDirectory.length){ box.innerHTML='<div class="room-empty">현재 참가 가능한 방이 없습니다.</div>'; return; }
+  box.innerHTML=roomDirectory.map((r,i)=>`<button class="room-list-item" type="button" data-room-index="${i}" ${r.joinable?'':'disabled'}><span class="room-lock">${r.locked?'🔒':'◉'}</span><span class="room-list-copy"><b>${esc(r.roomName||'이름 없는 방')}</b><small>${esc(r.campaignTitle||'연대기 선택 중')} · ${r.players}/${r.maxPlayers}명${r.joinable?'':' · 진행 중/가득 참'}</small></span><span>${r.locked?'비밀번호':'참가'}</span></button>`).join('');
+  box.querySelectorAll('[data-room-index]').forEach(btn=>btn.onclick=()=>{
+    const r=roomDirectory[Number(btn.dataset.roomIndex)]; if(!r?.joinable)return;
+    $('#codeInput').value=r.roomCode;
+    $('#joinPasswordField').classList.toggle('hidden',!r.locked);
+    if(r.locked){ $('#joinPasswordInput').focus(); $('#entryError').textContent='비밀번호를 입력한 뒤 방 참가하기를 누르세요.'; }
+    else joinSelectedRoom(r);
+  });
+}
+function joinSelectedRoom(r){
+  const name=$('#nameInput').value.trim(); if(!name){ $('#entryError').textContent='플레이어 이름을 먼저 입력하세요.'; return; }
+  socket.emit('room:join',{name,roomCode:r.roomCode,password:$('#joinPasswordInput').value},onJoined);
+}
+$('#refreshRooms').onclick=requestRoomDirectory;
+socket.on('room:list:update',rooms=>{ roomDirectory=rooms||[]; if(mode==='join')renderRoomDirectory(); });
+
 $('#openCreate').onclick = () => openEntry('create');
 $('#openJoin').onclick = () => openEntry('join');
 $('#entryBack').onclick = () => view('homeView');
 function openEntry(m) {
   mode = m;
-  const resume = m === 'resume';
-  $('#entryEyebrow').textContent = m === 'create' ? 'CREATE ROOM' : resume ? 'CONTINUE CHRONICLE' : 'JOIN ROOM';
-  $('#entryTitle').textContent = m === 'create' ? '새로운 연대기를 시작합니다.' : resume ? '진행 중이던 연대기로 돌아갑니다.' : '동료들이 기다리는 문을 엽니다.';
+  $('#entryEyebrow').textContent = m === 'create' ? 'CREATE ROOM' : 'JOIN ROOM';
+  $('#entryTitle').textContent = m === 'create' ? '새로운 연대기를 시작합니다.' : '열려 있는 연대기에 참가합니다.';
+  $('#createRoomFields').classList.toggle('hidden',m!=='create');
   $('#codeField').style.display = m === 'join' ? 'block' : 'none';
-  $('#entrySubmit').textContent = m === 'create' ? '방 만들기' : resume ? '내 진행 기록 찾기' : '방 참가하기';
+  $('#roomBrowser').classList.toggle('hidden',m!=='join');
+  $('#joinPasswordField').classList.add('hidden');
+  $('#entrySubmit').textContent = m === 'create' ? '방 만들기' : '방 코드로 참가하기';
   $('#resumeCandidates').innerHTML = '';
-  $('#entryError').textContent = resume ? '진행 중이던 이야기에서 사용한 닉네임을 정확히 입력하세요.' : '';
+  $('#entryError').textContent = '';
+  if(m==='join') requestRoomDirectory();
+  updateRoomPasswordField();
   view('entryView');
 }
 function renderResumeCandidates(candidates = []) {
@@ -997,21 +1024,21 @@ function renderResumeCandidates(candidates = []) {
 $('#entrySubmit').onclick = () => {
   const name = $('#nameInput').value.trim();
   if (!name) { $('#entryError').textContent = '플레이어 이름을 입력하세요.'; return; }
-  if (mode === 'create') return socket.emit('room:create', { name }, onJoined);
-  if (mode === 'resume') {
-    $('#entryError').textContent = '진행 기록을 찾는 중입니다…';
-    $('#resumeCandidates').innerHTML = '';
-    return socket.emit('session:lookup', { name }, res => {
-      if (!res?.ok) { $('#entryError').textContent = res?.error || '이어할 기록을 찾지 못했습니다.'; return; }
-      if (res.candidates?.length === 1) return socket.emit('session:resume', { name, roomCode:res.candidates[0].roomCode }, onJoined);
-      $('#entryError').textContent = res.candidates?.length ? '이어갈 연대기를 선택하세요.' : '이어할 수 있는 진행 기록이 없습니다.';
-      renderResumeCandidates(res.candidates || []);
-    });
+  if (mode === 'create') {
+    const roomName=$('#roomNameInput').value.trim() || `${name}의 연대기`;
+    const accessMode=roomAccessMode();
+    const password=$('#roomPasswordCreate').value;
+    if(accessMode==='locked' && password.length<2){ $('#entryError').textContent='비밀번호는 2자 이상 입력하세요.'; return; }
+    return socket.emit('room:create', { name, roomName, accessMode, password }, onJoined);
   }
-  const code = $('#codeInput').value.trim().toUpperCase();
-  if (code.length !== 5) { $('#entryError').textContent = '5자리 방 코드를 입력하세요.'; return; }
-  socket.emit('room:join', { name, roomCode: code }, onJoined);
+  const code = $('#codeInput').value.toUpperCase().trim();
+  if (!code) { $('#entryError').textContent='방을 목록에서 고르거나 5자리 코드를 입력하세요.'; return; }
+  socket.emit('room:join', { name, roomCode: code, password:$('#joinPasswordInput').value }, r=>{
+    if(r?.passwordRequired){ $('#joinPasswordField').classList.remove('hidden'); $('#entryError').textContent=r.error||'비밀번호를 입력하세요.'; return; }
+    onJoined(r);
+  });
 };
+
 function onJoined(res) {
   if (!res?.ok) { $('#entryError').textContent = res?.error || '연결에 실패했습니다.'; return; }
   roomCode = res.roomCode;
@@ -1132,6 +1159,7 @@ function renderState() {
   roomCode = state.code;
   $('#roomCodeTop').textContent = state.code;
   $('#roomCodeLobby').textContent = state.code;
+  if($('#roomNameLobby')) $('#roomNameLobby').textContent = state.roomName || '연대기의 동료들';
   if (state.campaign) setWorld(state.campaign);
 
   // v5.8: 현재 화면만 다시 그린다. 이전에는 state 패킷 하나마다 로비/스토리/전투/엔딩 DOM을
@@ -1354,35 +1382,35 @@ function renderParallelStory() {
   const social=nearby.length
     ? `현재 같은 장소에 ${nearby.map(x=>`${x.name}${x.linked?'(동행 중)':''}`).join(', ')}이(가) 있습니다. 만난 뒤에도 같이 갈지 헤어질지는 선택입니다.`
     : linked.length ? `동행 관계: ${linked.map(x=>`${x.name}(${x.locationLabel})`).join(', ')}. 서로 다른 길로 갈 경우 다음 턴에 따라갈지 남을지 다시 선택합니다.` : '현재 이 장소에는 다른 플레이어가 보이지 않습니다.';
-  $('#storyWhy').textContent=[social,world].filter(Boolean).join(' ');
-  $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}의 행동.</b> 같은 세계를 공유하지만 각자의 턴과 위치는 따로 움직입니다. 같은 장소에서 만나면 함께 갈 수도, 다시 갈라질 수도 있습니다.`;
-  const paragraphs=(scene.paragraphs||[]).map(text=>`<p>${esc(text)}</p>`).join('');
+  $('#storyWhy').textContent='';
+  $('#storyWhy').style.display='none';
+  $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}</b>은(는) 눈앞의 상황에서 다음 행동을 정해야 한다.`;
+  const paragraphs=parallelNarrationHTML(scene.paragraphs||[]);
   const last=state.lastResolution;
-  const lastResult=last?.source==='parallel-story' ? `<div class="inline-resolution ${last.ok?'success':'failure'}"><div class="eyebrow">LAST ACTION</div><b>${esc(last.playerName||'플레이어')} · ${esc(last.choiceLabel||'행동')}</b><p>${esc(last.text||'')}</p>${last.consequence?`<small>게임 효과 · ${esc(last.consequence)}</small>`:''}</div>` : '';
+  const lastResult=last?.source==='parallel-story' ? `<div class="inline-resolution ${last.ok?'success':'failure'}"><div class="eyebrow">LAST ACTION</div><b>${esc(last.playerName||'플레이어')} · ${esc(last.choiceLabel||'행동')}</b><p>${esc(last.text||'')}</p>${last.consequence?`<small>여파 · ${esc(last.consequence)}</small>`:''}</div>` : '';
   const encounterInfo=encounter?`<div class="story-inline-help danger"><b>지역 전투</b> · ${esc(encounter.name)} · HP ${encounter.hp}/${encounter.maxHp}${encounter.weak?` · 약점: ${esc(encounter.weak)}`:''}<br>이 장소에 들어온 다른 플레이어도 자기 턴에 같은 전투에 참가할 수 있습니다.</div>`:'';
   const nearbyInfo=nearby.length?`<div class="story-inline-help"><b>우연한 조우</b> · ${nearby.map(x=>`${esc(x.name)}(${esc(x.job||'')})`).join(' · ')}<br>자동으로 파티가 되지 않습니다. 아래 선택으로 같이 다니거나, 잠깐 협력하거나, 계속 각자 움직일 수 있습니다.</div>`:'';
-  const affordanceInfo=scene.affordanceSummary?`<div class="story-inline-help"><b>지금 눈앞에 있는 것</b><br>${esc(scene.affordanceSummary)}</div>`:'';
-  $('#eventText').innerHTML=lastResult+paragraphs+affordanceInfo+encounterInfo+nearbyInfo;
+  $('#eventText').innerHTML=lastResult+paragraphs+encounterInfo;
 
   $('#storyActionBox').style.display='none';
   $('#storyActionInput').disabled=true;
   $('#actionSuggestions').innerHTML='';
   const storyItems=(scene.storyItems||[]).map(item=>esc(item.name)).join(' · ');
-  $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>각 플레이어는 독립된 위치·진행·턴을 가집니다.</b><small>${storyItems?`현재 소지품 · ${storyItems}<br>`:''}스토리 도구는 현재 인물이 실제로 소지하고 있는 물건입니다. 각 물건의 용도와 배경은 오른쪽 STORY ITEMS에서 확인할 수 있습니다.</small>`;
+  $('#storyRoleContext').innerHTML=`<span>${esc(scene.locationLabel)}</span><b>${esc(scene.objective||'다음 행동을 정한다')}</b>${storyItems?`<small>소지품 · ${storyItems}</small>`:''}`;
 
   const choices=Array.isArray(scene.choices) ? scene.choices.filter(choice=>choice && choice.label) : [];
   const emptyNotice=choices.length ? '' : `<div class="action-lock"><div><div class="eyebrow">CHOICE DATA ERROR</div><b>서버에서 현재 장면의 선택지가 전달되지 않았습니다.</b><small>새 패치에서는 이 상태가 생기지 않도록 서버가 기본 행동을 항상 보장합니다. 화면이 계속 이 상태라면 서버도 함께 재배포했는지 확인하세요.</small></div></div>`;
   const renderedChoices=choices.map((choice,index)=>`
-    <button class="choice-card story-choice" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
-      <div class="choice-title-line"><b>${index+1}. ${esc(choice.label)}</b>${choice.choiceBadge?`<span class="job-choice-badge">${esc(choice.choiceBadge)}</span>`:''}</div>
-      <div class="story-choice-meta">${choice.automatic?'<span>플레이어 선택 · 판정 없음</span>':`<span>${esc(choice.stat || '지혜')} 판정</span><span class="difficulty">DC ${Number(choice.dc||8)}</span>`}</div>
-      ${choice.reason?`<div class="choice-context"><strong>가능한 이유</strong> · ${esc(choice.reason)}</div>`:''}
+    <button class="choice-card story-choice choice-row" type="button" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}>
+      <span class="choice-number">${index+1}</span>
+      <span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span>
+      <span class="choice-check">${choice.choiceBadge?`<em>${esc(choice.choiceBadge)}</em>`:''}${choice.automatic?'선택':`${esc(choice.stat||'지혜')} · DC ${Number(choice.dc||8)}`}</span>
     </button>`).join('');
   choiceBox.style.setProperty('display','grid','important');
   choiceBox.style.setProperty('visibility','visible','important');
   choiceBox.style.setProperty('opacity','1','important');
   choiceBox.style.minHeight=choices.length ? '120px' : '90px';
-  choiceBox.innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>${choices.length}개의 현재 상황 선택지</b></div><div>${isMyTurn?'지금 이 장소에서 실제로 할 수 있는 행동들입니다. 직업·장비·소지품이 있으면 특별한 방법이 추가됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 턴을 기다리는 중입니다.`}</div></div>${emptyNotice}${renderedChoices}`;
+  choiceBox.innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>지금 할 수 있는 행동 ${choices.length}개</b></div><div>${isMyTurn?'현재 장면에 직접 연결되는 행동만 표시됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 턴을 기다리는 중입니다.`}</div></div>${emptyNotice}${renderedChoices}`;
   forceChoiceLayout(choiceBox);
   requestAnimationFrame(()=>{
     choiceBox.style.setProperty('display','grid','important');
@@ -1421,10 +1449,10 @@ function forceChoiceLayout(root = document) {
   set(area, 'grid-auto-rows', 'max-content');
   set(area, 'align-items', 'start');
   set(area, 'align-content', 'start');
-  set(area, 'gap', '16px');
+  set(area, 'gap', '10px');
   set(area, 'overflow-x', 'hidden');
-  set(area, 'overflow-y', 'auto');
-  set(area, 'max-height', window.innerWidth <= 700 ? 'none' : '68vh');
+  set(area, 'overflow-y', 'visible');
+  set(area, 'max-height', 'none');
   area.querySelectorAll('.choice-card').forEach(card => {
     set(card, 'position', 'relative');
     set(card, 'display', 'flex');
@@ -1435,7 +1463,7 @@ function forceChoiceLayout(root = document) {
     set(card, 'height', 'auto');
     set(card, 'min-height', '0');
     set(card, 'max-height', 'none');
-    set(card, 'padding', '20px 22px 19px');
+    set(card, 'padding', '0');
     set(card, 'overflow', 'hidden');
     set(card, 'white-space', 'normal');
     set(card, 'box-sizing', 'border-box');
@@ -1549,9 +1577,9 @@ function renderStory() {
     $('#storyClarity').classList.add('clean-main');
     $('#storySituation').textContent = myScene?.lead || '각 플레이어는 서로 다른 장소에서 이야기를 시작합니다.';
     $('#storyObjective').textContent = myScene?.objective || '개인 서사를 읽고 다른 인물들과 합류할 준비를 하세요.';
-    $('#storyWhy').textContent = `${state.prologue?.readyCount || 0}/${state.prologue?.totalPlayers || state.players.length}명 준비 완료 · 모두가 준비되면 공통 메인 스토리가 열립니다.`;
-    $('#storyPrompt').innerHTML = `<b>${esc(p?.job?.name || '당신')}의 시작.</b> ${esc(myScene?.prompt || '지금 붙잡은 단서는 결국 다른 인물들과 당신을 만나게 합니다.')}`;
-    $('#eventText').innerHTML = (myScene?.paragraphs || []).map(text => `<p>${esc(text)}</p>`).join('') + `<div class="story-inline-help">합류 후 메인 스토리는 모두가 함께 진행합니다. 현재 준비 완료: ${readyNames.length ? esc(readyNames.join(', ')) : '아직 없음'}.</div>`;
+    $('#storyWhy').textContent = ''; $('#storyWhy').style.display='none';
+    $('#storyPrompt').innerHTML = `<b>${esc(p?.name||'당신')}</b>은(는) 아직 다른 이들이 어디에 있는지 모른다.`;
+    $('#eventText').innerHTML = parallelNarrationHTML((myScene?.paragraphs||[]).slice(0,4));
     $('#storyActionBox').style.display = 'none';
     $('#storyActionInput').disabled = true;
     $('#storyActionBox').classList.add('disabled');
@@ -1601,8 +1629,8 @@ function renderStory() {
     $('#storyClarity').classList.add('clean-main');
     $('#storySituation').textContent = `${beat?.actName || c?.title || '현재 장면'} · ${beat?.phase || '진행'}`;
     $('#storyObjective').textContent = beat?.objective || '지금 상황에서 무엇을 할지 정하세요.';
-    $('#storyWhy').textContent = beat?.continuityHook || beat?.why || '';
-    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '현재 플레이어')}의 선택.</b> ${esc(beat?.prompt || '아래 행동 중 하나를 고르세요.')}`;
+    $('#storyWhy').textContent = beat?.continuityHook || ''; $('#storyWhy').style.display=beat?.continuityHook?'':'none';
+    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '당신')}</b>은(는) 잠시 숨을 고르고 눈앞의 선택지를 살핀다.`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
     if (inResolution && lastResolution) {
       $('#storySituation').textContent = lastResolution.ok ? '판정 성공 · 선택의 결과' : '판정 실패 · 선택이 남긴 대가';
@@ -1693,13 +1721,13 @@ function renderChoices(ev) {
   const votes = state.choiceVotes || {};
   const counts = ev.choices.map((_, index) => Object.values(votes).filter(v => Number(v) === index).length);
   const highest = Math.max(0, ...counts);
-  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO QUICK CHOICE' : '45 SECOND TABLE VOTE'}</span><b>${state.soloMode ? '12초 선택' : '45초 투표'} · 전원 완료 시 3초 뒤 자동 확정</b></div><div>현재 ${Object.keys(votes).length}표 · 동률이면 현재 차례 플레이어의 표를 우선합니다.</div></div>` + ev.choices.map((c, i) => {
+  box.innerHTML = `<div class="vote-strip"><div><span class="eyebrow">${state.soloMode ? 'SOLO QUICK CHOICE' : '45 SECOND TABLE VOTE'}</span><b>${state.soloMode ? '지금 대응을 고르세요' : '테이블의 대응을 정하세요'}</b></div><div>${Object.keys(votes).length}명 선택 완료</div></div>` + ev.choices.map((c, i) => {
     const mine = Number(votes[playerToken]) === i;
     const leader = counts[i] > 0 && counts[i] === highest;
     const jobLocked = !!c.requiredJob && p?.job?.name !== c.requiredJob;
     const specialBadge = c.requiredJob ? `<span class="job-choice-badge">${c.rareJobMoment ? '희귀 기회 · ' : ''}${esc(c.requiredJob)} 전용</span>` : '';
     const lockText = jobLocked ? `<div class="job-choice-lock">🔒 ${esc(c.requiredJob)}만 이 상황의 전문 선택을 사용할 수 있습니다.</div>` : '';
-    return `<button class="choice-card ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><div class="choice-title-line"><b>${i + 1}. ${esc(c.label)}</b>${specialBadge}</div><small>${c.stat} · ${esc(c.difficulty || '')}${c.difficulty ? ' · ' : ''}DC ${c.dc + (state.dcPenalty || 0)}</small>${lockText}<div class="vote-chip">${counts[i]}표${mine ? ' · 내 선택' : ''}</div></button>`;
+    return `<button class="choice-card choice-row ${mine ? 'voted' : ''} ${leader ? 'leading' : ''} ${c.requiredJob ? 'job-choice' : ''} ${jobLocked ? 'job-locked' : ''}" type="button" ${jobLocked ? 'disabled' : ''}><span class="choice-number">${i+1}</span><span class="choice-copy"><b>${esc(c.label)}</b>${jobLocked?`<small>${esc(c.requiredJob)} 전용 행동</small>`:''}</span><span class="choice-check">${c.requiredJob?`<em>${esc(c.requiredJob)}</em>`:''}${esc(c.stat)} · DC ${c.dc + (state.dcPenalty || 0)}<small>${counts[i]}표${mine?' · 내 선택':''}</small></span></button>`;
   }).join('');
   forceChoiceLayout(box);
   box.querySelectorAll('.choice-card').forEach((b, i) => b.onclick = () => {
@@ -1737,7 +1765,7 @@ function showResolution(r) {
   $('#resolutionTitle').textContent = r.detourCreated ? '길이 예상과 다르게 꺾였다' : (r.isDetour ? '예정에 없던 위기의 결과' : (r.ok ? '선택의 결과' : '실패가 남긴 흔적'));
   const mechanics = [r.consequence, r.status ? `${r.status.label}: ${r.status.desc || ''}` : ''].filter(Boolean).join(' · ');
   const branchAfter = r.detourCreated ? '<small class="resolution-next">방금 실패 때문에 원래 다음 장면 앞에 새로운 위기가 생겼습니다.</small>' : '';
-  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<small class="resolution-mechanics">게임 효과 · ${esc(mechanics)}</small>` : ''}`;
+  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<small class="resolution-mechanics">${esc(mechanics)}</small>` : ''}`;
   $('#resolutionModal').classList.add('show');
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');

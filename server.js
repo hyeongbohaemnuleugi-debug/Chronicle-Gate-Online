@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '7.8.0-fiction-first-release';
+const APP_VERSION = '8.0.0-tabletop-first-public-alpha';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -207,8 +207,8 @@ function rollReward(room, player, { margin = 0, natural = 0, lootItemId = null, 
 // v6.1.0 LIVING STORY
 const AGENCY_VERSION = 2;
 const SCENE_IMPORTANCE = {
-  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:4, freeAction:true, consequence:'보이는 선택은 힌트일 뿐입니다. 직접 행동을 말해도 되며, 작은 실패는 이야기를 막지 않습니다.' },
-  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:4, freeAction:true, consequence:'위험이 분명한 장면입니다. 정해진 답 대신 직접 방법을 선언할 수 있습니다.' },
+  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:3, freeAction:true, consequence:'보이는 선택은 힌트일 뿐입니다. 직접 행동을 말해도 되며, 작은 실패는 이야기를 막지 않습니다.' },
+  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:3, freeAction:true, consequence:'위험이 분명한 장면입니다. 정해진 답 대신 직접 방법을 선언할 수 있습니다.' },
   pivotal: { label:'결정적 장면', dcMin:10, dcMax:13, choiceTarget:3, freeAction:true, consequence:'큰 분기나 엔딩이 걸린 장면입니다. 선택 수는 적지만 자유 행동은 그대로 허용됩니다.' },
 };
 
@@ -453,6 +453,30 @@ function validateFreeAction(declaration, beat) {
   if (intent==='help' && !(ctx.hasRescue || ctx.hasPerson)) return {ok:false,error:'지금 장면에는 당장 도울 대상이 보이지 않습니다.'};
   return {ok:true,ctx,intent};
 }
+function freeActionIsInquiry(declaration, validity, beat){
+  const t=String(declaration||'').toLowerCase();
+  if(!validity?.ok) return false;
+  if(['fight','break','steal','tail','sneak','help'].includes(validity.intent)) return false;
+  if(/들어가|이동|따라가|챙기|가져가|훔치|부수|열어|공격|제압|구조|끌고|도망|탈출/.test(t)) return false;
+  return ['talk','investigate','other'].includes(validity.intent);
+}
+function sceneInquiryNarrative(campaign, beat, validity, declaration, count=1){
+  const ctx=validity?.ctx||inferSceneAffordances(beat); const intent=validity?.intent||'other';
+  const clue=ctx.clue||'눈앞의 흔적'; const person=ctx.person||'상대';
+  if(intent==='talk'){
+    const quoted=beat?.dialogue?.[0]?.text || '';
+    if(count===1 && quoted) return `${person}은 잠시 주변을 살핀 뒤 대답했다. ${quoted}`;
+    const reveal=String(beat?.reveal||'').trim();
+    return reveal?`${person}의 대답에서 한 가지가 분명해진다. ${reveal}`:`${person}은 아는 것과 추측하는 것을 나눠 말한다. 적어도 ${clue}가 우연히 생긴 것은 아니라는 점은 확실하다.`;
+  }
+  if(intent==='investigate'){
+    if(count===1) return `${clue}를 가까이 확인하자 멀리서 볼 때는 보이지 않던 차이가 드러난다. 흔적의 순서와 주변 상태가 서로 맞지 않는다.`;
+    const reveal=String(beat?.reveal||'').trim();
+    return reveal?`${clue}의 세부를 다시 맞춰 보자 중요한 사실 하나가 이어진다. ${reveal}`:`${clue}를 다른 흔적과 대조하자 적어도 지금 보이는 설명만으로는 사건이 성립하지 않는다는 점이 확실해진다.`;
+  }
+  return `그 행동으로 당장 장면을 뒤집지는 않지만, 주변의 반응을 확인할 수 있었다. 지금 보이는 사람과 흔적은 그대로 있고 다음 행동은 아직 당신이 정할 수 있다.`;
+}
+
 function contextualGeneratedAction(stat, beat, ctx, variant=0) {
   const focus = sceneFocus(beat);
   const table = {
@@ -1701,8 +1725,8 @@ function parallelRenderedScene(room,campaign,player){
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
-    sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node),
-    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:false,
+    sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:node.affordances||{}, text:(node.text||[]).join(' '),
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:true,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
@@ -1895,8 +1919,28 @@ function parallelAdvance(room,campaign,player,payload,ack){
     }
   }
   const scene=parallelRenderedScene(room,campaign,player); if(!scene) return ack?.({ok:false,error:'개인 장면을 찾을 수 없습니다.'});
-  const choiceIndex=Number(payload?.choiceIndex); const choice=scene.choices?.[choiceIndex];
-  if(!choice) return ack?.({ok:false,error:'선택지가 올바르지 않습니다.'});
+  const choiceIndex=Number(payload?.choiceIndex); const declaration=sanitize(payload?.declaration,220);
+  let choice=Number.isInteger(choiceIndex)?scene.choices?.[choiceIndex]:null;
+  let freeActionInterpretation=null;
+  let freeActionValidity=null;
+  if(!choice && declaration){
+    freeActionValidity=validateFreeAction(declaration,scene);
+    if(!freeActionValidity.ok) return ack?.({ok:false,error:freeActionValidity.error});
+    freeActionInterpretation=interpretFreeAction(declaration,player,scene,room);
+    const template=(scene.choices||[]).find(x=>statPath(x.stat||'지혜')===statPath(freeActionInterpretation.stat)) || scene.choices?.[0] || {};
+    choice={...template,id:`${scene.id}-FREE-${Date.now()}`,label:declaration,stat:freeActionInterpretation.stat,dc:freeActionInterpretation.dc,automatic:false,freeAction:true,actionType:freeActionValidity.intent,kind:'parallel-free'};
+  }
+  if(!choice) return ack?.({ok:false,error:'하고 싶은 행동을 적거나 행동 예시를 이용해 주세요.'});
+  if(choice.freeAction && freeActionValidity && freeActionIsInquiry(choice.label,freeActionValidity,scene)){
+    ps.inquiries ||= {};
+    const count=Math.min(3,Number(ps.inquiries[scene.id]||0)+1); ps.inquiries[scene.id]=count;
+    const narrative=sceneInquiryNarrative(campaign,scene,freeActionValidity,choice.label,count);
+    room.lastResolution={source:'parallel-story',ok:true,inquiry:true,text:narrative,consequence:'',playerId:player.id,playerName:player.name,choiceLabel:choice.label,continueLabel:'장면으로 돌아가기'};
+    room.phase='resolution'; room.pendingContinue={source:'parallel-story',actorId:player.id,stayOnScene:true};
+    pushChat(room,{type:'action',author:player.name,text:choice.label}); sync(room);
+    setTimeout(()=>io.to(room.code).emit('resolution',room.lastResolution),180);
+    return ack?.({ok:true,inquiry:true});
+  }
   const automatic=Boolean(choice.automatic);
   const ability=player.abilities?.[choice.stat]; if(!automatic && !ability) return ack?.({ok:false,error:'능력치가 없습니다.'});
   const roll=automatic?null:rand(20); const base=automatic?0:mod(effectiveAbilityTotal(room,player,choice.stat)); const gear=automatic?0:equipmentStatBonus(room,player,choice.stat); const support=Math.min(2,Number(ps.support||0)); const encounter=room.parallel.encounters?.[ps.location]; const encounterAssist=choice.kind==='parallel-combat'?Math.min(2,Number(encounter?.assist||0)):0; const status=automatic?0:statusPenaltyForCheck(room,player,choice.stat); const total=automatic?null:roll+base+gear+support+encounterAssist+status; const dc=Math.max(7,Number(choice.dc||8)); const success=automatic?true:(roll===20 || (roll!==1 && total>=dc)); const grade=automatic?'success':storyOutcomeGrade(roll,total,dc);
@@ -1915,7 +1959,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
     const r=parallelCombatAction(room,campaign,player,choice,roll,total,dc);
     narrative=`${attempt} ${r.text}`; consequence=r.consequence;
   } else {
-    narrative=success ? (choice.success||`${choice.label}에 성공했다.`) : (choice.failure||`${choice.label}을 시도했지만 대가가 남았다.`);
+    narrative=choice.freeAction ? actionNarrative({success:success||grade==='mixed',declaration:choice.label,player,beat:scene,interpretation:freeActionInterpretation||interpretFreeAction(choice.label,player,scene,room),margin:(total??dc)-dc}) : (success ? (choice.success||`${choice.label}에 성공했다.`) : (choice.failure||`${choice.label}을 시도했지만 대가가 남았다.`));
     if(!success && grade==='mixed') narrative=`${choice.success||narrative} 하지만 작은 대가가 남았다.`;
     const storyPass=success || grade==='mixed';
     if(storyPass && choice.flag) ps.flags[choice.flag]=true;
@@ -3288,7 +3332,7 @@ function interpretFreeAction(declaration, player, beat, room) {
   const naturalFit = rawAbility(player, picked.stat) >= 15 ? 1 : 0;
   const baseByImportance = importanceKey === 'pivotal' ? 11 : importanceKey === 'important' ? 9 : 8;
   const dc = Math.max(rule.dcMin, Math.min(rule.dcMax, baseByImportance + threatPressure - expertise - naturalFit));
-  return { stat:picked.stat, mode:picked.label, dc, expertise, route:routeFromStat(picked.stat), importanceKey };
+  return { stat:picked.stat, mode:picked.label, dc, expertise, route:routeFromStat(picked.stat), importanceKey, intent:freeActionIntent(declaration) };
 }
 
 function actionNarrative({ success, declaration, player, beat, interpretation, margin }) {
@@ -4408,6 +4452,23 @@ io.on('connection', socket => {
     const ability = player.abilities?.[choice.stat];
     if (!ability) return ack?.({ ok:false, error:'캐릭터 능력치를 찾을 수 없습니다.' });
 
+    if (choice.freeAction && freeActionInterpretation && freeActionIsInquiry(choice.label, {ok:true,intent:freeActionInterpretation?.intent || freeActionIntent(choice.label),ctx:inferSceneAffordances(beat)}, beat)) {
+      room.sceneInquiries ||= {};
+      const key=`${beat.id}:${player.id}`;
+      const count=Math.min(3,Number(room.sceneInquiries[key]||0)+1);
+      room.sceneInquiries[key]=count;
+      const validity={ok:true,intent:freeActionIntent(choice.label),ctx:inferSceneAffordances(beat)};
+      const narrative=sceneInquiryNarrative(campaign,beat,validity,choice.label,count);
+      room.lastStoryAction={playerId:player.id,playerName:player.name,declaration:choice.label,stat:null,mode:'inquiry',roll:null,total:null,dc:null,success:true,narrative,beatId:beat.id};
+      room.lastResolution={source:'story',ok:true,inquiry:true,text:narrative,consequence:'',playerId:player.id,playerName:player.name,choiceLabel:choice.label,continueLabel:'장면으로 돌아가기'};
+      room.phase='resolution';
+      room.pendingContinue={source:'story',stayOnScene:true};
+      pushChat(room,{type:'action',author:player.name,text:choice.label});
+      sync(room);
+      setTimeout(()=>io.to(room.code).emit('resolution',room.lastResolution),180);
+      return ack?.({ok:true,inquiry:true,result:room.lastStoryAction});
+    }
+
     const roll = rand(20);
     const baseAbilityMod = mod(effectiveAbilityTotal(room, player, choice.stat));
     const gearBonus = equipmentStatBonus(room, player, choice.stat);
@@ -4748,8 +4809,17 @@ io.on('connection', socket => {
     if (room && resumeBlocked(room, ack)) return;
     if (!room || !requirePhase(room, 'resolution', ack, '계속할 결과가 없습니다.')) return;
     const pending = room.pendingContinue || {};
+    if (pending.source === 'story' && pending.stayOnScene) {
+      room.lastResolution=null; room.pendingContinue=null; room.phase='story';
+      sync(room);
+      return ack?.({ok:true,stayOnScene:true});
+    }
     if (pending.source === 'parallel-story') {
       const actor=getPlayer(room,pending.actorId);
+      if (pending.stayOnScene) {
+        if (!player || !actor || actor.id!==player.id) return ack?.({ok:false,error:`${actor?.name || '행동한 플레이어'}가 자신의 장면을 계속해야 합니다.`});
+        room.lastResolution=null; room.pendingContinue=null; room.phase='story'; sync(room); return ack?.({ok:true,parallel:true,stayOnScene:true});
+      }
       if (!player || !actor || actor.id!==player.id) return ack?.({ok:false,error:`${actor?.name || '행동한 플레이어'}가 자신의 턴 결과를 마무리해야 합니다.`});
       const campaign=CAMPAIGNS.find(item=>item.id===room.campaignId);
       room.lastResolution=null; room.lastResolvedStoryBeat=null; room.pendingContinue=null; room.phase='story';

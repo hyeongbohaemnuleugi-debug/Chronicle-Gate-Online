@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '7.7.0-actual-play-director';
+const APP_VERSION = '7.8.0-fiction-first-release';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -2334,23 +2334,7 @@ function storyResultColor(campaign,beat,choice,grade){
   return pool[n];
 }
 
-function storyCallbackLine(room,campaign,beat,choice,success){
-  const threads=(room?.narrativeLedger?.threads||[]).filter(x=>x.beatId!==beat?.id);
-  const prev=threads[threads.length-1];
-  if(!prev) return '';
-  if(prev.playerId===room?.lastStoryAction?.playerId && prev.choice===choice?.label) return '';
-  const route=choice?.branchValue||'careful';
-  if(prev.route===route && prev.success){
-    return `앞서 ${prev.playerName||'동료'}가 만든 ${prev.gain||'작은 이점'}이 아직 남아 있어, 이번 선택은 완전히 처음부터 시작되지 않았다.`;
-  }
-  if(!prev.success){
-    return `직전 실패에서 남은 ${prev.cost||prev.status||'문제'}가 사라지지 않아, 이번 행동에도 그 여파가 따라붙었다.`;
-  }
-  if(prev.route!==route){
-    return `앞에서는 ${prev.route==='bold'?'정면 돌파':prev.route==='empathetic'?'사람과의 신뢰':'조사와 추적'}를 택했지만, 이번에는 다른 방식으로 흐름을 틀었다. 그 변화 때문에 같은 사건에서도 새로운 반응이 나왔다.`;
-  }
-  return '';
-}
+function storyCallbackLine(room,campaign,beat,choice,success){ return ''; }
 
 function storyResolutionNarrative(room, campaign, beat, choice, player, success, status, grade=success?'success':'setback') {
   const actor=player?.name||'플레이어';
@@ -2889,23 +2873,23 @@ function renderedStoryBeat(room, campaign) {
   const beat = JSON.parse(JSON.stringify(base));
   const history = room.storyHistory || [];
   const prev = history[history.length - 1];
-  const continuity = livingContinuity(room, campaign, beat, prev);
-  const shiftBridge = routeShiftBridge(campaign, history);
   const lingering = room.players.flatMap(member => activeStatuses(room, member).map(status => `${member.name}의 ${status.label}`));
   const paragraphs = [];
 
+  // v7.8: open on what is happening NOW. Previous choices alter the world mechanically,
+  // but we do not narrate the player's own log back at them before every scene.
   if (beat.chapter === 1 && room.storyMemory?.prologueMeeting) paragraphs.push(room.storyMemory.prologueMeeting);
-  if (continuity) paragraphs.push(continuity);
-  if (shiftBridge) paragraphs.push(shiftBridge);
-  const routeVariant = routeSceneVariant(campaign, beat, room, prev);
-  if (routeVariant) paragraphs.push(routeVariant);
-  const actorJob=currentTurnPlayer(room)?.job?.name;
-  const jobContinuity=actorJob ? jobThreadCarry(room,actorJob) : '';
-  if (jobContinuity) paragraphs.push(jobContinuity);
+  if (prev) {
+    const world=LIVING_NOVEL[campaign?.id];
+    const carry=world?.opening?.[prev.branchValue || 'careful'];
+    if (carry) paragraphs.push(carry);
+  }
   paragraphs.push(beat.situation || beat.text || '');
+  const routeVariant = routeSceneVariant(campaign, beat, room, prev);
+  if (routeVariant && paragraphs.length < 3) paragraphs.push(routeVariant);
 
   if (lingering.length) {
-    paragraphs.push(`${lingering.slice(0,3).join(', ')}${lingering.length > 3 ? ' 같은 후유증' : ''}도 아직 사라지지 않았다. 몸과 판단에 남은 상처 때문에 이번 선택은 이전보다 조금 더 무겁다.`);
+    paragraphs.push(`${lingering.slice(0,2).join(', ')}${lingering.length > 2 ? ' 같은 상처' : ''}가 아직 남아 있다.`);
   }
 
   const currentRoute = prev?.branchValue || room.narrativeState?.lastRoute || 'careful';
@@ -3309,23 +3293,21 @@ function interpretFreeAction(declaration, player, beat, room) {
 
 function actionNarrative({ success, declaration, player, beat, interpretation, margin }) {
   const objective = beat?.objective || '눈앞의 문제';
-  const reveal = beat?.reveal || '';
-  const role = beat?.roleHooks?.[player.job?.prime] || '';
   const route = interpretation?.route || routeFromStat(interpretation?.stat);
-  const successTurn = route === 'careful'
-    ? '흩어진 징후들이 하나의 방향을 가리키기 시작했다.'
-    : route === 'bold' ? '머뭇거릴 틈을 주지 않은 행동이 상황의 균형을 깨뜨렸다.'
-    : '상대의 표정과 침묵 사이에서 처음과는 다른 반응이 돌아왔다.';
-  const failureTurn = route === 'careful'
-    ? '단서는 있었지만 한 조각을 너무 늦게 읽었다.'
-    : route === 'bold' ? '길은 열렸지만 그 대가로 주변의 위험까지 함께 깨어났다.'
-    : '말은 닿았지만 상대가 숨기고 있던 경계심까지 건드리고 말았다.';
+  const actor=player?.name||'플레이어';
+  const motion = route === 'careful'
+    ? `${actor}가 손을 대자 흩어진 흔적 사이의 연결이 드러났다.`
+    : route === 'bold' ? `${actor}가 먼저 움직이자 망설이던 상황이 한꺼번에 움직이기 시작했다.`
+    : `${actor}의 말과 행동에 상대의 태도가 아주 조금 달라졌다.`;
   if (success) {
-    if (margin >= 5) return `“${declaration}.” ${player.name}이(가) 그렇게 움직이자 ${successTurn} ${role ? `${role} ` : ''}${objective}에 닿는 길이 예상보다 선명하게 열렸다.${reveal ? ` 그리고 그 끝에서 지금까지 설명되지 않던 사실 하나가 모습을 드러냈다. ${reveal}` : ''}`;
-    return `“${declaration}.” ${player.name}의 선택은 무리 없이 현실이 되었다. ${successTurn} 당장 모든 문제가 풀린 것은 아니었지만, ${objective}를 향해 움직일 수 있는 새로운 틈이 생겼다.`;
+    const reveal = margin >= 5 && beat?.reveal ? ` ${beat.reveal}` : '';
+    return `${motion} ${objective}에 닿을 수 있는 틈이 생겼다.${reveal}`.trim();
   }
-  if (margin <= -5) return `“${declaration}.” 시도는 끝까지 밀어붙였지만 ${failureTurn} 원하는 결과는 얻지 못했다. 대신 무엇이 이곳을 막고 있는지는 분명해졌다. ${beat?.stakes ? `${beat.stakes}라는 위험이 이제 눈앞의 현실이 되었다.` : '주변의 긴장이 한층 짙어졌다.'}`;
-  return `“${declaration}.” ${player.name}이(가) 움직였지만 상황은 생각처럼 따라주지 않았다. ${failureTurn} 그래도 완전한 헛수고는 아니었다. 실패한 자리에는 다음에 이용할 수 있는 흔적과, 피해야 할 방식이 선명하게 남았다.`;
+  const cost = route === 'careful'
+    ? '한 조각을 잘못 읽는 동안 상황이 먼저 변했다.'
+    : route === 'bold' ? '밀어붙인 만큼 소리와 위험도 함께 커졌다.'
+    : '의도는 전해졌지만 상대의 경계도 함께 깨어났다.';
+  return `${cost} 원하는 결과는 얻지 못했지만, 다음에 무엇을 피하거나 이용해야 할지는 눈앞에 남았다.`;
 }
 
 function skillRemaining(room, player) {

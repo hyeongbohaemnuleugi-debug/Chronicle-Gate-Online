@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.0.0-tabletop-first-public-alpha';
+const APP_VERSION = '8.1.0-stable-story';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -1572,8 +1572,8 @@ function parallelSceneNarrative(room,campaign,player,node){
   const aff=node.affordances||{};
   const source=[...(node.text||[])].map(x=>String(x).trim()).filter(Boolean);
   const out=[];
-  // Keep the scene itself first. Two compact paragraphs are enough; the rest should come from people and decisions.
-  out.push(...source.slice(0,2));
+  // Keep the scene itself first. Give enough concrete fiction to understand place, danger, and people before asking for a decision.
+  out.push(...source.slice(0,3));
 
   const person=aff.hasPerson&&aff.person ? aff.person : '';
   if(person){
@@ -1592,12 +1592,7 @@ function parallelSceneNarrative(room,campaign,player,node){
   }
 
   const objective=String(node.objective||'').replace(/[.。]$/,'');
-  const thoughtLead={
-    ember:'왕관이 원하는 대로 움직이면 안 된다', neon:'기억보다 행동의 흔적이 더 믿을 만하다', abyss:'더 알아내는 동안 누군가의 산소가 줄고 있다',
-    clock:'이번 선택도 다음 반복에 남을 수 있다', wild:'내 소원 때문에 숲의 길이 달라질 수도 있다', guardian:'지금 돕는 사람이 나중에 다른 세계의 길을 열 수도 있다',
-    aurora:'이 신호가 구조 요청인지 유인인지 아직 모른다', masque:'내가 고른 배역이 아니라 내가 고른 행동으로 끝을 정해야 한다', echo:'이 역에서 정상처럼 보이는 것이 오히려 가장 수상하다'
-  }[campaign?.id] || '지금 선택은 다음 장면을 바꾼다';
-  if(objective) out.push(`내 생각: ${thoughtLead}. 우선 ${objective}.`);
+  if(objective) out.push(`지금 문제: ${objective}.`);
 
   const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===ps?.location);
   if(linked.length) out.push(`${linked.map(p=>p.name).join(', ')}도 바로 곁에 있다. 짧게 눈을 맞추는 것만으로도, 이번 선택은 혼자 감당할 일이 아니라는 걸 알 수 있다.`);
@@ -3339,19 +3334,20 @@ function actionNarrative({ success, declaration, player, beat, interpretation, m
   const objective = beat?.objective || '눈앞의 문제';
   const route = interpretation?.route || routeFromStat(interpretation?.stat);
   const actor=player?.name||'플레이어';
-  const motion = route === 'careful'
-    ? `${actor}가 손을 대자 흩어진 흔적 사이의 연결이 드러났다.`
-    : route === 'bold' ? `${actor}가 먼저 움직이자 망설이던 상황이 한꺼번에 움직이기 시작했다.`
-    : `${actor}의 말과 행동에 상대의 태도가 아주 조금 달라졌다.`;
-  if (success) {
-    const reveal = margin >= 5 && beat?.reveal ? ` ${beat.reveal}` : '';
-    return `${motion} ${objective}에 닿을 수 있는 틈이 생겼다.${reveal}`.trim();
+  const action=String(declaration||'행동').trim();
+  const ctx=inferSceneAffordances(beat);
+  const anchor=ctx.clue||ctx.person||ctx.obstacle||ctx.rescue||ctx.hostile||'현재 상황';
+  if(success){
+    const opening=route==='careful' ? `${actor}는 ${action}고 시도했다. ${anchor}에서 처음에는 보이지 않던 반응이 드러났다.`
+      : route==='bold' ? `${actor}는 망설이지 않고 ${action}고 밀어붙였다. 그 행동 때문에 정체돼 있던 상황이 실제로 움직였다.`
+      : `${actor}는 ${action}고 시도했다. 상대와 주변의 반응이 달라지면서 새로운 틈이 생겼다.`;
+    const reveal=margin>=5 && beat?.reveal ? ` 그 과정에서 ${beat.reveal}` : '';
+    return `${opening} 이제 ${objective}에 한 걸음 더 가까워졌다.${reveal}`.trim();
   }
-  const cost = route === 'careful'
-    ? '한 조각을 잘못 읽는 동안 상황이 먼저 변했다.'
-    : route === 'bold' ? '밀어붙인 만큼 소리와 위험도 함께 커졌다.'
-    : '의도는 전해졌지만 상대의 경계도 함께 깨어났다.';
-  return `${cost} 원하는 결과는 얻지 못했지만, 다음에 무엇을 피하거나 이용해야 할지는 눈앞에 남았다.`;
+  const cost=route==='careful' ? `${actor}는 ${action}고 시도했지만, 확인하려던 사이 ${anchor}의 상태가 먼저 변했다.`
+    : route==='bold' ? `${actor}는 ${action}고 시도했지만, 밀어붙인 만큼 소리와 위험이 커졌다.`
+    : `${actor}는 ${action}고 시도했지만, 의도와 다르게 받아들여져 경계가 높아졌다.`;
+  return `${cost} 원하는 결과는 얻지 못했지만 실패 때문에 다음에 피해야 할 것과 이용할 수 있는 흔적 하나는 남았다.`;
 }
 
 function skillRemaining(room, player) {
@@ -4433,7 +4429,12 @@ io.on('connection', socket => {
     let freeActionInterpretation = null;
     if (!choice && declaration && beat.freeActionAllowed) {
       const validity = validateFreeAction(declaration, beat);
-      if (!validity.ok) return ack?.({ok:false,error:validity.error});
+      if (!validity.ok) {
+        const ctx=inferSceneAffordances(beat);
+        const anchors=[ctx.person,ctx.clue,ctx.obstacle,ctx.rescue,ctx.item,ctx.hostile].filter(Boolean).slice(0,3);
+        const anchorText=anchors.length ? ` 지금 장면에서는 ${anchors.join(', ')}에 연결된 행동을 시도할 수 있습니다.` : '';
+        return ack?.({ok:false,recoverable:true,error:`${validity.error}${anchorText}`});
+      }
       freeActionInterpretation = interpretFreeAction(declaration, player, beat, room);
       const route = freeActionInterpretation.route;
       const template = routeTemplateChoice(beat, route) || beat.choices?.[0] || {};

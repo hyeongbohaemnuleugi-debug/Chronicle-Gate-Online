@@ -959,6 +959,71 @@ ${guide.place}에서 확인한 단서들은 지금 장면의 인물과 물건, �
   return `${scene}\n\n${guide.place}에서 모인 흔적은 아직 하나의 답을 주지 않는다. 그러나 처음 세운 가설만 붙들고 가기에는 설명되지 않는 것이 너무 많아졌다. 파티는 지금 여기서 한 번 더 파고들어야 한다. 그래야 “${guide.goal}”라는 목표에 다가갈 때 무엇이 함정이고 무엇이 진짜 길인지 구분할 수 있다.`;
 }
 
+
+// v7.3.0 - IMMERSIVE REPLAY LAYER
+// Every chronicle keeps a different human stake and unanswered question in the foreground.
+// This is intentionally in-world prose: it should feel like part of the scene, not a system tutorial.
+const IMMERSION_HEART = {
+  ember:{
+    people:'성 안에 남은 사람들은 같은 왕국을 원하지 않는다. 누군가는 왕가의 귀환을, 누군가는 왕관의 영원한 봉인을, 누군가는 그 혼란을 이용한 새 질서를 바란다.',
+    question:'죽은 왕이 정말 돌아오는 것인지, 아니면 왕관이 살아 있는 사람들의 욕망을 빌려 왕의 모습을 만들고 있는 것인지 아직 단정할 수 없다.',
+    price:'여기서 얻는 승리는 다른 누군가에게는 배신의 증거가 된다. 살려 둔 증인과 버린 서약 하나가 뒤에서 다시 사람의 얼굴을 하고 돌아올 수 있다.',
+    hook:'재가 가라앉을 때마다 이전에는 보이지 않던 발자국이 하나씩 더 드러난다. 파티보다 먼저 왕좌에 가려는 누군가가 있다.'},
+  neon:{
+    people:'거리의 시민들은 거대한 음모의 배경이 아니다. 누군가는 잃어버린 가족의 기억을 사고 싶어 하고, 누군가는 자신이 저지른 일을 영원히 지우고 싶어 한다.',
+    question:'파티의 잃어버린 48시간은 누가 훔친 것인지, 스스로 지운 것인지, 혹은 도시가 살아남기 위해 잘라 낸 것인지 아직 세 답이 모두 가능하다.',
+    price:'데이터 하나를 공개하면 사람을 살릴 수 있지만 다른 사람의 삶을 무너뜨릴 수 있다. 삭제도 공개도 흔적 없이 끝나지 않는다.',
+    hook:'꺼졌던 화면 한 장이 늦게 켜질 때마다 파티가 아직 하지 않은 행동의 기록이 잠깐 나타난다.'},
+  abyss:{
+    people:'세이렌 기지에는 구조 대상이 숫자로만 남아 있지 않다. 각 방에는 끝내 챙기지 못한 컵, 사진, 약봉지와 마지막 교대 기록이 남아 있다.',
+    question:'바깥의 존재가 기지를 공격한 것인지, 인간의 실험 때문에 구조 신호를 보낸 것인지 판단을 서두를수록 첫 접촉은 돌이킬 수 없어진다.',
+    price:'깊이 들어갈수록 진실에는 가까워지지만 산소와 전력, 부상자를 데리고 상승할 시간이 줄어든다.',
+    hook:'소나의 거대한 반향은 파티가 움직일 때마다 따라오는 것이 아니라, 누군가의 이름이 불릴 때만 방향을 바꾼다.'},
+  clock:{
+    people:'반복되는 도시에 사는 사람들 중 일부는 아무것도 모르고 같은 하루를 살고, 일부는 설명할 수 없는 익숙함 때문에 조금씩 무너지고 있다.',
+    question:'열세 번째 종이 하루를 되감는 것인지, 사라질 사람들을 한 번 더 붙잡아 두는 것인지 아직 어느 쪽도 완전히 맞지 않는다.',
+    price:'한 사람을 기억하게 만들면 다른 기록이 밀려날 수 있다. 완벽한 내일을 만들수록 오늘의 누군가가 지워질 위험도 커진다.',
+    hook:'파티가 선택을 바꿀 때마다 시계탑 창문 속 미래의 모습도 달라진다. 정해진 운명이라면 일어나기 어려운 변화다.'},
+  wild:{
+    people:'숲의 부족과 사냥꾼, 신수는 선과 악으로 나뉘지 않는다. 모두 살아남을 이유가 있고 서로 다른 방식으로 별빛을 필요로 한다.',
+    question:'숲이 별을 삼키는 것인지, 떨어지는 별을 대신 받아내고 있는 것인지에 따라 인간이 해야 할 일은 정반대가 된다.',
+    price:'한 길을 열면 다른 생물의 이동로가 막힐 수 있다. 인간에게 안전한 해결이 숲 전체에게도 안전하다는 보장은 없다.',
+    hook:'파티가 지나온 길에서 피어난 꽃들은 매번 다른 기억을 보여 준다. 그중 하나는 아직 누구도 겪지 않은 장면이다.'},
+  guardian:{
+    people:'각 세계에서 만난 사람들은 다음 지역으로 가기 위한 표지판이 아니다. 도움을 받은 마을과 버려 둔 전선, 약속한 동료는 훗날 다른 세계의 위기에서 다시 모습을 드러낸다.',
+    question:'침략자와 차원의 균열이 하나의 전쟁인지, 서로 다른 세계의 문제를 누군가 한 방향으로 밀어 넣고 있는 것인지 여행이 길어질수록 의문이 커진다.',
+    price:'모든 지역을 완벽하게 구할 시간은 없다. 어디에 남고 누구를 먼저 돕는지가 귀환 이후의 세계 지도를 바꾼다.',
+    hook:'챔피언 소드와 차원 흔적은 다음 목적지만 가리키지 않는다. 이미 지나온 세계 가운데 다시 위험해진 곳의 신호도 함께 보여 준다.'},
+  echo:{
+    people:'청명역 안에는 단순한 퍼즐보다 사람이 먼저 남아 있다. 퇴근하지 못한 직원, 길을 잃은 승객, 서로 다른 출구를 본 사람들이 같은 역 안에서 다른 현실을 겪고 있다.',
+    question:'0번선은 누군가 만든 함정이 아니라 운행 종료 뒤 어느 시간표에도 속하지 못한 사람과 공간을 시스템이 억지로 배치한 결과일 가능성이 커지고 있다.',
+    price:'가장 빠른 출구를 고르면 안전하지만 남은 사람과 증거를 포기할 수 있다. 더 깊이 확인하면 첫차가 들어올 때 실제 선로까지 위험해진다.',
+    hook:'정상 시각이 가까워질수록 역은 오히려 더 많은 모순을 보여 준다. 새벽이 모든 것을 자동으로 해결해 줄 것 같지는 않다.'},
+  aurora:{
+    people:'관측소의 대원들은 실험 기록 속 이름이 아니다. 서로가 기억을 잃기 시작하자 장비에 색 테이프를 붙이고 종이에 약속을 적으며 현실을 붙잡으려 했다.',
+    question:'43년 전 목소리가 유령인지, 얼음층에 저장된 기억의 재생인지, 현재 사람의 기억과 섞인 새로운 현상인지 검증할수록 경계가 흐려진다.',
+    price:'발견을 세상에 알리면 과학의 역사가 바뀔 수 있지만 사람의 기억을 저장하고 재생하는 기술로 악용될 위험도 함께 열린다.',
+    hook:'붉은 극광이 강해질 때마다 오래된 녹음 속 한 문장이 조금씩 달라진다. 과거의 기록이라면 설명하기 어려운 변화다.'},
+  masque:{
+    people:'나시라트의 주민들은 가면에 갇힌 피해자이면서 동시에 공연이 끝나면 도시 자체가 사라질까 두려워하는 사람들이다.',
+    question:'마지막 장이 사라진 이유는 저주가 아니라 누군가 결말을 끝내지 않기 위해 일부러 원고를 비워 둔 것일 수 있다.',
+    price:'사람들에게 본명을 돌려주는 일과 도시를 유지하는 일이 같은 선택이 아닐 수 있다. 자유를 주는 결말조차 누군가에게는 고향의 끝이다.',
+    hook:'공연이 진행될수록 관객석의 빈자리 하나가 파티가 선택하지 않은 배역의 가면으로 채워진다.'}
+};
+function immersiveStoryLayer(c, guide, act, step){
+  const heart=IMMERSION_HEART[c.id] || IMMERSION_HEART.guardian;
+  const actName=c.acts?.[act] || `제${act+1}막`;
+  const phase=[
+    `${actName}의 시작에서 가장 먼저 눈에 들어오는 것은 사건 자체보다 그 사건 때문에 행동을 바꾼 사람들이다. ${heart.people}`,
+    `현장을 더 살피면 처음 보였던 답과 맞지 않는 작은 흔적들이 생긴다. ${heart.question}`,
+    `이제 문제는 멀리 있는 설정이 아니라 눈앞의 사람과 장소가 된다. 누군가의 표정, 닫히는 문, 사라질 물건 하나가 “${String(guide.goal||'지금의 목표').replace(/[.!?]+$/g,'')}”와 직접 연결돼 있다.`,
+    `드러난 사실은 앞선 장면의 의미까지 바꾼다. ${heart.question} 파티가 이전에 무엇을 믿었는지에 따라 같은 진실도 전혀 다른 대가로 다가온다.`,
+    `위기가 커질수록 무엇을 지킬지가 선명해진다. ${heart.price}`,
+    `결정을 내린 뒤에도 모든 것이 정리되지는 않는다. ${heart.hook} 지금 남긴 사람·증거·상처·약속은 다음 막에서 다른 형태로 다시 이어진다.`
+  ][step] || heart.hook;
+  return phase;
+}
+
 function buildStoryBeats(c){
   const beats=[];
   const phases=['도입','탐색','대면','진실','위기','결단'];
@@ -968,7 +1033,9 @@ function buildStoryBeats(c){
     const guide=guides[act];
     const script=scripts[act];
     const rawProse=[script.intro, buildBridgeScene(c, guide, act), buildExplorationScene(c, guide, act), script.discovery, script.crisis, script.climax];
-    const prose=rawProse.map((text,step)=>enrichStoryProse(c, guide, text, act, step));
+    const prose=rawProse.map((text,step)=>`${enrichStoryProse(c, guide, text, act, step)}
+
+${immersiveStoryLayer(c, guide, act, step)}`);
     for(let step=0;step<6;step++){
       const index=act*6+step;
       const chapter=index+1;
@@ -1024,7 +1091,11 @@ function buildStoryBeats(c){
       const fallback=route==='careful'?bold.id:route==='bold'?empathic.id:careful.id;
       choice.next={success:routeTarget[route]||careful.id,failure:fallback};
     }
-    for (const beat of [careful,bold,empathic]) for (const choice of beat.choices||[]) choice.next={success:crisis.id,failure:crisis.id};
+    // A failed route no longer snaps back to the exact same crisis node immediately.
+    // It changes the *kind* of approach first, which makes a second playthrough materially different.
+    for (const choice of careful.choices||[]) choice.next={success:crisis.id,failure:bold.id};
+    for (const choice of bold.choices||[]) choice.next={success:crisis.id,failure:empathic.id};
+    for (const choice of empathic.choices||[]) choice.next={success:crisis.id,failure:crisis.id};
     for (const choice of crisis.choices||[]) choice.next={success:decision.id,failure:decision.id};
     for (const choice of decision.choices||[]) choice.next={success:nextAct,failure:nextAct};
     for (let stepIndex=0; stepIndex<6; stepIndex++) {

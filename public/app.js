@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '7.4.1-context-choice-snap';
+const CLIENT_BUILD = '7.6.0-release-story-overhaul';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -915,20 +915,24 @@ function playerInnerVoice(beat, player){
 }
 function storyNarrationHTML(c, beat, player, hints = []) {
   const raw = String(beat?.text || c?.intro || '').trim();
-  const paragraphs = proseParagraphs(raw).slice(0,5);
-  const aff=beat?.affordances||{};
+  const paragraphs = proseParagraphs(raw).slice(0,4);
+  const dialogue = Array.isArray(beat?.dialogue) ? beat.dialogue.filter(x=>x?.text) : [];
+  const prime = player?.job?.prime || '지혜';
+  const inner = beat?.playerVoices?.[prime] || playerInnerVoice(beat,player);
+  const question = beat?.sceneQuestion || beat?.objective || '지금 무엇을 먼저 확인해야 하는가?';
   const blocks=[];
-  if(paragraphs[0]) blocks.push(`<p class="scene-narration lead">${storyParagraphHTML(paragraphs[0],0)}</p>`);
-  if(paragraphs[1]) blocks.push(`<p class="scene-narration">${storyParagraphHTML(paragraphs[1],1)}</p>`);
-  if(aff.hasPerson && aff.person){
-    blocks.push(`<div class="story-dialogue"><span>${esc(aff.person)}</span><p>${esc(storyVoiceLine(c,beat))}</p></div>`);
+  if(paragraphs[0]) blocks.push(`<p class="scene-narration lead release-opening">${storyParagraphHTML(paragraphs[0],0)}</p>`);
+  if(paragraphs[1]) blocks.push(`<p class="scene-narration release-detail">${storyParagraphHTML(paragraphs[1],1)}</p>`);
+  if(dialogue.length){
+    blocks.push(`<section class="release-dialogue-stack">${dialogue.slice(0,2).map((line,i)=>`<div class="story-dialogue release-dialogue ${i===1?'secondary':''}"><span>${esc(line.speaker||'등장인물')}</span><p>${esc(line.text)}</p></div>`).join('')}</section>`);
   }
-  if(paragraphs[2]) blocks.push(`<p class="scene-narration sensory">${storyParagraphHTML(paragraphs[2],2)}</p>`);
-  blocks.push(`<p class="story-thought"><span>${esc(player?.name||'나')}</span>${esc(playerInnerVoice(beat,player))}</p>`);
-  if(paragraphs[3]) blocks.push(`<p class="scene-narration consequence">${storyParagraphHTML(paragraphs[3],3)}</p>`);
-  if(paragraphs[4]) blocks.push(`<p class="scene-narration afterthought">${storyParagraphHTML(paragraphs[4],4)}</p>`);
-  const hook=beat?.continuityHook ? `<p class="continuity-hook"><span>아직 풀리지 않은 것</span><strong>${esc(beat.continuityHook)}</strong></p>` : '';
-  return `<article class="narration-rich clean-narration dialogue-page cinematic-story public-quality-story">${blocks.join('')}${hook}</article>`;
+  if(beat?.playerSpeech) blocks.push(`<div class="story-dialogue release-dialogue player-spoken"><span>${esc(player?.name||'당신')}</span><p>“${esc(beat.playerSpeech)}”</p></div>`);
+  blocks.push(`<div class="release-player-beat"><span>${esc(player?.name||'나')}의 생각</span><p>${esc(inner)}</p></div>`);
+  if(paragraphs[2]) blocks.push(`<p class="scene-narration sensory release-change">${storyParagraphHTML(paragraphs[2],2)}</p>`);
+  if(paragraphs[3]) blocks.push(`<p class="scene-narration consequence release-consequence">${storyParagraphHTML(paragraphs[3],3)}</p>`);
+  blocks.push(`<div class="release-scene-question"><span>지금 장면의 핵심</span><strong>${esc(question)}</strong>${beat?.immediatePressure?`<small>${esc(beat.immediatePressure)}</small>`:''}</div>`);
+  const hook=beat?.continuityHook ? `<p class="continuity-hook"><span>기억해 둘 징후</span><strong>${esc(beat.continuityHook)}</strong></p>` : '';
+  return `<article class="narration-rich clean-narration dialogue-page cinematic-story public-quality-story release-story-v760">${blocks.join('')}${hook}</article>`;
 }
 
 function parallelNarrationHTML(lines=[]){
@@ -1473,13 +1477,19 @@ function renderParallelStory() {
     ? `현재 같은 장소에 ${nearby.map(x=>`${x.name}${x.linked?'(동행 중)':''}`).join(', ')}이(가) 있습니다. 만난 뒤에도 같이 갈지 헤어질지는 선택입니다.`
     : linked.length ? `동행 관계: ${linked.map(x=>`${x.name}(${x.locationLabel})`).join(', ')}. 서로 다른 길로 갈 경우 다음 턴에 따라갈지 남을지 다시 선택합니다.` : '현재 이 장소에는 다른 플레이어가 보이지 않습니다.';
   $('#storyWhy').style.display='block';
-  $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}</b>은(는) 눈앞의 상황에서 다음 행동을 정해야 한다.`;
+  $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}</b> · ${esc(scene.sceneQuestion || scene.objective || '지금 무엇을 할지 정한다')}`;
   const paragraphs=parallelNarrationHTML(scene.paragraphs||[]);
+  const pPrime=p?.job?.prime||'지혜';
+  const sceneDialogue=Array.isArray(scene.dialogue)?scene.dialogue.filter(x=>x?.text).slice(0,2):[];
+  const dialogueHtml=sceneDialogue.length?`<section class="release-dialogue-stack">${sceneDialogue.map((line,i)=>`<div class="story-dialogue release-dialogue ${i===1?'secondary':''}"><span>${esc(line.speaker||'등장인물')}</span><p>${esc(line.text)}</p></div>`).join('')}</section>`:'';
+  const spoken=scene.playerSpeech?`<div class="story-dialogue release-dialogue player-spoken"><span>${esc(p?.name||'당신')}</span><p>“${esc(scene.playerSpeech)}”</p></div>`:'';
+  const thought=scene.playerVoices?.[pPrime]?`<div class="release-player-beat"><span>${esc(p?.name||'나')}의 생각</span><p>${esc(scene.playerVoices[pPrime])}</p></div>`:'';
+  const questionHtml=scene.sceneQuestion?`<div class="release-scene-question"><span>지금 장면의 핵심</span><strong>${esc(scene.sceneQuestion)}</strong>${scene.immediatePressure?`<small>${esc(scene.immediatePressure)}</small>`:''}</div>`:'';
   const last=state.lastResolution;
   const lastResult=last?.source==='parallel-story' ? `<div class="inline-resolution ${last.ok?'success':'failure'}"><div class="eyebrow">LAST ACTION</div><b>${esc(last.playerName||'플레이어')} · ${esc(last.choiceLabel||'행동')}</b><p>${esc(last.text||'')}</p>${last.consequence?`<small>여파 · ${esc(last.consequence)}</small>`:''}</div>` : '';
   const encounterInfo=encounter?`<div class="story-inline-help danger"><b>지역 전투</b> · ${esc(encounter.name)} · HP ${encounter.hp}/${encounter.maxHp}${encounter.weak?` · 약점: ${esc(encounter.weak)}`:''}<br>이 장소에 들어온 다른 플레이어도 자기 턴에 같은 전투에 참가할 수 있습니다.</div>`:'';
   const nearbyInfo=nearby.length?`<div class="story-inline-help"><b>우연한 조우</b> · ${nearby.map(x=>`${esc(x.name)}(${esc(x.job||'')})`).join(' · ')}<br>자동으로 파티가 되지 않습니다. 아래 선택으로 같이 다니거나, 잠깐 협력하거나, 계속 각자 움직일 수 있습니다.</div>`:'';
-  $('#eventText').innerHTML=lastResult+paragraphs+encounterInfo;
+  $('#eventText').innerHTML=lastResult+paragraphs+dialogueHtml+spoken+thought+questionHtml+encounterInfo;
 
   $('#storyActionBox').style.display='none';
   $('#storyActionInput').disabled=true;
@@ -1538,7 +1548,8 @@ function forceChoiceLayout(root = document) {
   set(area, 'gap', '12px');
   set(area, 'overflow-x', 'hidden');
   set(area, 'overflow-y', 'auto');
-  set(area, 'max-height', 'min(68vh, 760px)');
+  set(area, 'height', 'min(70vh, 720px)');
+  set(area, 'max-height', 'min(70vh, 720px)');
   set(area, 'padding', '6px 10px 18px 4px');
   set(area, 'scroll-snap-type', 'y mandatory');
   set(area, 'scroll-padding-top', '10px');
@@ -1558,9 +1569,9 @@ function forceChoiceLayout(root = document) {
     set(card, 'justify-content', 'flex-start');
     set(card, 'width', '100%');
     set(card, 'height', 'auto');
-    set(card, 'min-height', rowStyle ? '104px' : '128px');
+    set(card, 'min-height', rowStyle ? '132px' : '150px');
     set(card, 'max-height', 'none');
-    set(card, 'padding', rowStyle ? '16px 18px' : '16px');
+    set(card, 'padding', rowStyle ? '20px 22px' : '18px');
     set(card, 'overflow', 'visible');
     set(card, 'scroll-snap-align', 'start');
     set(card, 'scroll-snap-stop', 'always');
@@ -1583,9 +1594,9 @@ function forceChoiceLayout(root = document) {
       if (copy) { set(copy, 'display', 'grid'); set(copy, 'gap', '6px'); set(copy, 'min-width', '0'); }
       if (check) { set(check, 'display', 'flex'); set(check, 'flex-direction', 'column'); set(check, 'align-items', 'flex-end'); set(check, 'white-space', 'nowrap'); }
       const copyTitle = copy?.querySelector('b');
-      if (copyTitle) { set(copyTitle, 'font-size', '15px'); set(copyTitle, 'line-height', '1.6'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
+      if (copyTitle) { set(copyTitle, 'font-size', '16px'); set(copyTitle, 'line-height', '1.6'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
       const copyReason = copy?.querySelector('small');
-      if (copyReason) { set(copyReason, 'font-size', '12.5px'); set(copyReason, 'line-height', '1.65'); set(copyReason, 'white-space', 'normal'); set(copyReason, 'word-break', 'keep-all'); }
+      if (copyReason) { set(copyReason, 'font-size', '13.5px'); set(copyReason, 'line-height', '1.65'); set(copyReason, 'white-space', 'normal'); set(copyReason, 'word-break', 'keep-all'); }
     }
     const title = card.querySelector('.choice-title-line');
     if (title) {
@@ -1751,7 +1762,7 @@ function renderStory() {
     const trail = mainStoryTrail(c, beat, inResolution);
     setStoryTrail(trail.before, trail.bridge, trail.now);
     $('#storyWhy').style.display='block';
-    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '당신')}</b>은(는) 잠시 숨을 고르고 눈앞의 선택지를 살핀다.`;
+    $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '당신')}</b> · ${esc(beat?.sceneQuestion || beat?.objective || '지금 무엇을 할지 정한다')}`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
     if (inResolution && lastResolution) {
       const resultTrail = mainStoryTrail(c, beat, true);

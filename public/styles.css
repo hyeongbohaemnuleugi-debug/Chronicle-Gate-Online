@@ -825,3 +825,28 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
   #choiceArea .choice-row{grid-template-columns:34px minmax(0,1fr)!important;gap:11px!important;padding:15px 14px!important}
   #choiceArea .choice-check{grid-column:2!important;min-width:0!important;align-items:flex-start!important;flex-direction:row!important;flex-wrap:wrap!important}
 }
+
+
+/* v7.5.0 - public quality narrative pass */
+.public-quality-story{display:flex;flex-direction:column;gap:15px!important;padding-bottom:4px}
+.public-quality-story .scene-narration{font-size:15px!important;line-height:1.88!important;color:rgba(247,244,238,.92)!important;letter-spacing:.005em;margin:0!important;max-width:100%!important}
+.public-quality-story .scene-narration.lead{font-size:16px!important;line-height:1.92!important;color:#fff!important}
+.public-quality-story .scene-narration.sensory{color:rgba(223,229,235,.9)!important;border-left:2px solid rgba(111,207,255,.34);padding-left:14px}
+.public-quality-story .scene-narration.consequence{color:rgba(255,226,183,.94)!important}
+.public-quality-story .story-dialogue{margin:3px 0!important;padding:15px 17px!important;border:1px solid rgba(255,211,103,.22)!important;border-left:3px solid #f1c85b!important;background:linear-gradient(90deg,rgba(241,200,91,.075),rgba(255,255,255,.015))!important;border-radius:3px 12px 12px 3px!important}
+.public-quality-story .story-dialogue span{display:block!important;font-size:12px!important;font-weight:900!important;letter-spacing:.05em;color:#f3cf68!important;margin-bottom:7px!important}
+.public-quality-story .story-dialogue p{font-size:15px!important;line-height:1.75!important;color:#fff!important;margin:0!important}
+.public-quality-story .story-thought{margin:2px 0!important;padding:14px 16px!important;background:rgba(110,146,189,.055)!important;border:1px solid rgba(139,183,235,.14)!important;border-radius:10px!important;font-size:14px!important;line-height:1.75!important;color:rgba(218,229,241,.88)!important;font-style:italic!important}
+.public-quality-story .story-thought span{font-style:normal!important;color:#9bc9f4!important;font-weight:800!important;margin-right:10px!important}
+.public-quality-story .continuity-hook{margin:4px 0 0!important;padding:12px 15px!important;background:rgba(255,118,70,.045)!important;border:1px solid rgba(255,118,70,.13)!important;border-radius:10px!important}
+.public-quality-story .continuity-hook span{display:block!important;color:#e98d69!important;font-size:11px!important;font-weight:900!important;letter-spacing:.07em;margin-bottom:5px!important}
+.public-quality-story .continuity-hook strong{font-size:13px!important;line-height:1.65!important;color:rgba(245,222,211,.88)!important;font-weight:600!important}
+#storyClarity.story-trail{gap:10px!important}
+#storyClarity.story-trail .clarity-card{min-height:118px!important;padding:15px 16px!important}
+#storyClarity.story-trail .clarity-card span{font-size:11px!important;letter-spacing:.04em!important}
+#storyClarity.story-trail .clarity-card p{font-size:13px!important;line-height:1.7!important;color:rgba(239,238,235,.9)!important}
+#choiceArea{scroll-padding-block:12px!important}
+#choiceArea .choice-card{scroll-snap-align:start!important;scroll-snap-stop:always!important;min-height:132px!important;padding:16px 18px!important;margin:0 0 12px!important}
+#choiceArea .choice-title-line b{font-size:15px!important;line-height:1.55!important;color:#fff!important}
+#choiceArea .story-choice-meta{margin-top:10px!important;padding-top:9px!important;border-top:1px solid rgba(255,255,255,.07)!important;font-size:12px!important}
+@media(max-width:720px){#choiceArea .choice-card{min-height:148px!important;padding:15px!important}.public-quality-story .scene-narration{font-size:14px!important}}

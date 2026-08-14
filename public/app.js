@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '8.0.1-client-load-hotfix';
+const CLIENT_BUILD = '8.0.2-client-module-fix';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -1414,61 +1414,112 @@ function renderCharacterHud(player, storyItems = []) {
 }
 
 function renderParallelStory() {
-  const c=currentCampaign();
-  const p=me();
-  const choiceBox=$('#choiceArea');
-  // v6.6.4: parallel-story choices must not inherit a hidden/display state from a previous screen.
-  if(choiceBox){ choiceBox.classList.remove('hidden'); choiceBox.style.display='grid'; choiceBox.style.visibility='visible'; choiceBox.style.opacity='1'; }
-  const ps=state?.parallel?.playerStates?.[playerToken];
-  const scene=ps?.scene;
-  const isMyTurn=state?.turnPlayerId===playerToken && state?.phase==='story';
-  const inResolution=state?.phase==='resolution';
-  if(!scene||!ps) return;
+  const c = currentCampaign();
+  const p = me();
+  const choiceBox = $('#choiceArea');
+  if (choiceBox) {
+    choiceBox.classList.remove('hidden');
+    choiceBox.style.display = 'block';
+    choiceBox.style.visibility = 'visible';
+    choiceBox.style.opacity = '1';
+  }
+
+  const ps = state?.parallel?.playerStates?.[playerToken];
+  const scene = ps?.scene;
+  const isMyTurn = state?.turnPlayerId === playerToken && state?.phase === 'story';
+  if (!scene || !ps) return;
+
   renderCharacterHud(p, scene.storyItems || []);
+  $('#deckCount').textContent = '—';
+  $('#eventCadence').textContent = '개인 진행 · 종료 시점은 선택에 따라 달라짐';
+  $('#threatValue').textContent = state.threat;
+  $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
+  $('#storyValue').textContent = `${ps.progress || 0}장면`;
+  $('#storyFill').style.width = `${Math.min(100, Math.max(4, (Number(ps.progress || 0) / 12) * 100))}%`;
 
-  $('#deckCount').textContent='—';
-  $('#eventCadence').textContent='개인 진행 · 종료 시점은 선택에 따라 달라짐';
-  $('#threatValue').textContent=state.threat;
-  $('#threatTrack').innerHTML=Array.from({length:8},(_,i)=>`<i class="${i<state.threat?'on':''}"></i>`).join('');
-  $('#storyValue').textContent=`${ps.progress || 0}장면`;
-  $('#storyFill').style.width=`${Math.min(100,Math.max(4,(Number(ps.progress||0)/12)*100))}%`;
-
-  if(ps.ended){
-    $('#turnBanner').textContent='당신의 개인 이야기는 한 결말에 도달했습니다. 다른 플레이어들의 이야기는 아직 계속될 수 있습니다.';
-    setSceneImage($('#storySceneImg'),c,{act:5,actName:'04시 58분',title:'각자의 아침',visual:'첫차 직전의 청명역'});
-    $('#storySceneCaption').textContent=`${c?.title || '막차 이후'} · ${p?.job?.name || ''}의 결말`;
-    $('#actLabel').textContent='PERSONAL ENDING';
-    $('#eventTitle').textContent='당신이 선택한 아침';
+  if (ps.ended) {
+    $('#turnBanner').textContent = '당신의 개인 이야기는 한 결말에 도달했습니다. 다른 플레이어들의 이야기는 아직 계속될 수 있습니다.';
+    setSceneImage($('#storySceneImg'), c, { act: 5, actName: '결말', title: '각자의 아침', visual: scene.locationLabel || '마지막 장면' });
+    $('#storySceneCaption').textContent = `${c?.title || '연대기'} · ${p?.job?.name || ''}의 결말`;
+    $('#actLabel').textContent = 'PERSONAL ENDING';
+    $('#eventTitle').textContent = '당신이 만든 결말';
     const endingClarity = $('#storyClarity');
     if (endingClarity) {
       endingClarity.className = 'story-clarity story-recap-compact story-recap-v780';
       endingClarity.style.display = 'block';
       endingClarity.innerHTML = `<div class="ending-context-card"><span>당신의 결말</span><p>${esc(ps.endingText || `${c?.title || '이 연대기'}에서의 당신 이야기는 여기서 한 결말에 도달했습니다.`)}</p></div>`;
     }
-    $('#storyPrompt').innerHTML=`<strong>${isMyTurn?'당신은 어떻게 하나요?':`${esc(state.turnPlayerName||'다른 플레이어')}의 행동을 기다리는 중`}</strong><span>같이 다니는 중이어도 각자의 행동은 직접 정합니다.</span>`;
-  const paragraphs=parallelNarrationHTML((scene.paragraphs||[]).slice(0,2));
-  const sceneDialogue=Array.isArray(scene.dialogue)?scene.dialogue.filter(x=>x?.text).slice(0,1):[];
-  const dialogueHtml=sceneDialogue.length?`<div class="story-dialogue table-npc-line"><span>${esc(sceneDialogue[0].speaker||'등장인물')}</span><p>${esc(sceneDialogue[0].text)}</p></div>`:'';
-  const pressureHtml=scene.immediatePressure?`<div class="table-pressure"><span>상황이 움직인다</span><p>${esc(conciseSceneText(scene.immediatePressure,120))}</p></div>`:'';
-  const encounterInfo=encounter?`<div class="story-inline-help danger"><b>${esc(encounter.name)}</b> · HP ${encounter.hp}/${encounter.maxHp}${encounter.weak?` · 약점: ${esc(encounter.weak)}`:''}</div>`:'';
-  $('#eventText').innerHTML=`<article class="tabletop-first-story">${paragraphs}${dialogueHtml}${pressureHtml}${encounterInfo}</article>`;
+    $('#storyPrompt').innerHTML = '<strong>당신의 이야기는 여기서 멈춥니다.</strong><span>다른 플레이어들의 선택은 계속 지켜볼 수 있습니다.</span>';
+    $('#eventText').innerHTML = `<div class="inline-resolution success"><div class="eyebrow">YOUR ENDING</div><p>${esc(ps.endingText || '')}</p></div>`;
+    choiceBox.innerHTML = '';
+    $('#storyActionBox').style.display = 'none';
+    $('#gmBar').style.display = 'none';
+    $('#advanceStoryBtn').style.display = 'none';
+    $('#continueBtn').style.display = 'none';
+    $('#facilityPanel')?.classList.add('hidden');
+    return;
+  }
 
-  $('#storyActionBox').style.setProperty('display',isMyTurn?'block':'none','important');
-  $('#storyActionBox').classList.toggle('disabled',!isMyTurn);
-  $('#storyActionInput').disabled=!isMyTurn;
-  $('#storyActionSubmitBtn').disabled=!isMyTurn;
-  $('#storyRoleContext').innerHTML=`<b>${esc(p?.job?.name||'당신')}</b><span>${linked.length?`${linked.map(x=>x.name).join(', ')}와 동행 중 · `:''}하고 싶은 일을 평범한 말로 적으세요.</span>`;
-  $('#actionSuggestions').innerHTML='';
-  const choices=Array.isArray(scene.choices)?scene.choices.filter(x=>x&&x.label).slice(0,3):[];
-  choiceBox.style.setProperty('display','block','important'); choiceBox.style.visibility='visible'; choiceBox.style.opacity='1';
-  choiceBox.innerHTML=choices.length?`<details class="action-examples"><summary><span>행동 예시</span><small>필요할 때만 펼쳐보세요</small></summary><div class="action-example-list">${choices.map((choice,index)=>`<button type="button" class="action-example" data-parallel-suggest="${index}" ${isMyTurn?'':'disabled'}><span>${index+1}</span><b>${esc(choice.label)}</b></button>`).join('')}</div></details>`:'';
-  choiceBox.querySelectorAll('[data-parallel-suggest]').forEach(btn=>btn.onclick=()=>{
-    if(btn.disabled)return; const choice=choices[Number(btn.dataset.parallelSuggest)]; const input=$('#storyActionInput'); input.value=choice?.label||''; input.focus(); const max=Number(input.maxLength||220); $('#storyActionCount').textContent=`${input.value.length}/${max}`;
+  const encounter = state?.parallel?.encounters?.[scene.location];
+  const nearby = Array.isArray(scene.nearby) ? scene.nearby : [];
+  const linked = Array.isArray(scene.linked) ? scene.linked : [];
+
+  $('#turnBanner').textContent = isMyTurn
+    ? `당신의 차례 · ${scene.locationLabel || '현재 장소'}`
+    : `${state.turnPlayerName || '다른 플레이어'}의 행동을 기다리고 있습니다.`;
+  setSceneImage($('#storySceneImg'), c, { act: scene.act, actName: scene.actName, title: scene.title, visual: scene.locationLabel, id: scene.id });
+  $('#storySceneCaption').textContent = `${scene.locationLabel || '개인 진행'}${nearby.length ? ` · 같은 장소: ${nearby.map(x => x.name).join(', ')}` : ''}`;
+  $('#actLabel').textContent = encounter ? `LOCAL ENCOUNTER · ACT ${scene.act}` : `PARALLEL STORY · ACT ${scene.act}`;
+  $('#eventTitle').textContent = encounter ? `${scene.title} · ${encounter.name}` : scene.title;
+
+  const trail = parallelStoryTrail(scene, ps, p);
+  if (encounter) trail.now = `${scene.sceneContext || scene.title}. ${encounter.name}이 길을 막고 있다.`;
+  setStoryTrail(trail.before, trail.bridge, trail.now);
+
+  $('#storyPrompt').innerHTML = `<strong>${isMyTurn ? '당신은 어떻게 하나요?' : `${esc(state.turnPlayerName || '다른 플레이어')}의 행동을 기다리는 중`}</strong><span>같이 다니는 중이어도 각자의 행동은 직접 정합니다.</span>`;
+  const paragraphs = parallelNarrationHTML((scene.paragraphs || []).slice(0, 2));
+  const sceneDialogue = Array.isArray(scene.dialogue) ? scene.dialogue.filter(x => x?.text).slice(0, 1) : [];
+  const dialogueHtml = sceneDialogue.length
+    ? `<div class="story-dialogue table-npc-line"><span>${esc(sceneDialogue[0].speaker || '등장인물')}</span><p>${esc(sceneDialogue[0].text)}</p></div>`
+    : '';
+  const pressureHtml = scene.immediatePressure
+    ? `<div class="table-pressure"><span>상황이 움직인다</span><p>${esc(conciseSceneText(scene.immediatePressure, 120))}</p></div>`
+    : '';
+  const encounterInfo = encounter
+    ? `<div class="story-inline-help danger"><b>${esc(encounter.name)}</b> · HP ${encounter.hp}/${encounter.maxHp}${encounter.weak ? ` · 약점: ${esc(encounter.weak)}` : ''}</div>`
+    : '';
+  const nearbyInfo = nearby.length
+    ? `<div class="story-inline-help"><b>같은 장소</b> · ${nearby.map(x => `${esc(x.name)}${x.job ? `(${esc(x.job)})` : ''}`).join(' · ')}</div>`
+    : '';
+  $('#eventText').innerHTML = `<article class="tabletop-first-story">${paragraphs}${dialogueHtml}${pressureHtml}${encounterInfo}${nearbyInfo}</article>`;
+
+  $('#storyActionBox').style.setProperty('display', isMyTurn ? 'block' : 'none', 'important');
+  $('#storyActionBox').classList.toggle('disabled', !isMyTurn);
+  $('#storyActionInput').disabled = !isMyTurn;
+  $('#storyActionSubmitBtn').disabled = !isMyTurn;
+  $('#storyRoleContext').innerHTML = `<b>${esc(p?.job?.name || '당신')}</b><span>${linked.length ? `${linked.map(x => x.name).join(', ')}와 동행 중 · ` : ''}하고 싶은 일을 평범한 말로 적으세요.</span>`;
+  $('#actionSuggestions').innerHTML = '';
+
+  const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 3) : [];
+  choiceBox.innerHTML = choices.length
+    ? `<details class="action-examples"><summary><span>행동 예시</span><small>막막할 때만 펼쳐보세요</small></summary><div class="action-example-list">${choices.map((choice, index) => `<button type="button" class="action-example" data-parallel-suggest="${index}" ${isMyTurn ? '' : 'disabled'}><span>${index + 1}</span><b>${esc(choice.label)}</b></button>`).join('')}</div></details>`
+    : '';
+  choiceBox.querySelectorAll('[data-parallel-suggest]').forEach(btn => {
+    btn.onclick = () => {
+      if (btn.disabled) return;
+      const choice = choices[Number(btn.dataset.parallelSuggest)];
+      const input = $('#storyActionInput');
+      input.value = choice?.label || '';
+      input.focus();
+      const max = Number(input.maxLength || 220);
+      $('#storyActionCount').textContent = `${input.value.length}/${max}`;
+    };
   });
-  $('#gmBar').style.display='none';
-  $('#advanceStoryBtn').style.display='none';
-  $('#continueBtn').style.display='none';
-  $('#continueBtn').disabled=true;
+
+  $('#gmBar').style.display = 'none';
+  $('#advanceStoryBtn').style.display = 'none';
+  $('#continueBtn').style.display = 'none';
+  $('#continueBtn').disabled = true;
   $('#facilityPanel')?.classList.add('hidden');
   updateVoteCountdown();
 }

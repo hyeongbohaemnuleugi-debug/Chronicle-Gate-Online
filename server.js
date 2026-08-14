@@ -637,7 +637,7 @@ function normalizeLoadedRoom(room) {
       if (!room.parallel.playerStates?.[player.id]) {
         const nodeId=campaign.parallelStory.startByJob?.[player.job?.name] || campaign.parallelStory.startFallback;
         const node=campaign.parallelStory.nodes?.[nodeId];
-        room.parallel.playerStates[player.id]={nodeId,location:node?.location||'concourse',previousLocation:null,progress:0,history:[],flags:{},items:parallelStartItemsFor(player),outcomeThreads:[],pathTotals:{truth:0,survival:0,bond:0},ended:false,ending:null,endingText:null,pendingTravel:null,support:0,lastPersonalResult:null};
+        room.parallel.playerStates[player.id]={nodeId,location:node?.location||'concourse',previousLocation:null,progress:0,history:[],flags:{},items:parallelStartItemsFor(player),outcomeThreads:[],pathTotals:{truth:0,survival:0,bond:0},ended:false,ending:null,endingText:null,pendingTravel:null,support:0,lastPersonalResult:null,sharedRevision:0};
       }
       const ps=room.parallel.playerStates[player.id];
       ps.flags ||= {}; ps.items = Array.isArray(ps.items) ? [...new Set(ps.items.filter(id=>PARALLEL_STORY_ITEM_DEFS[id]))] : parallelStartItemsFor(player);
@@ -1312,6 +1312,24 @@ function parallelNearby(room,player){
 }
 function parallelLinked(room,a,b){ return room.parallel?.links?.[pairKey(a,b)] === 'together'; }
 function parallelLinkedPlayers(room,player){ return (room.players||[]).filter(other=>other.id!==player.id && parallelLinked(room,player.id,other.id)); }
+// v7.2.5: companionship is a connected group, not only a single pair.
+// If A travels with B and B travels with C, all three must share the same current scene
+// until an explicit split breaks the corresponding link.
+function parallelLinkedGroup(room,player){
+  if(!player) return [];
+  const byId=new Map((room.players||[]).map(p=>[p.id,p]));
+  const seen=new Set([player.id]);
+  const queue=[player.id];
+  while(queue.length){
+    const id=queue.shift();
+    for(const other of (room.players||[])){
+      if(seen.has(other.id)||other.id===id) continue;
+      if(parallelLinked(room,id,other.id)){ seen.add(other.id); queue.push(other.id); }
+    }
+  }
+  return [...seen].map(id=>byId.get(id)).filter(Boolean);
+}
+function parallelLinkedGroupMates(room,player){ return parallelLinkedGroup(room,player).filter(p=>p.id!==player.id); }
 function parallelLocationLabel(campaign,key){ return campaign?.parallelStory?.locations?.[key] || key || '알 수 없는 장소'; }
 function parallelWorldSummary(room){
   const f=room.parallel?.worldFlags || {};
@@ -1339,6 +1357,52 @@ const PARALLEL_OUTCOME_VOICE={
   guardian:{success:'이 지역에서 만든 인연이나 통로가 다음 여정에 실제 자산으로 남았다.',mixed:'앞으로 나아갔지만 누군가에게 도움을 빚지거나 다른 길 하나를 포기했다.',failure:'막힌 길 때문에 다른 지역·사람과 연결되는 우회 여정이 생겼다.'},
   echo:{success:'역의 규칙 하나를 정확히 짚어 다음 이동에 사용할 수 있게 됐다.',mixed:'길은 열렸지만 문·신호·기록 중 하나에 이상 흔적이 남았다.',failure:'실패한 행동 덕분에 역이 어떤 조건에서 반응하는지 하나 더 알아냈다.'}
 };
+const PARALLEL_SCENE_COLOR={
+  ember:['재 냄새 속에서 갑옷 고리가 한 번 울렸다. 누군가 이 선택을 지켜보고 있었다.','왕가의 문장이 있는 쪽에서 바닥의 재가 아주 조금 움직였다.'],
+  neon:['근처 광고판이 한 프레임 깨지며 방금 행동을 다른 각도의 영상으로 되풀이했다.','감시 드론 하나가 지나쳤다가 다시 돌아와 같은 자리를 훑었다.'],
+  abyss:['기지 벽을 타고 낮은 진동이 지나갔다. 멀리 있는 무언가도 이 변화를 감지한 듯했다.','소나의 빈 화면 한쪽에 아주 작은 반향이 새로 생겼다.'],
+  clock:['멀리서 초침 하나가 거꾸로 움직이는 소리가 들렸다.','같은 순간을 기억하는 듯한 누군가가 길 건너에서 잠깐 파티를 바라봤다.'],
+  wild:['나뭇잎이 서로 스치며 방금 선택을 따라 말하듯 짧은 소리를 냈다.','별가루가 발자국 주위에 모였다가 다음 길 쪽으로 흩어졌다.'],
+  guardian:['멀리서 들리던 전투음 사이로 동료의 신호가 한 번 돌아왔다.','지나온 세계에서 얻은 인연 하나가 지금 선택에 작게 반응했다.'],
+  echo:['안내방송이 한 박자 늦게 따라 나오며 방금 지나온 위치의 이름을 다시 읽었다.','꺼진 전광판에 현재 위치가 아닌 다음 위치의 시간이 한 프레임 나타났다.'],
+  aurora:['붉은 극광이 한 번 맥박치듯 밝아지며 아날로그 계기의 바늘이 동시에 흔들렸다.','오래된 수신기에서 방금 선택과 닮은 문장이 43년 전 목소리로 짧게 재생됐다.'],
+  masque:['무대 어딘가에서 보이지 않는 관객이 한 번 박수를 쳤다.','가까운 가면 하나의 표정이 빛의 각도와 상관없이 잠깐 달라졌다.']
+};
+function parallelImmersiveOutcome(room,campaign,player,node,choice,grade,nextId){
+  const actor=player?.name||'플레이어';
+  const action=String(choice?.label||'행동');
+  const next=nextId && nextId!=='__ENDING__' ? campaign?.parallelStory?.nodes?.[nextId] : null;
+  const colorPool=PARALLEL_SCENE_COLOR[campaign?.id]||PARALLEL_SCENE_COLOR.guardian;
+  const seed=(Number(parallelPlayerState(room,player)?.progress||0)+String(node?.id||'').length+String(action).length)%colorPool.length;
+  const color=colorPool[seed];
+  const gradeText=grade==='critical'
+    ? `${actor}의 판단은 예상보다 멀리 닿았다. 단순히 문제를 넘긴 것이 아니라 다음 장면에서 먼저 움직일 이유와 단서를 함께 만들었다.`
+    : grade==='success'
+      ? `${actor}가 하려던 일이 의도한 방향으로 이어졌다. 눈앞의 상황도 그 선택에 맞춰 실제로 변했다.`
+      : grade==='mixed'
+        ? `${actor}는 원하는 결과에 손을 뻗는 데 성공했지만, 그 순간 다른 문제 하나도 함께 움직였다. 얻은 것과 잃은 것이 동시에 다음 장면으로 따라간다.`
+        : grade==='disaster'
+          ? `${actor}의 시도는 크게 어긋났다. 하지만 실패한 자리에서 무엇이 이 장소를 움직이는지 가장 위험한 방식으로 드러났다.`
+          : `${actor}의 첫 시도는 막혔다. 그렇다고 이야기가 제자리로 돌아간 것은 아니다. 막힌 이유와 새로 열린 우회로가 다음 선택의 조건이 됐다.`;
+  const move=next ? `그 결과 이야기는 “${node?.title||'현재 장면'}”에 머물지 않고 “${next.title}” 쪽으로 넘어가기 시작했다.` : '';
+  const linked=parallelLinkedGroupMates(room,player).filter(p=>!parallelPlayerState(room,p)?.ended);
+  const group=linked.length ? ` 함께 이동 중인 ${linked.map(p=>p.name).join(', ')}도 같은 변화를 보지만, 다음 행동은 각자의 턴에서 직접 결정한다.` : '';
+  return `“${action}”을 선택한 순간, ${gradeText} ${color} ${move}${group}`.replace(/\s+/g,' ').trim();
+}
+function parallelCombatAttemptText(player,choice,enc){
+  const actor=player?.name||'플레이어', enemy=enc?.name||'적';
+  const lines={
+    force:`${actor}는 물러서지 않고 ${enemy}의 정면을 붙잡아 힘으로 전열을 깨뜨리려 했다.`,
+    quick:`${actor}는 ${enemy}의 시선이 다른 곳으로 향한 짧은 순간에 옆으로 파고들어 빠른 공격을 노렸다.`,
+    analyze:`${actor}는 공격부터 하지 않고 ${enemy}의 발, 시선, 반복 동작을 따라가며 약점이 생기는 순간을 찾았다.`,
+    watch:`${actor}는 거리를 유지한 채 ${enemy}가 먼저 움직이도록 두고 공격 직전의 신호를 읽으려 했다.`,
+    defend:`${actor}는 몸을 낮추고 통로를 막아 ${enemy}의 다음 공격을 받아내면서 동료가 움직일 시간을 만들려 했다.`,
+    distract:`${actor}는 일부러 소리와 움직임을 크게 만들어 ${enemy}의 시선을 자신에게 묶고 동료에게 공격할 틈을 만들려 했다.`,
+    flee:`${actor}는 승부를 고집하지 않고 ${enemy}의 시야가 끊기는 순간을 골라 안전한 경로로 빠져나가려 했다.`
+  };
+  return lines[choice?.action]||`${actor}는 ${enemy}에게 지금 가능한 공격을 시도했다.`;
+}
+
 function parallelOutcomeThread(room,campaign,player,node,choice,grade,success){
   const ps=parallelPlayerState(room,player); if(!ps) return null;
   const aff=node?.affordances||{}; const target=aff.clue||aff.person||aff.obstacle||aff.hostile||aff.item||node?.title||'현재 사건';
@@ -1507,10 +1571,15 @@ function parallelSceneNarrative(room,campaign,player,node){
     const affordance=parallelAffordanceSummary(node);
     if(affordance) out.push(`지금 현장에서 행동으로 이어질 만한 요소도 분명하다. ${affordance}`);
     const nearby=parallelNearby(room,player); const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===parallelPlayerState(room,player)?.location);
-    if(linked.length) out.push(`${linked.map(p=>p.name).join(', ')}와 함께 움직이는 중이다. 헤어지기를 선택하기 전까지 같은 사건과 같은 장면을 공유하지만, 각자의 턴과 판정은 따로 진행된다.`);
+    if(linked.length) {
+      out.push(`${linked.map(p=>p.name).join(', ')}와 함께 움직이는 중이다. 헤어지기를 선택하기 전까지 같은 사건과 같은 장면을 공유하지만, 각자의 턴과 판정은 따로 진행된다.`);
+      const groupIds=new Set([player.id,...linked.map(p=>p.id)]);
+      const shared=[...(room.parallel?.sharedSceneLog||[])].reverse().find(x=>groupIds.has(x.by) && x.to===node?.id);
+      if(shared?.from && shared.from!==shared.to){ const prev=campaign?.parallelStory?.nodes?.[shared.from]; out.push(`조금 전 ${shared.byName||'동료'}의 선택으로 “${prev?.title||'이전 장면'}”에서 지금의 “${node.title}”로 상황이 넘어왔다. 동행 중이어도 이야기는 매 행동 뒤 계속 전진한다.`); }
+    }
     else if(nearby.length) out.push(`이 장소에는 ${nearby.map(p=>p.name).join(', ')}도 도착해 있다. 함께 움직일지, 잠깐 역할을 나눌지, 다시 각자의 길로 갈지는 플레이어들이 직접 정한다.`);
     else out.push('아직 이 장소에는 다른 플레이어가 보이지 않는다. 지금 선택한 길이 다른 사람의 동선과 겹치면 뒤의 장면에서 자연스럽게 마주칠 수 있다.');
-    return out.filter(Boolean).slice(0,7);
+    return out.filter(Boolean).slice(0,9);
   }
   const ps=parallelPlayerState(room,player);
   const loc=ps?.location || node.location;
@@ -1551,7 +1620,14 @@ function parallelSceneNarrative(room,campaign,player,node){
   if(ambient) out.push(ambient);
   if(role) out.push(role);
   if(shared.length) out.push(shared.slice(-2).join(' '));
-  return out.filter(Boolean).slice(0,6);
+  const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===ps?.location);
+  if(linked.length){
+    out.push(`${linked.map(p=>p.name).join(', ')}와 같은 구역을 함께 이동하고 있다. 누구의 턴에서든 새 장면으로 넘어가면 동행자 전원의 최신 장면도 함께 바뀐다.`);
+    const groupIds=new Set([player.id,...linked.map(p=>p.id)]);
+    const move=[...(room.parallel?.sharedSceneLog||[])].reverse().find(x=>groupIds.has(x.by) && x.to===node?.id && x.from && x.from!==x.to);
+    if(move){ const prev=campaign?.parallelStory?.nodes?.[move.from]; out.push(`조금 전 ${move.byName||'동료'}의 선택으로 “${prev?.title||'이전 장면'}”에서 “${node.title}”로 상황이 넘어왔다. 역은 같은 장면을 반복하는 대신 그 선택에 맞춰 다음 경로를 다시 만들고 있다.`); }
+  }
+  return out.filter(Boolean).slice(0,8);
 }
 function parallelChoiceScore(choice,node){
   const label=String(choice?.label||'');
@@ -1668,15 +1744,32 @@ function parallelSetNodeRaw(room,campaign,player,nextId){
 }
 function parallelSetNode(room,campaign,player,nextId,{syncLinked=false}={}){
   const ps=parallelPlayerState(room,player); if(!ps) return;
+  const oldNodeId=ps.nodeId;
   const oldLocation=ps.location;
-  const companions=syncLinked ? parallelLinkedPlayers(room,player).filter(other=>{
-    const ops=parallelPlayerState(room,other); return ops && !ops.ended && ops.location===oldLocation;
+  // If the party chose to travel together, move the entire linked component even if an
+  // older bug left one member on a stale location. Location equality must not decide
+  // whether a declared travelling companion advances with the group.
+  const companions=syncLinked ? parallelLinkedGroupMates(room,player).filter(other=>{
+    const ops=parallelPlayerState(room,other); return ops && !ops.ended;
   }) : [];
   const moved=parallelSetNodeRaw(room,campaign,player,nextId);
   if(syncLinked){
-    for(const other of companions) parallelSetNodeRaw(room,campaign,other,nextId);
+    const revision=Number(room.parallel.sharedSceneRevision||0)+1;
+    room.parallel.sharedSceneRevision=revision;
+    ps.sharedRevision=revision;
+    for(const other of companions){
+      parallelSetNodeRaw(room,campaign,other,nextId);
+      const ops=parallelPlayerState(room,other); if(ops) ops.sharedRevision=revision;
+    }
+    const newPs=parallelPlayerState(room,player);
+    if(newPs){
+      room.parallel.lastSharedScene={by:player.id,nodeId:newPs.nodeId,location:newPs.location,revision};
+      room.parallel.sharedSceneLog ||= [];
+      room.parallel.sharedSceneLog.push({by:player.id,byName:player.name,from:oldNodeId,to:newPs.nodeId,location:newPs.location,revision,ts:Date.now()});
+      if(room.parallel.sharedSceneLog.length>24) room.parallel.sharedSceneLog.splice(0,room.parallel.sharedSceneLog.length-24);
+    }
   } else if(moved){
-    for(const linked of parallelLinkedPlayers(room,player)){
+    for(const linked of parallelLinkedGroupMates(room,player)){
       const lps=parallelPlayerState(room,linked);
       if(lps && !lps.ended && lps.location===oldLocation) lps.pendingTravel={from:player.id,location:parallelPlayerState(room,player)?.location,nodeId:nextId};
     }
@@ -1684,8 +1777,11 @@ function parallelSetNode(room,campaign,player,nextId,{syncLinked=false}={}){
 }
 function parallelSyncLinkedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player); if(!ps) return;
-  for(const other of parallelLinkedPlayers(room,player)){
-    const ops=parallelPlayerState(room,other); if(!ops||ops.ended||ops.location!==ps.location) continue;
+  for(const other of parallelLinkedGroupMates(room,player)){
+    const ops=parallelPlayerState(room,other); if(!ops||ops.ended) continue;
+    // A linked group explicitly chose to travel together, so its story scene is shared.
+    // Do not require the stale pre-sync location to match; that requirement was what
+    // left some companions behind on the joining scene.
     ops.nodeId=ps.nodeId; ops.location=ps.location; ops.pendingTravel=null;
   }
 }
@@ -1704,8 +1800,17 @@ function parallelApplySocial(room,campaign,player,choice){
   if(choice.action==='accept' && target){
     room.parallel.links[key]='together'; delete room.parallel.offers[key];
     const tps=parallelPlayerState(room,target);
-    if(tps && tps.location===ps.location){ ps.nodeId=tps.nodeId; ps.location=tps.location; ps.pendingTravel=null; parallelSyncLinkedScene(room,campaign,target); }
-    return `${target.name}와 같은 길을 함께 가기로 했다. 이제 헤어지기를 선택하기 전까지 두 사람은 같은 장면과 이동 경로를 공유하며, 각자의 턴과 행동은 따로 진행된다.`;
+    if(tps && tps.location===ps.location){
+      ps.nodeId=tps.nodeId; ps.location=tps.location; ps.pendingTravel=null;
+      parallelSyncLinkedScene(room,campaign,target);
+      room.parallel.sharedSceneRevision=Number(room.parallel.sharedSceneRevision||0)+1;
+      const revision=room.parallel.sharedSceneRevision;
+      for(const member of parallelLinkedGroup(room,target)){ const mps=parallelPlayerState(room,member); if(mps) mps.sharedRevision=revision; }
+      room.parallel.lastSharedScene={by:target.id,nodeId:tps.nodeId,location:tps.location,revision};
+      room.parallel.sharedSceneLog ||= [];
+      room.parallel.sharedSceneLog.push({by:target.id,byName:target.name,from:null,to:tps.nodeId,location:tps.location,revision,ts:Date.now()});
+    }
+    return `${target.name}와 같은 길을 함께 가기로 했다. 이제 헤어지기를 선택하기 전까지 두 사람은 같은 최신 장면으로 함께 이동하며, 각자의 턴과 판정은 따로 진행된다.`;
   }
   if(choice.action==='assist' && target){ delete room.parallel.offers[key]; ps.support=Math.min(2,Number(ps.support||0)+1); const tps=parallelPlayerState(room,target); if(tps)tps.support=Math.min(2,Number(tps.support||0)+1); return `${target.name}와 이번 문제만 함께 해결하기로 했다. 두 사람은 다음 판정에 도움을 얻는다.`; }
   if(choice.action==='decline' && target){ delete room.parallel.offers[key]; return `${target.name}와 지금은 각자 움직이기로 했다. 서로의 이야기는 다른 길에서 계속된다.`; }
@@ -1721,7 +1826,7 @@ function parallelCombatAction(room,campaign,player,choice,roll,total,dc){
   const success=roll===20 || (roll!==1 && total>=dc);
   let text=''; let consequence=''; let fled=false;
   if(choice.action==='flee'){
-    if(success){ const fallback=ps.location==='platform0'?'platform0gate':ps.location==='track'?'platform1':'concourse'; const targetNode=Object.entries(campaign.parallelStory.nodes).find(([,n])=>n.location===fallback)?.[0] || 'concourse'; parallelSetNode(room,campaign,player,targetNode); text=`${enc.name}의 시야에서 벗어나 ${parallelLocationLabel(campaign,fallback)} 쪽으로 빠져나왔다.`; consequence='전투 이탈'; fled=true; }
+    if(success){ const fallback=ps.location==='platform0'?'platform0gate':ps.location==='track'?'platform1':'concourse'; const targetNode=Object.entries(campaign.parallelStory.nodes).find(([,n])=>n.location===fallback)?.[0] || 'concourse'; parallelSetNode(room,campaign,player,targetNode,{syncLinked:true}); text=`${enc.name}의 시야에서 벗어나 ${parallelLocationLabel(campaign,fallback)} 쪽으로 빠져나왔다.`; consequence='전투 이탈'; fled=true; }
     else text=`${enc.name}이 퇴로를 막아 빠져나가지 못했다.`;
   } else if(choice.action==='analyze' || choice.action==='watch'){
     if(success){ enc.exposed=true; enc.assist=Math.min(2,Number(enc.assist||0)+1); text=`${enc.name}의 움직임에서 반복되는 틈을 찾아냈다. 다음 공격이 쉬워진다.`; consequence='약점 노출'; }
@@ -1788,6 +1893,31 @@ function parallelEvaluateEnding(room,campaign){
 }
 function parallelAdvance(room,campaign,player,payload,ack){
   const ps=parallelPlayerState(room,player); if(!ps||ps.ended) return ack?.({ok:false,error:'이 플레이어의 이야기는 이미 끝났습니다.'});
+  // Repair stale linked-party state from the newest scene revision, not from whichever
+  // member happens to take the next turn. This prevents a later turn from pulling the
+  // whole party back to the scene where they first joined.
+  const group=parallelLinkedGroup(room,player).filter(p=>!parallelPlayerState(room,p)?.ended);
+  if(group.length>1){
+    let canonical=null;
+    for(const member of group){
+      const mps=parallelPlayerState(room,member); if(!mps) continue;
+      const candidate={player:member,ps:mps,revision:Number(mps.sharedRevision||0),progress:Number(mps.progress||0)};
+      if(!canonical || candidate.revision>canonical.revision || (candidate.revision===canonical.revision && candidate.progress>canonical.progress)) canonical=candidate;
+    }
+    const marker=room.parallel?.lastSharedScene;
+    if(marker && group.some(p=>p.id===marker.by) && campaign?.parallelStory?.nodes?.[marker.nodeId] && Number(marker.revision||0)>=Number(canonical?.revision||0)){
+      canonical={player:group.find(p=>p.id===marker.by)||player,ps:{nodeId:marker.nodeId,location:marker.location,sharedRevision:Number(marker.revision||0)},revision:Number(marker.revision||0),progress:Number(canonical?.progress||0)};
+    }
+    if(canonical?.ps?.nodeId && campaign?.parallelStory?.nodes?.[canonical.ps.nodeId]){
+      for(const member of group){
+        const mps=parallelPlayerState(room,member); if(!mps) continue;
+        mps.nodeId=canonical.ps.nodeId;
+        mps.location=canonical.ps.location||campaign.parallelStory.nodes[canonical.ps.nodeId]?.location||mps.location;
+        mps.sharedRevision=Number(canonical.revision||mps.sharedRevision||0);
+        mps.pendingTravel=null;
+      }
+    }
+  }
   const scene=parallelRenderedScene(room,campaign,player); if(!scene) return ack?.({ok:false,error:'개인 장면을 찾을 수 없습니다.'});
   const choiceIndex=Number(payload?.choiceIndex); const choice=scene.choices?.[choiceIndex];
   if(!choice) return ack?.({ok:false,error:'선택지가 올바르지 않습니다.'});
@@ -1804,7 +1934,10 @@ function parallelAdvance(room,campaign,player,payload,ack){
     if(target&&parallelTransferItem(room,player,target,choice.itemId)){ narrative=`${target.name}에게 ${item?.name||'물건'}을 건넸다. 이제 그 플레이어의 선택지에도 이 물건을 쓰는 방법이 열릴 수 있다.`; consequence='아이템 전달'; }
     else { narrative='물건을 전달하지 못했다.'; consequence='변화 없음'; }
   } else if(choice.kind==='parallel-combat'){
-    const r=parallelCombatAction(room,campaign,player,choice,roll,total,dc); narrative=r.text; consequence=r.consequence;
+    const beforeEncounter=room.parallel.encounters?.[ps.location];
+    const attempt=parallelCombatAttemptText(player,choice,beforeEncounter);
+    const r=parallelCombatAction(room,campaign,player,choice,roll,total,dc);
+    narrative=`${attempt} ${r.text}`; consequence=r.consequence;
   } else {
     narrative=success ? (choice.success||`${choice.label}에 성공했다.`) : (choice.failure||`${choice.label}을 시도했지만 대가가 남았다.`);
     if(!success && grade==='mixed') narrative=`${choice.success||narrative} 하지만 작은 대가가 남았다.`;
@@ -1826,6 +1959,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
       if(grade==='disaster' && roll!==1){ player.hp=Math.max(0,player.hp-1); consequence=[consequence,'큰 실패 HP -1'].filter(Boolean).join(' · '); }
     }
     const nextId=storyPass ? (choice.nextSuccess || choice.next) : (choice.nextFailure || choice.nextSuccess || choice.next);
+    narrative=`${narrative} ${parallelImmersiveOutcome(room,campaign,player,parallelNode(room,campaign,player),choice,grade,nextId)}`.trim();
     if(nextId==='__ENDING__'){
       ps.ended=true; ps.ending='completed';
       ps.endingText=parallelCampaignPersonalEnding(campaign,player,ps);
@@ -2207,6 +2341,23 @@ const MIXED_COST_TEXT={
   guardian:'길은 열렸지만 뒤따르는 적에게 흔적 하나를 남겼다.',
   echo:'항로는 이어졌지만 배와 선원에게 부담이 남았다.'
 };
+const STORY_RESULT_COLOR={
+  ember:['검은 재 위에 새 발자국이 생겼다. 성채는 방금 선택을 아무 일도 아니었던 것처럼 넘기지 않았다.','멀리서 장례 종이 한 번 울렸다. 살아 있는 사람과 죽은 사람 모두가 이 결과를 다른 의미로 받아들일 것이다.'],
+  neon:['근처 카메라의 추적등이 한 번 흔들렸다. 기록은 남았고, 누군가는 이미 그 기록을 보고 있다.','광고판의 얼굴이 깨졌다 돌아오며 파티의 현상수배 정보 한 줄이 갱신됐다.'],
+  abyss:['벽 너머의 압력이 낮게 울렸다. 구조할 시간과 더 알아낼 시간 사이의 거리가 다시 조금 줄었다.','소나에 새 반향이 생겼다. 방금 선택이 바깥의 존재에게도 신호가 된 듯했다.'],
+  clock:['초침 하나가 뒤로 움직였다가 다시 앞으로 갔다. 이번 선택은 다음 반복에도 흔적을 남길 것이다.','거리의 누군가가 처음 보는 얼굴로 파티를 바라보다가, 아주 익숙한 사람처럼 고개를 끄덕였다.'],
+  wild:['별가루가 발밑에서 모였다가 다른 길로 흩어졌다. 숲이 선택을 기억하고 있다.','멀리 있던 신수 한 마리가 공격하지 않고 방향만 바꿨다. 행동 하나가 생태의 균형을 조금 움직였다.'],
+  guardian:['멀리 있던 동료의 신호가 짧게 돌아왔다. 이 지역에서 만든 관계는 다음 세계에서도 완전히 사라지지 않을 것이다.','챔피언 소드의 빛이 지나온 방향과 앞으로 갈 방향을 동시에 비췄다.'],
+  echo:['꺼진 전광판이 한 번 켜져 방금 전과 다른 출구 번호를 표시했다. 역은 선택에 맞춰 경로를 다시 계산하고 있다.','안내방송이 끝난 뒤에도 마지막 한 음절이 늦게 따라왔다. 같은 장면으로 되돌아온 것이 아니다.'],
+  aurora:['극광이 붉게 흔들리자 오래된 아날로그 계기들이 동시에 반응했다. 방금 선택이 기억층의 재생 패턴까지 건드린 듯했다.','수신기에서 43년 전 목소리가 잡음 사이로 한 단어를 다르게 말했다. 기록이 현재에 반응하고 있다.'],
+  masque:['보이지 않는 관객석에서 박수 한 번이 울렸다. 누군가는 방금 선택을 새로운 대사로 받아들였다.','무대 위 조명이 한 칸 옆으로 이동하며 원고에 없던 자리를 비췄다. 결말은 아직 고정되지 않았다.']
+};
+function storyResultColor(campaign,beat,choice,grade){
+  const pool=STORY_RESULT_COLOR[campaign?.id]||STORY_RESULT_COLOR.guardian;
+  const n=(Number(beat?.chapter||0)+String(choice?.label||'').length+(grade==='critical'?1:0))%pool.length;
+  return pool[n];
+}
+
 function storyResolutionNarrative(campaign, beat, choice, player, success, status, grade=success?'success':'setback') {
   const actor=player?.name||'플레이어';
   const action=String(choice?.actionType||'');
@@ -2233,12 +2384,13 @@ function storyResolutionNarrative(campaign, beat, choice, player, success, statu
   const concrete=authored || generic[success?0:1];
   const echo=authored ? ` ${generic[success?0:1]}` : '';
   const injury=status?` 그 과정에서 부상이 하나 더 남았다.`:'';
+  const color=storyResultColor(campaign,beat,choice,grade);
   if(grade==='mixed'){
     const cost=MIXED_COST_TEXT[campaign?.id]||'목표에는 닿았지만 작은 대가가 남았다.';
     const positive=choice?.success||generic[0];
-    return `${positive} 다만 ${cost}`.trim();
+    return `${positive} 다만 ${cost} ${color}`.trim();
   }
-  return `${concrete}${echo}${injury}`.trim();
+  return `${concrete}${echo}${injury} ${color}`.trim();
 }
 
 
@@ -3502,6 +3654,74 @@ function monsterForEvent(room, event) {
   }, { isBoss });
 }
 
+function battleWeaponName(room, player) {
+  const weaponId = player?.equipment?.weapon;
+  const weapon = weaponId ? findCampaignItem(room.campaignId, weaponId) : null;
+  return weapon?.name || '무기';
+}
+
+function chooseBattleLine(lines) {
+  if (!Array.isArray(lines) || !lines.length) return '';
+  return lines[crypto.randomInt(0, lines.length)];
+}
+
+function playerAttackNarration(room, player, monster, { stat, roll, total, hit, damage }) {
+  const weapon = battleWeaponName(room, player);
+  const ac = Number(monster?.ac || 10);
+  const styles = {
+    '근력': {
+      try:[`${weapon}에 힘을 싣고 정면에서 방어를 무너뜨리려 했다`, `${monster.name}의 자세가 흔들리는 순간을 노려 강하게 밀고 들어갔다`, `한 번의 강한 타격으로 전열을 깨뜨리려 ${weapon}을 휘둘렀다`],
+      hit:[`충격이 그대로 들어가 ${monster.name}의 방어가 벌어졌다`, `${monster.name}이 버티려 했지만 힘을 다 받아내지 못했다`, `공격이 정면으로 꽂히며 ${monster.name}이 뒤로 밀려났다`],
+      miss:[`${monster.name}이 충돌 직전에 축을 틀어 힘의 방향을 흘려냈다`, `힘은 충분했지만 ${monster.name}이 한발 먼저 거리를 빼 타격점이 어긋났다`, `공격 궤적이 너무 크게 드러나 ${monster.name}이 미리 몸을 피했다`],
+    },
+    '민첩': {
+      try:[`${monster.name}의 사각으로 미끄러지듯 파고들어 빠르게 ${weapon}을 찔러 넣으려 했다`, `발을 바꿔 디디며 ${monster.name}의 시선 밖에서 짧은 공격을 노렸다`, `공격이 끝나는 순간을 기다렸다가 빈틈으로 재빨리 파고들었다`],
+      hit:[`${monster.name}이 몸을 돌리기 전에 공격이 먼저 닿았다`, `짧은 빈틈을 놓치지 않아 정확히 상처를 냈다`, `회피 동작보다 반 박자 빠르게 공격이 들어갔다`],
+      miss:[`${monster.name}이 예상보다 빠르게 몸을 틀어 궤적을 흘려냈다`, `발을 옮기는 순간 바닥이 미끄러져 공격 각도가 조금 벗어났다`, `${monster.name}이 사각을 내주지 않고 곧바로 거리를 다시 벌렸다`],
+    },
+    '지능': {
+      try:[`${monster.name}의 반복 동작과 관절 방향을 읽고 약점으로 보이는 지점을 노렸다`, `방금 전 공격 패턴에서 생긴 빈틈을 계산해 ${weapon}의 궤적을 맞췄다`, `${monster.name}의 방어가 늦어지는 순간을 계산해 정확한 한 점을 겨냥했다`],
+      hit:[`계산한 타이밍이 맞아떨어져 방어가 닫히기 전에 공격이 들어갔다`, `예측한 약점이 실제로 드러나며 공격이 제대로 먹혔다`, `${monster.name}의 반복 패턴을 역이용해 유효타를 만들었다`],
+      miss:[`${monster.name}이 직전과 다른 패턴으로 움직여 계산한 타이밍이 어긋났다`, `약점이라고 본 부분이 순간적으로 가려지며 공격이 빗나갔다`, `분석은 맞았지만 실행 직전에 ${monster.name}이 자세를 바꿨다`],
+    },
+    '지혜': {
+      try:[`성급히 들어가지 않고 ${monster.name}의 호흡과 시선을 읽다가 반격할 순간을 골랐다`, `${monster.name}이 다음에 움직일 방향을 읽고 그 길목에 공격을 맞추려 했다`, `위험한 움직임을 한 차례 흘려보낸 뒤 가장 안전한 반격 각도를 잡았다`],
+      hit:[`기다린 순간이 정확했고 ${monster.name}이 대응하기 전에 반격이 들어갔다`, `움직임을 제대로 읽어 공격이 빈틈과 정확히 겹쳤다`, `${monster.name}의 의도를 먼저 읽은 덕분에 안정적으로 타격했다`],
+      miss:[`${monster.name}이 마지막 순간 움직임을 끊어 예상한 반격 타이밍이 사라졌다`, `의도는 읽었지만 공격할 틈이 너무 짧아 ${weapon}이 닿지 못했다`, `한 번 더 기다렸지만 ${monster.name}이 거리를 내주지 않았다`],
+    },
+    '체력': {
+      try:[`${monster.name}의 압박을 몸으로 버티며 거리를 좁힌 뒤 묵직한 반격을 시도했다`, `한 차례 공격을 견딜 각오로 정면에 남아 ${weapon}을 밀어 넣으려 했다`, `자세가 무너지지 않게 버티면서 가까운 거리에서 공격을 이어갔다`],
+      hit:[`충격을 견딘 채 끝까지 밀어붙여 공격을 성공시켰다`, `${monster.name}이 밀어내려 했지만 자세를 지켜낸 쪽이 한 수 앞섰다`, `버티며 만든 가까운 거리에서 타격이 제대로 들어갔다`],
+      miss:[`끝까지 버텼지만 ${monster.name}이 접촉 직전에 옆으로 빠져 공격이 허공을 갈랐다`, `거리는 좁혔지만 공격까지 이어갈 순간을 만들지 못했다`, `${monster.name}의 반발에 자세가 잠깐 흔들려 타격이 빗나갔다`],
+    },
+    '매력': {
+      try:[`도발과 시선 유도로 ${monster.name}의 판단을 흔든 뒤 예상한 방향으로 공격을 유도했다`, `짧은 외침과 페인트로 ${monster.name}의 시선을 빼앗고 빈틈을 만들려 했다`, `${monster.name}이 반응할 행동을 일부러 보여준 뒤 반대쪽에서 공격을 노렸다`],
+      hit:[`${monster.name}이 미끼에 반응한 순간 빈틈이 열려 공격이 들어갔다`, `시선을 빼앗는 데 성공해 방어가 늦었다`, `유도한 반응이 그대로 나와 준비한 공격을 적중시켰다`],
+      miss:[`${monster.name}이 도발에 넘어오지 않아 준비한 공격 각도가 열리지 않았다`, `시선을 흔드는 데는 성공했지만 ${monster.name}이 거리를 지켜 타격까지 이어지지 않았다`, `예상과 달리 ${monster.name}이 반응하지 않아 공격 타이밍을 놓쳤다`],
+    },
+  };
+  const style = styles[stat] || styles['근력'];
+  if (roll === 1) return `${chooseBattleLine(style.try)}. 하지만 시작 동작부터 완전히 읽혔다. ${monster.name}이 공격선을 선점하면서 시도는 무너졌다. 자연 1 · 판정 ${total} / AC ${ac}.`;
+  if (roll === 20) return `${chooseBattleLine(style.try)}. ${chooseBattleLine(style.hit)} 급소까지 이어진 완벽한 공격으로 ${damage} 피해를 입혔다. 자연 20 · 판정 ${total} / AC ${ac}.`;
+  if (hit) return `${chooseBattleLine(style.try)}. ${chooseBattleLine(style.hit)} ${damage} 피해. 판정 ${total} / AC ${ac}.`;
+  return `${chooseBattleLine(style.try)}. 하지만 ${chooseBattleLine(style.miss)} 피해를 주지 못했다. 판정 ${total} / AC ${ac}.`;
+}
+
+function monsterAttackNarration(room, monster, target, { roll, total, armor, hit, rawDamage, blocked, damage }) {
+  const approaches = [
+    `${monster.name}이 ${target.name}의 정면을 압박하다가 갑자기 거리를 좁혀 공격했다`,
+    `${monster.name}이 한 차례 페인트를 넣은 뒤 ${target.name}이 반응한 쪽의 반대편을 노렸다`,
+    `${monster.name}이 주변 지형을 타고 움직이며 ${target.name}의 방어가 얇은 방향으로 파고들었다`,
+    `${monster.name}이 망설이지 않고 ${target.name}에게 연속 동작으로 달려들었다`,
+  ];
+  if (roll === 1) return `${chooseBattleLine(approaches)}. 하지만 공격 자세가 크게 무너지며 ${target.name}에게 닿지도 못했다. 자연 1 · 판정 ${total} / 방어 ${armor}.`;
+  if (!hit) return `${chooseBattleLine(approaches)}. ${target.name}이 공격 방향을 읽고 몸을 빼면서 타격을 피했다. 판정 ${total} / 방어 ${armor}.`;
+  if (blocked > 0 && damage <= 0) return `${chooseBattleLine(approaches)}. 공격 자체는 닿았지만 ${target.name}의 방어 태세가 ${rawDamage} 피해를 전부 받아냈다. 판정 ${total} / 방어 ${armor}.`;
+  if (blocked > 0) return `${chooseBattleLine(approaches)}. 타격은 들어왔지만 ${target.name}이 방어 태세로 ${blocked}만큼 막아내 최종 ${damage} 피해만 입었다. 판정 ${total} / 방어 ${armor}.`;
+  if (roll === 20) return `${chooseBattleLine(approaches)}. ${target.name}의 대응보다 한발 빨랐고 강한 타격으로 ${damage} 피해를 입혔다. 자연 20 · 판정 ${total} / 방어 ${armor}.`;
+  return `${chooseBattleLine(approaches)}. ${target.name}이 완전히 피하지 못해 ${damage} 피해를 입었다. 판정 ${total} / 방어 ${armor}.`;
+}
+
 function clearBossTurnTimer(roomCode) {
   const timer = bossTurnTimers.get(roomCode);
   if (timer) clearTimeout(timer);
@@ -3529,8 +3749,10 @@ function monsterTurn(room) {
   const total = roll + room.monster.attackBonus;
   const hit = roll === 20 || (roll !== 1 && total >= armor);
   let damage = hit ? rand(4) + 1 : 0;
+  const rawDamage = damage;
   const guard = Number(target.skillState?.guard || 0);
-  if (hit && guard > 0) { const blocked = Math.min(guard, damage); damage -= blocked; target.skillState.guard = guard - blocked; }
+  let blocked = 0;
+  if (hit && guard > 0) { blocked = Math.min(guard, damage); damage -= blocked; target.skillState.guard = guard - blocked; }
   if (hit) target.hp = Math.max(0, target.hp - damage);
   emitRoll(room, { id: 'gm-monster', name: room.monster.name }, {
     sides: 20,
@@ -3545,9 +3767,7 @@ function monsterTurn(room) {
   pushChat(room, {
     type: hit ? 'danger' : 'success',
     author: 'GM',
-    text: hit
-      ? `${room.monster.name}의 공격이 ${target.name}에게 ${damage} 피해를 입혔습니다.`
-      : `${target.name}이 ${room.monster.name}의 공격을 피했습니다.`,
+    text: monsterAttackNarration(room, room.monster, target, { roll, total, armor, hit, rawDamage, blocked, damage }),
   });
   room.monster.acted = [];
   room.monster.round += 1;
@@ -4570,7 +4790,7 @@ io.on('connection', socket => {
     player.skillState.guard = Math.max(Number(player.skillState.guard || 0), guard);
     room.monster.acted ||= [];
     room.monster.acted.push(player.id);
-    pushChat(room, { type:'success', author:player.name, text:`방어 태세 · 다음 피해 ${guard}까지 흡수` });
+    pushChat(room, { type:'success', author:player.name, text:`${player.name}은 공격을 서두르지 않고 자세를 낮춰 다음 타격을 받아낼 준비를 했다. 방어 태세가 잡혀 다음 피해를 최대 ${guard}까지 흡수할 수 있다.` });
     const eligible = room.players.filter(member => member.connected && member.hp > 0).map(member => member.id);
     if (eligible.length && eligible.every(id => room.monster.acted.includes(id))) scheduleMonsterTurn(room, 900);
     sync(room);
@@ -4616,7 +4836,7 @@ io.on('connection', socket => {
     });
     pushChat(room, {
       type: hit ? 'success' : 'failure', author: player.name,
-      text: `${room.monster.name} 공격 ${hit ? `명중! ${damage} 피해` : '실패'}`,
+      text: playerAttackNarration(room, player, room.monster, { stat, roll: result, total, hit, damage }),
     });
 
     const monsterName = room.monster.name;

@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '7.4.0-immersive-room-browser';
+const APP_VERSION = '7.5.0-public-quality-story';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -2172,7 +2172,7 @@ function buildVictoryEnding(room) {
   return {
     victory: true,
     title: alias ? `「${alias}」 · ${campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful} — ${legacyTitle}` : `${campaignEnding?.title || titles[path]?.[finalBranch] || titles[path]?.careful} — ${legacyTitle}`,
-    text: `${campaignEnding?.text ? `${campaignEnding.text} ` : ''}${summaries[path]} ${motive ? `그리고 파티는 끝까지 “${motive}”라는 이유를 놓지 않았습니다. ` : ''}${branchNote} ${routeTrail.length ? `이번 여정은 ${routeTrail.join(' → ')}의 흐름으로 이어졌고,` : ''} 총 ${room.story}개의 실제 분기 장면을 지나 선택의 흔적이 엔딩에 남았습니다. ${legacySentence} 루트 기록 ${routeCode || 'NONE'}.${legacyText}${casualtyText} ${failures >= 6 ? `수많은 실패와 상태이상을 견디며 도착한 만큼, 이 결말은 상처 입은 생존자들의 결말이기도 합니다.` : failures >= 3 ? `몇 번의 큰 실패가 있었고 그 흔적이 마지막 선택의 무게를 키웠습니다.` : `큰 실패를 최소화하며 비교적 온전한 상태로 결말에 도착했습니다.`}`,
+    text: `${campaignEnding?.text ? `${campaignEnding.text} ` : ''}${summaries[path]} ${motive ? `처음 이 길을 나설 때 붙잡았던 “${motive}”라는 이유도 마지막까지 완전히 사라지지 않았다. ` : ''}${branchNote} ${routeTrail.length ? `돌아보면 파티는 ${routeTrail.join(' → ')}의 방식으로 같은 세계를 조금씩 다른 모양으로 바꾸어 왔다. ` : ''}${legacySentence}${legacyText}${casualtyText} ${failures >= 6 ? `상처와 실패가 많았던 만큼 살아남은 사람들은 이 승리를 영웅담으로만 기억하지 않는다. 대신 어디에서 누구를 놓치지 않았고, 무엇을 포기했는지를 오래 이야기하게 된다.` : failures >= 3 ? `여정 중 생긴 몇 번의 실패는 마지막 장면까지 흔적으로 남았다. 그래서 이 결말은 완벽한 승리보다 끝까지 감당한 선택에 가깝다.` : `큰 상처를 피한 덕분에 살아남은 사람들은 곧바로 다음 삶을 준비할 수 있었다. 그러나 무엇을 선택했는지에 대한 기억은 쉽게 사라지지 않는다.`}`,
   };
 }
 
@@ -2332,7 +2332,25 @@ function storyResultColor(campaign,beat,choice,grade){
   return pool[n];
 }
 
-function storyResolutionNarrative(campaign, beat, choice, player, success, status, grade=success?'success':'setback') {
+function storyCallbackLine(room,campaign,beat,choice,success){
+  const threads=(room?.narrativeLedger?.threads||[]).filter(x=>x.beatId!==beat?.id);
+  const prev=threads[threads.length-1];
+  if(!prev) return '';
+  if(prev.playerId===room?.lastStoryAction?.playerId && prev.choice===choice?.label) return '';
+  const route=choice?.branchValue||'careful';
+  if(prev.route===route && prev.success){
+    return `앞서 ${prev.playerName||'동료'}가 만든 ${prev.gain||'작은 이점'}이 아직 남아 있어, 이번 선택은 완전히 처음부터 시작되지 않았다.`;
+  }
+  if(!prev.success){
+    return `직전 실패에서 남은 ${prev.cost||prev.status||'문제'}가 사라지지 않아, 이번 행동에도 그 여파가 따라붙었다.`;
+  }
+  if(prev.route!==route){
+    return `앞에서는 ${prev.route==='bold'?'정면 돌파':prev.route==='empathetic'?'사람과의 신뢰':'조사와 추적'}를 택했지만, 이번에는 다른 방식으로 흐름을 틀었다. 그 변화 때문에 같은 사건에서도 새로운 반응이 나왔다.`;
+  }
+  return '';
+}
+
+function storyResolutionNarrative(room, campaign, beat, choice, player, success, status, grade=success?'success':'setback') {
   const actor=player?.name||'플레이어';
   const action=String(choice?.actionType||'');
   const lines={
@@ -2362,9 +2380,9 @@ function storyResolutionNarrative(campaign, beat, choice, player, success, statu
   if(grade==='mixed'){
     const cost=MIXED_COST_TEXT[campaign?.id]||'목표에는 닿았지만 작은 대가가 남았다.';
     const positive=choice?.success||generic[0];
-    return `${positive} 다만 ${cost} ${color}`.trim();
+    return `${positive} 다만 ${cost} ${color} ${storyCallbackLine(room,campaign,beat,choice,false)}`.trim();
   }
-  return `${concrete}${echo}${injury} ${color}`.trim();
+  return `${concrete}${echo}${injury} ${color} ${storyCallbackLine(room,campaign,beat,choice,success)}`.trim();
 }
 
 
@@ -4467,7 +4485,7 @@ io.on('connection', socket => {
 
     let narrative = choice.freeAction
       ? actionNarrative({ success:storyPass, declaration:choice.label, player, beat, interpretation:freeActionInterpretation || interpretFreeAction(choice.label, player, beat, room), margin })
-      : storyResolutionNarrative(campaign, beat, choice, player, storyPass, status, outcomeGrade);
+      : storyResolutionNarrative(room, campaign, beat, choice, player, storyPass, status, outcomeGrade);
     if (choice.freeAction && outcomeGrade === 'mixed') narrative += ` 다만 ${MIXED_COST_TEXT[campaign?.id] || '작은 대가가 남았다.'}`;
     if (player.dead && player.deathReason) narrative = `${narrative}\n\n${player.name}의 이야기는 여기서 끝났다. ${player.deathReason}`;
     if (choice.jobSpecial) {

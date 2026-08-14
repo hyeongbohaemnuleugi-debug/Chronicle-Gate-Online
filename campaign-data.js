@@ -2191,6 +2191,12 @@ function buildUniversalParallelStory(c, storyBeats){
       campaignBeat:true,
       reveal:beat.reveal,
       stakes:beat.stakes,
+      dialogue:beat.dialogue || [],
+      playerVoices:beat.playerVoices || {},
+      sceneQuestion:beat.sceneQuestion || '',
+      playerSpeech:beat.playerSpeech || '',
+      immediatePressure:beat.immediatePressure || '',
+      releaseTone:beat.releaseTone || '',
     };
   }
 
@@ -2439,8 +2445,141 @@ DISTINCT_CAMPAIGN_IDENTITY.masque={play:'사막 가면극 미스터리 · 배역
 for (const c of EXTRA_CHRONICLES_V720) c.identity=DISTINCT_CAMPAIGN_IDENTITY[c.id];
 
 
+
+
+// v7.6.0 - RELEASE STORY DIRECTOR
+// Turns every authored beat into a playable dramatic scene: immediate hook -> NPC exchange ->
+// player interior voice -> concrete pressure -> grounded choices. This data is also copied into
+// universal parallel-story nodes so solo, split-party and linked-party play use the same scene quality.
+const RELEASE_STORY_DIRECTOR = {
+  ember:{
+    tone:'무너진 왕국의 정치와 망령이 동시에 숨 쉬는 음울한 궁정극',
+    leads:['장례 사제 마렌','왕실 기록관 세라','망명 기사 로웬','왕비의 수정 에일라','불멸왕 아르켄'],
+    verbs:['증언','서약','봉인','계승','고발'],
+    thoughts:{근력:'힘으로 열 수 있는 문과, 힘으로 열면 안 되는 문을 구분해야 한다.',민첩:'사람들이 시선을 두는 곳보다 감추려는 손끝과 발자국을 먼저 봐야 한다.',지능:'왕실 기록과 실제 흔적이 어긋나는 지점이 누가 역사를 고쳤는지 말해 줄 것이다.',지혜:'두려움에 떠는 사람의 말과 왕관에 홀린 사람의 말은 비슷해도 호흡이 다르다.',매력:'누구의 편을 드느냐보다 지금 누구에게 진실을 말하게 만들지가 중요하다.',체력:'여기서 버틴 사람이 다음 장면의 증인이 된다. 쓰러지지 않는 것 자체가 선택이다.'}
+  },
+  neon:{
+    tone:'기억과 신원 자체가 거래되는 네온 누아르 추적극',
+    leads:['기억 브로커 리안','폐기구역 의사 모라','보안요원 K-17','백업 인격 이브','MOTHER-9'],
+    verbs:['복호화','위장','거래','추적','백업'],
+    thoughts:{근력:'이 도시에서는 문을 부수는 순간보다 누가 그 장면을 녹화했는지가 더 위험하다.',민첩:'카메라의 사각과 사람들의 시선 사이에는 아주 짧은 틈이 있다.',지능:'삭제된 기록은 사라진 게 아니다. 누가 어떤 순서로 지웠는지가 남는다.',지혜:'기억이 맞는지보다 그 기억을 믿게 만들려는 사람이 누구인지 봐야 한다.',매력:'사람들은 진실보다 자신이 잃기 싫은 기억에 더 큰 값을 매긴다.',체력:'추격을 끝까지 버티면 데이터보다 먼저 사람을 구할 수 있는 순간이 온다.'}
+  },
+  abyss:{
+    tone:'산소와 신뢰가 동시에 줄어드는 폐쇄 심해 구조 미스터리',
+    leads:['의무관 윤서','기관장 바스','생물학자 린','실종 승무원 카이','심해 생명 탈라스'],
+    verbs:['감압','구조','격리','교신','상승'],
+    thoughts:{근력:'압력문은 힘으로 움직일 수 있지만, 잘못 열면 뒤쪽 사람까지 위험해진다.',민첩:'물이 차오르는 곳에서는 가장 빠른 길보다 돌아올 수 있는 길이 중요하다.',지능:'장비 오류와 생체 신호가 같은 시간에 시작됐다면 우연으로 보기 어렵다.',지혜:'공포 때문에 괴물처럼 들리는 소리와 실제 공격 신호를 구분해야 한다.',매력:'패닉에 빠진 사람 한 명을 설득하는 일이 기지 전체의 동선을 바꿀 수 있다.',체력:'산소가 부족할수록 침착함과 체력이 곧 다른 사람의 시간이다.'}
+  },
+  clock:{
+    tone:'같은 하루가 조금씩 어긋나며 사람의 존재를 지우는 시간 추리극',
+    leads:['꽃가게 주인 미라','시계공 벤','이름 잃은 아이','시간 밀수꾼 오르','열세 번째 종지기'],
+    verbs:['기록','대조','보존','되감기','분산'],
+    thoughts:{근력:'같은 문을 백 번 부숴도 같은 답만 나온다면 이번엔 다른 것을 움직여야 한다.',민첩:'루프가 완벽하다면 사람의 동선도 같아야 한다. 달라진 발걸음이 단서다.',지능:'반복되는 것과 반복되지 않는 것을 표로 나누면 누가 시간을 건드리는지 보일 것이다.',지혜:'사람의 말보다 데자뷔가 오는 순간의 표정을 기억해야 한다.',매력:'누군가에게 “당신은 어제도 존재했다”고 믿게 만드는 것이 생존보다 어려울 수 있다.',체력:'기억이 흔들려도 몸에 남은 습관과 상처는 거짓말하지 않는다.'}
+  },
+  wild:{
+    tone:'사람의 소원과 숲의 생태가 충돌하는 신화 생태 모험극',
+    leads:['별사냥꾼 라하','고목의 목소리 에누','유성 대장장이 토르','부족장 세이','신수 오르바'],
+    verbs:['교감','중재','추적','돌려보내기','약속'],
+    thoughts:{근력:'이 숲에서 강한 것은 쓰러뜨리는 힘보다 길을 망가뜨리지 않고 밀어내는 힘이다.',민첩:'숲길은 움직여도 별가루가 떨어진 방향은 잠깐 진실을 남긴다.',지능:'별빛을 먹는 현상과 계절 변화가 같은 주기로 움직이는 이유를 찾아야 한다.',지혜:'짐승의 경고와 공격은 다르다. 먼저 겁먹은 쪽이 누구인지 봐야 한다.',매력:'두 부족 모두 숲을 사랑한다면 싸움의 원인은 목적이 아니라 대가의 분배일 것이다.',체력:'숲의 독기와 추위 속에서 오래 버티는 사람이 더 많은 생명의 목소리를 듣는다.'}
+  },
+  guardian:{
+    tone:'여러 지역의 인연이 다음 세계까지 따라오는 모험·저항 연대기',
+    leads:['작은 공주','여관주인 로레인','저항군 정찰병','미래의 공주','챔피언 소드의 목소리'],
+    verbs:['합류','구조','해방','연결','귀환'],
+    thoughts:{근력:'앞을 막는 적을 쓰러뜨리는 것과 뒤에 남은 사람을 지키는 것은 같은 전투가 아니다.',민첩:'먼저 도착한 사람이 얻는 건 보물보다 누가 아직 위험한지 볼 수 있는 시간이다.',지능:'고대 장치와 침략 기술이 같은 문양을 쓰는 이유를 알면 다음 세계의 길도 읽을 수 있다.',지혜:'도움을 청하지 않는 사람도 있다. 누가 강해서 침묵하는지, 포기해서 침묵하는지 봐야 한다.',매력:'동료는 퀘스트 보상이 아니라 다음 장면에서 내 결정을 반대할 수도 있는 사람이다.',체력:'끝까지 살아서 약속을 지키는 것이 이 연대기에서는 가장 무거운 능력일 수 있다.'}
+  },
+  echo:{
+    tone:'막차가 끝난 뒤 현실의 동선이 비틀리는 심야 역 미스터리',
+    leads:['야간 역무원 지수','길 잃은 승객 민호','청소원 박씨','신호실 직원 없는 목소리','0번선의 안내방송'],
+    verbs:['확인','고정','연락','대조','귀환'],
+    thoughts:{근력:'셔터를 버티는 동안 누군가가 지나갈 수 있다면 힘을 쓰는 이유는 충분하다.',민첩:'역은 익숙해서 더 위험하다. 평소와 다른 한 칸의 표지판이 길 전체를 바꾼다.',지능:'CCTV 시간과 전광판 시간이 다르다면 어느 쪽이 현실인지 검증할 기준이 필요하다.',지혜:'사람 없는 곳에서 들리는 안내방송은 내용보다 방송이 시작된 시각이 중요하다.',매력:'겁먹은 승객의 기억을 맞춰 보면 서로 다른 사람들이 본 “같은 역”의 차이를 알 수 있다.',체력:'첫차가 들어오기 전까지 버틸 수 있어야 조사도 구조도 끝까지 갈 수 있다.'}
+  },
+  aurora:{
+    tone:'붉은 극광 아래 과학적 검증과 구조가 충돌하는 극지 미스터리',
+    leads:['관측소장 레나','통신기사 한','빙하학자 소피','창설 원정대장 이안의 기록','구조팀장 미카'],
+    verbs:['측정','교차검증','구조','차단','송신'],
+    thoughts:{근력:'얼음문을 깨는 건 쉽다. 그 뒤 압력과 추위를 감당할 준비가 되었는지가 문제다.',민첩:'눈보라 속에서는 발자국 하나가 몇 분 만에 사라진다. 지금 볼 수 있을 때 봐야 한다.',지능:'43년 전 기록이 현재 질문에 반응한다면 기록이 아니라 상호작용하는 현상이다.',지혜:'사람이 기억을 잃기 전에 남긴 습관과 메모가 현재의 말보다 믿을 만할 수 있다.',매력:'혼란에 빠진 연구원에게 사실을 강요하기보다 스스로 기억을 붙잡게 만들어야 한다.',체력:'추위와 저산소에서 버티는 사람이 결국 마지막 구조선을 잡는다.'}
+  },
+  masque:{
+    tone:'배역과 본명이 충돌하는 월식의 사막 가면극 미스터리',
+    leads:['가면 없는 아이 누라','복원사 사비','가면상인 라키','마지막 연출자 자밀','이름을 찾는 배우 아샤'],
+    verbs:['연기','복원','교환','거부','다시쓰기'],
+    thoughts:{근력:'무대를 부수면 길은 열려도 누군가의 유일한 고향까지 함께 무너질 수 있다.',민첩:'배우의 시선과 무대 장치의 타이밍을 읽으면 대본에 없는 틈이 생긴다.',지능:'가면 안쪽의 덧칠 순서를 보면 누가 누구의 이름을 지웠는지 알 수 있다.',지혜:'연기하는 사람도 진심을 말할 때가 있다. 대사보다 대사를 망설이는 순간을 봐야 한다.',매력:'이 도시에서 설득은 상대의 배역을 받아들이는 척하면서 본명을 끌어내는 일이다.',체력:'공연이 길어질수록 지치는 쪽이 먼저 자기 이름을 놓친다. 정신을 붙잡아야 한다.'}
+  }
+};
+function releaseDirectorFor(c){ return RELEASE_STORY_DIRECTOR[c.id] || RELEASE_STORY_DIRECTOR.guardian; }
+function releaseKo(word, batchim, vowel){
+  const t=String(word||'').trim(); const ch=t.charCodeAt(t.length-1);
+  if(ch>=0xAC00 && ch<=0xD7A3) return t+(((ch-0xAC00)%28)!==0?batchim:vowel);
+  return t+vowel;
+}
+function releaseChoiceLabel(c, beat, choice, index){
+  const act=Math.max(0,Number(beat.act||1)-1); const kit=(SCENE_KITS[c.id]||[])[act]||{}; const t=String(choice.label||'').trim();
+  if(/^주변을 살핀다$/.test(t)) return `${kit.clue||'핵심 단서'} 주변에서 현재 설명과 어긋난 흔적을 찾는다`;
+  if(/의 흔적을 따라$/.test(t)) return `${kit.clue||'단서'}의 흔적이 이어지는 방향을 따라간다`;
+  if(/^몰래 접근한다$/.test(t)) return `${kit.hostile||'감시자'}의 시야를 피해 ${kit.obstacle||'막힌 구역'} 가까이 접근한다`;
+  if(/^사람을 지킨다$/.test(t)) return `${kit.rescue||'위험에 놓인 사람'}을 먼저 안전한 위치로 옮긴다`;
+  if(kit.person && t===`${kit.person}를 따라간다`) return `${kit.person}가 향하는 길을 들키지 않게 따라간다`;
+  if(kit.person && t===`${kit.person}을 따라간다`) return `${kit.person}이 향하는 길을 들키지 않게 따라간다`;
+  if(kit.person && (t===`${kit.person}에게 묻는다`)) return `${kit.person}에게 ${kit.clue||'방금 일어난 일'}에 대해 직접 묻는다`;
+  if(kit.clue && (t===`${kit.clue}을 본다` || t===`${kit.clue}를 본다`)) return `${kit.clue}의 손상 시점과 남은 흔적을 확인한다`;
+  if(kit.hostile && t.includes(`${kit.hostile}와 싸운다`)) return `${kit.hostile}의 움직임을 끊어 ${kit.rescue||'동료'}가 움직일 시간을 번다`;
+  if(kit.hostile && t.includes(`${kit.hostile}과 싸운다`)) return `${kit.hostile}의 움직임을 끊어 ${kit.rescue||'동료'}가 움직일 시간을 번다`;
+  if(kit.obstacle && t===`${kit.obstacle}을 우회한다`) return `${kit.obstacle}을 건드리지 않고 지나갈 다른 통로를 찾는다`;
+  if(kit.obstacle && t===`${kit.obstacle}를 우회한다`) return `${kit.obstacle}를 건드리지 않고 지나갈 다른 통로를 찾는다`;
+  return t;
+}
+function releaseSceneDialogue(c, beat, index){
+  const d=releaseDirectorFor(c); const act=Math.max(0,Number(beat.act||1)-1); const phase=String(beat.phase||'도입');
+  const kit=(SCENE_KITS[c.id]||[])[act]||{}; const lead=kit.person || d.leads[act%d.leads.length] || '현장의 생존자';
+  const lines={
+    도입:`“잠깐. ${kit.clue?`${kit.clue}부터 보세요.`:'지금 보이는 것부터 확인해요.'} 이건 평소의 사고가 아닙니다.”`,
+    탐색:`“${kit.clue||'이 흔적'}와 ${kit.obstacle||'막힌 길'}이 같은 시각에 생겼다면 우연일 리 없어요.”`,
+    대면:`“${kit.hostile||'눈앞의 위협'}만 보고 덤비면 중요한 걸 놓칩니다. ${kit.rescue?`${kit.rescue}도 여기 있어요.`:'뒤쪽 상황도 봐야 해요.'}”`,
+    진실:`“그럼 지금까지 우리가 믿은 설명 중 하나는 틀렸다는 뜻이군요. 누가 그 거짓을 필요로 했죠?”`,
+    위기:`“시간이 없습니다. ${beat.stakes||'모든 것을 한 번에 지킬 수는 없습니다.'} 먼저 무엇을 지킬지 정하세요.”`,
+    결단:`“여기서 내리는 결정은 끝나고 사라지지 않을 겁니다. 다음에 누굴 만나는지도 바뀔 테니까요.”`
+  };
+  const second=d.leads[(act+1)%d.leads.length];
+  const secondLine=phase==='결단'
+    ? '“여기까지 오면서 무엇을 지키고 무엇을 놓쳤는지 봤습니다. 마지막 선택도 그 연장선에서 하세요.”'
+    : `“${kit.clue||'지금 남은 흔적'}부터 끝까지 확인합시다. 지금 섣불리 결론을 내리면 누군가가 원한 방향으로 움직이게 됩니다.”`;
+  return [{speaker:lead,text:lines[phase]||lines.도입},{speaker:second,text:secondLine}];
+}
+function releaseSceneQuestion(c, beat){
+  const act=Math.max(0,Number(beat.act||1)-1); const kit=(SCENE_KITS[c.id]||[])[act]||{};
+  if(beat.phase==='도입') return `${releaseKo(kit.clue||'첫 단서','은','는')} 왜 하필 지금 나타났는가?`;
+  if(beat.phase==='탐색') return `${releaseKo(kit.clue||'현장의 흔적','과','와')} ${releaseKo(kit.obstacle||'막힌 길','은','는')} 같은 원인에서 나온 것인가?`;
+  if(beat.phase==='대면') return `${releaseKo(kit.hostile||'눈앞의 위협','을','를')} 상대하면서 ${releaseKo(kit.rescue||'놓치면 안 되는 사람','도','도')} 지킬 방법은 무엇인가?`;
+  if(beat.phase==='진실') return `지금 드러난 사실을 누가 감추었고, 그 거짓말로 무엇을 지키려 했는가?`;
+  if(beat.phase==='위기') return `다가온 위험 속에서 무엇을 먼저 지키고, 무엇의 대가를 감수할 것인가?`;
+  return `지금까지의 선택을 감당하면서 어떤 다음 장면을 직접 만들 것인가?`;
+}
+
+function releaseChoiceReason(c, beat, choice){
+  const act=Math.max(0,Number(beat.act||1)-1); const kit=(SCENE_KITS[c.id]||[])[act]||{}; const t=String(choice.label||'');
+  if(/말|설득|묻|협상|대화|증언|고발/.test(t)) return `${releaseKo(kit.person||'이 장면의 인물','이','가')} 바로 눈앞에 있고, 그 반응에 따라 다음 정보나 통로가 달라질 수 있다.`;
+  if(/조사|확인|분석|읽|기록|대조|복원|흔적/.test(t)) return `${releaseKo(kit.clue||'현장에 남은 단서','이','가')} 현재 사건과 직접 연결되어 있어, 지금 확인하면 다음 판단의 근거가 된다.`;
+  if(/구조|돕|치료|보호|살린|구한다|안전한 위치/.test(t)) return `${releaseKo(kit.rescue||'도움이 필요한 대상','이','가')} 현재 위험에 놓여 있어, 늦으면 다음 장면에서 구할 기회를 잃을 수 있다.`;
+  if(/공격|싸|막|제압|돌파|움직임을 끊/.test(t)) return `${releaseKo(kit.hostile||kit.obstacle||'눈앞의 위협','이','가')} 실제로 진행을 막고 있어, 지금 제압하면 다른 행동을 할 시간을 벌 수 있다.`;
+  if(/이동|따라|향|들어|올라|내려|통과|우회|다른 통로/.test(t)) return `${releaseKo(kit.obstacle||kit.clue||'현재 단서','이','가')} 다음 장소로 이어지는 구체적인 방향을 보여 주고 있다.`;
+  return `현재 목표인 “${beat.objective||'눈앞의 문제 해결'}”와 직접 연결되는 행동이며, 결과가 다음 장면의 조건을 바꾼다.`;
+}
+
+function decorateReleaseStory(c, beats){
+  const d=releaseDirectorFor(c);
+  return beats.map((beat,index)=>{
+    const dialogue=releaseSceneDialogue(c,beat,index);
+    const playerVoices={}; for(const [stat,text] of Object.entries(d.thoughts)) playerVoices[stat]=`${text} 지금 내 앞의 문제는 “${releaseSceneQuestion(c,beat)}”다.`;
+    const choices=(beat.choices||[]).filter(x=>x&&x.label).slice(0,5).map((ch,i)=>({...ch,label:releaseChoiceLabel(c,beat,ch,i),reason:releaseChoiceReason(c,beat,{...ch,label:releaseChoiceLabel(c,beat,ch,i)})}));
+    const sceneQuestion=releaseSceneQuestion(c,beat);
+    const playerSpeech={도입:'좋아. 먼저 눈앞에서 확실히 확인할 수 있는 것부터 보자.',탐색:'처음 보인 답이 맞는지, 다른 흔적과 대조해 보자.',대면:'싸우든 물러서든, 누굴 지킬지부터 정하고 움직이자.',진실:'방금 드러난 사실이 진짜라면 앞선 판단도 다시 봐야 해.',위기:'전부 지킬 수 없다면 무엇을 절대 포기하지 않을지 정하자.',결단:'여기까지 온 이유를 잊지 말자. 마지막 선택도 우리가 직접 책임진다.'}[beat.phase]||'지금 할 수 있는 것부터 하나씩 확인하자.';
+    return {...beat,releaseTone:d.tone,dialogue,playerVoices,playerSpeech,sceneQuestion,immediatePressure:beat.stakes||beat.why||'',choices};
+  });
+}
+
 export const CAMPAIGNS = campaigns.map(c => {
-  const storyBeats=buildStoryBeats(c);
+  const storyBeats=decorateReleaseStory(c, buildStoryBeats(c));
   return {
     ...c,
     jobs: c.jobs.map((j, i) => ({roll:i+1,name:j[0],prime:j[1],skill:j[2],skillDef:JOB_SKILL_DEFS[j[0]],baseHp:10 + (i%3)*2})),

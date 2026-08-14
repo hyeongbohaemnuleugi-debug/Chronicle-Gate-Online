@@ -887,3 +887,36 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 }
 .story-dialogue.release-dialogue.player-spoken{border-left-color:#e8b95b;background:rgba(232,185,91,.055);margin-top:2px}
 .story-dialogue.release-dialogue.player-spoken>span{color:#ffd57a}
+
+/* v7.7.0 ACTUAL PLAY DIRECTOR — fiction first, logs second */
+#storyClarity.story-recap-compact{display:block!important;margin:0 0 12px!important}
+.story-now-strip{display:flex;align-items:flex-start;gap:12px;padding:12px 15px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:rgba(255,255,255,.025)}
+.story-now-strip>span{flex:0 0 auto;font-size:10px;font-weight:900;letter-spacing:.14em;color:var(--accent);padding-top:3px}
+.story-now-strip>b{font-size:13.5px;line-height:1.65;color:rgba(255,255,255,.92);font-weight:650}
+.story-recap-details{margin-top:7px;padding:0 12px;border-left:1px solid rgba(255,255,255,.09);color:rgba(255,255,255,.58)}
+.story-recap-details>summary{cursor:pointer;font-size:11px;line-height:1.5;list-style:none;padding:4px 0}
+.story-recap-details>summary::-webkit-details-marker{display:none}
+.story-recap-details>div{display:grid;gap:5px;padding:6px 0 4px}
+.story-recap-details p{margin:0;font-size:11.5px;line-height:1.6;color:rgba(255,255,255,.62)}
+.story-recap-details p span{display:inline-block;min-width:38px;color:rgba(255,255,255,.38);font-weight:800}
+.actual-play-story-v770{display:flex;flex-direction:column;gap:14px}
+.actual-play-story-v770 .scene-narration{margin:0!important;max-width:920px;font-size:15.5px!important;line-height:1.9!important;color:rgba(248,246,241,.91)!important}
+.actual-play-story-v770 .actual-play-opening{font-size:17px!important;line-height:1.92!important;color:#fff!important}
+.actual-play-story-v770 .actual-play-detail{color:rgba(240,238,232,.85)!important}
+.actual-play-dialogue{display:grid;gap:9px;margin:2px 0}
+.actual-play-instinct{margin:0!important;padding:9px 12px;border-left:2px solid rgba(137,197,255,.4);font-size:12.5px!important;line-height:1.65!important;color:rgba(205,221,238,.78)!important;font-style:italic}
+.actual-play-instinct>span{font-style:normal;font-weight:850;color:#9cc9f4;margin-right:9px}
+.actual-play-pressure{display:flex;gap:9px;align-items:flex-start;margin:0!important;padding:10px 12px;border-radius:9px;background:rgba(236,123,80,.045);font-size:12.5px!important;line-height:1.65!important;color:rgba(246,220,208,.86)!important}
+.actual-play-pressure>span{font-size:10px;font-weight:900;color:#ed956d;letter-spacing:.08em;padding-top:2px}
+.inline-resolution.compact-result{margin:0!important;padding:14px 16px!important;border-radius:10px!important}
+.inline-resolution.compact-result .eyebrow,.inline-resolution.compact-result>b{display:none!important}
+.inline-resolution.compact-result p{margin:0!important;font-size:15px!important;line-height:1.8!important;color:#fff!important}
+.inline-resolution.compact-result small{display:block;margin-top:8px;font-size:11.5px;line-height:1.55;color:rgba(255,255,255,.58)}
+#choiceArea>.vote-strip.actual-play-choice-head{padding:11px 14px!important;min-height:0!important;background:rgba(11,12,15,.99)!important}
+#choiceArea>.vote-strip.actual-play-choice-head>div:last-child{display:none!important}
+#choiceArea .choice-card.choice-row{min-height:118px!important;padding:17px 19px!important;gap:14px!important}
+#choiceArea .choice-copy>b{font-size:15.5px!important;line-height:1.55!important}
+#choiceArea .choice-copy>small{font-size:12px!important;line-height:1.55!important;color:rgba(255,255,255,.56)!important}
+#choiceArea .choice-check{font-size:11.5px!important;color:rgba(255,255,255,.56)!important}
+#choiceArea{scroll-snap-type:y mandatory!important;scroll-padding-top:8px!important}
+@media(max-width:760px){.story-now-strip{padding:11px 12px}.actual-play-story-v770 .actual-play-opening{font-size:15.5px!important}.actual-play-story-v770 .scene-narration{font-size:14.5px!important}#choiceArea .choice-card.choice-row{min-height:132px!important;padding:15px!important}}

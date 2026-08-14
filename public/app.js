@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '8.0.0-tabletop-first-public-alpha';
+const CLIENT_BUILD = '8.0.1-client-load-hotfix';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -2068,3 +2068,5 @@ fetch('/api/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).th
 // QA marker: state.phase==='resolution'&&state.lastResolution
 
 // v3.5.1: home overlay click-through + resilient 3D dice initialization
+
+window.__CHRONICLE_GATE_CLIENT_LOADED__ = CLIENT_BUILD;

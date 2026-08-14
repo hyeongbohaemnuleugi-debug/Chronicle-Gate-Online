@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=7400';
 
-const CLIENT_BUILD = '7.4.0-immersive-room-browser';
+const CLIENT_BUILD = '7.4.1-context-choice-snap';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -918,6 +918,73 @@ function parallelNarrationHTML(lines=[]){
   }).join('')}</article>`;
 }
 
+
+function conciseSceneText(text = '', max = 180) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  const first = clean.split(/(?<=[.!?…])\s+/).filter(Boolean).slice(0, 2).join(' ');
+  return first.length > max ? `${first.slice(0, max - 1).trim()}…` : first;
+}
+
+function setStoryTrail(before = '', bridge = '', now = '') {
+  const clarity = $('#storyClarity');
+  if (!clarity) return;
+  clarity.classList.remove('clean-main');
+  clarity.classList.add('story-trail');
+  const cards = clarity.querySelectorAll('.clarity-card');
+  const labels = ['직전 상황', '왜 여기까지 왔나', '지금 상황'];
+  const values = [before, bridge, now];
+  cards.forEach((card, index) => {
+    const label = card.querySelector('span');
+    const copy = card.querySelector('p');
+    if (label) label.textContent = labels[index] || '';
+    if (copy) copy.textContent = values[index] || '아직 확인된 내용이 없습니다.';
+  });
+}
+
+function mainStoryTrail(c, beat, inResolution = false) {
+  const history = Array.isArray(state?.storyHistory) ? state.storyHistory : [];
+  const last = history[history.length - 1];
+  const action = last?.declaration || last?.choiceLabel || '상황을 살폈다';
+  const actor = last?.playerName || state?.turnPlayerName || '플레이어';
+  let before = '';
+  let bridge = '';
+  let now = '';
+  if (!last) {
+    before = `${c?.title || '이 연대기'}의 시작. ${conciseSceneText(c?.intro || beat?.text || '')}`;
+    bridge = `아직 이전 선택은 없다. 지금 처음 마주한 사건에서 무엇을 먼저 할지 결정해야 한다.`;
+  } else if (inResolution) {
+    before = `${last.title || beat?.title || '이 장면'}에서 ${actor}이(가) 「${action}」을 선택했다.`;
+    bridge = `${last.success ? '시도는 뜻대로 풀렸다.' : '시도는 뜻대로 풀리지 않았고 대가가 남았다.'} ${conciseSceneText(last.narrative || state?.lastResolution?.text || '')}`;
+  } else {
+    before = `${last.title || '직전 장면'}에서 ${actor}이(가) 「${action}」을 선택했다.`;
+    bridge = `${last.success ? '그 선택이 길을 열어' : '그 선택의 실패와 여파 때문에'} 지금의 「${beat?.title || '다음 장면'}」까지 이어졌다.`;
+  }
+  if (inResolution) {
+    now = `${state?.lastResolution?.ok ? '현재 선택의 결과가 확정됐다.' : '현재 선택의 실패가 확정됐다.'} ${state?.lastResolution?.consequence || ''}`.trim();
+  } else {
+    const scene = conciseSceneText(beat?.text || beat?.sceneContext || '');
+    now = `${beat?.title ? `${beat.title}. ` : ''}${scene}${beat?.objective ? ` 지금 해야 할 일은 ${beat.objective}` : ''}`.trim();
+  }
+  return { before, bridge, now };
+}
+
+function parallelStoryTrail(scene, ps, player) {
+  const history = Array.isArray(ps?.history) ? ps.history : [];
+  const last = history[history.length - 1];
+  const oldPlace = ps?.previousLocation || scene?.previousLocation || '';
+  const placeName = oldPlace && oldPlace !== scene?.location ? oldPlace : '';
+  const before = last
+    ? `${player?.name || '당신'}은(는) ${placeName ? `${placeName}에서 ` : ''}「${last.choice || '행동'}」을 선택했다.`
+    : `${player?.name || '당신'}의 이야기는 ${scene?.locationLabel || '이 장소'}에서 시작됐다.`;
+  const bridge = last
+    ? `${last.success || last.grade === 'mixed' ? '그 행동이 다음 길을 열었다.' : '뜻대로 되지 않았지만 그 실패가 새로운 문제를 만들었다.'} 그래서 지금 ${scene?.locationLabel || '이곳'}에 서 있다.`
+    : `아직 다른 장면에서 이어진 선택은 없다. 눈앞의 상황을 처음부터 판단해야 한다.`;
+  const linked = Array.isArray(scene?.linked) && scene.linked.length ? ` 현재 ${scene.linked.map(x => x.name).join(', ')}와 동행 중이다.` : '';
+  const now = `${scene?.sceneContext || scene?.title || scene?.locationLabel || '현재 상황'}.${scene?.objective ? ` 지금 해야 할 일은 ${scene.objective}` : ''}${linked}`;
+  return { before, bridge, now };
+}
+
 function bossArtCandidates(c, monster='') {
   const world = c?.id || 'chronicle';
   const slug = String(monster || '').toLowerCase().replace(/[^a-z0-9가-힣]+/g, '_').replace(/^_+|_+$/g, '');
@@ -1375,15 +1442,14 @@ function renderParallelStory() {
   $('#storySceneCaption').textContent=`개인 진행 · ${scene.locationLabel} · ${p?.job?.name || '플레이어'}${nearby.length?` · 같은 장소: ${nearby.map(x=>x.name).join(', ')}`:''}`;
   $('#actLabel').textContent=encounter?`LOCAL ENCOUNTER · ACT ${scene.act}`:`PARALLEL STORY · ACT ${scene.act}`;
   $('#eventTitle').textContent=encounter?`${scene.title} · ${encounter.name}`:scene.title;
-  $('#storyClarity').classList.add('clean-main');
-  $('#storySituation').textContent=scene.sceneContext || `${scene.locationLabel} · ${scene.phase}`;
-  $('#storyObjective').textContent=encounter?`${encounter.name}이 이 장소의 길을 막고 있습니다. 싸우거나, 약점을 찾거나, 빠져나갈 수 있습니다.`:scene.objective;
+  const trail = parallelStoryTrail(scene, ps, p);
+  if (encounter) trail.now = `${scene.sceneContext || scene.title}. ${encounter.name}이 길을 막고 있다. 지금은 싸우거나, 약점을 찾거나, 빠져나갈 방법을 정해야 한다.`;
+  setStoryTrail(trail.before, trail.bridge, trail.now);
   const world=(scene.worldSummary||[]).join(' ');
   const social=nearby.length
     ? `현재 같은 장소에 ${nearby.map(x=>`${x.name}${x.linked?'(동행 중)':''}`).join(', ')}이(가) 있습니다. 만난 뒤에도 같이 갈지 헤어질지는 선택입니다.`
     : linked.length ? `동행 관계: ${linked.map(x=>`${x.name}(${x.locationLabel})`).join(', ')}. 서로 다른 길로 갈 경우 다음 턴에 따라갈지 남을지 다시 선택합니다.` : '현재 이 장소에는 다른 플레이어가 보이지 않습니다.';
-  $('#storyWhy').textContent='';
-  $('#storyWhy').style.display='none';
+  $('#storyWhy').style.display='block';
   $('#storyPrompt').innerHTML=`<b>${esc(p?.name || '당신')}</b>은(는) 눈앞의 상황에서 다음 행동을 정해야 한다.`;
   const paragraphs=parallelNarrationHTML(scene.paragraphs||[]);
   const last=state.lastResolution;
@@ -1406,14 +1472,14 @@ function renderParallelStory() {
       <span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span>
       <span class="choice-check">${choice.choiceBadge?`<em>${esc(choice.choiceBadge)}</em>`:''}${choice.automatic?'선택':`${esc(choice.stat||'지혜')} · DC ${Number(choice.dc||8)}`}</span>
     </button>`).join('');
-  choiceBox.style.setProperty('display','grid','important');
+  choiceBox.style.setProperty('display','flex','important');
   choiceBox.style.setProperty('visibility','visible','important');
   choiceBox.style.setProperty('opacity','1','important');
   choiceBox.style.minHeight=choices.length ? '120px' : '90px';
   choiceBox.innerHTML=`<div class="vote-strip"><div><span class="eyebrow">WHAT DO YOU DO?</span><b>지금 할 수 있는 행동 ${choices.length}개</b></div><div>${isMyTurn?'현재 장면에 직접 연결되는 행동만 표시됩니다.':`${esc(state.turnPlayerName || '다른 플레이어')}의 턴을 기다리는 중입니다.`}</div></div>${emptyNotice}${renderedChoices}`;
   forceChoiceLayout(choiceBox);
   requestAnimationFrame(()=>{
-    choiceBox.style.setProperty('display','grid','important');
+    choiceBox.style.setProperty('display','flex','important');
     choiceBox.style.setProperty('visibility','visible','important');
     choiceBox.style.setProperty('opacity','1','important');
   });
@@ -1443,28 +1509,39 @@ function forceChoiceLayout(root = document) {
   const area = root?.matches?.('#choiceArea') ? root : root?.querySelector?.('#choiceArea') || document.getElementById('choiceArea');
   if (!area) return;
   const set = (el, prop, value) => el?.style?.setProperty(prop, value, 'important');
-  set(area, 'display', 'grid');
-  set(area, 'grid-template-columns', 'minmax(0,1fr)');
-  set(area, 'grid-auto-flow', 'row');
-  set(area, 'grid-auto-rows', 'max-content');
-  set(area, 'align-items', 'start');
-  set(area, 'align-content', 'start');
-  set(area, 'gap', '10px');
+  set(area, 'display', 'flex');
+  set(area, 'flex-direction', 'column');
+  set(area, 'align-items', 'stretch');
+  set(area, 'gap', '12px');
   set(area, 'overflow-x', 'hidden');
-  set(area, 'overflow-y', 'visible');
-  set(area, 'max-height', 'none');
+  set(area, 'overflow-y', 'auto');
+  set(area, 'max-height', 'min(68vh, 760px)');
+  set(area, 'padding', '6px 10px 18px 4px');
+  set(area, 'scroll-snap-type', 'y mandatory');
+  set(area, 'scroll-padding-top', '72px');
+  set(area, 'overscroll-behavior', 'contain');
   area.querySelectorAll('.choice-card').forEach(card => {
+    const rowStyle = card.classList.contains('choice-row');
     set(card, 'position', 'relative');
-    set(card, 'display', 'flex');
-    set(card, 'flex-direction', 'column');
-    set(card, 'align-items', 'stretch');
+    set(card, 'display', rowStyle ? 'grid' : 'flex');
+    if (rowStyle) {
+      set(card, 'grid-template-columns', '42px minmax(0,1fr) auto');
+      set(card, 'align-items', 'center');
+      set(card, 'gap', '14px');
+    } else {
+      set(card, 'flex-direction', 'column');
+      set(card, 'align-items', 'stretch');
+    }
     set(card, 'justify-content', 'flex-start');
     set(card, 'width', '100%');
     set(card, 'height', 'auto');
-    set(card, 'min-height', '0');
+    set(card, 'min-height', rowStyle ? '104px' : '128px');
     set(card, 'max-height', 'none');
-    set(card, 'padding', '0');
-    set(card, 'overflow', 'hidden');
+    set(card, 'padding', rowStyle ? '16px 18px' : '16px');
+    set(card, 'overflow', 'visible');
+    set(card, 'scroll-snap-align', 'start');
+    set(card, 'scroll-snap-stop', 'always');
+    set(card, 'scroll-margin-top', '72px');
     set(card, 'white-space', 'normal');
     set(card, 'box-sizing', 'border-box');
     Array.from(card.children).forEach(child => {
@@ -1475,6 +1552,18 @@ function forceChoiceLayout(root = document) {
       set(child, 'max-width', '100%');
       set(child, 'box-sizing', 'border-box');
     });
+    if (rowStyle) {
+      const num = card.querySelector('.choice-number');
+      const copy = card.querySelector('.choice-copy');
+      const check = card.querySelector('.choice-check');
+      if (num) { set(num, 'width', '32px'); set(num, 'height', '32px'); }
+      if (copy) { set(copy, 'display', 'grid'); set(copy, 'gap', '6px'); set(copy, 'min-width', '0'); }
+      if (check) { set(check, 'display', 'flex'); set(check, 'flex-direction', 'column'); set(check, 'align-items', 'flex-end'); set(check, 'white-space', 'nowrap'); }
+      const copyTitle = copy?.querySelector('b');
+      if (copyTitle) { set(copyTitle, 'font-size', '15px'); set(copyTitle, 'line-height', '1.6'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
+      const copyReason = copy?.querySelector('small');
+      if (copyReason) { set(copyReason, 'font-size', '12.5px'); set(copyReason, 'line-height', '1.65'); set(copyReason, 'white-space', 'normal'); set(copyReason, 'word-break', 'keep-all'); }
+    }
     const title = card.querySelector('.choice-title-line');
     if (title) {
       set(title, 'display', 'flex');
@@ -1574,10 +1663,12 @@ function renderStory() {
     $('#storySceneCaption').textContent = `${c?.title || '연대기'} · ${p?.job?.name || '모험가'}의 개인 프롤로그`;
     $('#actLabel').textContent = 'PERSONAL PROLOGUE';
     $('#eventTitle').textContent = myScene?.title || '각자의 시작';
-    $('#storyClarity').classList.add('clean-main');
-    $('#storySituation').textContent = myScene?.lead || '각 플레이어는 서로 다른 장소에서 이야기를 시작합니다.';
-    $('#storyObjective').textContent = myScene?.objective || '개인 서사를 읽고 다른 인물들과 합류할 준비를 하세요.';
-    $('#storyWhy').textContent = ''; $('#storyWhy').style.display='none';
+    setStoryTrail(
+      `${c?.title || '이 연대기'}가 시작된다. ${conciseSceneText(c?.intro || myScene?.lead || '')}`,
+      `${p?.name || '당신'}은(는) 아직 다른 플레이어를 만나지 못한 채 자기 위치에서 사건의 첫 단서를 마주했다.`,
+      `${myScene?.lead || '각 플레이어는 서로 다른 장소에서 이야기를 시작한다.'} 지금 해야 할 일은 ${myScene?.objective || '자기 앞의 상황을 이해하고 첫 행동을 정하는 것'}이다.`
+    );
+    $('#storyWhy').style.display='block';
     $('#storyPrompt').innerHTML = `<b>${esc(p?.name||'당신')}</b>은(는) 아직 다른 이들이 어디에 있는지 모른다.`;
     $('#eventText').innerHTML = parallelNarrationHTML((myScene?.paragraphs||[]).slice(0,4));
     $('#storyActionBox').style.display = 'none';
@@ -1606,10 +1697,18 @@ function renderStory() {
     $('#storySceneCaption').textContent = `${ev.actName} · ${ev.visual || sceneWord(c?.id, Math.max(0, ev.act - 1))} · 이 사건은 메인 스토리 사이에 끼어드는 단 한 장의 이벤트입니다.`;
     $('#actLabel').textContent = `SIDE EVENT · ACT ${ev.act}`;
     $('#eventTitle').textContent = ev.title;
-    $('#storyClarity').classList.remove('clean-main');
-    $('#storySituation').textContent = eventResolution ? (eventResolution.ok ? '판정 성공 · 사건의 흐름이 바뀌었습니다.' : '판정 실패 · 대가가 다음 흐름에 남습니다.') : (ev.situation || ev.text || '예상하지 못한 사건이 발생했습니다.');
-    $('#storyObjective').textContent = eventResolution ? '결과를 읽고 다음 장면으로 이어가세요.' : (ev.objective || '제한시간 안에 대응 방식을 투표로 결정하세요.');
-    $('#storyWhy').textContent = eventResolution ? (eventResolution.consequence || '이번 결과는 파티 상태와 이후 사건에 반영됩니다.') : (ev.why || ev.stakes || '이 결과가 다음 장면의 위험도와 진행에 영향을 줍니다.');
+    const eventHistory = Array.isArray(state.storyHistory) ? state.storyHistory : [];
+    const eventLast = eventHistory[eventHistory.length - 1];
+    const eventBefore = eventLast
+      ? `${eventLast.title || '직전 메인 장면'}에서 ${eventLast.playerName || '플레이어'}이(가) 「${eventLast.declaration || '행동'}」을 선택했다.`
+      : `${c?.title || '이 연대기'}의 메인 흐름을 진행하던 중이었다.`;
+    const eventBridge = eventResolution
+      ? `${eventResolution.ok ? '돌발 사건에 대한 대응이 통했다.' : '돌발 사건 대응이 실패해 대가가 남았다.'} ${eventResolution.consequence || ''}`.trim()
+      : `메인 이야기 도중 예상하지 못한 사건이 끼어들어 지금 즉시 대응해야 한다.`;
+    const eventNow = eventResolution
+      ? `사건의 결과가 확정됐다. 다음 메인 장면으로 돌아가기 전에 이 결과를 확인해야 한다.`
+      : `${ev.situation || ev.text || '예상하지 못한 사건이 발생했다.'} 지금 해야 할 일은 ${ev.objective || '제한시간 안에 대응 방식을 정하는 것'}이다.`;
+    setStoryTrail(eventBefore, eventBridge, eventNow);
     $('#storyPrompt').innerHTML = eventResolution
       ? `<b>${esc(eventResolution.playerName || state.activeChoice?.playerName || '플레이어')}의 판정 결과.</b> 주사위 숫자를 다시 보여주지 않고 이야기 결과로 바로 이어집니다.`
       : state.soloMode ? `<b>돌발 사건.</b> 12초 안에 대응을 고르세요. 투표 즉시 3초 카운트다운이 시작됩니다.` : `<b>의견을 나눈 뒤 투표하세요.</b> 전원이 투표하면 3초 뒤 자동 확정됩니다.`;
@@ -1626,18 +1725,14 @@ function renderStory() {
     $('#storySceneCaption').textContent = beat ? `${beat.isDetour ? 'UNEXPECTED SCENE' : `STORY SCENE ${(state.storySeenCount || 0) + (state.phase === 'resolution' ? 0 : 1)} · NODE ${beat.chapter || '?'}`} · ${beat.actName} · ${beat.visual}` : `${c?.title || '연대기'}의 메인 스토리를 진행합니다.`;
     $('#actLabel').textContent = beat ? (beat.isDetour ? `UNEXPECTED SCENE · ACT ${beat.act}` : `MAIN STORY · ACT ${beat.act}`) : 'MAIN STORY';
     $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `${beat.title}`) : '연대기가 이어집니다.';
-    $('#storyClarity').classList.add('clean-main');
-    $('#storySituation').textContent = `${beat?.actName || c?.title || '현재 장면'} · ${beat?.phase || '진행'}`;
-    $('#storyObjective').textContent = beat?.objective || '지금 상황에서 무엇을 할지 정하세요.';
-    $('#storyWhy').textContent = beat?.continuityHook || ''; $('#storyWhy').style.display=beat?.continuityHook?'':'none';
+    const trail = mainStoryTrail(c, beat, inResolution);
+    setStoryTrail(trail.before, trail.bridge, trail.now);
+    $('#storyWhy').style.display='block';
     $('#storyPrompt').innerHTML = `<b>${esc(state.turnPlayerName || '당신')}</b>은(는) 잠시 숨을 고르고 눈앞의 선택지를 살핀다.`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
     if (inResolution && lastResolution) {
-      $('#storySituation').textContent = lastResolution.ok ? '판정 성공 · 선택의 결과' : '판정 실패 · 선택이 남긴 대가';
-      $('#storyObjective').textContent = '결과를 읽고 다음 장면으로 이어가세요.';
-      $('#storyWhy').textContent = lastResolution.detourCreated
-        ? '이번 실패가 원래 다음 장면 앞에 새로운 위기 장면을 만들었습니다.'
-        : (lastResolution.consequence || beat?.continuityHook || '이번 선택의 흔적이 다음 장면의 조건을 바꿉니다.');
+      const resultTrail = mainStoryTrail(c, beat, true);
+      setStoryTrail(resultTrail.before, resultTrail.bridge, resultTrail.now);
       $('#storyPrompt').innerHTML = `<b>${esc(lastResolution.playerName || '플레이어')}의 선택이 반영되었습니다.</b> 주사위 결과창을 반복하지 않고 이야기 결과를 바로 보여줍니다.`;
       $('#eventText').innerHTML = `<div class="inline-resolution ${lastResolution.ok ? 'success' : 'failure'}"><div class="eyebrow">SCENE RESULT</div>${lastResolution.choiceLabel ? `<b>${esc(lastResolution.choiceLabel)}</b>` : ''}<p>${esc(lastResolution.text || '')}</p>${lastResolution.consequence ? `<small>게임 효과 · ${esc(lastResolution.consequence)}</small>` : ''}${lastResolution.status ? `<small>상태 · ${esc(lastResolution.status.label)} — ${esc(lastResolution.status.desc || '')}</small>` : ''}</div>`;
     }

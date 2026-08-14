@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;800&family=Noto+Serif+KR:wght@400;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=7300">
+  <link rel="stylesheet" href="/styles.css?v=7400">
 </head>
 <body>
 <div id="app">
@@ -52,8 +52,15 @@
         <div class="eyebrow" id="entryEyebrow">CREATE ROOM</div>
         <h2 id="entryTitle">새로운 연대기를 시작합니다.</h2>
         <label class="field"><span>플레이어 이름</span><input id="nameInput" maxlength="18" placeholder="예: 재의 기사 아린"></label>
-        <label class="field" id="codeField"><span>방 코드</span><input id="codeInput" maxlength="5" placeholder="ABCDE"></label>
+        <div id="createRoomFields" class="room-create-fields">
+          <label class="field"><span>방 이름</span><input id="roomNameInput" maxlength="28" placeholder="예: 금요일 밤 연대기"></label>
+          <div class="room-access-select"><span>입장 방식</span><label><input type="radio" name="roomAccess" value="public" checked> 공개방</label><label><input type="radio" name="roomAccess" value="locked"> 비밀번호방</label></div>
+          <label class="field hidden" id="passwordCreateField"><span>방 비밀번호</span><input id="roomPasswordCreate" maxlength="40" type="password" placeholder="2자 이상"></label>
+        </div>
+        <label class="field" id="codeField"><span>방 코드로 바로 참가</span><input id="codeInput" maxlength="5" placeholder="ABCDE"></label>
+        <label class="field hidden" id="joinPasswordField"><span>방 비밀번호</span><input id="joinPasswordInput" maxlength="40" type="password" placeholder="비밀번호방일 때 입력"></label>
         <button class="primary full" id="entrySubmit" type="button">방 만들기</button>
+        <section id="roomBrowser" class="room-browser hidden"><div class="room-browser-head"><div><b>열려 있는 방</b><small>코드를 몰라도 참가할 수 있습니다.</small></div><button id="refreshRooms" class="mini" type="button">새로고침</button></div><div id="roomList" class="room-list"></div></section>
         <div id="resumeCandidates" class="resume-candidates"></div>
         <div class="error" id="entryError"></div>
       </div>
@@ -62,7 +69,7 @@
     <section class="view" id="lobbyView">
       <div class="lobby-shell">
         <div class="lobby-header">
-          <div><div class="eyebrow">SESSION LOBBY</div><h2>연대기의 동료들</h2></div>
+          <div><div class="eyebrow">SESSION LOBBY</div><h2 id="roomNameLobby">연대기의 동료들</h2></div>
           <div class="code-display"><span>ROOM CODE</span><b id="roomCodeLobby">-----</b><button class="mini" id="copyCode" type="button">COPY</button></div>
         </div>
         <div class="lobby-grid lobby-grid-extended">
@@ -247,6 +254,6 @@
   </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
-<script type="module" src="/app.js?v=7300"></script>
+<script type="module" src="/app.js?v=7400"></script>
 </body>
 </html>

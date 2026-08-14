@@ -1416,15 +1416,15 @@ function forceChoiceLayout(root = document) {
   if (!area) return;
   const set = (el, prop, value) => el?.style?.setProperty(prop, value, 'important');
   set(area, 'display', 'grid');
-  set(area, 'grid-template-columns', 'repeat(auto-fit,minmax(250px,1fr))');
+  set(area, 'grid-template-columns', 'minmax(0,1fr)');
   set(area, 'grid-auto-flow', 'row');
   set(area, 'grid-auto-rows', 'max-content');
   set(area, 'align-items', 'start');
   set(area, 'align-content', 'start');
-  set(area, 'gap', '12px');
+  set(area, 'gap', '16px');
   set(area, 'overflow-x', 'hidden');
   set(area, 'overflow-y', 'auto');
-  set(area, 'max-height', '50vh');
+  set(area, 'max-height', window.innerWidth <= 700 ? 'none' : '68vh');
   area.querySelectorAll('.choice-card').forEach(card => {
     set(card, 'position', 'relative');
     set(card, 'display', 'flex');
@@ -1433,9 +1433,9 @@ function forceChoiceLayout(root = document) {
     set(card, 'justify-content', 'flex-start');
     set(card, 'width', '100%');
     set(card, 'height', 'auto');
-    set(card, 'min-height', '150px');
+    set(card, 'min-height', '0');
     set(card, 'max-height', 'none');
-    set(card, 'padding', '14px');
+    set(card, 'padding', '20px 22px 19px');
     set(card, 'overflow', 'hidden');
     set(card, 'white-space', 'normal');
     set(card, 'box-sizing', 'border-box');
@@ -1452,7 +1452,7 @@ function forceChoiceLayout(root = document) {
       set(title, 'display', 'flex');
       set(title, 'align-items', 'flex-start');
       set(title, 'justify-content', 'space-between');
-      set(title, 'gap', '8px');
+      set(title, 'gap', '12px');
       set(title, 'margin', '0');
       set(title, 'min-height', '0');
     }
@@ -1460,8 +1460,8 @@ function forceChoiceLayout(root = document) {
     if (titleText) {
       set(titleText, 'display', 'block');
       set(titleText, 'margin', '0');
-      set(titleText, 'font-size', '12px');
-      set(titleText, 'line-height', '1.5');
+      set(titleText, 'font-size', '15px');
+      set(titleText, 'line-height', '1.6');
       set(titleText, 'white-space', 'normal');
       set(titleText, 'word-break', 'keep-all');
       set(titleText, 'overflow-wrap', 'anywhere');
@@ -1472,8 +1472,8 @@ function forceChoiceLayout(root = document) {
       set(meta, 'flex-wrap', 'wrap');
       set(meta, 'justify-content', 'space-between');
       set(meta, 'align-items', 'center');
-      set(meta, 'gap', '6px');
-      set(meta, 'margin', '9px 0 0');
+      set(meta, 'gap', '10px');
+      set(meta, 'margin', '12px 0 0');
       set(meta, 'padding', '0');
       set(meta, 'min-height', '0');
       meta.querySelectorAll('*').forEach(el => {
@@ -1484,11 +1484,11 @@ function forceChoiceLayout(root = document) {
     const reason = card.querySelector('.choice-context');
     if (reason) {
       set(reason, 'display', 'block');
-      set(reason, 'margin', '10px 0 0');
-      set(reason, 'padding', '9px 0 0');
+      set(reason, 'margin', '13px 0 0');
+      set(reason, 'padding', '11px 0 0');
       set(reason, 'border-top', '1px solid rgba(255,255,255,.08)');
-      set(reason, 'font-size', '10px');
-      set(reason, 'line-height', '1.65');
+      set(reason, 'font-size', '13px');
+      set(reason, 'line-height', '1.75');
       set(reason, 'white-space', 'normal');
       set(reason, 'word-break', 'keep-all');
       set(reason, 'overflow-wrap', 'anywhere');

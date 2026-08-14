@@ -550,9 +550,16 @@ function enrichStoryProse(c, guide, baseText, act, step) {
   const texture = STORY_TEXTURE[c.id] || STORY_TEXTURE.ember;
   const sense = texture.sense[(act * 2 + step) % texture.sense.length];
   const npc = texture.npc[(act * 3 + step + 1) % texture.npc.length];
-  const support = step % 2 === 0 ? sense : npc;
-  // One strong scene paragraph plus one sensory/human beat. Avoid stacking exposition blocks.
-  return [baseText, support].filter(Boolean).join('\n\n');
+  const omen = texture.omen[(act * 4 + step + 2) % texture.omen.length];
+  const tone = storyTone[c.id] || [];
+  const actTone = tone[Math.min(act, Math.max(0, tone.length - 1))] || '';
+  // v7.5: scene prose is staged like a table session: concrete scene -> human reaction -> sensory beat -> hook.
+  // Each paragraph has a different job so the player does not read four versions of the same exposition.
+  const humanBeat = npc ? `사건을 설명하는 기록보다 먼저, 눈앞의 사람에게서 변화가 보였다. ${npc}` : '';
+  const sensoryBeat = sense ? `주변을 다시 의식하자 작은 감각 하나가 상황을 더 선명하게 만들었다. ${sense}` : '';
+  const directionBeat = ''; // v7.5: no meta act-summary inside live scene prose
+  const hookBeat = omen ? `그때, 아직 설명되지 않은 징후가 하나 더 남았다. ${omen}` : '';
+  return [baseText, humanBeat, sensoryBeat, directionBeat, hookBeat].filter(Boolean).join('\n\n');
 }
 
 // v6.1.0 - LIVING STORY: explicit scene affordances.
@@ -757,7 +764,7 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
       success:'서두르지 않자 먼저 움직이는 쪽이 나타나 숨은 행동 순서를 확인했다.',failure:'작은 기회는 지나갔지만 반복되는 패턴을 읽었다.'},
     {type:'retreat',stat:'지혜',route:'careful',path:'survival',when:dangerPhase&&(hasHostile||hasObstacle),label:'잠시 물러난다',risk:'낮음',
       success:'안전한 거리로 빠져 상황을 다시 정리하고 다른 접근을 택할 여유를 얻었다.',failure:'후퇴가 늦어 압박이 따라붙었지만 추격 범위를 확실히 알게 됐다.'},
-    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:phase!=='결단',label:'다음 곳으로 간다',risk:'낮음',isTravel:true,
+    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:phase!=='결단',label:hasClue?`${aff.clue}의 흔적을 따라간다`:hasPerson?`${aff.person}이 가리킨 곳으로 간다`:`${guide.place} 안쪽으로 이동한다`,risk:'낮음',isTravel:true,
       success:'확보한 정보에 따라 다음 현장으로 이동했다.',failure:'이동 중 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.'}
   ].filter(item=>item.when);
 
@@ -1037,17 +1044,17 @@ function buildStoryBeats(c){
       const chapter=index+1;
       const phase=phases[step];
       const objective = step===0 ? guide.goal
-        : step===1 ? '처음 발견한 흔적만 믿지 말고 현장을 더 깊게 탐색해 숨겨진 연결점과 인물을 찾아낸다'
-        : step===2 ? '지금 눈앞에 펼쳐진 장면의 중심을 직접 마주하고, 무엇을 먼저 건드려야 하는지 정한다'
-        : step===3 ? '방금 드러난 진실이 맞는지 검증하고 다음 단서를 연결한다'
-        : step===4 ? '위기를 넘기되 핵심 단서와 동료를 잃지 않는다'
-        : '이번 막에서 얻은 진실을 바탕으로 다음 막으로 넘어갈 결정을 만든다';
+        : step===1 ? `${guide.place}에서 앞선 장면과 맞지 않는 흔적을 찾아, ${guide.goal}에 필요한 실제 단서를 확보한다`
+        : step===2 ? `${guide.place}에서 지금 사건을 움직이는 사람·장치·위협 중 무엇을 먼저 상대할지 정하고 주도권을 잡는다`
+        : step===3 ? `${guide.reveal}는 사실인지 확인하고, 거짓이라면 누가 왜 그런 흔적을 만들었는지 밝혀낸다`
+        : step===4 ? `${guide.stakes}는 상황을 막으면서도 지금까지 확보한 사람·단서·장비를 잃지 않는다`
+        : `${guide.reveal}를 알고 난 뒤 누구를 믿고 무엇을 포기할지 결정해 다음 막의 출발점을 만든다`;
       const why = step===0 ? guide.stakes
-        : step===1 ? '처음 보인 답만 따라가면 누군가 의도적으로 남긴 미끼에 끌려갈 수 있다. 이 장면에서 더 깊이 파고들수록 뒤의 선택이 설득력을 갖는다.'
-        : step===2 ? '지금 장면에서 무엇을 선택하느냐가 이후 흐름의 색을 결정한다.'
-        : step===3 ? '이 사실이 맞다면 지금까지의 사건을 바라보는 전제가 바뀐다.'
-        : step===4 ? '여기서의 실패는 단순한 지연이 아니라 이후 장면의 위협과 상태이상을 남길 수 있다.'
-        : '이번 결단이 다음 막에서 누구를 믿고 무엇을 포기할지 결정한다.';
+        : step===1 ? `처음 보인 답만 따르면 ${guide.stakes}는 상황을 막기 어렵다. 여기서 확보한 단서가 뒤 장면의 선택 근거가 된다.`
+        : step===2 ? `지금 누구와 무엇을 먼저 건드리느냐에 따라 같은 장소에서도 만나는 사람과 열리는 통로가 달라진다.`
+        : step===3 ? `이 사실이 맞다면 이전 장면의 의미가 바뀐다. 틀리다면 지금까지 믿은 단서 중 하나가 의도적인 미끼였다는 뜻이다.`
+        : step===4 ? `${guide.stakes}는 위험이 바로 눈앞까지 왔다. 이번 실패는 다음 장면의 부상·경계·시간 부족으로 이어질 수 있다.`
+        : `이번 결단은 다음 막의 시작 조건과 마지막 엔딩에서 되돌아오는 사람·증거·약속을 바꾼다.`;
       const artChapter = chapter;
       const beat = {
         id:`${c.id.toUpperCase()}-STORY-${String(index+1).padStart(2,'0')}`,
@@ -1058,7 +1065,7 @@ function buildStoryBeats(c){
         prompt: `지금 무엇을 할까요? 빠른 행동을 고르거나 직접 방법을 말해도 됩니다.`,
         reveal:guide.reveal, stakes:guide.stakes,
         visual:`${eventStyles[c.id].visuals[(act*2+step)%eventStyles[c.id].visuals.length]} · ${c.acts[act]}`,
-        continuityHook: `이 장면 뒤의 이야기는 현재 선택과 판정 결과에 따라 달라진다. 같은 막에서도 다른 장소·인물·위기로 갈라질 수 있다.`,
+        continuityHook: (()=>{ const t=STORY_TEXTURE[c.id]||STORY_TEXTURE.ember; return t.omen[(act*3+step)%t.omen.length] || guide.stakes; })(),
         branchContext: step === 0 ? { fromAct: Math.max(0, act), summaries: { careful:'앞선 막에서 차분히 모은 기록과 단서가 이번 시작을 더 정교하게 만든다.', bold:'앞선 막의 강행 돌파 여파가 남아 이번 시작은 더 거칠고 급박하다.', empathetic:'앞선 막에서 얻은 신뢰와 협력이 이번 시작의 든든한 발판이 된다.' } } : null,
         roleHooks:{
           '근력': '힘으로 길을 열거나 위험한 존재를 붙잡아 동료가 움직일 시간을 벌 수 있다.',

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;800&family=Noto+Serif+KR:wght@400;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=7810">
+  <link rel="stylesheet" href="/styles.css?v=8000">
 </head>
 <body>
 <div id="app">
@@ -127,8 +127,9 @@
             <div class="role-context" id="storyRoleContext"></div>
             <div class="action-suggestions" id="actionSuggestions"></div>
             <label for="storyActionInput">내 방식으로 행동하기</label>
-            <div class="story-action-row"><input id="storyActionInput" maxlength="180" placeholder="예: 부서진 제단 뒤를 조사해 숨겨진 통로가 있는지 확인한다."><span id="storyActionCount">0/180</span></div>
-            <small>아래 선택지에 없는 방법도 시도할 수 있습니다. 현재 장면에 실제로 존재하는 사람·물건·통로·위험과 연결된 행동만 판정됩니다.</small>
+            <div class="story-action-row"><textarea id="storyActionInput" maxlength="220" rows="3" placeholder="예: 꽃가게 주인에게 오늘 아침에도 나를 본 적이 있는지 묻는다."></textarea><span id="storyActionCount">0/220</span></div>
+            <div class="story-action-help">정답을 고르는 곳이 아닙니다. 보고 싶은 것을 살펴보고, 사람에게 말을 걸고, 물건을 쓰거나, 떠오른 방법을 그대로 시도하세요.</div>
+            <button class="primary story-declare-btn" id="storyActionSubmitBtn" type="button">이렇게 행동한다</button>
             <div class="last-action-result" id="lastActionResult"></div>
           </div>
           <div id="voteTimer" class="vote-timer hidden"></div>
@@ -254,6 +255,6 @@
   </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
-<script type="module" src="/app.js?v=7810"></script>
+<script type="module" src="/app.js?v=8000"></script>
 </body>
 </html>

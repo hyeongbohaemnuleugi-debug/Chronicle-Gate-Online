@@ -22,7 +22,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '7.5.0-public-quality-story';
+const APP_VERSION = '7.6.0-release-story-overhaul';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -1703,6 +1703,8 @@ function parallelRenderedScene(room,campaign,player){
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
     sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node),
     paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:false,
+    dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
+    immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
     linked:parallelLinkedPlayers(room,player).map(p=>({id:p.id,name:p.name,location:room.parallel.playerStates?.[p.id]?.location,locationLabel:parallelLocationLabel(campaign,room.parallel.playerStates?.[p.id]?.location)})),
     worldSummary:parallelWorldSummary(room), clockTick:Number(room.parallel.clockTick||0), ended:Boolean(ps.ended), ending:ps.ending,

@@ -1518,7 +1518,7 @@ function forceChoiceLayout(root = document) {
   set(area, 'max-height', 'min(68vh, 760px)');
   set(area, 'padding', '6px 10px 18px 4px');
   set(area, 'scroll-snap-type', 'y mandatory');
-  set(area, 'scroll-padding-top', '72px');
+  set(area, 'scroll-padding-top', '10px');
   set(area, 'overscroll-behavior', 'contain');
   area.querySelectorAll('.choice-card').forEach(card => {
     const rowStyle = card.classList.contains('choice-row');
@@ -1541,7 +1541,7 @@ function forceChoiceLayout(root = document) {
     set(card, 'overflow', 'visible');
     set(card, 'scroll-snap-align', 'start');
     set(card, 'scroll-snap-stop', 'always');
-    set(card, 'scroll-margin-top', '72px');
+    set(card, 'scroll-margin-top', '10px');
     set(card, 'white-space', 'normal');
     set(card, 'box-sizing', 'border-box');
     Array.from(card.children).forEach(child => {

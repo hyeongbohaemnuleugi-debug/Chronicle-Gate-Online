@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=8250';
+import { DiceTheater } from './dice3d.js?v=8260';
 
-const CLIENT_BUILD = '8.2.5-auth-fx-stable';
+const CLIENT_BUILD = '8.2.6-dice-visible-roll';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });

@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=8260';
+import { DiceTheater } from './dice3d.js?v=8290';
 
-const CLIENT_BUILD = '8.2.6-dice-visible-roll';
+const CLIENT_BUILD = '8.2.9-context-dice-identity';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -1110,7 +1110,7 @@ function renderDiceStore(){
   if(!account)return;
   $('#diceWallet').textContent=`${Number(account.chroniclePoints||0)} CP`;
   const owned=new Set(account.ownedDice||['classic']);
-  $('#diceStoreGrid').innerHTML=(diceCatalog||[]).map(d=>{ const have=owned.has(d.id); const active=account.equippedDice===d.id; return `<article class="dice-skin-card ${active?'equipped':''}" style="--dice-base:${esc(d.base||'#b94d36')};--dice-accent:${esc(d.accent||'#ffe6c6')}"><div class="dice-preview"><i></i><b>20</b></div><div class="dice-skin-copy"><span>${esc(d.rarity||'')}</span><b>${esc(d.name)}</b><small>${d.id==='classic'?'기본 제공':`${Number(d.price||0)} CP`}</small></div><button type="button" data-dice-id="${esc(d.id)}" ${active?'disabled':''}>${active?'장착 중':have?'장착':'구매'}</button></article>`; }).join('');
+  $('#diceStoreGrid').innerHTML=(diceCatalog||[]).map(d=>{ const have=owned.has(d.id); const active=account.equippedDice===d.id; return `<article class="dice-skin-card ${active?'equipped':''}" data-skin="${esc(d.id)}" style="--dice-base:${esc(d.base||'#b94d36')};--dice-accent:${esc(d.accent||'#ffe6c6')}"><div class="dice-preview"><i></i><b>20</b></div><div class="dice-skin-copy"><span>${esc(d.rarity||'')}</span><b>${esc(d.name)}</b><small>${d.id==='classic'?'기본 제공':`${Number(d.price||0)} CP`}</small></div><button type="button" data-dice-id="${esc(d.id)}" ${active?'disabled':''}>${active?'장착 중':have?'장착':'구매'}</button></article>`; }).join('');
   $('#diceStoreGrid').querySelectorAll('[data-dice-id]').forEach(btn=>btn.onclick=()=>{ const id=btn.dataset.diceId; const have=owned.has(id); const event=have?'account:diceEquip':'account:diceBuy'; socket.emit(event,{diceId:id},res=>{ if(!res?.ok)return toast(res?.error||'처리하지 못했습니다.'); account=res.account||account; renderAccountBar(); renderDiceStore(); toast(have?'주사위 외형을 장착했습니다.':'주사위 외형을 구매했습니다.'); }); });
 }
 function showAchievement(payload){ if(!payload?.newEnding)return; const box=$('#achievementToast'); $('#achievementTitle').textContent=payload.endingTitle||'새로운 엔딩'; $('#achievementReward').textContent=`새 엔딩 발견 · 크로니클 포인트 +${Number(payload.pointsAwarded||5)}P`; box.classList.add('show'); setTimeout(()=>box.classList.remove('show'),5200); }
@@ -1583,7 +1583,7 @@ function renderParallelStory() {
   $('#storyRoleContext').innerHTML = '';
   $('#actionSuggestions').innerHTML = '';
 
-  const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 7) : [];
+  const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 6) : [];
   choiceBox.innerHTML = choices.length
     ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>이 장면에서 가능한 행동 ${choices.length}가지</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}상황에 맞지 않는 행동은 표시하지 않습니다.</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)}`}</small></span></button>`).join('')
     : '<div class="choice-empty">현재 장면에서 가능한 행동을 정리하는 중입니다.</div>';
@@ -1614,14 +1614,14 @@ function forceChoiceLayout(root = document) {
   set(area, 'display', 'flex');
   set(area, 'flex-direction', 'column');
   set(area, 'align-items', 'stretch');
-  set(area, 'gap', '12px');
+  set(area, 'gap', '7px');
   // v8.2.8: choiceArea is no longer its own scroll container.
   // The whole story-stage scrolls, so narration, dialogue and choices move together.
   set(area, 'overflow-x', 'visible');
   set(area, 'overflow-y', 'visible');
   set(area, 'height', 'auto');
   set(area, 'max-height', 'none');
-  set(area, 'padding', '6px 4px 56px 4px');
+  set(area, 'padding', '4px 4px 34px 4px');
   set(area, 'scroll-snap-type', 'none');
   set(area, 'scroll-padding-top', '0');
   set(area, 'overscroll-behavior', 'auto');
@@ -1630,9 +1630,9 @@ function forceChoiceLayout(root = document) {
     set(card, 'position', 'relative');
     set(card, 'display', rowStyle ? 'grid' : 'flex');
     if (rowStyle) {
-      set(card, 'grid-template-columns', '42px minmax(0,1fr) auto');
+      set(card, 'grid-template-columns', '30px minmax(0,1fr) 70px');
       set(card, 'align-items', 'center');
-      set(card, 'gap', '14px');
+      set(card, 'gap', '10px');
     } else {
       set(card, 'flex-direction', 'column');
       set(card, 'align-items', 'stretch');
@@ -1640,9 +1640,9 @@ function forceChoiceLayout(root = document) {
     set(card, 'justify-content', 'flex-start');
     set(card, 'width', '100%');
     set(card, 'height', 'auto');
-    set(card, 'min-height', rowStyle ? '132px' : '150px');
+    set(card, 'min-height', rowStyle ? '72px' : '96px');
     set(card, 'max-height', 'none');
-    set(card, 'padding', rowStyle ? '20px 22px' : '18px');
+    set(card, 'padding', rowStyle ? '10px 12px' : '12px');
     set(card, 'overflow', 'visible');
     set(card, 'scroll-snap-align', 'none');
     set(card, 'scroll-snap-stop', 'normal');
@@ -1661,13 +1661,13 @@ function forceChoiceLayout(root = document) {
       const num = card.querySelector('.choice-number');
       const copy = card.querySelector('.choice-copy');
       const check = card.querySelector('.choice-check');
-      if (num) { set(num, 'width', '32px'); set(num, 'height', '32px'); }
-      if (copy) { set(copy, 'display', 'grid'); set(copy, 'gap', '6px'); set(copy, 'min-width', '0'); }
+      if (num) { set(num, 'width', '26px'); set(num, 'height', '26px'); set(num, 'font-size', '11px'); }
+      if (copy) { set(copy, 'display', 'grid'); set(copy, 'gap', '3px'); set(copy, 'min-width', '0'); }
       if (check) { set(check, 'display', 'flex'); set(check, 'flex-direction', 'column'); set(check, 'align-items', 'flex-end'); set(check, 'white-space', 'nowrap'); }
       const copyTitle = copy?.querySelector('b');
-      if (copyTitle) { set(copyTitle, 'font-size', '16px'); set(copyTitle, 'line-height', '1.6'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
+      if (copyTitle) { set(copyTitle, 'font-size', '14px'); set(copyTitle, 'line-height', '1.42'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
       const copyReason = copy?.querySelector('small');
-      if (copyReason) { set(copyReason, 'font-size', '13.5px'); set(copyReason, 'line-height', '1.65'); set(copyReason, 'white-space', 'normal'); set(copyReason, 'word-break', 'keep-all'); }
+      if (copyReason) { set(copyReason, 'font-size', '11px'); set(copyReason, 'line-height', '1.45'); set(copyReason, 'white-space', 'normal'); set(copyReason, 'word-break', 'keep-all'); }
     }
     const title = card.querySelector('.choice-title-line');
     if (title) {
@@ -1682,8 +1682,8 @@ function forceChoiceLayout(root = document) {
     if (titleText) {
       set(titleText, 'display', 'block');
       set(titleText, 'margin', '0');
-      set(titleText, 'font-size', '15px');
-      set(titleText, 'line-height', '1.6');
+      set(titleText, 'font-size', '14px');
+      set(titleText, 'line-height', '1.45');
       set(titleText, 'white-space', 'normal');
       set(titleText, 'word-break', 'keep-all');
       set(titleText, 'overflow-wrap', 'anywhere');
@@ -1695,7 +1695,7 @@ function forceChoiceLayout(root = document) {
       set(meta, 'justify-content', 'space-between');
       set(meta, 'align-items', 'center');
       set(meta, 'gap', '10px');
-      set(meta, 'margin', '12px 0 0');
+      set(meta, 'margin', '7px 0 0');
       set(meta, 'padding', '0');
       set(meta, 'min-height', '0');
       meta.querySelectorAll('*').forEach(el => {
@@ -1706,11 +1706,11 @@ function forceChoiceLayout(root = document) {
     const reason = card.querySelector('.choice-context');
     if (reason) {
       set(reason, 'display', 'block');
-      set(reason, 'margin', '13px 0 0');
-      set(reason, 'padding', '11px 0 0');
+      set(reason, 'margin', '7px 0 0');
+      set(reason, 'padding', '7px 0 0');
       set(reason, 'border-top', '1px solid rgba(255,255,255,.08)');
-      set(reason, 'font-size', '13px');
-      set(reason, 'line-height', '1.75');
+      set(reason, 'font-size', '11px');
+      set(reason, 'line-height', '1.5');
       set(reason, 'white-space', 'normal');
       set(reason, 'word-break', 'keep-all');
       set(reason, 'overflow-wrap', 'anywhere');

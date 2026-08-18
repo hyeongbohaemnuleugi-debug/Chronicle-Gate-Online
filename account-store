@@ -1,0 +1,215 @@
+import crypto from 'crypto';
+
+const rawUrl = process.env.SUPABASE_URL?.trim();
+const secretKey = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
+export const accountPersistenceEnabled = Boolean(rawUrl && secretKey);
+const restBase = rawUrl ? `${rawUrl.replace(/\/$/, '')}/rest/v1` : null;
+
+const memoryAccounts = new Map();
+const memoryEmailIndex = new Map();
+const memorySessions = new Map();
+const memoryEndings = new Map();
+
+const hashToken = token => crypto.createHash('sha256').update(String(token || '')).digest('hex');
+const normalizeEmail = email => String(email || '').trim().toLowerCase().slice(0, 160);
+const normalizeName = name => String(name || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18);
+
+function headers(extra = {}) {
+  return {
+    apikey: secretKey,
+    Authorization: `Bearer ${secretKey}`,
+    'Content-Type': 'application/json',
+    ...extra,
+  };
+}
+
+async function request(path, options = {}) {
+  if (!accountPersistenceEnabled) return { ok: false, disabled: true, data: null };
+  const response = await fetch(`${restBase}${path}`, {
+    ...options,
+    headers: headers(options.headers),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const text = await response.text().catch(() => '');
+  if (!response.ok) throw new Error(`Supabase REST ${response.status}: ${text.slice(0, 500)}`);
+  return { ok: true, data: text ? JSON.parse(text) : null };
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  const key = crypto.scryptSync(String(password), salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
+  return `scrypt$${salt}$${key}`;
+}
+function verifyPassword(password, encoded) {
+  const [algo, salt, expected] = String(encoded || '').split('$');
+  if (algo !== 'scrypt' || !salt || !expected) return false;
+  const actual = hashPassword(password, salt).split('$')[2];
+  try { return crypto.timingSafeEqual(Buffer.from(actual, 'hex'), Buffer.from(expected, 'hex')); }
+  catch { return false; }
+}
+
+export function publicAccount(account) {
+  if (!account) return null;
+  return {
+    id: account.id,
+    email: account.email,
+    displayName: account.display_name || account.displayName || '플레이어',
+    chroniclePoints: Number(account.chronicle_points ?? account.chroniclePoints ?? 0),
+    ownedDice: Array.isArray(account.owned_dice) ? account.owned_dice : (account.ownedDice || ['classic']),
+    equippedDice: account.equipped_dice || account.equippedDice || 'classic',
+    createdAt: account.created_at || account.createdAt || null,
+  };
+}
+
+async function findAccountByEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (!accountPersistenceEnabled) {
+    const id = memoryEmailIndex.get(normalized);
+    return id ? memoryAccounts.get(id) || null : null;
+  }
+  const { data } = await request(`/cg_accounts?email=eq.${encodeURIComponent(normalized)}&select=*&limit=1`, { method: 'GET' });
+  return Array.isArray(data) ? data[0] || null : null;
+}
+
+async function findAccountById(accountId) {
+  if (!accountId) return null;
+  if (!accountPersistenceEnabled) return memoryAccounts.get(accountId) || null;
+  const { data } = await request(`/cg_accounts?id=eq.${encodeURIComponent(accountId)}&select=*&limit=1`, { method: 'GET' });
+  return Array.isArray(data) ? data[0] || null : null;
+}
+
+async function createSession(accountId) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+  if (!accountPersistenceEnabled) {
+    memorySessions.set(tokenHash, { accountId, expiresAt });
+    return { token, expiresAt };
+  }
+  await request('/cg_auth_sessions', {
+    method: 'POST',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({ token_hash: tokenHash, account_id: accountId, expires_at: expiresAt }),
+  });
+  return { token, expiresAt };
+}
+
+export async function registerAccount({ email, password, displayName }) {
+  const normalizedEmail = normalizeEmail(email);
+  const name = normalizeName(displayName);
+  if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error('올바른 이메일 주소를 입력하세요.');
+  if (String(password || '').length < 8 || String(password || '').length > 72) throw new Error('비밀번호는 8~72자로 입력하세요.');
+  if (name.length < 2) throw new Error('닉네임은 2자 이상 입력하세요.');
+  if (await findAccountByEmail(normalizedEmail)) throw new Error('이미 가입된 이메일입니다.');
+  const id = crypto.randomUUID();
+  const row = {
+    id,
+    email: normalizedEmail,
+    display_name: name,
+    password_hash: hashPassword(password),
+    chronicle_points: 0,
+    owned_dice: ['classic'],
+    equipped_dice: 'classic',
+    created_at: new Date().toISOString(),
+  };
+  if (!accountPersistenceEnabled) {
+    memoryAccounts.set(id, row);
+    memoryEmailIndex.set(normalizedEmail, id);
+  } else {
+    await request('/cg_accounts', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(row) });
+  }
+  const session = await createSession(id);
+  return { account: publicAccount(row), ...session };
+}
+
+export async function loginAccount({ email, password }) {
+  const account = await findAccountByEmail(email);
+  if (!account || !verifyPassword(password, account.password_hash)) throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+  const session = await createSession(account.id);
+  return { account: publicAccount(account), ...session };
+}
+
+export async function logoutSession(token) {
+  const tokenHash = hashToken(token);
+  if (!accountPersistenceEnabled) return memorySessions.delete(tokenHash);
+  await request(`/cg_auth_sessions?token_hash=eq.${encodeURIComponent(tokenHash)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+  return true;
+}
+
+export async function getAccountBySessionToken(token) {
+  if (!token) return null;
+  const tokenHash = hashToken(token);
+  if (!accountPersistenceEnabled) {
+    const session = memorySessions.get(tokenHash);
+    if (!session || new Date(session.expiresAt).getTime() < Date.now()) { memorySessions.delete(tokenHash); return null; }
+    return publicAccount(memoryAccounts.get(session.accountId));
+  }
+  const { data } = await request(`/cg_auth_sessions?token_hash=eq.${encodeURIComponent(tokenHash)}&select=account_id,expires_at&limit=1`, { method: 'GET' });
+  const session = Array.isArray(data) ? data[0] : null;
+  if (!session || (session.expires_at && new Date(session.expires_at).getTime() < Date.now())) return null;
+  return publicAccount(await findAccountById(session.account_id));
+}
+
+export async function getAccountProfile(accountId) {
+  return publicAccount(await findAccountById(accountId));
+}
+
+export async function getEndingCollection(accountId) {
+  if (!accountId) return [];
+  if (!accountPersistenceEnabled) return [...(memoryEndings.get(accountId)?.values() || [])].sort((a,b)=>String(a.campaignId).localeCompare(String(b.campaignId)) || a.firstSeenAt-b.firstSeenAt);
+  const { data } = await request(`/cg_endings?account_id=eq.${encodeURIComponent(accountId)}&select=ending_key,campaign_id,ending_title,seen_count,first_seen_at,last_seen_at&order=first_seen_at.asc`, { method: 'GET' });
+  return (Array.isArray(data) ? data : []).map(row => ({
+    endingKey: row.ending_key, campaignId: row.campaign_id, endingTitle: row.ending_title,
+    seenCount: Number(row.seen_count || 0), firstSeenAt: row.first_seen_at, lastSeenAt: row.last_seen_at,
+  }));
+}
+
+export async function recordEnding(accountId, { endingKey, campaignId, endingTitle }) {
+  if (!accountId || !endingKey) return { newEnding:false, pointsAwarded:0, account:await getAccountProfile(accountId) };
+  if (!accountPersistenceEnabled) {
+    let collection = memoryEndings.get(accountId); if (!collection) { collection = new Map(); memoryEndings.set(accountId, collection); }
+    const prior = collection.get(endingKey);
+    const newEnding = !prior;
+    const now = new Date().toISOString();
+    collection.set(endingKey, prior ? { ...prior, seenCount: prior.seenCount + 1, lastSeenAt: now } : { endingKey, campaignId, endingTitle, seenCount:1, firstSeenAt:now, lastSeenAt:now });
+    const acc = memoryAccounts.get(accountId); if (acc) acc.chronicle_points = Number(acc.chronicle_points || 0) + (newEnding ? 5 : 1);
+    return { newEnding, pointsAwarded:newEnding ? 5 : 1, account:publicAccount(acc) };
+  }
+  const { data } = await request('/rpc/record_chronicle_ending', {
+    method: 'POST',
+    body: JSON.stringify({ p_account_id: accountId, p_ending_key: endingKey, p_campaign_id: campaignId, p_ending_title: endingTitle }),
+  });
+  const result = Array.isArray(data) ? data[0] : data;
+  return {
+    newEnding: Boolean(result?.new_ending),
+    pointsAwarded: Number(result?.points_awarded || 0),
+    account: await getAccountProfile(accountId),
+  };
+}
+
+export async function buyDice(accountId, diceId, price) {
+  if (!accountId) throw new Error('로그인이 필요합니다.');
+  if (!accountPersistenceEnabled) {
+    const acc = memoryAccounts.get(accountId); if (!acc) throw new Error('계정을 찾을 수 없습니다.');
+    acc.owned_dice ||= ['classic'];
+    if (acc.owned_dice.includes(diceId)) return publicAccount(acc);
+    if (Number(acc.chronicle_points || 0) < price) throw new Error('크로니클 포인트가 부족합니다.');
+    acc.chronicle_points -= price; acc.owned_dice.push(diceId); return publicAccount(acc);
+  }
+  const { data } = await request('/rpc/purchase_chronicle_dice', { method: 'POST', body: JSON.stringify({ p_account_id: accountId, p_dice_id: diceId, p_price: price }) });
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result?.ok) throw new Error(result?.message || '주사위를 구매하지 못했습니다.');
+  return await getAccountProfile(accountId);
+}
+
+export async function equipDice(accountId, diceId) {
+  const account = await findAccountById(accountId);
+  if (!account) throw new Error('계정을 찾을 수 없습니다.');
+  const owned = Array.isArray(account.owned_dice) ? account.owned_dice : ['classic'];
+  if (!owned.includes(diceId)) throw new Error('보유하지 않은 주사위입니다.');
+  if (!accountPersistenceEnabled) {
+    account.equipped_dice = diceId;
+    return publicAccount(account);
+  }
+  await request(`/cg_accounts?id=eq.${encodeURIComponent(accountId)}`, { method:'PATCH', headers:{ Prefer:'return=minimal' }, body:JSON.stringify({ equipped_dice:diceId }) });
+  return await getAccountProfile(accountId);
+}

@@ -1005,7 +1005,20 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 #choiceArea .main-story-choice:hover:not(:disabled){border-color:rgba(231,186,91,.58)!important;background:rgba(231,186,91,.05)!important;transform:none!important}#choiceArea .main-story-choice .choice-copy b{font-size:14.5px!important;line-height:1.5!important;margin:0!important}#choiceArea .main-story-choice .choice-copy small{display:block!important;margin-top:6px!important;color:rgba(255,255,255,.42)!important;font-size:10.5px!important;line-height:1.45!important}#choiceArea .main-story-choice .choice-check{justify-self:end!important;text-align:right!important;font-size:10px!important;color:rgba(255,255,255,.55)!important}#choiceArea .main-story-choice .choice-check small{display:block!important;margin-top:4px!important;color:rgba(255,255,255,.32)!important}
 #storyActionBox{margin-top:14px!important;border-style:dashed!important;border-color:rgba(255,255,255,.11)!important;background:rgba(255,255,255,.012)!important;box-shadow:none!important}#storyActionBox label{color:rgba(255,255,255,.62)!important}.last-action-result.action-error,.last-action-result.action-info{display:block!important;margin-top:10px!important;padding:10px 12px!important;border-radius:10px!important;line-height:1.55!important}.last-action-result.action-error{background:rgba(255,110,110,.07)!important;border:1px solid rgba(255,110,110,.22)!important}.last-action-result.action-info{background:rgba(117,184,226,.06)!important;border:1px solid rgba(117,184,226,.18)!important}.last-action-result b{display:block!important;margin-bottom:4px!important;font-size:11px!important}.last-action-result p{margin:0!important;font-size:12px!important}.last-action-result small{display:block!important;margin-top:5px!important;color:rgba(255,255,255,.45)!important;font-size:10.5px!important}
 @media(max-width:760px){.stable-story-v810 .scene-narration,.stable-story-v810 .scene-narration.lead{font-size:14.5px!important}.main-choice-head{display:block!important}.main-choice-head small{display:block!important;margin-top:5px!important}#choiceArea{max-height:68vh!important;padding-bottom:140px!important}#choiceArea .main-story-choice{grid-template-columns:34px minmax(0,1fr)!important;min-height:126px!important;padding:15px!important}#choiceArea .main-story-choice .choice-check{grid-column:2!important;justify-self:start!important;text-align:left!important}}
-\n\n/* v8.1.1 - contextual choice only: no free-form input, more readable valid choices */\n#storyActionBox{display:none!important}\n#choiceArea{display:block!important;max-height:68vh!important;overflow-y:auto!important;overscroll-behavior:contain!important;scroll-snap-type:y proximity!important;padding:0 8px 38vh 0!important;margin-top:10px!important}\n#choiceArea .main-choice-head{position:sticky!important;top:0!important;z-index:4!important;margin:0 0 10px!important;padding:12px 14px!important;border:1px solid rgba(255,255,255,.09)!important;border-radius:12px!important;background:rgba(10,11,14,.985)!important;backdrop-filter:blur(10px)!important}\n#choiceArea .main-choice-head b{font-size:13px!important;line-height:1.45!important;color:rgba(255,255,255,.92)!important}\n#choiceArea .main-choice-head small{font-size:10.5px!important;line-height:1.5!important;color:rgba(255,255,255,.48)!important}\n#choiceArea .main-story-choice{scroll-snap-align:start!important;scroll-snap-stop:always!important;min-height:118px!important;margin-bottom:12px!important;padding:18px 20px!important}\n#choiceArea .main-story-choice .choice-copy b{font-size:15px!important;line-height:1.55!important}\n#choiceArea .main-story-choice .choice-copy small{display:block!important;margin-top:7px!important;font-size:11px!important;line-height:1.5!important;color:rgba(255,255,255,.48)!important}\n#choiceArea .parallel-direct-choice .choice-copy small{max-width:760px!important}\n@media(max-width:760px){#choiceArea{max-height:72vh!important;padding-bottom:42vh!important}#choiceArea .main-choice-head{position:static!important}#choiceArea .main-story-choice{min-height:132px!important;padding:16px!important}}\n
+
+
+/* v8.1.1 - contextual choice only: no free-form input, more readable valid choices */
+#storyActionBox{display:none!important}
+#choiceArea{display:block!important;max-height:68vh!important;overflow-y:auto!important;overscroll-behavior:contain!important;scroll-snap-type:y proximity!important;padding:0 8px 38vh 0!important;margin-top:10px!important}
+#choiceArea .main-choice-head{position:sticky!important;top:0!important;z-index:4!important;margin:0 0 10px!important;padding:12px 14px!important;border:1px solid rgba(255,255,255,.09)!important;border-radius:12px!important;background:rgba(10,11,14,.985)!important;backdrop-filter:blur(10px)!important}
+#choiceArea .main-choice-head b{font-size:13px!important;line-height:1.45!important;color:rgba(255,255,255,.92)!important}
+#choiceArea .main-choice-head small{font-size:10.5px!important;line-height:1.5!important;color:rgba(255,255,255,.48)!important}
+#choiceArea .main-story-choice{scroll-snap-align:start!important;scroll-snap-stop:always!important;min-height:118px!important;margin-bottom:12px!important;padding:18px 20px!important}
+#choiceArea .main-story-choice .choice-copy b{font-size:15px!important;line-height:1.55!important}
+#choiceArea .main-story-choice .choice-copy small{display:block!important;margin-top:7px!important;font-size:11px!important;line-height:1.5!important;color:rgba(255,255,255,.48)!important}
+#choiceArea .parallel-direct-choice .choice-copy small{max-width:760px!important}
+@media(max-width:760px){#choiceArea{max-height:72vh!important;padding-bottom:42vh!important}#choiceArea .main-choice-head{position:static!important}#choiceArea .main-story-choice{min-height:132px!important;padding:16px!important}}
+
 /* v8.2.0 account, progression, collection and contextual-choice polish */
 .home-account{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:22px 0 4px;padding:13px 15px;border:1px solid rgba(255,255,255,.1);background:rgba(7,8,12,.68);backdrop-filter:blur(14px);max-width:720px}
 .account-copy{display:flex;flex-direction:column;gap:4px;min-width:0}.account-copy span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.account-copy b{font-family:var(--tech);font-size:11px;letter-spacing:.12em;color:var(--accent)}
@@ -1019,4 +1032,84 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 #storyActionBox{display:none!important}
 #choiceArea{max-height:72vh!important;overflow-y:auto!important;scroll-snap-type:y mandatory!important;scroll-padding-top:12px!important;padding:12px 8px 34vh 0!important;overscroll-behavior:contain}.main-choice-head{position:static!important;background:rgba(10,11,15,.96)!important;margin-bottom:8px!important}.main-story-choice{scroll-snap-align:start!important;scroll-snap-stop:always!important;min-height:142px!important}.choice-copy{align-self:stretch}.choice-copy b{font-size:16px!important;line-height:1.55!important}.choice-reason{display:block!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid rgba(255,255,255,.07)!important;color:rgba(235,238,244,.67)!important;font-size:12.5px!important;line-height:1.65!important;white-space:normal!important;word-break:keep-all!important}.choice-check{align-self:center!important}
 @media(max-width:720px){.home-account{align-items:flex-start;flex-direction:column}.account-actions{justify-content:flex-start}.collection-grid,.dice-store-grid{grid-template-columns:1fr}.dice-skin-card{grid-template-columns:62px minmax(0,1fr) auto}.dice-preview{width:56px;height:56px}.ending-point-card{grid-template-columns:1fr}.main-story-choice{grid-template-columns:36px minmax(0,1fr)!important}.main-story-choice .choice-check{grid-column:2;align-items:flex-start!important;margin-top:6px}.account-card{padding:24px 18px}}
-\n\n/* v8.2.8 - unified story scroll\n   Narration + dialogue + choices share the story-stage scrollbar. */\n#storyView .story-stage{\n  min-height:0!important;\n  overflow-y:auto!important;\n  overflow-x:hidden!important;\n  overscroll-behavior-y:contain!important;\n  scroll-behavior:smooth!important;\n  padding-bottom:56px!important;\n}\n#storyView #choiceArea{\n  display:flex!important;\n  flex-direction:column!important;\n  width:100%!important;\n  height:auto!important;\n  min-height:0!important;\n  max-height:none!important;\n  overflow:visible!important;\n  overscroll-behavior:auto!important;\n  scroll-snap-type:none!important;\n  scroll-padding:0!important;\n  padding:6px 4px 72px!important;\n  margin-top:14px!important;\n}\n#storyView #choiceArea .choice-card,\n#storyView #choiceArea .choice-card.choice-row{\n  flex:0 0 auto!important;\n  scroll-snap-align:none!important;\n  scroll-snap-stop:normal!important;\n  scroll-margin:0!important;\n}\n#storyView #choiceArea .main-choice-head{\n  flex:0 0 auto!important;\n}\n@media(max-width:760px){\n  #storyView .story-stage{padding-bottom:42px!important}\n  #storyView #choiceArea{padding-bottom:64px!important}\n}\n
+
+
+/* v8.2.8 - unified story scroll
+   Narration + dialogue + choices share the story-stage scrollbar. */
+#storyView .story-stage{
+  min-height:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior-y:contain!important;
+  scroll-behavior:smooth!important;
+  padding-bottom:56px!important;
+}
+#storyView #choiceArea{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  overscroll-behavior:auto!important;
+  scroll-snap-type:none!important;
+  scroll-padding:0!important;
+  padding:6px 4px 72px!important;
+  margin-top:14px!important;
+}
+#storyView #choiceArea .choice-card,
+#storyView #choiceArea .choice-card.choice-row{
+  flex:0 0 auto!important;
+  scroll-snap-align:none!important;
+  scroll-snap-stop:normal!important;
+  scroll-margin:0!important;
+}
+#storyView #choiceArea .main-choice-head{
+  flex:0 0 auto!important;
+}
+@media(max-width:760px){
+  #storyView .story-stage{padding-bottom:42px!important}
+  #storyView #choiceArea{padding-bottom:64px!important}
+}
+
+
+/* v8.2.9 - compact contextual choices + distinct dice collection previews */
+#storyView #choiceArea{gap:7px!important;padding:4px 4px 38px!important;margin-top:10px!important}
+#storyView #choiceArea .main-choice-head{margin:0 0 3px!important;padding:8px 10px!important;border-radius:10px!important}
+#storyView #choiceArea .main-choice-head span{font-size:9px!important}
+#storyView #choiceArea .main-choice-head b{font-size:12px!important;line-height:1.35!important}
+#storyView #choiceArea .main-choice-head small{font-size:9.5px!important;line-height:1.35!important}
+#storyView #choiceArea .choice-card.choice-row,
+#storyView #choiceArea .main-story-choice{
+  grid-template-columns:30px minmax(0,1fr) 70px!important;
+  gap:10px!important;
+  min-height:72px!important;
+  padding:10px 12px!important;
+  margin:0!important;
+  border-radius:11px!important;
+}
+#storyView #choiceArea .choice-number{width:26px!important;height:26px!important;font-size:11px!important}
+#storyView #choiceArea .choice-copy{gap:3px!important}
+#storyView #choiceArea .choice-copy>b{font-size:14px!important;line-height:1.42!important}
+#storyView #choiceArea .choice-copy>small,
+#storyView #choiceArea .choice-reason{margin:0!important;padding:0!important;border:0!important;font-size:11px!important;line-height:1.45!important;color:rgba(235,238,244,.58)!important}
+#storyView #choiceArea .choice-check{font-size:10.5px!important;line-height:1.3!important;align-self:center!important}
+#storyView #choiceArea .choice-check small{font-size:9.5px!important}
+@media(max-width:760px){
+  #storyView #choiceArea .choice-card.choice-row,#storyView #choiceArea .main-story-choice{grid-template-columns:28px minmax(0,1fr)!important;min-height:74px!important;padding:10px!important;gap:8px!important}
+  #storyView #choiceArea .choice-check{grid-column:2!important;display:flex!important;flex-direction:row!important;gap:6px!important;justify-self:start!important;text-align:left!important}
+}
+.dice-skin-card[data-skin]{position:relative;overflow:hidden}
+.dice-skin-card[data-skin] .dice-preview i{transition:.2s ease}
+.dice-skin-card[data-skin="nebula_glass"] .dice-preview i{opacity:.72;filter:drop-shadow(0 0 10px #9d8cff);clip-path:polygon(50% 0,93% 24%,84% 78%,50% 100%,14% 78%,6% 25%)}
+.dice-skin-card[data-skin="abyss_pearl"] .dice-preview i{border-radius:38%;filter:drop-shadow(0 0 12px #8eefff)}
+.dice-skin-card[data-skin="twilight_gilt"] .dice-preview i{outline:3px double #ffd67a;outline-offset:-9px}
+.dice-skin-card[data-skin="clockwork"] .dice-preview:after{content:"⚙";position:absolute;font-size:54px;color:#f5cf84;opacity:.28;animation:dicePreviewSpin 8s linear infinite}
+.dice-skin-card[data-skin="aurora_crystal"] .dice-preview i{clip-path:polygon(50% 0,79% 18%,100% 51%,75% 83%,50% 100%,22% 80%,0 51%,22% 17%);filter:drop-shadow(0 0 12px #baffd8)}
+.dice-skin-card[data-skin="eclipse_obsidian"] .dice-preview:after{content:"";position:absolute;width:46px;height:46px;border-radius:50%;border:4px solid #d998ff;border-left-color:transparent;filter:drop-shadow(0 0 9px #9d3aff)}
+.dice-skin-card[data-skin="starseed"] .dice-preview:after{content:"✦";position:absolute;font-size:52px;color:#f8f29b;opacity:.45;text-shadow:0 0 15px #f8f29b}
+.dice-skin-card[data-skin="neon_prism"] .dice-preview i{outline:2px solid #58fff0;filter:drop-shadow(5px 0 0 #ff55e8) drop-shadow(-5px 0 0 #7f71ff)}
+.dice-skin-card[data-skin="crown_steel"] .dice-preview:after{content:"♛";position:absolute;top:-4px;font-size:27px;color:#ffe29b;text-shadow:0 0 10px #ffd16b}
+.dice-skin-card[data-skin="rift_shard"] .dice-preview i{clip-path:polygon(50% 0,87% 15%,76% 42%,100% 58%,70% 75%,50% 100%,31% 74%,0 61%,23% 42%,12% 17%);filter:drop-shadow(0 0 12px #ff8ff1)}
+@keyframes dicePreviewSpin{to{transform:rotate(360deg)}}

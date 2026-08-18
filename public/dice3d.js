@@ -51,9 +51,13 @@ export class DiceTheater {
     this.camera.updateProjectionMatrix();
   }
 
-  makeLabel(text, size = .34, color = '#fff9ec') {
+  makeLabel(text, size = .34, color = '#fff9ec', opts = {}) {
     const c = document.createElement('canvas'); c.width = 192; c.height = 192;
-    const x = c.getContext('2d'); x.clearRect(0, 0, 192, 192); x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '800 88px Georgia'; x.shadowColor = 'rgba(0,0,0,.9)'; x.shadowBlur = 10; x.fillStyle = color; x.fillText(text, 96, 104);
+    const x = c.getContext('2d'); x.clearRect(0, 0, 192, 192); x.textAlign = 'center'; x.textBaseline = 'middle';
+    const font = opts.font || 'Georgia'; const weight = opts.weight || '800';
+    x.font = `${weight} ${opts.fontSize || 88}px ${font}`; x.shadowColor = opts.shadow || 'rgba(0,0,0,.9)'; x.shadowBlur = opts.shadowBlur ?? 10;
+    if(opts.stroke){ x.lineWidth=opts.strokeWidth||5; x.strokeStyle=opts.stroke; x.strokeText(text,96,104); }
+    x.fillStyle = color; x.fillText(text, 96, 104);
     const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide, color: 0xffffff });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
@@ -219,6 +223,15 @@ export class DiceTheater {
         const g = new THREE.Mesh(new THREE.TorusGeometry(1.9 + i * .22, .025, 8, 16), m); g.userData.die = die; g.userData.gear = true; g.userData.speed = i ? -1.6 : 1.2; g.rotation.x = i ? .7 : 1.1; this.fxGroup.add(g); this.fxOrbiters.push(g);
       }
     }
+    if (profile.theme === 'nebula') { this.addOrbiter(die,0xd9d0ff,2.15,.55,.25,0,.18); this.addOrbiter(die,0x8c78ff,2.55,-.42,-.15,2.1,.13); }
+    if (profile.theme === 'abyss') { this.addHalo(die,0x8eefff,2.0,.18); this.addOrbiter(die,0xbaf8ff,1.8,.35,-.55,1.2,.14); }
+    if (profile.theme === 'gilt') { const h=this.addHalo(die,0xffd67a,2.05,.32); h.rotation.x=.35; this.addOrbiter(die,0xff8c5a,2.25,.62,.3,.5,.14); }
+    if (profile.theme === 'aurora') { const h=this.addHalo(die,0xbaffd8,2.15,.22); h.rotation.y=.85; this.addOrbiter(die,0x79bfff,2.45,.48,.35,2.4,.16); }
+    if (profile.theme === 'eclipse') { const h=this.addHalo(die,0xd998ff,2.25,.28); h.rotation.x=.82; this.addOrbiter(die,0x4c1764,1.75,-.35,0,1.7,.22); }
+    if (profile.theme === 'starseed') { this.addOrbiter(die,0xf8f29b,2.0,.42,.45,.3,.18); this.addOrbiter(die,0x8ed88a,2.35,-.3,-.25,2.7,.13); }
+    if (profile.theme === 'neon') { [0x58fff0,0xff55e8,0x7f71ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.85+i*.18,.23);h.rotation.set(.35*i,.55*i,.8*i);}); }
+    if (profile.theme === 'crown') { const h=this.addHalo(die,0xffe29b,2.15,.34);h.rotation.x=.45;this.addOrbiter(die,0xffc851,2.45,.72,.4,0,.16); }
+    if (profile.theme === 'rift') { for(let i=0;i<3;i++){const h=this.addHalo(die,i%2?0xffbcf5:0x8b4dff,1.9+i*.22,.2);h.rotation.set(.4+i*.5,.2+i*.7,.3+i*.35);} }
   }
 
   trailFx(die, profile, dt) {
@@ -239,6 +252,14 @@ export class DiceTheater {
     }
     if (profile.theme === 'abyss' && Math.random() < .45) this.addSprite(basePos.clone().add(new THREE.Vector3(0, -.5, 0)), 0xa7f4ff, .13, .7, new THREE.Vector3((Math.random()-.5)*.2, .7+Math.random()*.5, (Math.random()-.5)*.2), -.05);
     if (profile.theme === 'starseed' && Math.random() < .4) this.addSprite(basePos.clone(), 0xf8f29b, .12, .65, new THREE.Vector3((Math.random()-.5)*.4, .3+Math.random()*.25, (Math.random()-.5)*.4), .25);
+    if (profile.theme === 'nebula' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xd9d0ff:0x806dff,.14,.75,new THREE.Vector3(-.25,.12,(Math.random()-.5)*.5),.05);
+    if (profile.theme === 'gilt' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xffd67a:0xff7b55,.13,.5,new THREE.Vector3(-.6,.35,(Math.random()-.5)*.25),.5);
+    if (profile.theme === 'clockwork' && Math.random()<.4) this.shardBurst(basePos.clone(),0xf5cf84,2,.42);
+    if (profile.theme === 'aurora' && Math.random()<.42) this.addSprite(basePos.clone(),Math.random()<.5?0xbaffd8:0x79bfff,.18,.8,new THREE.Vector3(-.25,.65,(Math.random()-.5)*.35),-.08);
+    if (profile.theme === 'eclipse' && Math.random()<.35) this.addSprite(basePos.clone(),0xd998ff,.16,.7,new THREE.Vector3(-.2,.05,(Math.random()-.5)*.3),.1);
+    if (profile.theme === 'neon' && Math.random()<.65) this.addSprite(basePos.clone(),[0x58fff0,0xff55e8,0x7f71ff][Math.floor(Math.random()*3)],.15,.48,new THREE.Vector3(-.75,.1,(Math.random()-.5)*.25),.05);
+    if (profile.theme === 'crown' && Math.random()<.45) this.addSprite(basePos.clone(),0xffe29b,.13,.55,new THREE.Vector3(-.4,.45,(Math.random()-.5)*.25),.4);
+    if (profile.theme === 'rift' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xffbcf5:0x8b4dff,.17,.55,new THREE.Vector3(-.45,(Math.random()-.5)*.4,(Math.random()-.5)*.7),.1);
   }
 
   landingFx(profile) {
@@ -290,6 +311,11 @@ export class DiceTheater {
       this.cloudBurst(new THREE.Vector3(0,-1.05,0),[0xbaffd8,0x79bfff,0xffd9ff],1050,3.2,1.8,.11,1.8,.55);
       for (let i=0;i<28;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4,-1.2,(Math.random()-.5)*2.6), i%2?0xbaffd8:0x79bfff, .24, 1.3, new THREE.Vector3((Math.random()-.5)*.3,1.2+Math.random()*1.7,(Math.random()-.5)*.25), -.05);
     }
+    if (profile.theme === 'nebula') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0xd9d0ff,0x806dff,0xffb7f5],760,3.6,1.45,.1,.9,.75); for(let i=0;i<5;i++) this.ring(p.clone().add(new THREE.Vector3(0,.04*i,0)),i%2?0xd9d0ff:0x806dff,.12+i*.05,3.6+i*.6,.9+i*.08,.32,Math.PI/2*(i%2)); }
+    if (profile.theme === 'abyss') { for(let i=0;i<34;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3,-1.25,(Math.random()-.5)*2),0xbaf8ff,.1+Math.random()*.12,1.2+Math.random()*.6,new THREE.Vector3((Math.random()-.5)*.15,.75+Math.random()*1.3,(Math.random()-.5)*.15),-.03); this.ring(p,0x6ee6ff,.2,5.2,1.15,.48); }
+    if (profile.theme === 'gilt') { this.cloudBurst(new THREE.Vector3(0,-.9,0),[0xffd67a,0xff8c5a,0xfff2c2],620,4.3,1.05,.09,1.0,.45); for(let i=0;i<3;i++) this.ring(p.clone().add(new THREE.Vector3(0,.025*i,0)),i===1?0xff7d50:0xffd67a,.16+i*.08,4.5+i*.8,.75+i*.12,.5); }
+    if (profile.theme === 'clockwork') { for(let i=0;i<4;i++){const m=new THREE.MeshBasicMaterial({color:i%2?0xb78948:0xf5cf84,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false});const g=new THREE.Mesh(new THREE.TorusGeometry(.65+i*.18,.035,8,18),m);g.position.set(0,-.7+i*.12,0);g.rotation.set(Math.PI/2,i*.4,i*.6);this.fxGroup.add(g);this.fxItems.push({obj:g,life:1.1,maxLife:1.1,kind:'crown'});} this.shardBurst(new THREE.Vector3(0,-.65,0),0xf5cf84,18,1.0); }
+    if (profile.theme === 'starseed') { this.cloudBurst(new THREE.Vector3(0,-.85,0),[0xf8f29b,0x8ed88a,0xffffff],780,3.6,1.55,.1,1.2,.5); for(let i=0;i<18;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3.4,-1.05,(Math.random()-.5)*2.5),i%3?0xf8f29b:0x8ed88a,.16,1.35,new THREE.Vector3((Math.random()-.5)*.25,.7+Math.random()*1.4,(Math.random()-.5)*.25),.1); }
   }
 
   tickFx(dt, elapsed = 0) {
@@ -330,6 +356,54 @@ export class DiceTheater {
     }
   }
 
+  skinVisual(style={}) {
+    const id=String(style?.id||'classic');
+    const map={
+      classic:{font:'Georgia',weight:'800',scale:1,edge:'#ffe6c6'},
+      nebula_glass:{font:'Georgia',weight:'700',scale:1.02,edge:'#d9d0ff',shell:'glass-stars'},
+      abyss_pearl:{font:'Trebuchet MS',weight:'800',scale:1.04,edge:'#baf8ff',shell:'pearl-bubble'},
+      twilight_gilt:{font:'Georgia',weight:'900',scale:1.02,edge:'#ffd67a',shell:'gilded-studs'},
+      clockwork:{font:'Courier New',weight:'900',scale:1.03,edge:'#f5cf84',shell:'mechanical-gears'},
+      aurora_crystal:{font:'Arial',weight:'800',scale:1.05,edge:'#baffd8',shell:'crystal-spires'},
+      eclipse_obsidian:{font:'Georgia',weight:'900',scale:1.04,edge:'#d998ff',shell:'eclipse-core'},
+      starseed:{font:'Georgia',weight:'900',scale:1.03,edge:'#f8f29b',shell:'living-stars'},
+      neon_prism:{font:'Arial Black',weight:'900',scale:1.04,edge:'#58fff0',shell:'neon-wire'},
+      crown_steel:{font:'Georgia',weight:'900',scale:1.05,edge:'#ffe29b',shell:'royal-spikes'},
+      rift_shard:{font:'Trebuchet MS',weight:'900',scale:1.06,edge:'#ffbcf5',shell:'fractured-shell'},
+    };
+    return map[id]||map.classic;
+  }
+
+  decorateDie(group, skin={}, sides=20) {
+    const visual=this.skinVisual(skin); const id=String(skin.id||'classic');
+    group.userData.skinId=id; group.scale.setScalar(visual.scale||1);
+    const accent=new THREE.Color(skin.accent||'#ffe6c6'); const emissive=new THREE.Color(skin.emissive||skin.accent||'#ffffff');
+    const shellGeom=()=>sides===6?new THREE.BoxGeometry(2.34,2.34,2.34):new THREE.IcosahedronGeometry(1.62,0);
+    const addWire=(color,opacity=.5,scale=1)=>{ const e=new THREE.LineSegments(new THREE.EdgesGeometry(shellGeom()),new THREE.LineBasicMaterial({color,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false})); e.scale.setScalar(scale); e.renderOrder=15; group.add(e); return e; };
+    const addPoints=(count,color,radius,size=.045)=>{ const arr=new Float32Array(count*3); for(let i=0;i<count;i++){ const u=Math.random(),v=Math.random(),th=u*Math.PI*2,ph=Math.acos(2*v-1),r=radius*(.55+Math.random()*.45); arr[i*3]=Math.sin(ph)*Math.cos(th)*r;arr[i*3+1]=Math.cos(ph)*r;arr[i*3+2]=Math.sin(ph)*Math.sin(th)*r; } const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(arr,3));const m=new THREE.PointsMaterial({map:this.getGlowTexture(),color,size,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false});const p=new THREE.Points(g,m);p.renderOrder=16;group.add(p);return p; };
+    if(id==='nebula_glass'){
+      const shell=new THREE.Mesh(shellGeom(),new THREE.MeshPhysicalMaterial({color:skin.base,transparent:true,opacity:.16,roughness:.02,metalness:.05,transmission:.45,clearcoat:1.5,depthWrite:false}));shell.scale.setScalar(1.035);shell.renderOrder=10;group.add(shell);addPoints(54,accent,1.36,.055);addWire(accent,.42,1.035);
+    } else if(id==='abyss_pearl'){
+      const pearl=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.62:1.72,24,16),new THREE.MeshPhysicalMaterial({color:skin.base,transparent:true,opacity:.08,roughness:.08,metalness:.15,clearcoat:1.6,depthWrite:false}));pearl.renderOrder=9;group.add(pearl);for(let i=0;i<10;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.07+Math.random()*.05,10,8),new THREE.MeshBasicMaterial({color:accent,transparent:true,opacity:.55,depthWrite:false}));const a=Math.random()*Math.PI*2;b.position.set(Math.cos(a)*(1.45+Math.random()*.22),-.7+Math.random()*1.5,Math.sin(a)*(1.45+Math.random()*.22));group.add(b);} addWire(accent,.35,1.01);
+    } else if(id==='twilight_gilt'){
+      addWire(0xffd67a,.95,1.01); const verts=(sides===6?[[1,1,1],[-1,1,1],[1,-1,1],[1,1,-1],[-1,-1,1],[-1,1,-1],[1,-1,-1],[-1,-1,-1]]:new THREE.IcosahedronGeometry(1.58,0).attributes.position.array); if(Array.isArray(verts)){for(const v of verts){const m=new THREE.Mesh(new THREE.SphereGeometry(.075,10,8),new THREE.MeshStandardMaterial({color:0xffd67a,metalness:.95,roughness:.15}));m.position.set(v[0]*1.12,v[1]*1.12,v[2]*1.12);group.add(m);}} else {for(let i=0;i<verts.length;i+=9){const m=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),new THREE.MeshStandardMaterial({color:0xffd67a,metalness:.95,roughness:.15}));m.position.set(verts[i],verts[i+1],verts[i+2]).normalize().multiplyScalar(1.64);group.add(m);}}
+    } else if(id==='clockwork'){
+      for(let r=0;r<3;r++){const tor=new THREE.Mesh(new THREE.TorusGeometry(1.58+r*.08,.035,8,32),new THREE.MeshStandardMaterial({color:r%2?0x8d6b39:0xf5cf84,metalness:.95,roughness:.3}));tor.rotation.set(r===0?0:Math.PI/2,r===2?Math.PI/2:0,r*.55);group.add(tor);} for(let i=0;i<12;i++){const a=i/12*Math.PI*2;const tooth=new THREE.Mesh(new THREE.BoxGeometry(.14,.08,.12),new THREE.MeshStandardMaterial({color:0xd5ad66,metalness:.9,roughness:.32}));tooth.position.set(Math.cos(a)*1.72,Math.sin(a)*1.72,0);tooth.rotation.z=a;group.add(tooth);} addWire(0xf5cf84,.55,1.0);
+    } else if(id==='aurora_crystal'){
+      addWire(0xbaffd8,.7,1.025); for(let i=0;i<14;i++){const a=i/14*Math.PI*2;const spike=new THREE.Mesh(new THREE.ConeGeometry(.07,.38,5),new THREE.MeshPhysicalMaterial({color:i%2?0xbaffd8:0x79bfff,transparent:true,opacity:.55,transmission:.2,roughness:.05,depthWrite:false}));const dir=new THREE.Vector3(Math.cos(a),((i%3)-1)*.42,Math.sin(a)).normalize();spike.position.copy(dir.clone().multiplyScalar(1.65));spike.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);group.add(spike);}
+    } else if(id==='eclipse_obsidian'){
+      const core=new THREE.Mesh(new THREE.SphereGeometry(1.16,24,16),new THREE.MeshStandardMaterial({color:0x050409,roughness:.1,metalness:.75,emissive:0x26062e,emissiveIntensity:.7}));group.add(core);const cres=new THREE.Mesh(new THREE.TorusGeometry(1.73,.075,12,64,Math.PI*1.45),new THREE.MeshBasicMaterial({color:0xd998ff,transparent:true,opacity:.78,blending:THREE.AdditiveBlending,depthWrite:false}));cres.rotation.set(.65,.25,.2);group.add(cres);addWire(0x8c54a8,.5,1.02);
+    } else if(id==='starseed'){
+      addWire(0xf8f29b,.5,1.01);addPoints(26,0xf8f29b,1.52,.07);for(let i=0;i<7;i++){const leaf=new THREE.Mesh(new THREE.OctahedronGeometry(.11,0),new THREE.MeshBasicMaterial({color:i%2?0x8dd884:0xf8f29b,transparent:true,opacity:.72,depthWrite:false}));const a=i/7*Math.PI*2;leaf.position.set(Math.cos(a)*1.62,.28*Math.sin(a*2),Math.sin(a)*1.62);group.add(leaf);}
+    } else if(id==='neon_prism'){
+      [[0x58fff0,1.0],[0xff55e8,1.025],[0x7f71ff,1.05]].forEach(([col,sc],i)=>{const e=addWire(col,.72-i*.12,sc);e.position.set((i-1)*.025,0,(1-i)*.02);});
+    } else if(id==='crown_steel'){
+      addWire(0xffe29b,.92,1.01);for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const dir=new THREE.Vector3(Math.cos(a),.35+Math.sin(a*2)*.15,Math.sin(a)).normalize();const spike=new THREE.Mesh(new THREE.ConeGeometry(.095,.52,4),new THREE.MeshStandardMaterial({color:0xffe29b,metalness:1,roughness:.15}));spike.position.copy(dir.clone().multiplyScalar(1.68));spike.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);group.add(spike);} const band=new THREE.Mesh(new THREE.TorusGeometry(1.61,.055,10,48),new THREE.MeshStandardMaterial({color:0xcaa45c,metalness:1,roughness:.18}));band.rotation.x=Math.PI/2;group.add(band);
+    } else if(id==='rift_shard'){
+      addWire(0xffbcf5,.7,1.02);for(let i=0;i<11;i++){const shard=new THREE.Mesh(new THREE.TetrahedronGeometry(.12+Math.random()*.1,0),new THREE.MeshPhysicalMaterial({color:i%2?0xffbcf5:0x8b4dff,transparent:true,opacity:.65,roughness:.08,metalness:.35,depthWrite:false}));const dir=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize();shard.position.copy(dir.multiplyScalar(1.58+Math.random()*.28));shard.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);group.add(shard);}
+    }
+  }
+
   resetHighlights() {
     for (const mat of this.faceMaterials) {
       if (!mat) continue;
@@ -350,8 +424,9 @@ export class DiceTheater {
     const index = Math.max(0, Math.min(this.faceMaterials.length - 1, result - 1));
     const faceMat = this.faceMaterials[index];
     const labelMat = this.labelMaterials[index];
-    if (faceMat) { faceMat.emissive.set(0xffd681); faceMat.emissiveIntensity = 1.35; faceMat.clearcoat = 1.2; }
-    if (labelMat) { labelMat.color.set(0xfff0bc); labelMat.opacity = 1; }
+    const skin=this.active?.userData?.skin||{}; const hi=new THREE.Color(skin.accent||'#ffd681');
+    if (faceMat) { faceMat.emissive.copy(hi); faceMat.emissiveIntensity = 1.35; faceMat.clearcoat = 1.2; }
+    if (labelMat) { labelMat.color.copy(hi); labelMat.opacity = 1; }
     if (!this.highlightRing) {
       this.highlightRing = new THREE.Mesh(new THREE.TorusGeometry(1.85, .08, 18, 72), new THREE.MeshBasicMaterial({ color: 0xffd681, transparent: true, opacity: .72 }));
       this.active.add(this.highlightRing);
@@ -368,6 +443,7 @@ export class DiceTheater {
     const pos = geom.attributes.position;
     this.faceNormals = []; this.faceMaterials = []; this.labelMaterials = [];
     const skin = typeof style === 'object' && style ? style : { base: style || '#c24a35' };
+    const visual = this.skinVisual(skin);
     const base = new THREE.Color(skin.base || '#c24a35'); const emissive = new THREE.Color(skin.emissive || '#000000'); const labelColor = skin.accent || '#fff9ec';
     const premium = Number(skin.price||0) >= 12;
     for (let f = 0; f < 20; f++) {
@@ -377,15 +453,16 @@ export class DiceTheater {
       const mat = new THREE.MeshPhysicalMaterial({ color: tint, roughness: Number(skin.roughness ?? .24), metalness: Number(skin.metalness ?? .36), clearcoat: premium?1.45:1.05, clearcoatRoughness: .08, emissive, emissiveIntensity: skin.id==='classic'?0:(premium?.52:.34), transmission: (skin.id==='aurora_crystal'||skin.id==='nebula_glass')?.06:0 });
       const mesh = new THREE.Mesh(tri, mat); mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); this.faceMaterials[f] = mat;
       const center = a.clone().add(b).add(c).divideScalar(3); const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize(); if (normal.dot(center) < 0) normal.negate(); this.faceNormals.push(normal.clone());
-      const label = this.makeLabel(String(f + 1), .44, labelColor); label.position.copy(center.clone().add(normal.clone().multiplyScalar(.022))); label.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal); group.add(label); this.labelMaterials[f] = label.userData.material;
+      const label = this.makeLabel(String(f + 1), .44, labelColor, {font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:4,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:skin.id==='classic'?8:14}); label.position.copy(center.clone().add(normal.clone().multiplyScalar(.022))); label.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal); group.add(label); this.labelMaterials[f] = label.userData.material;
     }
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.556, 0), 1), new THREE.LineBasicMaterial({ color: skin.accent || '#ffe2ba', transparent: true, opacity: premium?.98:.82 })); group.add(edges); return group;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.556, 0), 1), new THREE.LineBasicMaterial({ color: visual.edge || skin.accent || '#ffe2ba', transparent: true, opacity: premium?.98:.82 })); group.add(edges); this.decorateDie(group,skin,20); return group;
   }
 
   d6(style) {
     const group = new THREE.Group(); const geom = new THREE.BoxGeometry(2.25, 2.25, 2.25, 1, 1, 1);
     this.faceNormals = []; this.faceMaterials = []; this.labelMaterials = [];
     const skin = typeof style === 'object' && style ? style : { base: style || '#b94836' };
+    const visual = this.skinVisual(skin);
     const labelColor = skin.accent || '#fff9ec'; const emissive = new THREE.Color(skin.emissive || '#000000'); const premium = Number(skin.price||0)>=12;
     const faces = [
       { normal: [1, 0, 0], roll: 1 }, { normal: [-1, 0, 0], roll: 6 }, { normal: [0, 1, 0], roll: 2 },
@@ -398,13 +475,13 @@ export class DiceTheater {
     });
     const materials = [this.faceMaterials[0], this.faceMaterials[5], this.faceMaterials[1], this.faceMaterials[4], this.faceMaterials[2], this.faceMaterials[3]];
     const cube = new THREE.Mesh(geom, materials); cube.castShadow = true; cube.receiveShadow = true; group.add(cube);
-    faces.forEach(({ normal, roll }) => { const v = new THREE.Vector3(...normal); this.faceNormals[roll - 1] = v.clone(); const label = this.makeLabel(String(roll), .72, labelColor); label.position.copy(v.clone().multiplyScalar(1.136)); label.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), v); group.add(label); this.labelMaterials[roll - 1] = label.userData.material; });
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: skin.accent || '#ffe6c6', transparent: true, opacity: premium?.98:.84 })); group.add(edges); return group;
+    faces.forEach(({ normal, roll }) => { const v = new THREE.Vector3(...normal); this.faceNormals[roll - 1] = v.clone(); const label = this.makeLabel(String(roll), .72, labelColor, {font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:4,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:skin.id==='classic'?8:14}); label.position.copy(v.clone().multiplyScalar(1.136)); label.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), v); group.add(label); this.labelMaterials[roll - 1] = label.userData.material; });
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: visual.edge || skin.accent || '#ffe6c6', transparent: true, opacity: premium?.98:.84 })); group.add(edges); this.decorateDie(group,skin,6); return group;
   }
 
   prioritizeDie(die) {
     // Keep the physical die readable even when premium additive FX are active.
-    die.scale.setScalar(1.12);
+    die.scale.multiplyScalar(1.12);
     die.traverse(obj => {
       if (obj.isMesh) {
         obj.renderOrder = obj.userData?.material ? 14 : 12;
@@ -434,6 +511,7 @@ export class DiceTheater {
     const dieStyle = skin || color; const profile = this.fxProfile(typeof dieStyle === 'object' ? dieStyle : { base: dieStyle });
     const die = sides === 6 ? this.d6(dieStyle) : this.d20(dieStyle);
     this.active = die;
+    this.active.userData.skin = typeof dieStyle === 'object' ? dieStyle : {base:dieStyle,id:'classic'};
     this.scene.add(die);
     this.prioritizeDie(die);
     die.position.set(-3.2, 2.85, 0);

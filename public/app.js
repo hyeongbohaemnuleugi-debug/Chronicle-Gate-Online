@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=7400';
+import { DiceTheater } from './dice3d.js?v=8200';
 
-const CLIENT_BUILD = '8.1.0-stable-story';
+const CLIENT_BUILD = '8.2.0-account-progression';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -18,7 +18,7 @@ const REQUIRED_IDS = [
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceBreakdown', 'diceSub',
-  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioTestBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel', 'resumeGate'
+  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioTestBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel', 'resumeGate', 'openResume', 'homeAccountBar', 'accountStatus', 'accountPointLabel', 'loginOpenBtn', 'collectionOpenBtn', 'diceStoreOpenBtn', 'logoutBtn', 'authModal', 'authCloseBtn', 'authLoginTab', 'authRegisterTab', 'authEmail', 'authPassword', 'authNameField', 'authDisplayName', 'authSubmitBtn', 'authError', 'collectionModal', 'collectionCloseBtn', 'collectionGrid', 'diceStoreModal', 'diceStoreCloseBtn', 'diceWallet', 'diceStoreGrid', 'achievementToast', 'achievementTitle', 'achievementReward', 'endingReward'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
@@ -35,6 +35,12 @@ function getDiceTheater() {
 }
 let campaigns = [];
 let state = null;
+let account = null;
+let diceCatalog = [];
+let authMode = 'login';
+let pendingEntryMode = null;
+let lastEndingReward = null;
+
 let mode = 'create';
 let roomCode = localStorage.getItem('cg_room') || '';
 let playerToken = localStorage.getItem('cg_token') || '';
@@ -1060,6 +1066,70 @@ function everyoneVoted(choiceVotes = {}) {
 }
 
 
+async function apiJson(url, options={}) {
+  const res=await fetch(url,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})},credentials:'same-origin'});
+  const data=await res.json().catch(()=>({ok:false,error:'서버 응답을 읽지 못했습니다.'}));
+  if(!res.ok || data?.ok===false) throw new Error(data?.error||`요청 실패 (${res.status})`);
+  return data;
+}
+function renderAccountBar(){
+  const logged=!!account;
+  $('#accountStatus').textContent=logged?`${account.displayName} · ${account.email}`:'로그인하면 이어하기·도감·보상을 사용할 수 있습니다.';
+  $('#accountPointLabel').textContent=`CHRONICLE POINT ${Number(account?.chroniclePoints||0)}P`;
+  $('#loginOpenBtn').classList.toggle('hidden',logged);
+  $('#collectionOpenBtn').classList.toggle('hidden',!logged);
+  $('#diceStoreOpenBtn').classList.toggle('hidden',!logged);
+  $('#logoutBtn').classList.toggle('hidden',!logged);
+  if(logged && !$('#nameInput').value) $('#nameInput').value=account.displayName||'';
+}
+function setModal(id,show){ const el=$(id); if(!el)return; el.hidden=!show; el.classList.toggle('show',show); el.setAttribute('aria-hidden',show?'false':'true'); }
+function setAuthMode(mode){ authMode=mode==='register'?'register':'login'; const reg=authMode==='register'; $('#authLoginTab').classList.toggle('selected',!reg); $('#authRegisterTab').classList.toggle('selected',reg); $('#authNameField').classList.toggle('hidden',!reg); $('#authSubmitBtn').textContent=reg?'계정 만들기':'로그인'; $('#authPassword').autocomplete=reg?'new-password':'current-password'; $('#authError').textContent=''; }
+function openAuth(mode='login',after=null){ pendingEntryMode=after; setAuthMode(mode); setModal('#authModal',true); setTimeout(()=>$('#authEmail').focus(),30); }
+async function refreshAccount(){ try{ const data=await apiJson('/api/account/me'); account=data.account||null; diceCatalog=data.diceCatalog||diceCatalog||[]; renderAccountBar(); return account; }catch{account=null;renderAccountBar();return null;} }
+async function reconnectForAccount(){
+  await new Promise(resolve=>{
+    let done=false; const finish=()=>{if(done)return;done=true;clearTimeout(timer);resolve();};
+    const timer=setTimeout(finish,2500);
+    socket.once('account:state',payload=>{ if(payload?.account!==undefined)account=payload.account; if(payload?.diceCatalog)diceCatalog=payload.diceCatalog; renderAccountBar(); finish(); });
+    if(socket.connected) socket.disconnect(); socket.connect();
+  });
+}
+function requireAccount(after){ if(account)return true; openAuth('login',after); return false; }
+async function loadCollection(){
+  if(!requireAccount())return;
+  setModal('#collectionModal',true); $('#collectionGrid').innerHTML='<div class="collection-empty">도감을 불러오는 중…</div>';
+  socket.emit('account:collection',{},res=>{
+    if(!res?.ok){ $('#collectionGrid').innerHTML=`<div class="collection-empty">${esc(res?.error||'도감을 불러오지 못했습니다.')}</div>`; return; }
+    if(res.account){account=res.account;renderAccountBar();}
+    const byCampaign=new Map(); (res.endings||[]).forEach(e=>{ const arr=byCampaign.get(e.campaignId)||[]; arr.push(e); byCampaign.set(e.campaignId,arr); });
+    if(!res.endings?.length){ $('#collectionGrid').innerHTML='<div class="collection-empty">아직 기록된 엔딩이 없습니다. 첫 결말을 완성해 보세요.</div>'; return; }
+    $('#collectionGrid').innerHTML=[...byCampaign.entries()].map(([campaignId,list])=>{ const c=campaigns.find(x=>x.id===campaignId); return `<section class="collection-section"><div class="collection-head"><span>${esc(c?.icon||'◆')}</span><div><b>${esc(c?.title||campaignId)}</b><small>${list.length}개 엔딩 발견</small></div></div>${list.map(e=>`<div class="ending-entry"><b>${esc(e.endingTitle)}</b><small>${e.seenCount>1?`${e.seenCount}회 도달`:'처음 발견한 엔딩'}</small></div>`).join('')}</section>`; }).join('');
+  });
+}
+function renderDiceStore(){
+  if(!account)return;
+  $('#diceWallet').textContent=`${Number(account.chroniclePoints||0)} CP`;
+  const owned=new Set(account.ownedDice||['classic']);
+  $('#diceStoreGrid').innerHTML=(diceCatalog||[]).map(d=>{ const have=owned.has(d.id); const active=account.equippedDice===d.id; return `<article class="dice-skin-card ${active?'equipped':''}" style="--dice-base:${esc(d.base||'#b94d36')};--dice-accent:${esc(d.accent||'#ffe6c6')}"><div class="dice-preview"><i></i><b>20</b></div><div class="dice-skin-copy"><span>${esc(d.rarity||'')}</span><b>${esc(d.name)}</b><small>${d.id==='classic'?'기본 제공':`${Number(d.price||0)} CP`}</small></div><button type="button" data-dice-id="${esc(d.id)}" ${active?'disabled':''}>${active?'장착 중':have?'장착':'구매'}</button></article>`; }).join('');
+  $('#diceStoreGrid').querySelectorAll('[data-dice-id]').forEach(btn=>btn.onclick=()=>{ const id=btn.dataset.diceId; const have=owned.has(id); const event=have?'account:diceEquip':'account:diceBuy'; socket.emit(event,{diceId:id},res=>{ if(!res?.ok)return toast(res?.error||'처리하지 못했습니다.'); account=res.account||account; renderAccountBar(); renderDiceStore(); toast(have?'주사위 외형을 장착했습니다.':'주사위 외형을 구매했습니다.'); }); });
+}
+function showAchievement(payload){ if(!payload?.newEnding)return; const box=$('#achievementToast'); $('#achievementTitle').textContent=payload.endingTitle||'새로운 엔딩'; $('#achievementReward').textContent=`새 엔딩 발견 · 크로니클 포인트 +${Number(payload.pointsAwarded||5)}P`; box.classList.add('show'); setTimeout(()=>box.classList.remove('show'),5200); }
+$('#loginOpenBtn').onclick=()=>openAuth('login');
+$('#authCloseBtn').onclick=()=>{pendingEntryMode=null;setModal('#authModal',false);};
+$('#authLoginTab').onclick=()=>setAuthMode('login');
+$('#authRegisterTab').onclick=()=>setAuthMode('register');
+$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register')body.displayName=$('#authDisplayName').value.trim(); const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
+$('#logoutBtn').onclick=async()=>{ try{await apiJson('/api/account/logout',{method:'POST',body:'{}'});}catch{} account=null;renderAccountBar(); if(socket.connected)socket.disconnect();socket.connect();toast('로그아웃했습니다.'); };
+$('#collectionOpenBtn').onclick=loadCollection;
+$('#collectionCloseBtn').onclick=()=>setModal('#collectionModal',false);
+$('#diceStoreOpenBtn').onclick=()=>{if(!requireAccount())return;setModal('#diceStoreModal',true);renderDiceStore();};
+$('#diceStoreCloseBtn').onclick=()=>setModal('#diceStoreModal',false);
+$('#collectionModal').onclick=e=>{if(e.target===$('#collectionModal'))setModal('#collectionModal',false);};
+$('#diceStoreModal').onclick=e=>{if(e.target===$('#diceStoreModal'))setModal('#diceStoreModal',false);};
+$('#authModal').onclick=e=>{if(e.target===$('#authModal'))setModal('#authModal',false);};
+socket.on('account:state',payload=>{ if(payload?.account!==undefined)account=payload.account; if(payload?.diceCatalog)diceCatalog=payload.diceCatalog; renderAccountBar(); });
+socket.on('account:reward',payload=>{ lastEndingReward=payload; if(payload?.account)account=payload.account; renderAccountBar(); showAchievement(payload); renderEnding(); });
+
 let roomDirectory=[];
 function roomAccessMode(){ return document.querySelector('input[name="roomAccess"]:checked')?.value || 'public'; }
 function updateRoomPasswordField(){ $('#passwordCreateField').classList.toggle('hidden',roomAccessMode()!=='locked'); }
@@ -1078,14 +1148,15 @@ function renderRoomDirectory(){
   });
 }
 function joinSelectedRoom(r){
-  const name=$('#nameInput').value.trim(); if(!name){ $('#entryError').textContent='플레이어 이름을 먼저 입력하세요.'; return; }
+  if(!requireAccount('join'))return; const name=$('#nameInput').value.trim() || account?.displayName || ''; if(!name){ $('#entryError').textContent='플레이어 이름을 먼저 입력하세요.'; return; }
   socket.emit('room:join',{name,roomCode:r.roomCode,password:$('#joinPasswordInput').value},onJoined);
 }
 $('#refreshRooms').onclick=requestRoomDirectory;
 socket.on('room:list:update',rooms=>{ roomDirectory=rooms||[]; if(mode==='join')renderRoomDirectory(); });
 
-$('#openCreate').onclick = () => openEntry('create');
-$('#openJoin').onclick = () => openEntry('join');
+$('#openCreate').onclick = () => { if(requireAccount('create')) openEntry('create'); };
+$('#openJoin').onclick = () => { if(requireAccount('join')) openEntry('join'); };
+$('#openResume').onclick = () => { if(requireAccount('resume')) openResumeFlow(); };
 $('#entryBack').onclick = () => view('homeView');
 function openEntry(m) {
   mode = m;
@@ -1095,6 +1166,7 @@ function openEntry(m) {
   $('#codeField').style.display = m === 'join' ? 'block' : 'none';
   $('#roomBrowser').classList.toggle('hidden',m!=='join');
   $('#joinPasswordField').classList.add('hidden');
+  $('#entrySubmit').style.display='inline-flex';
   $('#entrySubmit').textContent = m === 'create' ? '방 만들기' : '방 코드로 참가하기';
   $('#resumeCandidates').innerHTML = '';
   $('#entryError').textContent = '';
@@ -1102,19 +1174,24 @@ function openEntry(m) {
   updateRoomPasswordField();
   view('entryView');
 }
+function openResumeFlow(){
+  if(!requireAccount('resume'))return;
+  mode='resume'; $('#entryEyebrow').textContent='CONTINUE CHRONICLE'; $('#entryTitle').textContent='저장된 연대기로 돌아갑니다.'; $('#createRoomFields').classList.add('hidden'); $('#codeField').style.display='none'; $('#roomBrowser').classList.add('hidden'); $('#entrySubmit').style.display='none'; $('#entryError').textContent=''; $('#resumeCandidates').innerHTML='<div class="resume-loading">저장된 세션을 찾는 중…</div>'; view('entryView');
+  socket.emit('session:lookup',{},res=>{ if(!res?.ok){$('#entryError').textContent=res?.error||'이어하기 목록을 불러오지 못했습니다.';return;} renderResumeCandidates(res.candidates||[]); });
+}
 function renderResumeCandidates(candidates = []) {
   const box = $('#resumeCandidates');
   if (!candidates.length) { box.innerHTML = ''; return; }
-  box.innerHTML = candidates.map((candidate, index) => `<button class="resume-candidate" type="button" data-resume-index="${index}"><b>${esc(candidate.campaignTitle || '진행 중인 연대기')}</b><span>${esc(candidate.progressLabel || '')}</span><small>${candidate.connectedCount || 0}/${candidate.playerCount || 1}명 접속 · ${esc(candidate.updatedLabel || '')}</small></button>`).join('');
+  box.innerHTML = candidates.map((candidate, index) => `<button class="resume-candidate" type="button" data-resume-index="${index}"><b>${esc(candidate.campaignTitle || '진행 중인 연대기')}</b><span>${esc(candidate.progressLabel || '')}</span><small>${candidate.playerCount || 1}인 세션 · ${esc(candidate.roomName || '')}</small></button>`).join('');
   box.querySelectorAll('[data-resume-index]').forEach(btn => btn.onclick = () => {
     const candidate = candidates[Number(btn.dataset.resumeIndex)];
-    const name = $('#nameInput').value.trim();
     $('#entryError').textContent = '저장된 세션에 연결하는 중입니다…';
-    socket.emit('session:resume', { name, roomCode:candidate.roomCode }, onJoined);
+    socket.emit('session:resume', { roomCode:candidate.roomCode }, onJoined);
   });
 }
 $('#entrySubmit').onclick = () => {
-  const name = $('#nameInput').value.trim();
+  if(!requireAccount(mode==='create'?'create':'join'))return;
+  const name = $('#nameInput').value.trim() || account?.displayName || '';
   if (!name) { $('#entryError').textContent = '플레이어 이름을 입력하세요.'; return; }
   if (mode === 'create') {
     const roomName=$('#roomNameInput').value.trim() || `${name}의 연대기`;
@@ -1195,7 +1272,7 @@ function enqueueDice(payload) {
     $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     const theater = getDiceTheater();
     if (theater) {
-      await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', duration: payload.sides === 20 ? 2850 : 2350 });
+      await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 2850 : 2350 });
     } else {
       $('#diceSub').textContent = '3D 렌더러를 사용할 수 없어 판정을 진행합니다.';
       await new Promise(r => setTimeout(r, 450));
@@ -1383,7 +1460,7 @@ function updateVoteCountdown() {
   el.classList.toggle('urgent', left <= 5);
 }
 
-function renderResumeGate(){ $('#resumeGate')?.classList.add('hidden'); }
+function renderResumeGate(){ const gate=$('#resumeGate'); if(!gate)return; if(!state?.resumeBarrier){gate.classList.add('hidden');gate.innerHTML='';return;} const missing=state.resumeMissingNames||[]; gate.innerHTML=`<div class="resume-gate-card"><span>SESSION PAUSED</span><b>나머지 플레이어를 기다리세요.</b><p>${missing.length?`${esc(missing.join(', '))} 님이 아직 접속하지 않았습니다.`:'기존 참가자의 재접속을 확인하는 중입니다.'}</p><small>저장된 멀티 세션은 원래 참가자가 모두 돌아오기 전에는 스토리와 전투를 진행할 수 없습니다.</small></div>`; gate.classList.remove('hidden'); }
 
 function renderCharacterHud(player, storyItems = []) {
   if (!state) return;
@@ -1432,7 +1509,7 @@ function renderParallelStory() {
 
   const ps = state?.parallel?.playerStates?.[playerToken];
   const scene = ps?.scene;
-  const isMyTurn = state?.turnPlayerId === playerToken && state?.phase === 'story';
+  const isMyTurn = state?.turnPlayerId === playerToken && state?.phase === 'story' && !state?.resumeBarrier;
   if (!scene || !ps) return;
 
   renderCharacterHud(p, scene.storyItems || []);
@@ -1785,7 +1862,7 @@ function renderMainStoryChoices(beat) {
   const indexed=(beat?.choices||[]).map((choice,index)=>({choice,index})).filter(({choice})=>!choice.requiredJob||choice.requiredJob===myJob).slice(0,7);
   if(!indexed.length){ box.innerHTML='<div class="choice-empty">지금 선택할 수 있는 행동을 준비하는 중입니다.</div>'; return; }
   box.innerHTML=`<div class="main-choice-head"><div><span>어떻게 할까?</span><b>현재 상황에서 가능한 행동 ${indexed.length}가지</b></div><small>조사·대화·우회·돌파·보호 등 실제로 가능한 방법만 표시됩니다.</small></div>`+
-    indexed.map(({choice,index},i)=>`<button type="button" class="choice-card choice-row main-story-choice" data-main-choice-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${i+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b></span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)+(Number(state.dcPenalty||0))}`}</small></span></button>`).join('');
+    indexed.map(({choice,index},i)=>`<button type="button" class="choice-card choice-row main-story-choice" data-main-choice-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${i+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small class="choice-reason">${esc(choice.reason)}</small>`:''}</span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)+(Number(state.dcPenalty||0))}`}</small></span></button>`).join('');
   forceChoiceLayout(box);
   if($('#storyActionBox') && box.nextElementSibling !== $('#storyActionBox')) box.after($('#storyActionBox'));
   box.querySelectorAll('[data-main-choice-index]').forEach(btn=>btn.onclick=()=>{
@@ -1969,6 +2046,8 @@ function renderEnding() {
   $('#endingIcon').textContent = state.campaign?.icon || '◆';
   $('#endingTitle').textContent = e.title || '연대기가 끝났습니다.';
   $('#endingText').textContent = e.text || '';
+  const reward=state?.endingRewards?.[playerToken] || lastEndingReward;
+  $('#endingReward').innerHTML=reward?`<div class="ending-point-card ${reward.newEnding?'new':''}"><span>${reward.newEnding?'NEW ENDING':'REPEAT CLEAR'}</span><b>${esc(reward.endingTitle||e.title||'결말')}</b><strong>+${Number(reward.pointsAwarded||0)} CP</strong></div>`:'';
   $('#endingStats').innerHTML = `<span>STORY ${state.story || 0} SCENES</span><span>THREAT ${state.threat}/${state.maxThreat || 8}</span><span>CARDS ${state.discardCount} USED</span><span>PLAYERS ${state.players.length}</span>`;
 }
 $('#endingHomeBtn').onclick = () => {
@@ -2014,7 +2093,7 @@ function renderHelp() {
       title: '기본 진행 순서',
       items: [
         '로비에서 스토리를 고른 뒤 각 플레이어는 D6 직업 배정과 4D6 능력치 생성을 각 스토리마다 1번씩만 진행합니다.',
-        '장면에 실제로 존재하는 인물·적·단서·장애물·구조 대상에 따라 6~12개의 해결법이 나옵니다. 조사·질문·설득·잠입·전투·우회·구조·함정 등 가능한 행동만 표시됩니다.',
+        '장면에 실제로 존재하는 인물·적·단서·장애물·구조 대상에 따라 5~7개의 해결법이 나옵니다. 조사·질문·설득·잠입·전투·우회·구조·함정 등 가능한 행동만 표시됩니다.',
         `가장 많은 표를 받은 선택지가 확정되며, 현재 차례 플레이어(${esc(state?.turnPlayerName || '미정')})가 실제 판정을 굴립니다.`,
         '메인 소설 장면 3개를 진행할 때마다 짧은 이벤트 카드가 끼어듭니다. 일반 사건의 DC는 낮고, 위험한 사건일수록 난이도와 중요도가 화면에 표시됩니다.',
       ],
@@ -2118,6 +2197,7 @@ document.addEventListener('visibilitychange', () => {
 
 makeParticles();
 renderCampaigns();
+refreshAccount();
 
 fetch('/api/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(cfg => { if (cfg?.version) $('#versionLabel').textContent = `ONLINE EDITION · ${CLIENT_BUILD} · SERVER v${cfg.version}`; }).catch(() => {});
 

@@ -1483,7 +1483,7 @@ function renderParallelStory() {
   setStoryTrail(trail.before, trail.bridge, trail.now);
 
   $('#storyPrompt').innerHTML = `<strong>${isMyTurn ? '당신은 어떻게 하나요?' : `${esc(state.turnPlayerName || '다른 플레이어')}의 행동을 기다리는 중`}</strong><span>같이 다니는 중이어도 각자의 행동은 직접 정합니다.</span>`;
-  const paragraphs = parallelNarrationHTML((scene.paragraphs || []).slice(0, 2));
+  const paragraphs = parallelNarrationHTML((scene.paragraphs || []).slice(0, 4));
   const sceneDialogue = Array.isArray(scene.dialogue) ? scene.dialogue.filter(x => x?.text).slice(0, 1) : [];
   const dialogueHtml = sceneDialogue.length
     ? `<div class="story-dialogue table-npc-line"><span>${esc(sceneDialogue[0].speaker || '등장인물')}</span><p>${esc(sceneDialogue[0].text)}</p></div>`
@@ -1499,26 +1499,25 @@ function renderParallelStory() {
     : '';
   $('#eventText').innerHTML = `<article class="tabletop-first-story">${paragraphs}${dialogueHtml}${pressureHtml}${encounterInfo}${nearbyInfo}</article>`;
 
-  $('#storyActionBox').style.setProperty('display', isMyTurn ? 'block' : 'none', 'important');
-  $('#storyActionBox').classList.toggle('disabled', !isMyTurn);
-  $('#storyActionInput').disabled = !isMyTurn;
-  $('#storyActionSubmitBtn').disabled = !isMyTurn;
-  $('#storyRoleContext').innerHTML = `<b>${esc(p?.job?.name || '당신')}</b><span>${linked.length ? `${linked.map(x => x.name).join(', ')}와 동행 중 · ` : ''}하고 싶은 일을 평범한 말로 적으세요.</span>`;
+  $('#storyActionBox').style.setProperty('display', 'none', 'important');
+  $('#storyActionBox').classList.add('disabled');
+  $('#storyActionInput').disabled = true;
+  $('#storyActionSubmitBtn').disabled = true;
+  $('#storyRoleContext').innerHTML = '';
   $('#actionSuggestions').innerHTML = '';
 
-  const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 3) : [];
+  const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 7) : [];
   choiceBox.innerHTML = choices.length
-    ? `<details class="action-examples"><summary><span>행동 예시</span><small>막막할 때만 펼쳐보세요</small></summary><div class="action-example-list">${choices.map((choice, index) => `<button type="button" class="action-example" data-parallel-suggest="${index}" ${isMyTurn ? '' : 'disabled'}><span>${index + 1}</span><b>${esc(choice.label)}</b></button>`).join('')}</div></details>`
-    : '';
-  choiceBox.querySelectorAll('[data-parallel-suggest]').forEach(btn => {
-    btn.onclick = () => {
-      if (btn.disabled) return;
-      const choice = choices[Number(btn.dataset.parallelSuggest)];
-      const input = $('#storyActionInput');
-      input.value = choice?.label || '';
-      input.focus();
-      const max = Number(input.maxLength || 220);
-      $('#storyActionCount').textContent = `${input.value.length}/${max}`;
+    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>이 장면에서 가능한 행동 ${choices.length}가지</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}상황에 맞지 않는 행동은 표시하지 않습니다.</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)}`}</small></span></button>`).join('')
+    : '<div class="choice-empty">현재 장면에서 가능한 행동을 정리하는 중입니다.</div>';
+  forceChoiceLayout(choiceBox);
+  choiceBox.querySelectorAll('[data-parallel-index]').forEach(btn=>{
+    btn.onclick=()=>{
+      if(btn.disabled)return;
+      btn.disabled=true;
+      socket.emit('story:advance',{roomCode,playerToken,choiceIndex:Number(btn.dataset.parallelIndex)},r=>{
+        if(!r?.ok){btn.disabled=false;showActionFeedback(r?.error||'행동을 처리하지 못했습니다.',true);}
+      });
     };
   });
 
@@ -1666,7 +1665,7 @@ function renderStory() {
   const roleHook = beat?.roleHooks?.[p?.job?.prime] || '';
   $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}${beat?.route ? ` · ${esc(beat.route.name)}` : ''}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';
   $('#actionSuggestions').innerHTML = '';
-  $('#storyActionInput').placeholder = '하고 싶은 행동을 직접 적어도 됩니다.';
+  $('#storyActionInput').placeholder = '';
   $('#storyActionInput').maxLength = 180;
   $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${$('#storyActionInput').maxLength || 180}`;
 
@@ -1746,7 +1745,7 @@ function renderStory() {
     $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `${beat.title}`) : '연대기가 이어집니다.';
     const trail = mainStoryTrail(c, beat, inResolution);
     setStoryTrail(trail.before, trail.bridge, trail.now);
-      $('#storyPrompt').innerHTML = `<strong>${state.turnPlayerId===playerToken?'상황을 읽고 행동을 고르세요.':`${esc(state.turnPlayerName||'다른 플레이어')}의 행동을 기다리는 중`}</strong><span>아래 선택지는 현재 장면에 맞는 대표적인 접근입니다. 선택지 밖 방법은 보조 입력으로 시도할 수 있습니다.</span>`;
+      $('#storyPrompt').innerHTML = `<strong>${state.turnPlayerId===playerToken?'상황을 읽고 가능한 행동을 고르세요.':`${esc(state.turnPlayerName||'다른 플레이어')}의 행동을 기다리는 중`}</strong><span>현재 장면의 사람·단서·통로·위험에 맞는 행동만 표시됩니다.</span>`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
     if (inResolution && lastResolution) {
       const resultTrail = mainStoryTrail(c, beat, true);
@@ -1755,22 +1754,18 @@ function renderStory() {
       $('#eventText').innerHTML = `<div class="inline-resolution compact-result ${lastResolution.ok ? 'success' : 'failure'}"><p>${esc(lastResolution.text || '')}</p>${lastResolution.status ? `<small>${esc(lastResolution.status.label)} · ${esc(lastResolution.status.desc || '')}</small>` : ''}</div>`;
     }
 
-    const freeActionAllowed = Boolean(beat?.freeActionAllowed);
     const myTurn = state.phase === 'story' && state.turnPlayerId === playerToken;
-    $('#storyActionBox').style.setProperty('display', (freeActionAllowed && state.phase==='story') ? 'block' : 'none', 'important');
-    $('#storyActionInput').disabled = !(freeActionAllowed && myTurn);
-    $('#storyActionSubmitBtn').disabled = !(freeActionAllowed && myTurn);
-    $('#storyActionBox').classList.toggle('disabled', !(freeActionAllowed && myTurn));
-    $('#storyActionInput').placeholder = freeActionAllowed
-      ? '선택지에 없는 방법을 시도하고 싶을 때만 적으세요.'
-      : '이 장면에서는 아래 선택으로 진행합니다.';
-    $('#storyRoleContext').innerHTML = `<b>선택지 밖 행동 · 선택사항</b><span>현재 장면의 인물·물건·통로와 연결된 행동만 처리됩니다. 이해되지 않으면 위 선택지만 사용해도 됩니다.</span>`;
+    $('#storyActionBox').style.setProperty('display', 'none', 'important');
+    $('#storyActionInput').disabled = true;
+    $('#storyActionSubmitBtn').disabled = true;
+    $('#storyActionBox').classList.add('disabled');
+    $('#storyRoleContext').innerHTML = '';
     $('#actionSuggestions').innerHTML = '';
     renderMainStoryChoices(beat);
   }
 
   $('#gmBar').style.display = 'flex';
-  const freeActionSubmit = Boolean(beat?.freeActionAllowed);
+  const freeActionSubmit = false;
   $('#advanceStoryBtn').style.display = state.phase === 'prologue' ? 'inline-flex' : 'none';
   if (state.phase !== 'prologue') {
     $('#advanceStoryBtn').disabled = !(freeActionSubmit && state.turnPlayerId === playerToken);
@@ -1787,9 +1782,9 @@ function renderMainStoryChoices(beat) {
   const isMyTurn=state.turnPlayerId===playerToken && state.phase==='story' && !state.resumeBarrier;
   if(state.phase==='resolution') { box.innerHTML=''; return; }
   const myJob=me()?.job?.name;
-  const indexed=(beat?.choices||[]).map((choice,index)=>({choice,index})).filter(({choice})=>!choice.requiredJob||choice.requiredJob===myJob).slice(0,4);
+  const indexed=(beat?.choices||[]).map((choice,index)=>({choice,index})).filter(({choice})=>!choice.requiredJob||choice.requiredJob===myJob).slice(0,7);
   if(!indexed.length){ box.innerHTML='<div class="choice-empty">지금 선택할 수 있는 행동을 준비하는 중입니다.</div>'; return; }
-  box.innerHTML=`<div class="main-choice-head"><div><span>어떻게 할까?</span><b>현재 상황에서 가능한 행동</b></div><small>선택마다 접근법과 이후 장면이 달라집니다.</small></div>`+
+  box.innerHTML=`<div class="main-choice-head"><div><span>어떻게 할까?</span><b>현재 상황에서 가능한 행동 ${indexed.length}가지</b></div><small>조사·대화·우회·돌파·보호 등 실제로 가능한 방법만 표시됩니다.</small></div>`+
     indexed.map(({choice,index},i)=>`<button type="button" class="choice-card choice-row main-story-choice" data-main-choice-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${i+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b></span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)+(Number(state.dcPenalty||0))}`}</small></span></button>`).join('');
   forceChoiceLayout(box);
   if($('#storyActionBox') && box.nextElementSibling !== $('#storyActionBox')) box.after($('#storyActionBox'));
@@ -1849,8 +1844,8 @@ const submitStoryDeclaration=()=>{
     input.value=''; const max=Number(input.maxLength||220); $('#storyActionCount').textContent=`0/${max}`;
   });
 };
-if($('#storyActionSubmitBtn')) $('#storyActionSubmitBtn').onclick=submitStoryDeclaration;
-$('#storyActionInput').addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();submitStoryDeclaration();} });
+if($('#storyActionSubmitBtn')) $('#storyActionSubmitBtn').onclick=()=>toast('현재 버전에서는 장면에 맞는 선택지로 진행합니다.');
+$('#storyActionInput').addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();toast('현재 버전에서는 장면에 맞는 선택지로 진행합니다.');} });
 
 $('#advanceStoryBtn').onclick = () => {
   if (state?.phase === 'prologue') {

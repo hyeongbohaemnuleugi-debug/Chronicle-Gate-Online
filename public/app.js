@@ -1615,14 +1615,16 @@ function forceChoiceLayout(root = document) {
   set(area, 'flex-direction', 'column');
   set(area, 'align-items', 'stretch');
   set(area, 'gap', '12px');
-  set(area, 'overflow-x', 'hidden');
-  set(area, 'overflow-y', 'auto');
-  set(area, 'height', 'min(70vh, 720px)');
-  set(area, 'max-height', 'min(70vh, 720px)');
-  set(area, 'padding', '6px 10px 18px 4px');
-  set(area, 'scroll-snap-type', 'y mandatory');
-  set(area, 'scroll-padding-top', '10px');
-  set(area, 'overscroll-behavior', 'contain');
+  // v8.2.8: choiceArea is no longer its own scroll container.
+  // The whole story-stage scrolls, so narration, dialogue and choices move together.
+  set(area, 'overflow-x', 'visible');
+  set(area, 'overflow-y', 'visible');
+  set(area, 'height', 'auto');
+  set(area, 'max-height', 'none');
+  set(area, 'padding', '6px 4px 56px 4px');
+  set(area, 'scroll-snap-type', 'none');
+  set(area, 'scroll-padding-top', '0');
+  set(area, 'overscroll-behavior', 'auto');
   area.querySelectorAll('.choice-card').forEach(card => {
     const rowStyle = card.classList.contains('choice-row');
     set(card, 'position', 'relative');
@@ -1642,9 +1644,9 @@ function forceChoiceLayout(root = document) {
     set(card, 'max-height', 'none');
     set(card, 'padding', rowStyle ? '20px 22px' : '18px');
     set(card, 'overflow', 'visible');
-    set(card, 'scroll-snap-align', 'start');
-    set(card, 'scroll-snap-stop', 'always');
-    set(card, 'scroll-margin-top', '10px');
+    set(card, 'scroll-snap-align', 'none');
+    set(card, 'scroll-snap-stop', 'normal');
+    set(card, 'scroll-margin-top', '0');
     set(card, 'white-space', 'normal');
     set(card, 'box-sizing', 'border-box');
     Array.from(card.children).forEach(child => {

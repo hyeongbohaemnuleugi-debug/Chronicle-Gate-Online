@@ -11,7 +11,9 @@ import {
   scheduleRoomSave,
   flushRoomSave,
   findResumableRoomSnapshotsByName,
+  findResumableRoomSnapshotsByAccount,
 } from './persistence.js';
+import { registerAccount, loginAccount, logoutSession, getAccountBySessionToken, getAccountProfile, getEndingCollection, recordEnding, buyDice, equipDice, accountPersistenceEnabled } from './account-store.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +24,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.1.0-stable-story';
+const APP_VERSION = '8.2.0-account-progression';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -33,12 +35,44 @@ const SOLO_VOTE_DURATION_MS = 12_000;
 const ALL_VOTED_COUNTDOWN_MS = 3_000;
 const ROOM_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 
+const DICE_CATALOG = [
+  {id:'classic',name:'기본 주사위',price:0,rarity:'기본',base:'#b94d36',accent:'#ffe6c6',emissive:'#2a0904',metalness:.32,roughness:.24},
+  {id:'nebula_glass',name:'성운 유리',price:5,rarity:'희귀',base:'#5948b8',accent:'#d9d0ff',emissive:'#251b6b',metalness:.18,roughness:.12},
+  {id:'abyss_pearl',name:'심해 진주',price:6,rarity:'희귀',base:'#0f7185',accent:'#baf8ff',emissive:'#063d56',metalness:.28,roughness:.16},
+  {id:'twilight_gilt',name:'황혼 금박',price:7,rarity:'희귀',base:'#7d3f36',accent:'#ffd67a',emissive:'#5b1d12',metalness:.72,roughness:.2},
+  {id:'clockwork',name:'시계태엽',price:8,rarity:'영웅',base:'#6b553a',accent:'#f5cf84',emissive:'#332515',metalness:.82,roughness:.3},
+  {id:'aurora_crystal',name:'극광 수정',price:9,rarity:'영웅',base:'#277f78',accent:'#baffd8',emissive:'#164e64',metalness:.2,roughness:.08},
+  {id:'eclipse_obsidian',name:'월식 흑요석',price:10,rarity:'영웅',base:'#17151d',accent:'#d998ff',emissive:'#4c1764',metalness:.55,roughness:.14},
+  {id:'starseed',name:'별씨앗',price:11,rarity:'영웅',base:'#315a3a',accent:'#f8f29b',emissive:'#163b24',metalness:.24,roughness:.3},
+  {id:'neon_prism',name:'네온 프리즘',price:12,rarity:'전설',base:'#142a54',accent:'#58fff0',emissive:'#a213a9',metalness:.42,roughness:.1},
+  {id:'crown_steel',name:'왕관 강철',price:14,rarity:'전설',base:'#3c3f49',accent:'#ffe29b',emissive:'#684516',metalness:.9,roughness:.18},
+  {id:'rift_shard',name:'경계의 파편',price:16,rarity:'전설',base:'#472d6f',accent:'#ffbcf5',emissive:'#6e1c78',metalness:.48,roughness:.09},
+];
+const DICE_BY_ID = Object.fromEntries(DICE_CATALOG.map(d=>[d.id,d]));
+
 const rooms = new Map();
 const loadLocks = new Map();
 const voteTimers = new Map();
 const bossTurnTimers = new Map();
 
 app.disable('x-powered-by');
+app.use((req,res,next)=>{ res.setHeader('X-Content-Type-Options','nosniff'); res.setHeader('Referrer-Policy','strict-origin-when-cross-origin'); res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=()'); next(); });
+app.use(express.json({ limit:'16kb' }));
+
+function parseCookies(header='') { return Object.fromEntries(String(header||'').split(';').map(part=>part.trim()).filter(Boolean).map(part=>{ const i=part.indexOf('='); return i<0?[part,'']:[part.slice(0,i),decodeURIComponent(part.slice(i+1))]; })); }
+function authCookie(req){ return parseCookies(req.headers.cookie || '').cg_session || ''; }
+function setAuthCookie(req,res,token,maxAge=60*60*24*30){
+  const secure = String(req.headers['x-forwarded-proto'] || req.protocol || '').includes('https');
+  res.setHeader('Set-Cookie', `cg_session=${encodeURIComponent(token||'')}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure?'; Secure':''}`);
+}
+const loginAttempts = new Map();
+function authRateAllowed(req){ const key=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim(); const now=Date.now(); const row=loginAttempts.get(key)||{count:0,reset:now+600000}; if(now>row.reset){row.count=0;row.reset=now+600000;} row.count++; loginAttempts.set(key,row); return row.count<=12; }
+async function httpAccount(req){ try{return await getAccountBySessionToken(authCookie(req));}catch{return null;} }
+app.get('/api/account/me', async (req,res)=>{ const account=await httpAccount(req); res.json({ok:true,account,diceCatalog:DICE_CATALOG,persistence:accountPersistenceEnabled}); });
+app.post('/api/account/register', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'잠시 후 다시 시도하세요.'}); const result=await registerAccount(req.body||{}); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG}); }catch(error){ res.status(400).json({ok:false,error:error.message||'회원가입에 실패했습니다.'}); } });
+app.post('/api/account/login', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요.'}); const result=await loginAccount(req.body||{}); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG}); }catch(error){ res.status(401).json({ok:false,error:error.message||'로그인에 실패했습니다.'}); } });
+app.post('/api/account/logout', async (req,res)=>{ try{ await logoutSession(authCookie(req)); }catch{} setAuthCookie(req,res,'',0); res.json({ok:true}); });
+app.get('/api/account/collection', async (req,res)=>{ const account=await httpAccount(req); if(!account) return res.status(401).json({ok:false,error:'로그인이 필요합니다.'}); res.json({ok:true,endings:await getEndingCollection(account.id),account:await getAccountProfile(account.id)}); });
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -74,7 +108,7 @@ app.get('/health', (_req, res) => res.json({
   persistence: persistenceEnabled ? 'supabase' : 'memory',
   timestamp: new Date().toISOString(),
   uptimeSeconds: Math.floor(process.uptime()),
-  release: 'release-candidate',
+  release: 'account-progression-beta',
 }));
 app.get('/api/config', (_req, res) => res.json({
   version: APP_VERSION,
@@ -87,6 +121,8 @@ app.get('/api/config', (_req, res) => res.json({
   voteDurationMs: VOTE_DURATION_MS,
   soloVoteDurationMs: SOLO_VOTE_DURATION_MS,
   allVotedCountdownMs: ALL_VOTED_COUNTDOWN_MS,
+  diceCatalog: DICE_CATALOG,
+  accounts: accountPersistenceEnabled,
 }));
 
 const rand = sides => crypto.randomInt(1, sides + 1);
@@ -510,6 +546,31 @@ function choiceConsequenceHint(choice, importanceKey) {
   const failure = importanceKey === 'pivotal' ? '큰 분기 변화 가능' : importanceKey === 'important' ? '위협·상태 변화 가능' : '작은 불리함 또는 우회';
   return { success, failure };
 }
+function choiceReasonForScene(choice, ctx={}) {
+  const action=String(choice?.actionType||'');
+  if(choice?.requiredJob) return `${choice.requiredJob}의 전문 지식이나 장비가 이 상황에 직접 쓰일 수 있다.`;
+  const map={
+    investigate:ctx.clue?`${ctx.clue}가 현장에 남아 있어 직접 확인할 수 있다.`:'눈앞의 단서에 아직 확인하지 않은 부분이 있다.',
+    observe:'움직이기 전에 주변의 변화와 위험을 읽을 시간이 있다.',
+    wait:'상황이 계속 변하고 있어 먼저 반응하는 쪽을 지켜볼 수 있다.',
+    bypass:ctx.obstacle?`${ctx.obstacle}이 정면 경로를 막고 있어 다른 길을 찾을 수 있다.`:'정면으로 가지 않고 접근할 여지가 있다.',
+    sneak:ctx.hasStealthPressure?'시야와 감시가 끊기는 순간이 있어 들키지 않고 움직일 수 있다.':'몸을 숨길 지형이 있다.',
+    hide:'주변에 몸을 감추고 상황을 지켜볼 공간이 있다.',
+    fight:ctx.hostile?`${ctx.hostile}이 바로 앞에서 진행을 막고 있다.`:'적대적인 대상이 길을 막고 있다.',
+    break:ctx.obstacle?`${ctx.obstacle}이 실제로 길을 막고 있어 힘으로 해결할 수 있다.`:'부수거나 밀어낼 장애물이 있다.',
+    persuade:ctx.person?`${ctx.person}이 현장에 있고 대화로 태도를 바꿀 여지가 있다.`:'대화할 상대가 있다.',
+    trade:ctx.person?`${ctx.person}이 원하는 것과 교환할 여지가 있다.`:'대가를 주고받을 상대가 있다.',
+    threaten:ctx.person?`${ctx.person}이 정보를 쥐고 있지만 협조하지 않고 있다.`:'압박할 상대가 있다.',
+    tail:ctx.person?`${ctx.person}이 자리를 떠나려 해 뒤를 밟을 수 있다.`:'이동하는 인물을 추적할 수 있다.',
+    steal:ctx.item?`${ctx.item}이 손이 닿는 곳에 있어 위험을 감수하면 확보할 수 있다.`:'가져갈 수 있는 물건이 보인다.',
+    help:(ctx.rescue||ctx.person)?`${ctx.rescue||ctx.person}이 지금 도움을 필요로 한다.`:'도움이 필요한 대상이 있다.',
+    endure:'환경의 압박이 계속되고 있어 버티는 것 자체가 시간을 번다.',
+    trap:'적이나 장애물이 지나갈 경로를 예측해 준비할 수 있다.'
+  };
+  return map[action]||'현재 장면의 사람·물건·통로와 직접 연결된 행동이다.';
+}
+function genericChoiceLabel(label='') { return /^(주변을 살핀다|조사한다|대화한다|설득한다|우회한다|버틴다|길을 연다|다음 곳으로 간다|다른 방법을 찾는다|맞서 싸운다)$/.test(String(label).trim()); }
+
 function prepareAgencyBeat(room, beat) {
   if (!beat) return beat;
   const importanceKey = sceneImportanceKey(beat);
@@ -530,7 +591,8 @@ function prepareAgencyBeat(room, beat) {
       normalized.memoryAdvantage = true;
     }
     normalized.difficulty = difficultyLabel(normalized.dc);
-    normalized.label = shortActionLabel(normalized.actionType, normalized.stat, sceneCtx);
+    if (genericChoiceLabel(normalized.label)) { const richer=contextualGeneratedAction(normalized.stat, beat, sceneCtx, 0); if(richer?.label) normalized.label=richer.label; }
+    normalized.reason = choice.reason || choiceReasonForScene(normalized, sceneCtx);
     normalized.consequenceHint = choiceConsequenceHint(normalized, importanceKey);
     return normalized;
   }) : [];
@@ -558,7 +620,8 @@ function prepareAgencyBeat(room, beat) {
     beat.choices.push({
       ...template,
       id:`${beat.id || 'scene'}-option-${stat}-${generatedIndex}`,
-      label:shortActionLabel(generated.actionType, stat, sceneCtx),
+      label:generated.label,
+      reason:choiceReasonForScene({...generated,stat}, sceneCtx),
       detail:`현재 장면에서 실제로 가능한 ${stat} 계열 접근입니다. 성공하면 같은 목표를 다른 경로로 진전시키고, 실패해도 그 행동 때문에 생긴 후속 상황으로 이어집니다.`,
       actionType:generated.actionType,
       startsCombat:Boolean(generated.startsCombat),
@@ -628,6 +691,7 @@ function normalizeLoadedRoom(room) {
     player.skillState ||= { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
     player.statuses ||= [];
     normalizeEconomyPlayer(player);
+    player.accountId ||= null; player.diceSkinId ||= 'classic';
     if (player.job && player.abilities && Number(player.derivedVitalsVersion || 0) < AGENCY_VERSION) recomputeDerivedVitals(player, { preserveRatio:true });
   }
   room.pendingTurnAdvance = Boolean(room.pendingTurnAdvance);
@@ -729,8 +793,10 @@ function normalizeLoadedRoom(room) {
 
 async function createRoom(hostName, socketId, options = {}) {
   const roomCode = await reserveRoomCode();
+  const account = options.account || null;
   const player = {
     id: token(), socketId, name: hostName, host: true, connected: true,
+    accountId: account?.id || null, diceSkinId: account?.equippedDice || 'classic',
     ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
   };
   const roomName = sanitize(options.roomName || `${hostName}의 연대기`, 28) || `${hostName}의 연대기`;
@@ -765,7 +831,14 @@ async function createRoom(hostName, socketId, options = {}) {
   return { room, player };
 }
 
-async function getOrLoadRoom(roomCode) { return rooms.get(roomCode) || null; }
+async function getOrLoadRoom(roomCode) {
+  if (rooms.has(roomCode)) return rooms.get(roomCode);
+  const loaded = await loadRoomSnapshot(roomCode);
+  if (!loaded) return null;
+  normalizeLoadedRoom(loaded);
+  rooms.set(roomCode, loaded);
+  return loaded;
+}
 
 function currentTurnPlayer(room) {
   if (!room?.players?.length) return null;
@@ -3095,7 +3168,7 @@ function publicRoom(room) {
       parallelMode: Boolean(campaign.parallelStory?.enabled),
     } : null,
     players: room.players.map(p => ({
-      id: p.id, name: p.name, host: p.host, connected: p.connected,
+      id: p.id, name: p.name, host: p.host, connected: p.connected, diceSkinId: p.diceSkinId || 'classic',
       ready: p.ready, job: p.job, abilities: p.abilities,
       hp: p.hp, maxHp: p.maxHp, inspiration: p.inspiration,
       coins: Number(p.coins || 0), inventory: [...(p.inventory || [])], equipment: { ...(p.equipment || {}) },
@@ -3132,6 +3205,7 @@ function publicRoom(room) {
     monster: room.monster,
     lastResolution: room.lastResolution || null,
     ending: room.ending || null,
+    endingRewards: Object.fromEntries((room.players||[]).map(p=>[p.id, room.endingRewards?.[p.accountId]||null]).filter(([,v])=>v)),
     lastStoryAction: room.lastStoryAction || null,
     storyHistory: (room.storyHistory || []).slice(-8),
     storyMemory: room.storyMemory || {},
@@ -3142,8 +3216,8 @@ function publicRoom(room) {
     facilityUses: room.facilityUses || {},
     agencyMemory: room.agencyMemory || { actions:[], clues:0, position:0, rapport:0, scars:0 },
     maxThreat: MAX_THREAT,
-    resumeBarrier: false,
-    resumeMissingNames: [],
+    resumeBarrier: Boolean(room.resumeBarrier),
+    resumeMissingNames: room.resumeBarrier ? room.players.filter(p=>(room.resumeRequiredIds||room.players.map(x=>x.id)).includes(p.id) && !p.connected).map(p=>p.name) : [],
     parallel: room.parallel?.enabled && campaign?.parallelStory?.enabled ? {
       enabled:true, mode:room.parallel.mode || 'split-party', clockStart:room.parallel.clockStart, clockTick:Number(room.parallel.clockTick||0), clockLimit:Number(room.parallel.clockLimit||30),
       worldFlags:{...(room.parallel.worldFlags||{})}, worldSummary:parallelWorldSummary(room), links:{...(room.parallel.links||{})}, offers:{...(room.parallel.offers||{})},
@@ -3167,6 +3241,8 @@ function sync(room) {
   room.lastActiveAt = Date.now();
   room.revision = Number(room.revision || 0) + 1;
   io.to(room.code).emit('state', publicRoom(room));
+  scheduleRoomSave(room, 220);
+  if (room.phase === 'ending') void ensureEndingRewards(room);
 }
 
 function pushChat(room, entry) {
@@ -3178,6 +3254,8 @@ function emitRoll(room, roller, roll) {
   io.to(room.code).emit('dice:roll', {
     rollerId: roller.id,
     rollerName: roller.name,
+    diceSkinId: roller.diceSkinId || 'classic',
+    diceSkin: DICE_BY_ID[roller.diceSkinId || 'classic'] || DICE_BY_ID.classic,
     ts: Date.now(),
     startsAt: Date.now() + 650,
     ...roll,
@@ -4008,7 +4086,14 @@ function reconcileResumeBarrier(room) {
   }
   return false;
 }
-function resumeBlocked(){ return false; }
+function resumeBlocked(room, ack){
+  if (!room?.resumeBarrier) return false;
+  reconcileResumeBarrier(room);
+  if (!room.resumeBarrier) return false;
+  const missing=room.players.filter(p=>(room.resumeRequiredIds||[]).includes(p.id)&&!p.connected).map(p=>p.name);
+  ack?.({ok:false,waiting:true,error:`나머지 플레이어를 기다리세요. (${missing.join(', ') || '접속 대기'})`});
+  return true;
+}
 async function resumableCandidates(name) {
   const exact = sanitize(name || '', 18);
   if (!exact) return [];
@@ -4033,6 +4118,42 @@ async function resumableCandidates(name) {
       updatedAt: entry.updatedAt,
     };
   }).sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,12);
+}
+
+async function resumableCandidatesForAccount(accountId) {
+  if (!accountId) return [];
+  const map = new Map();
+  for (const room of rooms.values()) {
+    if (!isResumableRoom(room) || !(room.players||[]).some(p=>p.accountId===accountId)) continue;
+    map.set(room.code,{room,updatedAt:room.lastActiveAt||room.createdAt||Date.now()});
+  }
+  for (const row of await findResumableRoomSnapshotsByAccount(accountId)) if(!map.has(row.room_code)) map.set(row.room_code,{room:row.state,updatedAt:row.updated_at?new Date(row.updated_at).getTime():0});
+  return [...map.entries()].map(([code,entry])=>{ const room=entry.room; const campaign=CAMPAIGNS.find(c=>c.id===room.campaignId); return {roomCode:code,roomName:room.roomName||'저장된 연대기',campaignTitle:campaign?.title||room.campaignId||'연대기',playerCount:(room.players||[]).length,progressLabel:room.phase==='combat'?'전투 진행 중':room.phase==='ending'?'결말 도달':`스토리 ${Number(room.story||0)}장면 진행`,updatedAt:entry.updatedAt}; }).sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,12);
+}
+
+function endingIdentity(room, player){
+  let title=room.ending?.title || '이름 없는 결말';
+  const ps=room.parallel?.playerStates?.[player.id];
+  if (ps?.endingText) { const m=String(ps.endingText).match(/·\s*([^—]+)\s*—/); if(m?.[1]) title=m[1].trim(); }
+  const raw=`${room.campaignId||'unknown'}|${title}`;
+  const endingKey=`${room.campaignId||'unknown'}:${crypto.createHash('sha1').update(raw).digest('hex').slice(0,14)}`;
+  return {title,endingKey};
+}
+async function ensureEndingRewards(room){
+  if (!room || room.phase!=='ending' || room.endingRewardLock) return;
+  room.endingRewardLock=true;
+  room.endingRewards ||= {};
+  try{
+    for(const player of room.players||[]){
+      if(!player.accountId || room.endingRewards[player.accountId]) continue;
+      const {title,endingKey}=endingIdentity(room,player);
+      const reward=await recordEnding(player.accountId,{endingKey,campaignId:room.campaignId||'unknown',endingTitle:title});
+      room.endingRewards[player.accountId]={endingKey,endingTitle:title,newEnding:reward.newEnding,pointsAwarded:reward.pointsAwarded};
+      if(player.socketId) io.to(player.socketId).emit('account:reward',{endingKey,endingTitle:title,newEnding:reward.newEnding,pointsAwarded:reward.pointsAwarded,account:reward.account});
+    }
+    scheduleRoomSave(room,0);
+  }catch(error){ console.error('[ending rewards]',error); }
+  finally{ room.endingRewardLock=false; }
 }
 
 function resetToLobby(room, reasonText = '세션이 로비로 돌아갔습니다.') {
@@ -4097,22 +4218,36 @@ function passwordMatches(room, supplied='') {
   return Boolean(room.passwordHash) && crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(room.passwordHash));
 }
 
-io.on('connection', socket => {
+io.on('connection', async socket => {
+  try { socket.data.account = await getAccountBySessionToken(parseCookies(socket.handshake.headers.cookie || '').cg_session || ''); } catch { socket.data.account=null; }
+  socket.emit('account:state',{account:socket.data.account,diceCatalog:DICE_CATALOG});
   socket.emit('campaigns', campaignPublic());
   socket.emit('room:list:update', liveRoomDirectory());
   socket.on('room:list', (_payload, ack) => ack?.({ok:true, rooms:liveRoomDirectory()}));
 
-  socket.on('session:lookup', (_payload, ack) => ack?.({ok:false,error:'이어하기 기능은 제거되었습니다.'}));
-  socket.on('session:resume', (_payload, ack) => ack?.({ok:false,error:'이어하기 기능은 제거되었습니다.'}));
+  socket.on('account:refresh', async (_payload,ack)=>{ try{ socket.data.account=await getAccountBySessionToken(parseCookies(socket.handshake.headers.cookie||'').cg_session||''); ack?.({ok:true,account:socket.data.account,diceCatalog:DICE_CATALOG}); }catch(error){ack?.({ok:false,error:error.message});} });
+  socket.on('account:collection', async (_payload,ack)=>{ if(!socket.data.account) return ack?.({ok:false,error:'로그인이 필요합니다.'}); ack?.({ok:true,endings:await getEndingCollection(socket.data.account.id),account:await getAccountProfile(socket.data.account.id)}); });
+  socket.on('account:diceBuy', async (payload,ack)=>{ try{ if(!socket.data.account) return ack?.({ok:false,error:'로그인이 필요합니다.'}); const item=DICE_BY_ID[String(payload?.diceId||'')]; if(!item||item.id==='classic') return ack?.({ok:false,error:'구매할 수 없는 주사위입니다.'}); const account=await buyDice(socket.data.account.id,item.id,item.price); socket.data.account=account; ack?.({ok:true,account}); }catch(error){ack?.({ok:false,error:error.message});} });
+  socket.on('account:diceEquip', async (payload,ack)=>{ try{ if(!socket.data.account) return ack?.({ok:false,error:'로그인이 필요합니다.'}); const item=DICE_BY_ID[String(payload?.diceId||'')]; if(!item) return ack?.({ok:false,error:'주사위를 찾을 수 없습니다.'}); const account=await equipDice(socket.data.account.id,item.id); socket.data.account=account; for(const room of rooms.values()){ const player=(room.players||[]).find(p=>p.accountId===account.id&&p.socketId===socket.id); if(player){player.diceSkinId=account.equippedDice;sync(room);} } ack?.({ok:true,account}); }catch(error){ack?.({ok:false,error:error.message});} });
+  socket.on('session:lookup', async (_payload, ack) => { if(!socket.data.account) return ack?.({ok:false,error:'로그인이 필요합니다.'}); ack?.({ok:true,candidates:await resumableCandidatesForAccount(socket.data.account.id)}); });
+  socket.on('session:resume', async (payload, ack) => {
+    if(!socket.data.account) return ack?.({ok:false,error:'로그인이 필요합니다.'});
+    const roomCode=String(payload?.roomCode||'').toUpperCase().trim(); const room=await getOrLoadRoom(roomCode); if(!room) return ack?.({ok:false,error:'저장된 세션을 찾을 수 없습니다.'});
+    const player=(room.players||[]).find(p=>p.accountId===socket.data.account.id); if(!player) return ack?.({ok:false,error:'이 계정은 해당 세션의 참가자가 아닙니다.'});
+    const old=player.socketId; if(old&&old!==socket.id) io.sockets.sockets.get(old)?.leave(room.code); player.socketId=socket.id; player.connected=true; player.diceSkinId=socket.data.account.equippedDice||'classic'; socket.join(room.code);
+    armResumeBarrier(room); reconcileResumeBarrier(room); pushChat(room,{type:'system',text:`${player.name} 님이 저장된 연대기로 돌아왔습니다.`}); sync(room);
+    ack?.({ok:true,resumed:true,roomCode:room.code,playerToken:player.id,state:publicRoom(room)});
+  });
 
   socket.on('room:create', async (payload = {}, ack) => {
     try {
-      const name = sanitize(payload.name || '방장', 18) || '방장';
+      if(!socket.data.account) return ack?.({ok:false,error:'방을 만들려면 로그인하세요.'});
+      const name = sanitize(payload.name || socket.data.account.displayName || '방장', 18) || '방장';
       const roomName = sanitize(payload.roomName || `${name}의 연대기`, 28) || `${name}의 연대기`;
       const accessMode = payload.accessMode === 'locked' ? 'locked' : 'public';
       const password = String(payload.password || '').slice(0,40);
       if (accessMode === 'locked' && password.length < 2) return ack?.({ok:false,error:'비밀번호 방은 2자 이상 비밀번호가 필요합니다.'});
-      const { room, player } = await createRoom(name, socket.id, {roomName,accessMode,password});
+      const { room, player } = await createRoom(name, socket.id, {roomName,accessMode,password,account:socket.data.account});
       socket.join(room.code);
       pushChat(room, { type: 'system', text: `${name} 님이 방을 만들었습니다.` });
       void appendSessionEvent(room.code, 'room_created', { hostName: name });
@@ -4125,22 +4260,25 @@ io.on('connection', socket => {
   });
 
   socket.on('room:join', async (payload = {}, ack) => {
+    if(!socket.data.account) return ack?.({ok:false,error:'방에 참가하려면 로그인하세요.'});
     const roomCode = String(payload.roomCode || '').toUpperCase().trim();
     if (!ROOM_PATTERN.test(roomCode)) return ack?.({ ok: false, error: '5자리 방 코드를 확인하세요.' });
     const room = await getOrLoadRoom(roomCode);
     if (!room) return ack?.({ ok: false, error: '존재하지 않거나 만료된 방입니다.' });
 
-    const existing = payload.playerToken && getPlayer(room, payload.playerToken);
+    const existing = (payload.playerToken && getPlayer(room, payload.playerToken)) || (room.players||[]).find(p=>p.accountId===socket.data.account.id);
     if (existing) {
       const oldSocketId = existing.socketId;
       if (oldSocketId && oldSocketId !== socket.id) io.sockets.sockets.get(oldSocketId)?.leave(room.code);
       existing.socketId = socket.id;
       existing.connected = true;
+      existing.accountId = socket.data.account.id; existing.diceSkinId = socket.data.account.equippedDice || 'classic';
       socket.join(room.code);
       pushChat(room, { type: 'system', text: `${existing.name} 님이 다시 연결되었습니다.` });
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);
       resolveAbandonVoteIfReady(room);
+      reconcileResumeBarrier(room);
       sync(room);
       void appendSessionEvent(room.code, 'player_reconnected', { playerName: existing.name });
       return ack?.({ ok: true, roomCode: room.code, playerToken: existing.id, state: publicRoom(room) });
@@ -4151,7 +4289,7 @@ io.on('connection', socket => {
     if (room.phase !== 'lobby') return ack?.({ ok: false, error: '이미 모험이 시작된 방입니다. 기존 플레이어만 재접속할 수 있습니다.' });
     const name = sanitize(payload.name || `플레이어 ${room.players.length + 1}`, 18) || `플레이어 ${room.players.length + 1}`;
     const player = {
-      id: token(), socketId: socket.id, name, host: room.players.length === 0, connected: true,
+      id: token(), socketId: socket.id, name, host: room.players.length === 0, connected: true, accountId:socket.data.account.id, diceSkinId:socket.data.account.equippedDice||'classic',
       ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
     };
     room.players.push(player);
@@ -4580,6 +4718,7 @@ io.on('connection', socket => {
     const { room, player } = requireMember(socket, payload, ack);
     if (!room || !player) return;
     normalizeEconomyPlayer(player);
+    player.accountId ||= null; player.diceSkinId ||= 'classic';
     const item = findCampaignItem(room.campaignId, payload?.itemId);
     if (!item || !player.inventory.includes(item.id)) return ack?.({ ok:false, error:'보유하지 않은 아이템입니다.' });
     const slot = item.slot;
@@ -4600,6 +4739,7 @@ io.on('connection', socket => {
     if (!room || !player) return;
     if (!['story','resolution'].includes(room.phase) || !room.currentEvent?.facility) return ack?.({ ok:false, error:'지금은 시설을 이용할 수 없습니다.' });
     normalizeEconomyPlayer(player);
+    player.accountId ||= null; player.diceSkinId ||= 'classic';
     room.facilityUses ||= {};
     const facility = room.currentEvent.facility;
     const action = String(payload?.action || facility.type);
@@ -4995,6 +5135,7 @@ io.on('connection', socket => {
       if (!player) continue;
       player.connected = false;
       player.socketId = null;
+      if(room.phase!=='lobby' && room.players.length>1) armResumeBarrier(room);
       pushChat(room, { type: 'system', text: `${player.name} 님의 연결이 끊겼습니다.` });
       promoteHostIfNeeded(room);
       reconcileCombatRound(room);

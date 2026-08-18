@@ -24,6 +24,8 @@ export class DiceTheater {
     this.fxGroup = new THREE.Group();
     this.fxItems = [];
     this.fxOrbiters = [];
+    for (const c of this.fxClouds) { if (c?.obj?.parent) c.obj.parent.remove(c.obj); c?.obj?.geometry?.dispose?.(); c?.obj?.material?.dispose?.(); }
+    this.fxClouds = [];
     this.fxTrailClock = 0;
     this.glowTexture = null;
     this.setup();
@@ -95,6 +97,12 @@ export class DiceTheater {
     }
     this.fxItems = [];
     this.fxOrbiters = [];
+    for (const c of this.fxClouds) {
+      if (c?.obj?.parent) c.obj.parent.remove(c.obj);
+      c?.obj?.geometry?.dispose?.();
+      c?.obj?.material?.dispose?.();
+    }
+    this.fxClouds = [];
     this.fxTrailClock = 0;
     while (this.fxGroup.children.length) this.fxGroup.remove(this.fxGroup.children[0]);
   }
@@ -144,6 +152,52 @@ export class DiceTheater {
     const h = new THREE.Mesh(new THREE.TorusGeometry(radius, .035, 12, 96), mat); h.rotation.x = Math.PI / 2; h.userData.die = die; this.fxGroup.add(h); this.fxOrbiters.push(h); return h;
   }
 
+
+  addAuraField(die, colors, count = 360, radius = 2.4, size = .11, speed = .35) {
+    const positions = new Float32Array(count * 3);
+    const colorAttr = new Float32Array(count * 3);
+    const palette = (Array.isArray(colors) ? colors : [colors]).map(c => new THREE.Color(c));
+    for (let i = 0; i < count; i++) {
+      const u = Math.random(), v = Math.random();
+      const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
+      const r = radius * (.45 + Math.random() * .55);
+      positions[i*3] = Math.sin(phi) * Math.cos(theta) * r;
+      positions[i*3+1] = Math.cos(phi) * r * .72;
+      positions[i*3+2] = Math.sin(phi) * Math.sin(theta) * r;
+      const c = palette[i % palette.length]; colorAttr[i*3]=c.r; colorAttr[i*3+1]=c.g; colorAttr[i*3+2]=c.b;
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(positions,3));
+    geom.setAttribute('color', new THREE.BufferAttribute(colorAttr,3));
+    const mat = new THREE.PointsMaterial({ map:this.getGlowTexture(), size, transparent:true, opacity:.78, vertexColors:true, blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true });
+    const obj = new THREE.Points(geom,mat); obj.userData={die,speed,baseOpacity:.78}; this.fxGroup.add(obj); this.fxOrbiters.push(obj); return obj;
+  }
+
+  cloudBurst(pos, colors, count = 700, speed = 3.8, life = 1.25, size = .12, vertical = .7, spread = .18) {
+    const positions = new Float32Array(count * 3);
+    const velocities = new Float32Array(count * 3);
+    const colorAttr = new Float32Array(count * 3);
+    const palette = (Array.isArray(colors) ? colors : [colors]).map(c => new THREE.Color(c));
+    for (let i=0;i<count;i++) {
+      positions[i*3]=(Math.random()-.5)*spread; positions[i*3+1]=(Math.random()-.5)*spread; positions[i*3+2]=(Math.random()-.5)*spread;
+      const a=Math.random()*Math.PI*2; const r=speed*(.18+Math.pow(Math.random(),.55)*.95);
+      velocities[i*3]=Math.cos(a)*r*(.65+Math.random()*.7);
+      velocities[i*3+1]=vertical+Math.random()*speed*.85;
+      velocities[i*3+2]=Math.sin(a)*r*(.65+Math.random()*.7);
+      const c=palette[i%palette.length]; colorAttr[i*3]=c.r; colorAttr[i*3+1]=c.g; colorAttr[i*3+2]=c.b;
+    }
+    const geom=new THREE.BufferGeometry(); geom.setAttribute('position',new THREE.BufferAttribute(positions,3)); geom.setAttribute('color',new THREE.BufferAttribute(colorAttr,3));
+    const mat=new THREE.PointsMaterial({ map:this.getGlowTexture(), size, transparent:true, opacity:.95, vertexColors:true, blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true });
+    const obj=new THREE.Points(geom,mat); obj.position.copy(pos); this.fxGroup.add(obj);
+    this.fxClouds.push({obj,velocities,life,maxLife:life,gravity:3.1,spin:(Math.random()-.5)*.9,baseOpacity:.95}); return obj;
+  }
+
+  flashDisc(pos, color, size = 5.5, life = .35, opacity = .8) {
+    const mat=new THREE.SpriteMaterial({map:this.getGlowTexture(),color,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false});
+    const obj=new THREE.Sprite(mat); obj.position.copy(pos); obj.scale.setScalar(size); this.fxGroup.add(obj);
+    this.fxItems.push({obj,life,maxLife:life,kind:'flash',baseScale:size,opacity}); return obj;
+  }
+
   setupRollFx(die, profile) {
     this.clearFx();
     if (!profile.tier) return;
@@ -152,8 +206,10 @@ export class DiceTheater {
     const orbCount = profile.tier === 1 ? 3 : profile.tier === 2 ? 5 : 8;
     for (let i = 0; i < orbCount; i++) this.addOrbiter(die, i % 2 ? accent : emissive, 1.75 + (i % 3) * .18, .75 + i * .09, (i % 2 ? .3 : -.15), i * .85, profile.tier === 3 ? .24 : .17);
     if (profile.tier >= 2) this.addHalo(die, accent, 1.85, .28);
+    this.addAuraField(die, [accent, emissive], profile.tier===1?220:profile.tier===2?420:760, profile.tier===3?2.9:2.35, profile.tier===3?.135:.105, profile.tier===3?.62:.38);
     if (profile.tier >= 3) {
       const h2 = this.addHalo(die, emissive, 2.2, .18); h2.rotation.y = Math.PI / 2;
+      this.addAuraField(die, [profile.accent, profile.emissive || profile.accent, '#ffffff'], 620, 3.55, .085, -.48);
     }
     if (profile.theme === 'clockwork') {
       for (let i = 0; i < 2; i++) {
@@ -193,6 +249,21 @@ export class DiceTheater {
     this.burst(new THREE.Vector3(0, -.9, 0), accent, profile.tier === 3 ? 40 : profile.tier === 2 ? 24 : 14, profile.tier === 3 ? 4.2 : 2.8, profile.tier === 3 ? .32 : .23, profile.tier === 3 ? 1.2 : .85, .8);
     if (profile.tier >= 2) this.shardBurst(new THREE.Vector3(0, -.65, 0), emissive, profile.tier === 3 ? 22 : 10, profile.tier === 3 ? 1.35 : .95);
 
+    // Ultra-dense batched particles: thousands of visible sparks in only a few draw calls.
+    const cloudColors=[accent,emissive,new THREE.Color(0xffffff)];
+    if (profile.tier===1) this.cloudBurst(new THREE.Vector3(0,-1.0,0),cloudColors,360,3.0,.95,.10,.45,.3);
+    if (profile.tier===2) {
+      this.cloudBurst(new THREE.Vector3(0,-.95,0),cloudColors,820,4.5,1.2,.115,.75,.38);
+      this.flashDisc(new THREE.Vector3(0,-.35,0),accent,4.6,.34,.72);
+    }
+    if (profile.tier===3) {
+      this.cloudBurst(new THREE.Vector3(0,-.92,0),cloudColors,1450,6.1,1.55,.13,1.0,.45);
+      this.cloudBurst(new THREE.Vector3(0,-.72,0),[emissive,accent],950,3.7,1.85,.095,1.65,.3);
+      this.flashDisc(new THREE.Vector3(0,-.2,0),0xffffff,8.2,.28,.92);
+      this.flashDisc(new THREE.Vector3(0,-.1,0),accent,6.4,.62,.68);
+      for(let i=0;i<4;i++) this.ring(p.clone().add(new THREE.Vector3(0,.02*i,0)),i%2?emissive:accent,.14+i*.05,6.2+i*.9,.72+i*.11,.46);
+    }
+
     if (profile.theme === 'eclipse') {
       this.ring(new THREE.Vector3(0, .15, 0), 0xd998ff, .2, 2.9, 1.15, .95, Math.PI / 2);
       const dark = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.getGlowTexture(), color: 0x3a0d4f, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -200,20 +271,22 @@ export class DiceTheater {
     }
     if (profile.theme === 'neon') {
       const colors = [0x58fff0,0xff55e8,0x7f71ff,0x53ff8c];
-      colors.forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,i*.012,0)),c,.18+i*.05,5.2-i*.45,.75+i*.08,.48));
+      colors.forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,i*.012,0)),c,.18+i*.05,6.8-i*.35,.88+i*.1,.62));
+      this.cloudBurst(new THREE.Vector3(0,-.75,0),colors,1200,5.2,1.5,.115,1.05,.25);
     }
     if (profile.theme === 'crown') {
-      for (let i=0;i<8;i++) {
-        const a=i/8*Math.PI*2; const pos=new THREE.Vector3(Math.cos(a)*1.55,-.9,Math.sin(a)*1.55);
+      for (let i=0;i<12;i++) {
+        const a=i/12*Math.PI*2; const pos=new THREE.Vector3(Math.cos(a)*1.55,-.9,Math.sin(a)*1.55);
         const geom=new THREE.ConeGeometry(.13,.8,4); const mat=new THREE.MeshBasicMaterial({color:0xffe29b,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false});
         const obj=new THREE.Mesh(geom,mat); obj.position.copy(pos); obj.rotation.z=Math.PI; this.fxGroup.add(obj); this.fxItems.push({obj,life:1.1,maxLife:1.1,kind:'crown'});
       }
     }
     if (profile.theme === 'rift') {
-      for (let i=0;i<5;i++) this.ring(new THREE.Vector3(0,-.15+i*.08,0), i%2?0xffbcf5:0x8b4dff, .15+i*.05, 3.3+i*.5, .95+i*.08, .55, Math.PI/2 + (i-.2)*.15);
+      for (let i=0;i<9;i++) this.ring(new THREE.Vector3(0,-.15+i*.08,0), i%2?0xffbcf5:0x8b4dff, .15+i*.05, 3.3+i*.5, .95+i*.08, .55, Math.PI/2 + (i-.2)*.15);
     }
     if (profile.theme === 'aurora') {
-      for (let i=0;i<18;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4,-1.2,(Math.random()-.5)*2.6), i%2?0xbaffd8:0x79bfff, .24, 1.3, new THREE.Vector3((Math.random()-.5)*.3,1.2+Math.random()*1.7,(Math.random()-.5)*.25), -.05);
+      this.cloudBurst(new THREE.Vector3(0,-1.05,0),[0xbaffd8,0x79bfff,0xffd9ff],1050,3.2,1.8,.11,1.8,.55);
+      for (let i=0;i<28;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4,-1.2,(Math.random()-.5)*2.6), i%2?0xbaffd8:0x79bfff, .24, 1.3, new THREE.Vector3((Math.random()-.5)*.3,1.2+Math.random()*1.7,(Math.random()-.5)*.25), -.05);
     }
   }
 
@@ -221,7 +294,9 @@ export class DiceTheater {
     for (const o of this.fxOrbiters) {
       const die = o.userData?.die;
       if (!die) continue;
-      if (o.isSprite) {
+      if (o.isPoints) {
+        const d=o.userData; o.position.copy(die.position); o.rotation.y += dt*(d.speed||.35); o.rotation.x += dt*(d.speed||.35)*.35; o.material.opacity=(d.baseOpacity||.75)*(.78+.22*Math.sin(elapsed*3));
+      } else if (o.isSprite) {
         const d = o.userData; const a = elapsed * d.speed * 2.4 + d.phase;
         o.position.copy(die.position).add(new THREE.Vector3(Math.cos(a)*d.radius, d.y + Math.sin(a*1.7)*.34, Math.sin(a)*d.radius));
         o.material.opacity = .62 + Math.sin(a*2.1)*.18;
@@ -231,6 +306,13 @@ export class DiceTheater {
         o.rotation.y += dt * (o.userData.gear ? .3 : .08);
       }
     }
+    for (let i=this.fxClouds.length-1;i>=0;i--) {
+      const c=this.fxClouds[i]; c.life-=dt; const q=Math.max(0,c.life/c.maxLife); const attr=c.obj.geometry.getAttribute('position'); const arr=attr.array;
+      for(let j=0;j<arr.length;j+=3){ c.velocities[j+1]-=c.gravity*dt; arr[j]+=c.velocities[j]*dt; arr[j+1]+=c.velocities[j+1]*dt; arr[j+2]+=c.velocities[j+2]*dt; }
+      attr.needsUpdate=true; c.obj.rotation.y += dt*c.spin; c.obj.material.opacity=c.baseOpacity*Math.min(1,q*1.7)*q;
+      c.obj.material.size=Math.max(.025,c.obj.material.size*(.9994));
+      if(c.life<=0){ if(c.obj.parent)c.obj.parent.remove(c.obj); c.obj.geometry.dispose(); c.obj.material.dispose(); this.fxClouds.splice(i,1); }
+    }
     for (let i=this.fxItems.length-1;i>=0;i--) {
       const it=this.fxItems[i]; it.life -= dt; const q=Math.max(0,it.life/it.maxLife); const obj=it.obj;
       if (it.velocity) {
@@ -239,6 +321,7 @@ export class DiceTheater {
       }
       if (it.spin) { obj.rotation.x+=it.spin.x*dt; obj.rotation.y+=it.spin.y*dt; obj.rotation.z+=it.spin.z*dt; }
       if (it.kind==='ring') { const s=it.start+(it.end-it.start)*(1-q); obj.scale.setScalar(s); obj.material.opacity=(it.opacity||.8)*q*q; }
+      else if (it.kind==='flash') { obj.material.opacity=(it.opacity||.8)*q*q; const s=(it.baseScale||4)*(1+(1-q)*.32); obj.scale.setScalar(s); }
       else if (it.kind==='sprite') { obj.material.opacity=Math.min(.95,q*1.2); const s=(it.baseScale||.25)*(.65+.7*q); obj.scale.setScalar(s); }
       else if (obj.material) obj.material.opacity=.9*q;
       if (it.life<=0) { if(obj.parent)obj.parent.remove(obj); obj.geometry?.dispose?.(); obj.material?.dispose?.(); this.fxItems.splice(i,1); }
@@ -349,13 +432,13 @@ export class DiceTheater {
         else { const local = (t - .73) / .27; die.quaternion.slerp(finalQ, Math.min(1, local * .12 + .08)); die.quaternion.slerp(finalQ, Math.min(1, local * .23)); }
         this.trailFx(die, profile, dt); this.tickFx(dt, (now-start)/1000);
         const b = Math.floor(t * 5.3); if (b !== lastBounce && t > .08 && t < .9) { lastBounce = b; this.synthHit(.045 + (.9 - t) * .06, 70 + Math.random() * 65, profile); if(profile.tier>=2 && t>.35) this.ring(new THREE.Vector3(die.position.x,-1.4,die.position.z),profile.accent,.08,.8+profile.tier*.25,.25,.28); }
-        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=3?.11:.06); this.camera.lookAt(0, .05, 0);
+        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=3?.18:profile.tier===2?.09:.045); this.camera.position.y = 4.6 + Math.sin(t*31)*(1-t)*(profile.tier>=3?.055:0); this.camera.lookAt(0, .05, 0);
         this.renderer.render(this.scene, this.camera);
         if (t < 1) requestAnimationFrame(frame);
         else {
           die.quaternion.copy(finalQ); die.position.set(0, -.02, 0); this.highlightResult(result); this.landingFx(profile); this.synthHit(profile.tier>=3?.22:.15, profile.tier>=3?48:55, profile);
           const settleStart=performance.now(); let settleLast=settleStart;
-          const settle=ts=>{ const dt2=Math.min(.05,(ts-settleLast)/1000||.016); settleLast=ts; this.tickFx(dt2,(ts-start)/1000); this.renderer.render(this.scene,this.camera); if(ts-settleStart<900+profile.tier*180) requestAnimationFrame(settle); else { this.running=false; resolve(); } };
+          const settle=ts=>{ const dt2=Math.min(.05,(ts-settleLast)/1000||.016); settleLast=ts; this.tickFx(dt2,(ts-start)/1000); this.renderer.render(this.scene,this.camera); if(ts-settleStart<1050+profile.tier*260) requestAnimationFrame(settle); else { this.running=false; resolve(); } };
           requestAnimationFrame(settle);
         }
       };

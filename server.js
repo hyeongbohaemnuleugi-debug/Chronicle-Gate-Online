@@ -207,9 +207,9 @@ function rollReward(room, player, { margin = 0, natural = 0, lootItemId = null, 
 // v6.1.0 LIVING STORY
 const AGENCY_VERSION = 2;
 const SCENE_IMPORTANCE = {
-  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:3, freeAction:true, consequence:'보이는 선택은 힌트일 뿐입니다. 직접 행동을 말해도 되며, 작은 실패는 이야기를 막지 않습니다.' },
-  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:3, freeAction:true, consequence:'위험이 분명한 장면입니다. 정해진 답 대신 직접 방법을 선언할 수 있습니다.' },
-  pivotal: { label:'결정적 장면', dcMin:10, dcMax:13, choiceTarget:3, freeAction:true, consequence:'큰 분기나 엔딩이 걸린 장면입니다. 선택 수는 적지만 자유 행동은 그대로 허용됩니다.' },
+  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:5, freeAction:false, consequence:'현재 장면에서 실제로 가능한 여러 접근 중 하나를 고릅니다. 작은 실패도 다음 상황으로 이어집니다.' },
+  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:6, freeAction:false, consequence:'위험이 분명한 장면입니다. 조사·대화·우회·돌파·보호 등 가능한 접근을 상황에 맞게 제시합니다.' },
+  pivotal: { label:'결정적 장면', dcMin:10, dcMax:13, choiceTarget:7, freeAction:false, consequence:'큰 분기나 엔딩이 걸린 장면입니다. 서로 다른 위험과 대가를 가진 선택지를 충분히 제시합니다.' },
 };
 
 function approachPressure(room, player, choice) {
@@ -515,7 +515,7 @@ function prepareAgencyBeat(room, beat) {
   const importanceKey = sceneImportanceKey(beat);
   const rule = SCENE_IMPORTANCE[importanceKey];
   beat.importance = { key:importanceKey, label:rule.label, consequence:rule.consequence };
-  beat.freeActionAllowed = Boolean(rule.freeAction);
+  beat.freeActionAllowed = false;
   const sceneCtx = inferSceneAffordances(beat);
   beat.choices = Array.isArray(beat.choices) ? beat.choices.filter(choice => choiceFitsScene(choice, sceneCtx)).map(choice => {
     const normalized = { ...choice };
@@ -1687,16 +1687,16 @@ function parallelCurateChoices(room,campaign,player,node,dynamic,base){
     if(/^(trade|acquire):/.test(intent)) acquisition++;
     if(/^social:/.test(intent)) social++;
     selected.push(c);
-    if(selected.length>=5) break;
+    if(selected.length>=7) break;
   }
   // Preserve meaningful action diversity when the scene has it.
   const categories=new Set(selected.map(c=>parallelChoiceIntent(c,node).split('|')[0]));
   for(const wanted of ['inspect','talk','move','help','combat']){
     if(categories.has(wanted)) continue;
     const candidate=pool.find(c=>parallelChoiceIntent(c,node).startsWith(`${wanted}|`) && !selected.includes(c));
-    if(candidate && selected.length<5){ selected.push(candidate); categories.add(wanted); }
+    if(candidate && selected.length<7){ selected.push(candidate); categories.add(wanted); }
   }
-  return selected.slice(0,5);
+  return selected.slice(0,7);
 }
 function parallelRenderedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player);
@@ -1714,14 +1714,14 @@ function parallelRenderedScene(room,campaign,player){
     const fallback=(node.choices||[])
       .filter(choice=>!choice.requiredJob && !choice.requiredJobs && !choice.requiredTag && !choice.requiredTags && !choice.requiredAnyTag && !choice.requiredAnyTags && !choice.requiredFlag && !choice.requiredFlags && !choice.requiredWorldFlag && !choice.requiredWorldFlags)
       .map((choice,index)=>({id:`fallback:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
-    choices.push(...fallback.filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node)).slice(0,5));
+    choices.push(...fallback.filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node)).slice(0,7));
   }
-  const explainedChoices=choices.slice(0,5).map(choice=>({...choice,reason:parallelChoiceReason(choice,node)}));
+  const explainedChoices=choices.slice(0,7).map(choice=>({...choice,reason:parallelChoiceReason(choice,node)}));
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
     sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:node.affordances||{}, text:(node.text||[]).join(' '),
-    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:true,
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:false,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
@@ -1914,28 +1914,10 @@ function parallelAdvance(room,campaign,player,payload,ack){
     }
   }
   const scene=parallelRenderedScene(room,campaign,player); if(!scene) return ack?.({ok:false,error:'개인 장면을 찾을 수 없습니다.'});
-  const choiceIndex=Number(payload?.choiceIndex); const declaration=sanitize(payload?.declaration,220);
-  let choice=Number.isInteger(choiceIndex)?scene.choices?.[choiceIndex]:null;
-  let freeActionInterpretation=null;
-  let freeActionValidity=null;
-  if(!choice && declaration){
-    freeActionValidity=validateFreeAction(declaration,scene);
-    if(!freeActionValidity.ok) return ack?.({ok:false,error:freeActionValidity.error});
-    freeActionInterpretation=interpretFreeAction(declaration,player,scene,room);
-    const template=(scene.choices||[]).find(x=>statPath(x.stat||'지혜')===statPath(freeActionInterpretation.stat)) || scene.choices?.[0] || {};
-    choice={...template,id:`${scene.id}-FREE-${Date.now()}`,label:declaration,stat:freeActionInterpretation.stat,dc:freeActionInterpretation.dc,automatic:false,freeAction:true,actionType:freeActionValidity.intent,kind:'parallel-free'};
-  }
-  if(!choice) return ack?.({ok:false,error:'하고 싶은 행동을 적거나 행동 예시를 이용해 주세요.'});
-  if(choice.freeAction && freeActionValidity && freeActionIsInquiry(choice.label,freeActionValidity,scene)){
-    ps.inquiries ||= {};
-    const count=Math.min(3,Number(ps.inquiries[scene.id]||0)+1); ps.inquiries[scene.id]=count;
-    const narrative=sceneInquiryNarrative(campaign,scene,freeActionValidity,choice.label,count);
-    room.lastResolution={source:'parallel-story',ok:true,inquiry:true,text:narrative,consequence:'',playerId:player.id,playerName:player.name,choiceLabel:choice.label,continueLabel:'장면으로 돌아가기'};
-    room.phase='resolution'; room.pendingContinue={source:'parallel-story',actorId:player.id,stayOnScene:true};
-    pushChat(room,{type:'action',author:player.name,text:choice.label}); sync(room);
-    setTimeout(()=>io.to(room.code).emit('resolution',room.lastResolution),180);
-    return ack?.({ok:true,inquiry:true});
-  }
+  const choiceIndex=Number(payload?.choiceIndex);
+  const choice=Number.isInteger(choiceIndex)?scene.choices?.[choiceIndex]:null;
+  const freeActionInterpretation=null;
+  if(!choice) return ack?.({ok:false,error:'현재 장면에서 제시된 행동 중 하나를 선택해 주세요.'});
   const automatic=Boolean(choice.automatic);
   const ability=player.abilities?.[choice.stat]; if(!automatic && !ability) return ack?.({ok:false,error:'능력치가 없습니다.'});
   const roll=automatic?null:rand(20); const base=automatic?0:mod(effectiveAbilityTotal(room,player,choice.stat)); const gear=automatic?0:equipmentStatBonus(room,player,choice.stat); const support=Math.min(2,Number(ps.support||0)); const encounter=room.parallel.encounters?.[ps.location]; const encounterAssist=choice.kind==='parallel-combat'?Math.min(2,Number(encounter?.assist||0)):0; const status=automatic?0:statusPenaltyForCheck(room,player,choice.stat); const total=automatic?null:roll+base+gear+support+encounterAssist+status; const dc=Math.max(7,Number(choice.dc||8)); const success=automatic?true:(roll===20 || (roll!==1 && total>=dc)); const grade=automatic?'success':storyOutcomeGrade(roll,total,dc);
@@ -4448,7 +4430,7 @@ io.on('connection', socket => {
         opportunity:'플레이어가 직접 만든 해결법', risk:sceneImportanceKey(beat)==='pivotal'?'높음':'보통',
       };
     }
-    if (!choice) return ack?.({ ok:false, error:'빠른 선택을 고르거나, 아래 입력칸에 직접 하고 싶은 행동을 적어 주세요.' });
+    if (!choice) return ack?.({ ok:false, error:'현재 장면에서 제시된 행동 중 하나를 선택해 주세요.' });
     if (choice.requiredJob && player.job?.name !== choice.requiredJob) return ack?.({ ok:false, error:`${choice.requiredJob}만 선택할 수 있는 직업 전용 선택지입니다.` });
     const ability = player.abilities?.[choice.stat];
     if (!ability) return ack?.({ ok:false, error:'캐릭터 능력치를 찾을 수 없습니다.' });

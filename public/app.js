@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=8200';
+import { DiceTheater } from './dice3d.js?v=8240';
 
-const CLIENT_BUILD = '8.2.0-account-progression';
+const CLIENT_BUILD = '8.2.4-dice-effects';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });

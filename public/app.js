@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=8240';
+import { DiceTheater } from './dice3d.js?v=8250';
 
-const CLIENT_BUILD = '8.2.4-dice-effects';
+const CLIENT_BUILD = '8.2.5-auth-fx-stable';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -1118,7 +1118,7 @@ $('#loginOpenBtn').onclick=()=>openAuth('login');
 $('#authCloseBtn').onclick=()=>{pendingEntryMode=null;setModal('#authModal',false);};
 $('#authLoginTab').onclick=()=>setAuthMode('login');
 $('#authRegisterTab').onclick=()=>setAuthMode('register');
-$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register')body.displayName=$('#authDisplayName').value.trim(); const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
+$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register')body.displayName=$('#authDisplayName').value.trim(); const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); if(data.accountStore==='local-fallback') setTimeout(()=>toast('계정은 로컬 안전 저장소에 저장되었습니다. 상용 배포 전에는 Supabase 영속 저장을 연결해 주세요.'),350); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
 $('#logoutBtn').onclick=async()=>{ try{await apiJson('/api/account/logout',{method:'POST',body:'{}'});}catch{} account=null;renderAccountBar(); if(socket.connected)socket.disconnect();socket.connect();toast('로그아웃했습니다.'); };
 $('#collectionOpenBtn').onclick=loadCollection;
 $('#collectionCloseBtn').onclick=()=>setModal('#collectionModal',false);

@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=8290';
 
-const CLIENT_BUILD = '8.3.0-shared-turn-branch-clarity';
+const CLIENT_BUILD = '8.3.1-shared-party-prologue';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -961,16 +961,8 @@ function conciseSceneText(text = '', max = 180) {
 function setStoryTrail(before = '', bridge = '', now = '') {
   const clarity = $('#storyClarity');
   if (!clarity) return;
-  const prev = conciseSceneText(before, 105);
-  const why = conciseSceneText(bridge, 120);
-  clarity.className = 'story-clarity story-recap-compact story-recap-v780';
-  if(!prev && !why){
-    clarity.replaceChildren();
-    clarity.style.display='none';
-    return;
-  }
-  clarity.style.display='block';
-  clarity.innerHTML = `<details class="story-recap-details"><summary>지난 이야기</summary><div>${prev?`<p>${esc(prev)}</p>`:''}${why?`<p>${esc(why)}</p>`:''}</div></details>`;
+  clarity.replaceChildren();
+  clarity.style.display = 'none';
 }
 
 function mainStoryTrail(c, beat, inResolution = false) {
@@ -1763,26 +1755,26 @@ function renderStory() {
     const myScene = state.prologue?.scenes?.[playerToken];
     const readyMe = !!state.prologue?.ready?.[playerToken];
     const readyNames = state.players.filter(member => state.prologue?.ready?.[member.id]).map(member => member.name);
-    $('#turnBanner').textContent = '개인 프롤로그를 읽고 합류 준비를 마치면 메인 스토리가 시작됩니다.';
+    $('#turnBanner').textContent = '모든 플레이어가 같은 프롤로그를 보고 있습니다. 모두 준비되면 파티 스토리가 시작됩니다.';
     $('#storySceneImg').src = coverArt(c);
-    $('#storySceneCaption').textContent = `${c?.title || '연대기'} · ${p?.job?.name || '모험가'}의 개인 프롤로그`;
-    $('#actLabel').textContent = 'PERSONAL PROLOGUE';
+    $('#storySceneCaption').textContent = `${c?.title || '연대기'} · 파티 프롤로그`;
+    $('#actLabel').textContent = 'PARTY PROLOGUE';
     $('#eventTitle').textContent = myScene?.title || '각자의 시작';
     setStoryTrail(
-      `${c?.title || '이 연대기'}가 시작된다. ${conciseSceneText(c?.intro || myScene?.lead || '')}`,
-      `${p?.name || '당신'}은(는) 아직 다른 플레이어를 만나지 못한 채 자기 위치에서 사건의 첫 단서를 마주했다.`,
-      `${myScene?.lead || '각 플레이어는 서로 다른 장소에서 이야기를 시작한다.'} 지금 해야 할 일은 ${myScene?.objective || '자기 앞의 상황을 이해하고 첫 행동을 정하는 것'}이다.`
+      `${c?.title || '이 연대기'}의 시작`,
+      `서로 다른 이유로 사건에 끌려온 플레이어들이 같은 장소에 도착했다.`,
+      `${conciseSceneText(state.prologue?.meetingText || myScene?.paragraphs?.at(-1) || '')}`
     );
-      $('#storyPrompt').innerHTML = `<b>${esc(p?.name||'당신')}</b>은(는) 아직 다른 이들이 어디에 있는지 모른다.`;
-    $('#eventText').innerHTML = parallelNarrationHTML((myScene?.paragraphs||[]).slice(0,4));
+      $('#storyPrompt').innerHTML = `<b>${esc(state.players.map(x=>x.name).join(', '))}</b> — 여기서부터 같은 장면을 함께 진행합니다.`;
+    $('#eventText').innerHTML = parallelNarrationHTML(myScene?.paragraphs||[]);
     $('#storyActionBox').style.display = 'none';
     $('#storyActionInput').disabled = true;
     $('#storyActionBox').classList.add('disabled');
-    $('#choiceArea').innerHTML = `<div class="vote-strip"><div><span class="eyebrow">JOIN THE CHRONICLE</span><b>${readyMe ? '합류 준비 완료. 다른 플레이어를 기다리는 중입니다.' : '프롤로그를 읽었다면 합류 준비를 완료하세요.'}</b></div><div>${esc(state.prologue?.meetingText || '')}</div></div>`;
+    $('#choiceArea').innerHTML = `<div class="vote-strip"><div><span class="eyebrow">PARTY READY</span><b>${readyMe ? '준비 완료. 다른 플레이어를 기다리는 중입니다.' : '프롤로그를 읽었다면 준비를 완료하세요.'}</b></div><div>${esc(state.prologue?.meetingText || '')}</div></div>`;
     $('#gmBar').style.display = 'flex';
     $('#advanceStoryBtn').style.display = 'inline-flex';
     $('#advanceStoryBtn').disabled = readyMe;
-    $('#advanceStoryBtn').textContent = readyMe ? '다른 플레이어를 기다리는 중' : '프롤로그 읽고 합류하기';
+    $('#advanceStoryBtn').textContent = readyMe ? '다른 플레이어를 기다리는 중' : '프롤로그 확인 완료';
     $('#continueBtn').style.display = 'none';
     $('#continueBtn').disabled = true;
     $('#facilityPanel')?.classList.add('hidden');
@@ -1831,7 +1823,7 @@ function renderStory() {
     $('#eventTitle').textContent = beat ? (beat.isDetour ? beat.title : `${beat.title}`) : '연대기가 이어집니다.';
     const trail = mainStoryTrail(c, beat, inResolution);
     setStoryTrail(trail.before, trail.bridge, trail.now);
-      $('#storyPrompt').innerHTML = `<strong>${state.turnPlayerId===playerToken?'상황을 읽고 가능한 행동을 고르세요.':`${esc(state.turnPlayerName||'다른 플레이어')}의 행동을 기다리는 중`}</strong><span>현재 장면의 사람·단서·통로·위험에 맞는 행동만 표시됩니다.</span>`;
+      $('#storyPrompt').innerHTML = `<strong>${state.turnPlayerId===playerToken?'당신의 차례':`${esc(state.turnPlayerName||'다른 플레이어')}의 차례`}</strong>`;
     $('#eventText').innerHTML = storyNarrationHTML(c, beat, p, []);
     if (inResolution && lastResolution) {
       const resultTrail = mainStoryTrail(c, beat, true);

@@ -331,7 +331,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.2.9-context-dice-identity';
+const APP_VERSION = '8.3.0-shared-turn-branch-clarity';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -1836,25 +1836,14 @@ const PARALLEL_SCENE_COLOR={
   masque:['무대 어딘가에서 보이지 않는 관객이 한 번 박수를 쳤다.','가까운 가면 하나의 표정이 빛의 각도와 상관없이 잠깐 달라졌다.']
 };
 function parallelImmersiveOutcome(room,campaign,player,node,choice,grade,nextId){
-  const actor=player?.name||'플레이어';
-  const action=String(choice?.label||'행동');
   const next=nextId && nextId!=='__ENDING__' ? campaign?.parallelStory?.nodes?.[nextId] : null;
   const colorPool=PARALLEL_SCENE_COLOR[campaign?.id]||PARALLEL_SCENE_COLOR.guardian;
-  const seed=(Number(parallelPlayerState(room,player)?.progress||0)+String(node?.id||'').length+String(action).length)%colorPool.length;
-  const color=colorPool[seed];
-  const gradeText=grade==='critical'
-    ? `${actor}의 판단은 예상보다 멀리 닿았다. 단순히 문제를 넘긴 것이 아니라 다음 장면에서 먼저 움직일 이유와 단서를 함께 만들었다.`
-    : grade==='success'
-      ? `${actor}가 하려던 일이 의도한 방향으로 이어졌다. 눈앞의 상황도 그 선택에 맞춰 실제로 변했다.`
-      : grade==='mixed'
-        ? `${actor}는 원하는 결과에 손을 뻗는 데 성공했지만, 그 순간 다른 문제 하나도 함께 움직였다. 얻은 것과 잃은 것이 동시에 다음 장면으로 따라간다.`
-        : grade==='disaster'
-          ? `${actor}의 시도는 크게 어긋났다. 하지만 실패한 자리에서 무엇이 이 장소를 움직이는지 가장 위험한 방식으로 드러났다.`
-          : `${actor}의 첫 시도는 막혔다. 그렇다고 이야기가 제자리로 돌아간 것은 아니다. 막힌 이유와 새로 열린 우회로가 다음 선택의 조건이 됐다.`;
-  const move=next ? `그 결과 이야기는 “${node?.title||'현재 장면'}”에 머물지 않고 “${next.title}” 쪽으로 넘어가기 시작했다.` : '';
-  const linked=parallelLinkedGroupMates(room,player).filter(p=>!parallelPlayerState(room,p)?.ended);
-  const group=linked.length ? ` 함께 이동 중인 ${linked.map(p=>p.name).join(', ')}도 같은 변화를 보지만, 다음 행동은 각자의 턴에서 직접 결정한다.` : '';
-  return `“${action}”을 선택한 순간, ${gradeText} ${color} ${move}${group}`.replace(/\s+/g,' ').trim();
+  const seed=(Number(parallelPlayerState(room,player)?.progress||0)+String(node?.title||'').length+String(choice?.label||'').length)%colorPool.length;
+  const color=colorPool[seed]||'';
+  const transition=next && nextId!==parallelPlayerState(room,player)?.nodeId
+    ? `${parallelLocationLabel(campaign,next.location)} 쪽에서 다음 상황이 이어진다.`
+    : '';
+  return [color,transition].filter(Boolean).join(' ');
 }
 function parallelCombatAttemptText(player,choice,enc){
   const actor=player?.name||'플레이어', enemy=enc?.name||'적';
@@ -2019,39 +2008,37 @@ function parallelContextualLabel(choice,node){
 }
 function parallelSceneNarrative(room,campaign,player,node){
   if(!node) return [];
-  const ps=parallelPlayerState(room,player);
-  const aff=parallelNodeAffordances(node);
   const source=[...(node.text||[])].map(x=>String(x).trim()).filter(Boolean);
-  const out=[];
-  // Keep the scene itself first. Give enough concrete fiction to understand place, danger, and people before asking for a decision.
-  out.push(...source.slice(0,3));
-
-  const person=aff.hasPerson&&aff.person ? aff.person : '';
-  if(person){
-    const lines={
-      ember:'“여기서 한 걸음 더 가면, 누군가는 왕을 얻고 누군가는 이름을 잃습니다.”',
-      neon:'“기록이 사실이라고 믿지 마. 누가 그 기억의 주인인지부터 확인해.”',
-      abyss:'“산소보다 먼저 바닥나는 건 판단력이야. 보고 싶은 것만 보지 마.”',
-      clock:'“이번에도 같은 선택을 할 건가요? 나는 당신을 전에도 본 것 같아요.”',
-      wild:'“숲은 길을 막지 않아. 네가 숨긴 소원 쪽으로 길을 바꿀 뿐이지.”',
-      guardian:'“우리가 누구를 데리고 여기까지 왔는지, 그게 다음 길을 정할 거예요.”',
-      aurora:'“무전에서 들린 목소리… 죽은 사람이라면, 왜 지금 우리 이름을 알고 있죠?”',
-      masque:'“가면을 벗는다고 네 배역이 끝나는 건 아니야. 마지막 장면을 누가 썼는지가 중요하지.”',
-      echo:'“방금 그 안내방송, 정상 시간표에는 없는 문장이었어요.”'
-    };
-    out.push(`${person}: ${lines[campaign?.id]||'“지금 보이는 것만 믿으면 늦습니다. 먼저 무엇이 바뀌었는지 보세요.”'}`);
-  }
-
-  const objective=String(node.objective||'').replace(/[.。]$/,'');
-  if(objective) out.push(`지금 문제: ${objective}.`);
-
-  const linked=parallelLinkedPlayers(room,player).filter(p=>parallelPlayerState(room,p)?.location===ps?.location);
-  if(linked.length) out.push(`${linked.map(p=>p.name).join(', ')}도 바로 곁에 있다. 짧게 눈을 맞추는 것만으로도, 이번 선택은 혼자 감당할 일이 아니라는 걸 알 수 있다.`);
-  else {
-    const nearby=parallelNearby(room,player);
-    if(nearby.length) out.push(`${nearby.map(p=>p.name).join(', ')}의 인기척이 같은 구역 안에서 들린다. 아직 함께 갈지 정한 것은 아니다.`);
-  }
-  return out.filter(Boolean).slice(0,5);
+  // The authored scene text is the fiction. Do not inject generic campaign catchphrases or repeat the objective as prose.
+  return source.slice(0,4);
+}
+function compactSceneSentence(value='',limit=260){
+  const text=String(value||'').replace(/\s+/g,' ').trim();
+  if(text.length<=limit) return text;
+  const cut=text.slice(0,limit); const stop=Math.max(cut.lastIndexOf('.'),cut.lastIndexOf('다.'),cut.lastIndexOf('요.'));
+  return (stop>Math.floor(limit*0.55)?cut.slice(0,stop+1):cut+'…').trim();
+}
+function parallelSceneBrief(room,campaign,player,node){
+  const ps=parallelPlayerState(room,player); const aff=parallelNodeAffordances(node);
+  const source=[...(node?.text||[])].map(x=>String(x).trim()).filter(Boolean);
+  const visible=[];
+  if(aff.hasPerson&&aff.person) visible.push(`인물 · ${aff.person}`);
+  if(aff.hasClue&&aff.clue) visible.push(`단서 · ${aff.clue}`);
+  if(aff.hasHostile&&aff.hostile) visible.push(`위협 · ${aff.hostile}`);
+  if(aff.hasObstacle&&aff.obstacle) visible.push(`장애물 · ${aff.obstacle}`);
+  if(aff.hasRescue&&aff.rescue) visible.push(`도움 필요 · ${aff.rescue}`);
+  if(aff.hasItem&&aff.item) visible.push(`물건 · ${aff.item}`);
+  const last=(ps?.history||[]).slice(-1)[0];
+  const arrival=last && last.nodeId!==ps?.nodeId ? `직전 행동 “${last.choice}” 이후 이 장면으로 이동했다.` : '';
+  const danger=String(node?.immediatePressure||'').trim() || (aff.hasHostile&&aff.hostile?`${aff.hostile}이 지금 행동을 방해하고 있다.`:'') || (aff.hasObstacle&&aff.obstacle?`${aff.obstacle} 때문에 그대로 진행할 수 없다.`:'');
+  return {
+    location:parallelLocationLabel(campaign,ps?.location),
+    situation:compactSceneSentence(source.slice(0,2).join(' '),420),
+    objective:compactSceneSentence(node?.objective||node?.sceneQuestion||'',180),
+    danger:compactSceneSentence(danger,180),
+    visible:visible.slice(0,5),
+    arrival
+  };
 }
 function parallelChoiceScore(choice,node){
   const label=String(choice?.label||'');
@@ -2124,35 +2111,68 @@ function parallelChoiceFitsCurrentScene(room,campaign,player,choice,node){
   return true;
 }
 
+function parallelChoiceDestination(choice,nodeId,success=true){
+  if(!choice) return null;
+  const raw=success
+    ? (choice.nextSuccess ?? choice.next?.success ?? choice.next)
+    : (choice.nextFailure ?? choice.next?.failure ?? choice.nextSuccess ?? choice.next?.success ?? choice.next);
+  if(typeof raw==='string') return raw;
+  return null;
+}
+function parallelResolveNextId(room,campaign,player,node,choice,storyPass){
+  const current=node?.id || parallelPlayerState(room,player)?.nodeId;
+  let preferred=parallelChoiceDestination(choice,current,storyPass);
+  if(preferred==='__ENDING__' || choice?.ending) return preferred;
+  if(preferred && preferred!==current && campaign?.parallelStory?.nodes?.[preferred]) return preferred;
+  // A self-loop is useful for gathering information once, but repeating the identical scene is not.
+  // When an authored choice points back to itself, continue through another authored edge that best matches the chosen path.
+  const candidates=[];
+  for(const c of (node?.choices||[])){
+    for(const ok of [true,false]){
+      const id=parallelChoiceDestination(c,current,ok);
+      if(!id || id===current || id==='__ENDING__' || !campaign?.parallelStory?.nodes?.[id]) continue;
+      let score=0;
+      if((c.path||statPath(c.stat||'지혜'))===(choice?.path||statPath(choice?.stat||'지혜'))) score+=8;
+      if(c.branchValue&&c.branchValue===choice?.branchValue) score+=5;
+      if(c.stat&&c.stat===choice?.stat) score+=3;
+      candidates.push({id,score,label:String(c.label||'')});
+    }
+  }
+  if(!candidates.length) return preferred || current;
+  candidates.sort((a,b)=>b.score-a.score || a.label.localeCompare(b.label,'ko'));
+  const topScore=candidates[0].score; const top=candidates.filter(x=>x.score===topScore);
+  const seed=(Number(parallelPlayerState(room,player)?.progress||0)+String(choice?.label||'').length)%top.length;
+  return top[seed].id;
+}
+
 function parallelCurateChoices(room,campaign,player,node,dynamic,base){
   const encounter=room.parallel?.encounters?.[parallelPlayerState(room,player)?.location];
   if(encounter?.hp>0) return dynamic.slice(0,6);
   const all=[...dynamic,...base].filter(choice=>choice && parallelChoiceFitsCurrentScene(room,campaign,player,choice,node));
   const ranked=[...all].sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
-  const bestByIntent=new Map();
-  for(const choice of ranked){
-    const key=parallelChoiceIntent(choice,node);
-    const prev=bestByIntent.get(key);
-    if(!prev || parallelChoiceScore(choice,node)>parallelChoiceScore(prev,node)) bestByIntent.set(key,choice);
-  }
-  let pool=[...bestByIntent.values()].sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
-  // Keep at most two acquisition/trade options in one scene so freedom does not become a wall of near-identical item buttons.
-  let acquisition=0, social=0; const selected=[];
-  for(const c of pool){
-    const intent=parallelChoiceIntent(c,node);
+  const selected=[]; const seenIntent=new Set(); const seenDest=new Set();
+  const currentId=parallelPlayerState(room,player)?.nodeId || '';
+  let acquisition=0, social=0;
+  // First pass: prefer distinct actions AND distinct destinations, so choices actually lead to different progress.
+  for(const c of ranked){
+    const intent=parallelChoiceIntent(c,node); const family=intent.split('|')[0];
+    const dest=parallelChoiceDestination(c,currentId,true) || parallelChoiceDestination(c,currentId,false) || '';
     if(/^(trade|acquire):/.test(intent) && acquisition>=1) continue;
     if(/^social:/.test(intent) && social>=2) continue;
+    if(seenIntent.has(intent)) continue;
+    if(dest && dest!==currentId && seenDest.has(dest) && selected.length>=2) continue;
+    selected.push(c); seenIntent.add(intent); if(dest&&dest!==currentId) seenDest.add(dest);
     if(/^(trade|acquire):/.test(intent)) acquisition++;
     if(/^social:/.test(intent)) social++;
-    selected.push(c);
     if(selected.length>=5) break;
   }
-  // Preserve meaningful action diversity when the scene has it.
-  const categories=new Set(selected.map(c=>parallelChoiceIntent(c,node).split('|')[0]));
-  for(const wanted of ['inspect','talk','move','help','combat']){
-    if(categories.has(wanted)) continue;
-    const candidate=pool.find(c=>parallelChoiceIntent(c,node).startsWith(`${wanted}|`) && !selected.includes(c));
-    if(candidate && selected.length<5){ selected.push(candidate); categories.add(wanted); }
+  // Second pass: fill only when necessary, still avoiding exact duplicate intent.
+  for(const c of ranked){
+    if(selected.length>=5) break;
+    if(selected.includes(c)) continue;
+    const intent=parallelChoiceIntent(c,node);
+    if(seenIntent.has(intent)) continue;
+    selected.push(c); seenIntent.add(intent);
   }
   return selected.slice(0,5);
 }
@@ -2179,7 +2199,7 @@ function parallelRenderedScene(room,campaign,player){
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
     sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:parallelNodeAffordances(node), text:(node.text||[]).join(' '),
-    paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:false,
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices, freeActionAllowed:false,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
@@ -2413,7 +2433,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
       consequence=[consequence,`${applied.label} ${applied.stacks>1?`x${applied.stacks}`:''}`.trim()].filter(Boolean).join(' · ');
       if(grade==='disaster' && roll!==1){ player.hp=Math.max(0,player.hp-1); consequence=[consequence,'큰 실패 HP -1'].filter(Boolean).join(' · '); }
     }
-    const nextId=storyPass ? (choice.nextSuccess || choice.next) : (choice.nextFailure || choice.nextSuccess || choice.next);
+    const nextId=parallelResolveNextId(room,campaign,player,parallelNode(room,campaign,player),choice,storyPass);
     narrative=`${narrative} ${parallelImmersiveOutcome(room,campaign,player,parallelNode(room,campaign,player),choice,grade,nextId)}`.trim();
     if(nextId==='__ENDING__'){
       ps.ended=true; ps.ending='completed';
@@ -2430,7 +2450,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
   ps.progress=Number(ps.progress||0)+1; ps.history.push({nodeId:scene.id,choice:choice.label,success,grade,path:choice.path||statPath(choice.stat||'지혜'),roll,total,dc,ts:Date.now()}); if(ps.history.length>20)ps.history.splice(0,ps.history.length-20);
   ps.lastPersonalResult={choiceLabel:choice.label,text:narrative,consequence,success:success||grade==='mixed',grade};
   room.parallel.clockTick=Number(room.parallel.clockTick||0)+1;
-  room.parallel.incidentLog.push({playerId:player.id,playerName:player.name,location:ps.location,choice:choice.label,text:narrative,ts:Date.now()}); if(room.parallel.incidentLog.length>40)room.parallel.incidentLog.splice(0,room.parallel.incidentLog.length-40);
+  room.parallel.incidentLog.push({playerId:player.id,playerName:player.name,location:ps.location,nodeId:ps.nodeId,choice:choice.label,text:narrative,ts:Date.now()}); if(room.parallel.incidentLog.length>40)room.parallel.incidentLog.splice(0,room.parallel.incidentLog.length-40);
   room.story=Object.values(room.parallel.playerStates).reduce((sum,s)=>sum+Number(s.progress||0),0);
   room.lastResolution={source:'parallel-story',ok:success||grade==='mixed',outcomeGrade:grade,result:roll,total,dc,playerId:player.id,playerName:player.name,choiceLabel:choice.label,text:narrative,consequence};
   room.phase='story'; room.pendingContinue=null;

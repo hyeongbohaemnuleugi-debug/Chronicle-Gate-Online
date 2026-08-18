@@ -9,6 +9,7 @@ const writeChains = new Map();
 function headers(extra = {}) {
   return {
     apikey: secretKey,
+    Authorization: `Bearer ${secretKey}`,
     'Content-Type': 'application/json',
     ...extra,
   };
@@ -59,7 +60,7 @@ export async function saveRoomSnapshot(room) {
     state: serializableRoom(room),
     revision: Number(room.revision || 1),
     updated_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+    expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),
   };
   return enqueueWrite(room.code, async () => {
     await request('/rpc/save_chronicle_room', {
@@ -188,6 +189,29 @@ export async function findResumableRoomSnapshotsByName(playerName, limit = 100) 
     });
   } catch (error) {
     console.error('[supabase] resumable room lookup failed:', error.message);
+    return [];
+  }
+}
+
+export async function findResumableRoomSnapshotsByAccount(accountId, limit = 100) {
+  const exact = String(accountId || '').trim();
+  if (!persistenceEnabled || !exact) return [];
+  try {
+    const { data } = await request(`/room_sessions?select=room_code,state,expires_at,updated_at&order=updated_at.desc&limit=${Math.max(1, Math.min(200, Number(limit || 100)))}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    const now = Date.now();
+    return (Array.isArray(data) ? data : []).filter(row => {
+      if (!row?.state) return false;
+      if (row.expires_at && new Date(row.expires_at).getTime() < now) return false;
+      const room = row.state;
+      if (!room.campaignId || ['lobby','ending'].includes(room.phase)) return false;
+      if (room.abandonVote || room.sessionClosed) return false;
+      return (room.players || []).some(player => String(player?.accountId || '') === exact);
+    });
+  } catch (error) {
+    console.error('[supabase] resumable account lookup failed:', error.message);
     return [];
   }
 }

@@ -1,6 +1,8 @@
 import express from 'express';
 import http from 'http';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { Server } from 'socket.io';
 import { CAMPAIGNS, STAT_NAMES, ITEMS_BY_CAMPAIGN, ECONOMY_FACILITY_TEMPLATES, ECONOMY_FACILITY_THEMES } from './campaign-data.js';
 import {
@@ -18,7 +20,7 @@ import {
 // --- v8.2.3 inline account store: avoids external module deployment mismatch ---
 
 const rawUrl = process.env.SUPABASE_URL?.trim();
-const secretKey = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
+const secretKey = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_API_KEY)?.trim();
 const accountPersistenceEnabled = Boolean(rawUrl && secretKey);
 const restBase = rawUrl ? `${rawUrl.replace(/\/$/, '')}/rest/v1` : null;
 
@@ -26,6 +28,52 @@ const memoryAccounts = new Map();
 const memoryEmailIndex = new Map();
 const memorySessions = new Map();
 const memoryEndings = new Map();
+
+// Durable local fallback for deployments where Supabase account persistence is not configured yet.
+// Render's persistent disk path is preferred when available. This prevents a successful signup
+// from disappearing just because the Node process restarted. Supabase is still the production path.
+const localAccountDir = process.env.CHRONICLE_DATA_DIR || process.env.RENDER_DISK_PATH || path.join(process.cwd(), '.chronicle-data');
+const localAccountFile = path.join(localAccountDir, 'accounts.json');
+let localLoaded = false;
+
+function ensureLocalStoreLoaded() {
+  if (localLoaded || accountPersistenceEnabled) return;
+  localLoaded = true;
+  try {
+    fs.mkdirSync(localAccountDir, { recursive: true });
+    if (!fs.existsSync(localAccountFile)) return;
+    const raw = JSON.parse(fs.readFileSync(localAccountFile, 'utf8'));
+    for (const row of Array.isArray(raw.accounts) ? raw.accounts : []) {
+      if (!row?.id || !row?.email) continue;
+      memoryAccounts.set(row.id, row);
+      memoryEmailIndex.set(normalizeEmail(row.email), row.id);
+    }
+    for (const row of Array.isArray(raw.endings) ? raw.endings : []) {
+      if (!row?.accountId || !row?.endingKey) continue;
+      let map = memoryEndings.get(row.accountId);
+      if (!map) { map = new Map(); memoryEndings.set(row.accountId, map); }
+      map.set(row.endingKey, row);
+    }
+  } catch (error) {
+    console.error('[Chronicle Gate] local account store load failed:', error?.message || error);
+  }
+}
+
+function saveLocalStore() {
+  if (accountPersistenceEnabled) return;
+  ensureLocalStoreLoaded();
+  try {
+    fs.mkdirSync(localAccountDir, { recursive: true });
+    const accounts = [...memoryAccounts.values()];
+    const endings = [];
+    for (const [accountId, map] of memoryEndings.entries()) for (const row of map.values()) endings.push({ accountId, ...row });
+    const temp = `${localAccountFile}.tmp`;
+    fs.writeFileSync(temp, JSON.stringify({ version: 1, accounts, endings, savedAt: new Date().toISOString() }, null, 2));
+    fs.renameSync(temp, localAccountFile);
+  } catch (error) {
+    console.error('[Chronicle Gate] local account store save failed:', error?.message || error);
+  }
+}
 
 const hashToken = token => crypto.createHash('sha256').update(String(token || '')).digest('hex');
 const normalizeEmail = email => String(email || '').trim().toLowerCase().slice(0, 160);
@@ -37,6 +85,8 @@ const ALL_DICE_IDS = [
   'aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard',
 ];
 const isDeveloperEmail = email => DEVELOPER_EMAILS.has(normalizeEmail(email));
+
+console.log(`[Chronicle Gate] account store: ${accountPersistenceEnabled ? 'supabase' : 'local-fallback'}${accountPersistenceEnabled ? '' : ` (${localAccountFile})`}`);
 
 function headers(extra = {}) {
   return {
@@ -89,6 +139,7 @@ function publicAccount(account) {
 async function findAccountByEmail(email) {
   const normalized = normalizeEmail(email);
   if (!accountPersistenceEnabled) {
+    ensureLocalStoreLoaded();
     const id = memoryEmailIndex.get(normalized);
     return id ? memoryAccounts.get(id) || null : null;
   }
@@ -98,7 +149,7 @@ async function findAccountByEmail(email) {
 
 async function findAccountById(accountId) {
   if (!accountId) return null;
-  if (!accountPersistenceEnabled) return memoryAccounts.get(accountId) || null;
+  if (!accountPersistenceEnabled) { ensureLocalStoreLoaded(); return memoryAccounts.get(accountId) || null; }
   const { data } = await request(`/cg_accounts?id=eq.${encodeURIComponent(accountId)}&select=*&limit=1`, { method: 'GET' });
   return Array.isArray(data) ? data[0] || null : null;
 }
@@ -108,6 +159,7 @@ async function createSession(accountId) {
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
   if (!accountPersistenceEnabled) {
+    ensureLocalStoreLoaded();
     memorySessions.set(tokenHash, { accountId, expiresAt });
     return { token, expiresAt };
   }
@@ -138,8 +190,10 @@ async function registerAccount({ email, password, displayName }) {
     created_at: new Date().toISOString(),
   };
   if (!accountPersistenceEnabled) {
+    ensureLocalStoreLoaded();
     memoryAccounts.set(id, row);
     memoryEmailIndex.set(normalizedEmail, id);
+    saveLocalStore();
   } else {
     await request('/cg_accounts', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(row) });
   }
@@ -181,7 +235,7 @@ async function getAccountProfile(accountId) {
 
 async function getEndingCollection(accountId) {
   if (!accountId) return [];
-  if (!accountPersistenceEnabled) return [...(memoryEndings.get(accountId)?.values() || [])].sort((a,b)=>String(a.campaignId).localeCompare(String(b.campaignId)) || a.firstSeenAt-b.firstSeenAt);
+  if (!accountPersistenceEnabled) { ensureLocalStoreLoaded(); return [...(memoryEndings.get(accountId)?.values() || [])].sort((a,b)=>String(a.campaignId).localeCompare(String(b.campaignId)) || a.firstSeenAt-b.firstSeenAt); }
   const { data } = await request(`/cg_endings?account_id=eq.${encodeURIComponent(accountId)}&select=ending_key,campaign_id,ending_title,seen_count,first_seen_at,last_seen_at&order=first_seen_at.asc`, { method: 'GET' });
   return (Array.isArray(data) ? data : []).map(row => ({
     endingKey: row.ending_key, campaignId: row.campaign_id, endingTitle: row.ending_title,
@@ -198,6 +252,7 @@ async function recordEnding(accountId, { endingKey, campaignId, endingTitle }) {
     const now = new Date().toISOString();
     collection.set(endingKey, prior ? { ...prior, seenCount: prior.seenCount + 1, lastSeenAt: now } : { endingKey, campaignId, endingTitle, seenCount:1, firstSeenAt:now, lastSeenAt:now });
     const acc = memoryAccounts.get(accountId); if (acc) acc.chronicle_points = Number(acc.chronicle_points || 0) + (newEnding ? 5 : 1);
+    saveLocalStore();
     return { newEnding, pointsAwarded:newEnding ? 5 : 1, account:publicAccount(acc) };
   }
   const { data } = await request('/rpc/record_chronicle_ending', {
@@ -222,7 +277,7 @@ async function buyDice(accountId, diceId, price) {
     acc.owned_dice ||= ['classic'];
     if (acc.owned_dice.includes(diceId)) return publicAccount(acc);
     if (Number(acc.chronicle_points || 0) < price) throw new Error('크로니클 포인트가 부족합니다.');
-    acc.chronicle_points -= price; acc.owned_dice.push(diceId); return publicAccount(acc);
+    acc.chronicle_points -= price; acc.owned_dice.push(diceId); saveLocalStore(); return publicAccount(acc);
   }
   const { data } = await request('/rpc/purchase_chronicle_dice', { method: 'POST', body: JSON.stringify({ p_account_id: accountId, p_dice_id: diceId, p_price: price }) });
   const result = Array.isArray(data) ? data[0] : data;
@@ -238,6 +293,7 @@ async function equipDice(accountId, diceId) {
   if (!owned.includes(diceId)) throw new Error('보유하지 않은 주사위입니다.');
   if (!accountPersistenceEnabled) {
     account.equipped_dice = diceId;
+    saveLocalStore();
     return publicAccount(account);
   }
   await request(`/cg_accounts?id=eq.${encodeURIComponent(accountId)}`, { method:'PATCH', headers:{ Prefer:'return=minimal' }, body:JSON.stringify({ equipped_dice:diceId }) });
@@ -254,7 +310,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.2.3-inline-account-store';
+const APP_VERSION = '8.2.5-auth-fx-stable';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -296,11 +352,14 @@ function setAuthCookie(req,res,token,maxAge=60*60*24*30){
   res.setHeader('Set-Cookie', `cg_session=${encodeURIComponent(token||'')}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure?'; Secure':''}`);
 }
 const loginAttempts = new Map();
-function authRateAllowed(req){ const key=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim(); const now=Date.now(); const row=loginAttempts.get(key)||{count:0,reset:now+600000}; if(now>row.reset){row.count=0;row.reset=now+600000;} row.count++; loginAttempts.set(key,row); return row.count<=12; }
+function authAttemptKey(req){ return String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim(); }
+function authRateAllowed(req){ const key=authAttemptKey(req); const now=Date.now(); const row=loginAttempts.get(key); if(!row||now>row.reset){ if(row)loginAttempts.delete(key); return true; } return row.count<12; }
+function authRateFail(req){ const key=authAttemptKey(req); const now=Date.now(); const row=loginAttempts.get(key)||{count:0,reset:now+600000}; if(now>row.reset){row.count=0;row.reset=now+600000;} row.count++; loginAttempts.set(key,row); }
+function authRateSuccess(req){ loginAttempts.delete(authAttemptKey(req)); }
 async function httpAccount(req){ try{return await getAccountBySessionToken(authCookie(req));}catch{return null;} }
 app.get('/api/account/me', async (req,res)=>{ const account=await httpAccount(req); res.json({ok:true,account,diceCatalog:DICE_CATALOG,persistence:accountPersistenceEnabled}); });
-app.post('/api/account/register', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'잠시 후 다시 시도하세요.'}); const result=await registerAccount(req.body||{}); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG}); }catch(error){ res.status(400).json({ok:false,error:error.message||'회원가입에 실패했습니다.'}); } });
-app.post('/api/account/login', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요.'}); const result=await loginAccount(req.body||{}); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG}); }catch(error){ res.status(401).json({ok:false,error:error.message||'로그인에 실패했습니다.'}); } });
+app.post('/api/account/register', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 10분 뒤 다시 시도하세요.'}); const result=await registerAccount(req.body||{}); authRateSuccess(req); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG,accountStore:accountPersistenceEnabled?'supabase':'local-fallback'}); }catch(error){ authRateFail(req); res.status(400).json({ok:false,error:error.message||'회원가입에 실패했습니다.'}); } });
+app.post('/api/account/login', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 10분 뒤 다시 시도하세요.'}); const result=await loginAccount(req.body||{}); authRateSuccess(req); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG,accountStore:accountPersistenceEnabled?'supabase':'local-fallback'}); }catch(error){ authRateFail(req); res.status(401).json({ok:false,error:error.message||'로그인에 실패했습니다.'}); } });
 app.post('/api/account/logout', async (req,res)=>{ try{ await logoutSession(authCookie(req)); }catch{} setAuthCookie(req,res,'',0); res.json({ok:true}); });
 app.get('/api/account/collection', async (req,res)=>{ const account=await httpAccount(req); if(!account) return res.status(401).json({ok:false,error:'로그인이 필요합니다.'}); res.json({ok:true,endings:await getEndingCollection(account.id),account:await getAccountProfile(account.id)}); });
 app.use((req, res, next) => {
@@ -336,9 +395,10 @@ app.get('/health', (_req, res) => res.json({
   version: APP_VERSION,
   rooms: rooms.size,
   persistence: persistenceEnabled ? 'supabase' : 'memory',
+  accountStore: accountPersistenceEnabled ? 'supabase' : 'local-fallback',
   timestamp: new Date().toISOString(),
   uptimeSeconds: Math.floor(process.uptime()),
-  release: 'account-progression-beta',
+  release: 'auth-persistence-and-ultra-dice-fx',
 }));
 app.get('/api/config', (_req, res) => res.json({
   version: APP_VERSION,

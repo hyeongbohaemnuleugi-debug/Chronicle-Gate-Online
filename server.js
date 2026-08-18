@@ -23,6 +23,9 @@ const rawUrl = process.env.SUPABASE_URL?.trim();
 const secretKey = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_API_KEY)?.trim();
 const accountPersistenceEnabled = Boolean(rawUrl && secretKey);
 const restBase = rawUrl ? `${rawUrl.replace(/\/$/, '')}/rest/v1` : null;
+const explicitLocalAccountDir = (process.env.CHRONICLE_DATA_DIR || process.env.RENDER_DISK_PATH || '').trim() || (fs.existsSync('/var/data') ? '/var/data' : '');
+const localAccountDurable = Boolean(explicitLocalAccountDir);
+const accountStoreMode = accountPersistenceEnabled ? 'supabase' : (localAccountDurable ? 'persistent-disk' : 'unconfigured');
 
 const memoryAccounts = new Map();
 const memoryEmailIndex = new Map();
@@ -32,7 +35,7 @@ const memoryEndings = new Map();
 // Durable local fallback for deployments where Supabase account persistence is not configured yet.
 // Render's persistent disk path is preferred when available. This prevents a successful signup
 // from disappearing just because the Node process restarted. Supabase is still the production path.
-const localAccountDir = process.env.CHRONICLE_DATA_DIR || process.env.RENDER_DISK_PATH || path.join(process.cwd(), '.chronicle-data');
+const localAccountDir = explicitLocalAccountDir || path.join(process.cwd(), '.chronicle-data');
 const localAccountFile = path.join(localAccountDir, 'accounts.json');
 let localLoaded = false;
 
@@ -86,7 +89,15 @@ const ALL_DICE_IDS = [
 ];
 const isDeveloperEmail = email => DEVELOPER_EMAILS.has(normalizeEmail(email));
 
-console.log(`[Chronicle Gate] account store: ${accountPersistenceEnabled ? 'supabase' : 'local-fallback'}${accountPersistenceEnabled ? '' : ` (${localAccountFile})`}`);
+console.log(`[Chronicle Gate] account store: ${accountStoreMode}${localAccountDurable ? ` (${localAccountFile})` : ''}`);
+if (!accountPersistenceEnabled && !localAccountDurable) {
+  console.error('[Chronicle Gate] ACCOUNT STORAGE NOT CONFIGURED: signup/login persistence is disabled until Supabase or a Render Persistent Disk is configured.');
+}
+
+function assertAccountStoreReady() {
+  if (accountPersistenceEnabled || localAccountDurable) return;
+  throw new Error('계정 영속 저장소가 설정되지 않았습니다. Supabase 계정 SQL을 실행하고 SUPABASE_URL + Service Role 키를 설정하거나 Render Persistent Disk를 연결한 뒤 다시 시도하세요.');
+}
 
 function headers(extra = {}) {
   return {
@@ -105,7 +116,15 @@ async function request(path, options = {}) {
     signal: AbortSignal.timeout(10_000),
   });
   const text = await response.text().catch(() => '');
-  if (!response.ok) throw new Error(`Supabase REST ${response.status}: ${text.slice(0, 500)}`);
+  if (!response.ok) {
+    if (response.status === 404 || /PGRST205|does not exist|schema cache/i.test(text)) {
+      throw new Error('Supabase 계정 테이블이 아직 준비되지 않았습니다. 패치의 supabase/2026-08-18_accounts_progress.sql을 SQL Editor에서 실행하세요.');
+    }
+    if (response.status === 401 || response.status === 403 || /permission denied|row-level security|JWT/i.test(text)) {
+      throw new Error('Supabase 계정 저장 권한이 없습니다. Render 환경변수에 SUPABASE_SERVICE_ROLE_KEY(또는 SUPABASE_SECRET_KEY)를 설정하세요. anon 키만으로는 계정 저장이 되지 않습니다.');
+    }
+    throw new Error(`Supabase 계정 저장 오류 (${response.status}). Render의 Supabase 환경변수와 계정 SQL 적용 상태를 확인하세요.`);
+  }
   return { ok: true, data: text ? JSON.parse(text) : null };
 }
 
@@ -172,6 +191,7 @@ async function createSession(accountId) {
 }
 
 async function registerAccount({ email, password, displayName }) {
+  assertAccountStoreReady();
   const normalizedEmail = normalizeEmail(email);
   const name = normalizeName(displayName);
   if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error('올바른 이메일 주소를 입력하세요.');
@@ -202,6 +222,7 @@ async function registerAccount({ email, password, displayName }) {
 }
 
 async function loginAccount({ email, password }) {
+  assertAccountStoreReady();
   const account = await findAccountByEmail(email);
   if (!account || !verifyPassword(password, account.password_hash)) throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
   const session = await createSession(account.id);
@@ -310,7 +331,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.2.5-auth-fx-stable';
+const APP_VERSION = '8.2.7-auth-persistence-fix';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -357,9 +378,10 @@ function authRateAllowed(req){ const key=authAttemptKey(req); const now=Date.now
 function authRateFail(req){ const key=authAttemptKey(req); const now=Date.now(); const row=loginAttempts.get(key)||{count:0,reset:now+600000}; if(now>row.reset){row.count=0;row.reset=now+600000;} row.count++; loginAttempts.set(key,row); }
 function authRateSuccess(req){ loginAttempts.delete(authAttemptKey(req)); }
 async function httpAccount(req){ try{return await getAccountBySessionToken(authCookie(req));}catch{return null;} }
-app.get('/api/account/me', async (req,res)=>{ const account=await httpAccount(req); res.json({ok:true,account,diceCatalog:DICE_CATALOG,persistence:accountPersistenceEnabled}); });
-app.post('/api/account/register', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 10분 뒤 다시 시도하세요.'}); const result=await registerAccount(req.body||{}); authRateSuccess(req); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG,accountStore:accountPersistenceEnabled?'supabase':'local-fallback'}); }catch(error){ authRateFail(req); res.status(400).json({ok:false,error:error.message||'회원가입에 실패했습니다.'}); } });
-app.post('/api/account/login', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 10분 뒤 다시 시도하세요.'}); const result=await loginAccount(req.body||{}); authRateSuccess(req); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG,accountStore:accountPersistenceEnabled?'supabase':'local-fallback'}); }catch(error){ authRateFail(req); res.status(401).json({ok:false,error:error.message||'로그인에 실패했습니다.'}); } });
+app.get('/api/account/me', async (req,res)=>{ const account=await httpAccount(req); res.json({ok:true,account,diceCatalog:DICE_CATALOG,persistence:accountPersistenceEnabled || localAccountDurable,accountStore:accountStoreMode}); });
+app.get('/api/account/storage-status', (_req,res)=>res.json({ok:true,mode:accountStoreMode,durable:accountPersistenceEnabled || localAccountDurable,ready:accountPersistenceEnabled || localAccountDurable}));
+app.post('/api/account/register', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 10분 뒤 다시 시도하세요.'}); const result=await registerAccount(req.body||{}); authRateSuccess(req); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG,accountStore:accountStoreMode}); }catch(error){ authRateFail(req); res.status(400).json({ok:false,error:error.message||'회원가입에 실패했습니다.'}); } });
+app.post('/api/account/login', async (req,res)=>{ try{ if(!authRateAllowed(req)) return res.status(429).json({ok:false,error:'로그인 시도가 너무 많습니다. 10분 뒤 다시 시도하세요.'}); const result=await loginAccount(req.body||{}); authRateSuccess(req); setAuthCookie(req,res,result.token); res.json({ok:true,account:result.account,diceCatalog:DICE_CATALOG,accountStore:accountStoreMode}); }catch(error){ authRateFail(req); res.status(401).json({ok:false,error:error.message||'로그인에 실패했습니다.'}); } });
 app.post('/api/account/logout', async (req,res)=>{ try{ await logoutSession(authCookie(req)); }catch{} setAuthCookie(req,res,'',0); res.json({ok:true}); });
 app.get('/api/account/collection', async (req,res)=>{ const account=await httpAccount(req); if(!account) return res.status(401).json({ok:false,error:'로그인이 필요합니다.'}); res.json({ok:true,endings:await getEndingCollection(account.id),account:await getAccountProfile(account.id)}); });
 app.use((req, res, next) => {
@@ -395,7 +417,8 @@ app.get('/health', (_req, res) => res.json({
   version: APP_VERSION,
   rooms: rooms.size,
   persistence: persistenceEnabled ? 'supabase' : 'memory',
-  accountStore: accountPersistenceEnabled ? 'supabase' : 'local-fallback',
+  accountStore: accountStoreMode,
+  accountStoreDurable: accountPersistenceEnabled || localAccountDurable,
   timestamp: new Date().toISOString(),
   uptimeSeconds: Math.floor(process.uptime()),
   release: 'auth-persistence-and-ultra-dice-fx',

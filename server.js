@@ -331,7 +331,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.2.7-auth-persistence-fix';
+const APP_VERSION = '8.2.9-context-dice-identity';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -343,17 +343,17 @@ const ALL_VOTED_COUNTDOWN_MS = 3_000;
 const ROOM_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 
 const DICE_CATALOG = [
-  {id:'classic',name:'기본 주사위',price:0,rarity:'기본',base:'#b94d36',accent:'#ffe6c6',emissive:'#2a0904',metalness:.32,roughness:.24},
-  {id:'nebula_glass',name:'성운 유리',price:5,rarity:'희귀',base:'#5948b8',accent:'#d9d0ff',emissive:'#251b6b',metalness:.18,roughness:.12},
-  {id:'abyss_pearl',name:'심해 진주',price:6,rarity:'희귀',base:'#0f7185',accent:'#baf8ff',emissive:'#063d56',metalness:.28,roughness:.16},
-  {id:'twilight_gilt',name:'황혼 금박',price:7,rarity:'희귀',base:'#7d3f36',accent:'#ffd67a',emissive:'#5b1d12',metalness:.72,roughness:.2},
-  {id:'clockwork',name:'시계태엽',price:8,rarity:'영웅',base:'#6b553a',accent:'#f5cf84',emissive:'#332515',metalness:.82,roughness:.3},
-  {id:'aurora_crystal',name:'극광 수정',price:9,rarity:'영웅',base:'#277f78',accent:'#baffd8',emissive:'#164e64',metalness:.2,roughness:.08},
-  {id:'eclipse_obsidian',name:'월식 흑요석',price:10,rarity:'영웅',base:'#17151d',accent:'#d998ff',emissive:'#4c1764',metalness:.55,roughness:.14},
-  {id:'starseed',name:'별씨앗',price:11,rarity:'영웅',base:'#315a3a',accent:'#f8f29b',emissive:'#163b24',metalness:.24,roughness:.3},
-  {id:'neon_prism',name:'네온 프리즘',price:12,rarity:'전설',base:'#142a54',accent:'#58fff0',emissive:'#a213a9',metalness:.42,roughness:.1},
-  {id:'crown_steel',name:'왕관 강철',price:14,rarity:'전설',base:'#3c3f49',accent:'#ffe29b',emissive:'#684516',metalness:.9,roughness:.18},
-  {id:'rift_shard',name:'경계의 파편',price:16,rarity:'전설',base:'#472d6f',accent:'#ffbcf5',emissive:'#6e1c78',metalness:.48,roughness:.09},
+  {id:'classic',name:'기본 주사위',price:0,rarity:'기본',base:'#b94d36',accent:'#ffe6c6',emissive:'#2a0904',metalness:.32,roughness:.24,visual:'etched'},
+  {id:'nebula_glass',name:'성운 유리',price:5,rarity:'희귀',base:'#5948b8',accent:'#d9d0ff',emissive:'#251b6b',metalness:.18,roughness:.12,visual:'glass-stars'},
+  {id:'abyss_pearl',name:'심해 진주',price:6,rarity:'희귀',base:'#0f7185',accent:'#baf8ff',emissive:'#063d56',metalness:.28,roughness:.16,visual:'pearl-bubble'},
+  {id:'twilight_gilt',name:'황혼 금박',price:7,rarity:'희귀',base:'#7d3f36',accent:'#ffd67a',emissive:'#5b1d12',metalness:.72,roughness:.2,visual:'gilded-studs'},
+  {id:'clockwork',name:'시계태엽',price:8,rarity:'영웅',base:'#6b553a',accent:'#f5cf84',emissive:'#332515',metalness:.82,roughness:.3,visual:'mechanical-gears'},
+  {id:'aurora_crystal',name:'극광 수정',price:9,rarity:'영웅',base:'#277f78',accent:'#baffd8',emissive:'#164e64',metalness:.2,roughness:.08,visual:'crystal-spires'},
+  {id:'eclipse_obsidian',name:'월식 흑요석',price:10,rarity:'영웅',base:'#17151d',accent:'#d998ff',emissive:'#4c1764',metalness:.55,roughness:.14,visual:'eclipse-core'},
+  {id:'starseed',name:'별씨앗',price:11,rarity:'영웅',base:'#315a3a',accent:'#f8f29b',emissive:'#163b24',metalness:.24,roughness:.3,visual:'living-stars'},
+  {id:'neon_prism',name:'네온 프리즘',price:12,rarity:'전설',base:'#142a54',accent:'#58fff0',emissive:'#a213a9',metalness:.42,roughness:.1,visual:'neon-wire'},
+  {id:'crown_steel',name:'왕관 강철',price:14,rarity:'전설',base:'#3c3f49',accent:'#ffe29b',emissive:'#684516',metalness:.9,roughness:.18,visual:'royal-spikes'},
+  {id:'rift_shard',name:'경계의 파편',price:16,rarity:'전설',base:'#472d6f',accent:'#ffbcf5',emissive:'#6e1c78',metalness:.48,roughness:.09,visual:'fractured-shell'},
 ];
 const DICE_BY_ID = Object.fromEntries(DICE_CATALOG.map(d=>[d.id,d]));
 
@@ -556,9 +556,9 @@ function rollReward(room, player, { margin = 0, natural = 0, lootItemId = null, 
 // v6.1.0 LIVING STORY
 const AGENCY_VERSION = 2;
 const SCENE_IMPORTANCE = {
-  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:5, freeAction:false, consequence:'현재 장면에서 실제로 가능한 여러 접근 중 하나를 고릅니다. 작은 실패도 다음 상황으로 이어집니다.' },
-  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:6, freeAction:false, consequence:'위험이 분명한 장면입니다. 조사·대화·우회·돌파·보호 등 가능한 접근을 상황에 맞게 제시합니다.' },
-  pivotal: { label:'결정적 장면', dcMin:10, dcMax:13, choiceTarget:7, freeAction:false, consequence:'큰 분기나 엔딩이 걸린 장면입니다. 서로 다른 위험과 대가를 가진 선택지를 충분히 제시합니다.' },
+  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:4, freeAction:false, consequence:'현재 장면에서 실제로 가능한 여러 접근 중 하나를 고릅니다. 작은 실패도 다음 상황으로 이어집니다.' },
+  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:5, freeAction:false, consequence:'위험이 분명한 장면입니다. 조사·대화·우회·돌파·보호 등 가능한 접근을 상황에 맞게 제시합니다.' },
+  pivotal: { label:'결정적 장면', dcMin:10, dcMax:13, choiceTarget:6, freeAction:false, consequence:'큰 분기나 엔딩이 걸린 장면입니다. 서로 다른 위험과 대가를 가진 선택지를 충분히 제시합니다.' },
 };
 
 function approachPressure(room, player, choice) {
@@ -724,7 +724,7 @@ function alternateActionLabel(stat, beat) {
 }
 function inferSceneAffordances(beat) {
   const explicit = beat?.affordances || {};
-  const text = [beat?.title, beat?.phase, beat?.objective, beat?.situation, beat?.text, beat?.visual, beat?.why, beat?.stakes]
+  const text = [beat?.title, beat?.phase, beat?.objective, beat?.situation, beat?.text, beat?.visual, beat?.why, beat?.stakes, beat?.reveal]
     .filter(Boolean).join(' ');
   const hasPerson = /사람|인물|경비|상인|주민|생존자|증언자|아이|공주|로레인|귀족|사제|군중|병사|기사|추적자|침략자|고블린|도굴꾼|브로커|의무관|조종사|연구원|파수꾼|부족|사냥꾼|동료|누군가|목소리|상대/.test(text);
   const hasHostile = /적|적대|공격|습격|전투|싸움|결투|괴물|짐승|추적자|침략자|고블린|경비대가 .*막|길을 막|위협하는 존재|포위|매복|사냥감/.test(text);
@@ -733,27 +733,45 @@ function inferSceneAffordances(beat) {
   const hasStealthPressure = /감시|경계|추적|시야|센서|포탑|몰래|숨|발각|봉쇄|경비|드론/.test(text);
   const hasRescue = /구조|부상|다친|살리|피난|보호|위험에 처|갇힌|생존자|동료|시간을 벌/.test(text);
   const hasItem = /물건|열쇠|상자|장부|지도|무기|왕관|조각|데이터|기록물|장치|보관|소지/.test(text);
+  const hasRoute = /길|통로|복도|계단|문|입구|출구|승강장|골목|다리|터널|우회|경로|방향|안쪽|바깥|지하|옥상|다음 장소|향해/.test(text);
+  const hasTimePressure = /시간|곧|서둘|급히|제한|카운트|붕괴|잠기|침수|산소|추격|다가오|꺼지|닫히|무너지|자정|첫차|종소리|반복/.test(text);
   return {
     text,
     hasPerson: explicit.hasPerson ?? hasPerson, hasHostile: explicit.hasHostile ?? hasHostile,
     hasObstacle: explicit.hasObstacle ?? hasObstacle, hasClue: explicit.hasClue ?? hasClue,
     hasStealthPressure: explicit.hasStealthPressure ?? hasStealthPressure, hasRescue: explicit.hasRescue ?? hasRescue,
-    hasItem: explicit.hasItem ?? hasItem,
-    person:explicit.person||'', hostile:explicit.hostile||'', obstacle:explicit.obstacle||'', clue:explicit.clue||'', rescue:explicit.rescue||'', item:explicit.item||''
+    hasItem: explicit.hasItem ?? hasItem, hasRoute: explicit.hasRoute ?? hasRoute, hasTimePressure: explicit.hasTimePressure ?? hasTimePressure,
+    person:explicit.person||'', hostile:explicit.hostile||'', obstacle:explicit.obstacle||'', clue:explicit.clue||'', rescue:explicit.rescue||'', item:explicit.item||'', route:explicit.route||''
   };
 }
-function choiceFitsScene(choice, ctx) {
-  if (!choice || choice.requiredJob || choice.isTravel) return true;
-  const action = String(choice.actionType || '');
+function actionFitsScene(action, ctx={}) {
   if (!action || action.startsWith('follow-') || action.startsWith('chain-') || action.startsWith('travel-')) return true;
-  if (action === 'fight') return ctx.hasHostile;
-  if (['persuade','threaten','trade','tail'].includes(action)) return ctx.hasPerson;
-  if (action === 'steal') return ctx.hasPerson || ctx.hasItem;
-  if (['sneak','hide'].includes(action)) return ctx.hasStealthPressure || ctx.hasHostile || ctx.hasObstacle;
-  if (action === 'break') return ctx.hasObstacle || ctx.hasHostile;
-  if (action === 'trap') return ctx.hasHostile || ctx.hasStealthPressure || ctx.hasObstacle;
-  if (action === 'help') return ctx.hasPerson || ctx.hasRescue;
+  if (action === 'fight') return Boolean(ctx.hasHostile);
+  if (['persuade','threaten','trade','tail'].includes(action)) return Boolean(ctx.hasPerson);
+  if (action === 'steal') return Boolean(ctx.hasItem && (ctx.hasPerson || ctx.hasStealthPressure || ctx.hasHostile));
+  if (['sneak','hide'].includes(action)) return Boolean(ctx.hasStealthPressure || ctx.hasHostile);
+  if (action === 'break') return Boolean(ctx.hasObstacle);
+  if (action === 'bypass') return Boolean(ctx.hasObstacle || ctx.hasRoute);
+  if (action === 'trap') return Boolean(ctx.hasHostile || ctx.hasStealthPressure);
+  if (action === 'help') return Boolean(ctx.hasRescue);
+  if (action === 'investigate') return Boolean(ctx.hasClue || ctx.hasItem);
+  if (action === 'observe') return Boolean(ctx.hasClue || ctx.hasHostile || ctx.hasStealthPressure || ctx.hasTimePressure);
+  if (action === 'wait') return Boolean(ctx.hasTimePressure || ctx.hasHostile || ctx.hasStealthPressure);
+  if (action === 'endure') return Boolean(ctx.hasTimePressure || ctx.hasHostile || ctx.hasRescue);
   return true;
+}
+function choiceFitsScene(choice, ctx) {
+  if (!choice) return false;
+  if (choice.requiredJob || choice.isTravel) return true;
+  const action = String(choice.actionType || '');
+  return actionFitsScene(action, ctx);
+}
+function parallelNodeAffordances(node) {
+  return inferSceneAffordances({
+    title:node?.title||'', phase:node?.phase||'', objective:node?.objective||'',
+    situation:node?.sceneQuestion||'', stakes:node?.immediatePressure||'', reveal:node?.releaseTone||'',
+    text:(node?.text||[]).join(' '), affordances:node?.affordances||{}
+  });
 }
 function sceneFocus(beat) {
   return String(beat?.objective || beat?.title || '현재 상황').replace(/[.!?]+$/g,'').slice(0,72);
@@ -828,29 +846,38 @@ function sceneInquiryNarrative(campaign, beat, validity, declaration, count=1){
 
 function contextualGeneratedAction(stat, beat, ctx, variant=0) {
   const focus = sceneFocus(beat);
+  const clue = ctx.clue || '눈앞의 단서';
+  const person = ctx.person || '눈앞의 인물';
+  const obstacle = ctx.obstacle || '막힌 경로';
+  const hostile = ctx.hostile || '위협';
+  const rescue = ctx.rescue || '위험에 처한 사람';
   const table = {
     '지능': [
-      {actionType:'investigate', label:`현장의 단서와 모순을 다시 맞춰 ${focus}의 원인을 좁힌다`},
-      {actionType:'trap', label:`주변 조건을 계산해 위험이 움직일 경로를 미리 제한한다`},
+      ...(ctx.hasClue||ctx.hasItem ? [{actionType:'investigate', label:`${clue}의 앞뒤가 맞지 않는 부분을 대조해 ${focus}의 원인을 좁힌다`}] : []),
+      ...(ctx.hasHostile||ctx.hasStealthPressure ? [{actionType:'trap', label:`${hostile}이 움직일 경로를 계산해 먼저 유리한 위치를 만든다`}] : []),
     ],
     '지혜': [
-      {actionType:'observe', label:`바로 움직이지 않고 기척과 변화를 읽어 가장 안전한 다음 수를 찾는다`},
-      {actionType:'wait', label:`상황이 먼저 반응하게 기다린 뒤 드러난 틈을 이용한다`},
+      ...(ctx.hasClue||ctx.hasHostile||ctx.hasStealthPressure ? [{actionType:'observe', label:`바로 움직이지 않고 ${clue}와 주변 반응의 변화를 먼저 읽는다`}] : []),
+      ...(ctx.hasTimePressure ? [{actionType:'wait', label:`짧게 기다려 상황이 먼저 드러내는 변화가 있는지 확인한다`}] : []),
     ],
-    '민첩': ctx.hasStealthPressure
-      ? [{actionType:'sneak', label:`감시와 시야가 비는 순간을 골라 들키지 않고 유리한 위치로 이동한다`},{actionType:'bypass', label:`정면을 피하고 위험 구간을 우회해 ${focus}에 먼저 접근한다`}]
-      : [{actionType:'bypass', label:`정면을 피하고 지형의 빈틈을 이용해 ${focus}에 접근한다`},{actionType:'bypass', label:`가장 위험한 지점을 건드리지 않고 측면 경로를 확보한다`}],
-    '근력': ctx.hasHostile
-      ? [{actionType:'fight', label:`눈앞의 적대 세력을 정면으로 밀어내고 길을 연다`, startsCombat:true, fatalRisk:true},{actionType:'break', label:`주변 구조물을 힘으로 바꿔 상대의 유리한 판을 무너뜨린다`, fatalRisk:true}]
-      : [{actionType:'break', label:`막힌 구조물이나 장애물을 힘으로 치워 ${focus}에 길을 만든다`, fatalRisk:true},{actionType:'break', label:`주변 구조를 강제로 바꿔 지금 막힌 동선을 새로 만든다`, fatalRisk:true}],
-    '체력': ctx.hasRescue || ctx.hasPerson
-      ? [{actionType:'help', label:`위험을 대신 받아내며 사람들을 보호하고 움직일 시간을 번다`},{actionType:'endure', label:`가장 위험한 구간을 버텨 동료들이 ${focus}에 집중할 시간을 만든다`}]
-      : [{actionType:'endure', label:`환경의 압박을 몸으로 버티며 ${focus}을 위한 시간을 확보한다`},{actionType:'endure', label:`피로와 위험을 감수하고 가장 불안정한 구간을 직접 지탱한다`}],
-    '매력': ctx.hasPerson
-      ? [{actionType:'persuade', label:`관련 인물의 이해관계를 짚어 협조하는 편이 이득이 되도록 설득한다`},{actionType:'trade', label:`상대가 원하는 대가를 제시해 충돌 없이 정보나 통로를 얻는다`}]
-      : [],
+    '민첩': [
+      ...(ctx.hasStealthPressure||ctx.hasHostile ? [{actionType:'sneak', label:`시야가 끊기는 순간을 골라 들키지 않고 유리한 위치로 이동한다`}] : []),
+      ...(ctx.hasObstacle||ctx.hasRoute ? [{actionType:'bypass', label:`${obstacle}을 정면으로 건드리지 않고 이어지는 다른 경로를 찾는다`}] : []),
+    ],
+    '근력': [
+      ...(ctx.hasHostile ? [{actionType:'fight', label:`${hostile}을 정면으로 밀어내고 진행할 공간을 만든다`, startsCombat:true, fatalRisk:true}] : []),
+      ...(ctx.hasObstacle ? [{actionType:'break', label:`${obstacle}을 힘으로 치워 막힌 동선을 연다`, fatalRisk:true}] : []),
+    ],
+    '체력': [
+      ...(ctx.hasRescue ? [{actionType:'help', label:`${rescue}을 먼저 안전하게 옮기며 다른 행동을 할 시간을 번다`}] : []),
+      ...(ctx.hasTimePressure||ctx.hasHostile ? [{actionType:'endure', label:`지금 닥친 압박을 버텨 ${focus}에 대응할 시간을 확보한다`}] : []),
+    ],
+    '매력': ctx.hasPerson ? [
+      {actionType:'persuade', label:`${person}에게 지금 알고 있는 사실을 짚어 협조를 끌어낸다`},
+      {actionType:'trade', label:`${person}이 원하는 조건을 확인하고 정보나 통로를 얻을 거래를 제안한다`},
+    ] : [],
   };
-  const options = table[stat] || [];
+  const options = (table[stat] || []).filter(option=>actionFitsScene(option.actionType,ctx));
   return options.length ? options[variant % options.length] : null;
 }
 function choiceConsequenceHint(choice, importanceKey) {
@@ -880,9 +907,32 @@ function choiceReasonForScene(choice, ctx={}) {
     endure:'환경의 압박이 계속되고 있어 버티는 것 자체가 시간을 번다.',
     trap:'적이나 장애물이 지나갈 경로를 예측해 준비할 수 있다.'
   };
-  return map[action]||'현재 장면의 사람·물건·통로와 직접 연결된 행동이다.';
+  return map[action]||'';
 }
 function genericChoiceLabel(label='') { return /^(주변을 살핀다|조사한다|대화한다|설득한다|우회한다|버틴다|길을 연다|다음 곳으로 간다|다른 방법을 찾는다|맞서 싸운다)$/.test(String(label).trim()); }
+function sceneChoiceRelevance(choice, beat, ctx={}) {
+  if(!choice) return -999;
+  const label=String(choice.label||'');
+  const action=String(choice.actionType||'');
+  if(!choiceFitsScene(choice,ctx)) return -999;
+  let score=choice.requiredJob?70:0;
+  if(choice.isTravel) score+=16;
+  if(choice.agencyGenerated) score-=5;
+  if(choice.reason) score+=7;
+  if(action==='investigate' && ctx.hasClue) score+=25;
+  if(action==='persuade' && ctx.hasPerson) score+=25;
+  if(action==='fight' && ctx.hasHostile) score+=25;
+  if(action==='help' && ctx.hasRescue) score+=25;
+  if((action==='break'||action==='bypass') && ctx.hasObstacle) score+=22;
+  if((action==='sneak'||action==='hide') && ctx.hasStealthPressure) score+=22;
+  const entities=[ctx.person,ctx.clue,ctx.obstacle,ctx.hostile,ctx.rescue,ctx.item].filter(Boolean);
+  for(const entity of entities) if(label.includes(String(entity))) score+=18;
+  const context=`${beat?.title||''} ${beat?.objective||''} ${beat?.situation||''} ${beat?.text||''}`;
+  const words=label.split(/\s+/).map(w=>w.replace(/[을를이가은는와과으로에서에게부터까지]/g,'')).filter(w=>w.length>=2);
+  score+=Math.min(18,words.filter(w=>context.includes(w)).length*4);
+  if(genericChoiceLabel(label)) score-=18;
+  return score;
+}
 
 function prepareAgencyBeat(room, beat) {
   if (!beat) return beat;
@@ -935,7 +985,7 @@ function prepareAgencyBeat(room, beat) {
       id:`${beat.id || 'scene'}-option-${stat}-${generatedIndex}`,
       label:generated.label,
       reason:choiceReasonForScene({...generated,stat}, sceneCtx),
-      detail:`현재 장면에서 실제로 가능한 ${stat} 계열 접근입니다. 성공하면 같은 목표를 다른 경로로 진전시키고, 실패해도 그 행동 때문에 생긴 후속 상황으로 이어집니다.`,
+      detail:`${generated.label}`, 
       actionType:generated.actionType,
       startsCombat:Boolean(generated.startsCombat),
       fatalRisk:Boolean(generated.fatalRisk),
@@ -950,17 +1000,18 @@ function prepareAgencyBeat(room, beat) {
     usedStats.add(stat);
   }
 
-  const visible = visibleForActor();
-  if (visible.length > targetChoiceCount) {
+  const visible = visibleForActor().filter(choice=>sceneChoiceRelevance(choice,beat,sceneCtx)>-900);
+  if (visible.length) {
+    const ranked=[...visible].sort((a,b)=>sceneChoiceRelevance(b,beat,sceneCtx)-sceneChoiceRelevance(a,beat,sceneCtx));
     const kept=[]; const seenActions=new Set();
-    for (const choice of visible) {
-      const key=choice.requiredJob ? `job:${choice.requiredJob}` : (choice.actionType || choice.stat);
-      if (seenActions.has(key) && kept.length < targetChoiceCount - 1) continue;
+    for (const choice of ranked) {
+      const key=choice.requiredJob ? `job:${choice.requiredJob}` : (choice.actionType || choice.stat || choice.label);
+      if (seenActions.has(key)) continue;
       kept.push(choice); seenActions.add(key);
       if (kept.length >= targetChoiceCount) break;
     }
-    if (kept.length < targetChoiceCount) {
-      for (const choice of visible) { if (!kept.includes(choice)) kept.push(choice); if (kept.length >= targetChoiceCount) break; }
+    if (kept.length < Math.min(3,targetChoiceCount)) {
+      for (const choice of ranked) { if (!kept.includes(choice)) kept.push(choice); if (kept.length >= Math.min(targetChoiceCount,Math.max(3,ranked.length))) break; }
     }
     const hiddenJob = beat.choices.filter(choice => choice.requiredJob && choice.requiredJob !== actor?.job?.name);
     beat.choices = [...kept, ...hiddenJob];
@@ -1577,7 +1628,7 @@ function parallelAddAcquisitionChoices(room,campaign,player,node){
 function parallelUniversalItemChoices(room,campaign,player,node){
   if(!campaign || campaign.id==='echo' || !node) return [];
   const ps=parallelPlayerState(room,player); if(!ps) return [];
-  const out=[]; const sceneItem=parallelCampaignSceneItem(campaign,node); const aff=node.affordances||{};
+  const out=[]; const sceneItem=parallelCampaignSceneItem(campaign,node); const aff=parallelNodeAffordances(node);
   const add=c=>out.push({kind:c.kind||'parallel-base',path:c.path||statPath(c.stat||'지혜'),...c});
   const hasPerson=Boolean(aff.hasPerson||aff.person);
   const hasHostile=Boolean(aff.hasHostile||aff.hostile);
@@ -1821,7 +1872,7 @@ function parallelCombatAttemptText(player,choice,enc){
 
 function parallelOutcomeThread(room,campaign,player,node,choice,grade,success){
   const ps=parallelPlayerState(room,player); if(!ps) return null;
-  const aff=node?.affordances||{}; const target=aff.clue||aff.person||aff.obstacle||aff.hostile||aff.item||node?.title||'현재 사건';
+  const aff=parallelNodeAffordances(node); const target=aff.clue||aff.person||aff.obstacle||aff.hostile||aff.item||node?.title||'현재 사건';
   const tier=success ? 'success' : (grade==='mixed'?'mixed':'failure');
   const voice=PARALLEL_OUTCOME_VOICE[campaign?.id]||PARALLEL_OUTCOME_VOICE.guardian;
   const thread={id:`${ps.nodeId}:${Date.now()}:${ps.progress||0}`,sourceNode:ps.nodeId,sourceTitle:node?.title||'',choiceLabel:choice?.label||'',grade:tier,target,path:choice?.path||statPath(choice?.stat||'지혜'),text:voice[tier],resolved:false};
@@ -1839,7 +1890,7 @@ function parallelThreadNarrative(room,campaign,player){
 }
 function parallelOutcomeFollowupChoices(room,campaign,player,node){
   const ps=parallelPlayerState(room,player); const thread=parallelLatestOpenThread(room,player); if(!ps||!thread||thread.sourceNode===ps.nodeId) return [];
-  const aff=node?.affordances||{}; const target=aff.clue||aff.obstacle||aff.person||aff.hostile||aff.item||'지금 상황';
+  const aff=parallelNodeAffordances(node); const target=aff.clue||aff.obstacle||aff.person||aff.hostile||aff.item||'지금 상황';
   const base=(node.choices||[]).filter(c=>parallelChoiceVisible(room,campaign,player,c,node));
   const nextFor=(patterns)=>base.find(c=>patterns.test(String(c.label||''))) || base[0];
   const out=[]; const add=(id,label,stat,dc,path,route,successText,failureText)=>{ if(!route) return; out.push({id,kind:'parallel-base',label,stat,dc,path,choiceBadge:'이전 선택의 여파',nextSuccess:route.nextSuccess||route.next?.success||route.next,nextFailure:route.nextFailure||route.next?.failure||route.nextSuccess||route.next,success:successText,failure:failureText,resolveThreadId:thread.id}); };
@@ -1916,7 +1967,7 @@ function parallelDynamicChoices(room,campaign,player,node){
   return dynamic.filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
 }
 function parallelAffordanceSummary(node){
-  const aff=node?.affordances || {};
+  const aff=parallelNodeAffordances(node);
   const parts=[];
   if(aff.hasClue && aff.clue) parts.push(`조사 가능한 단서로 ${aff.clue}가 남아 있다`);
   if(aff.hasPerson && aff.person) parts.push(`${aff.person}이(가) 이 장면 안에 있어 직접 말을 걸거나 반응을 살필 수 있다`);
@@ -1927,7 +1978,7 @@ function parallelAffordanceSummary(node){
   return parts.join('. ')+(parts.length?' .':'');
 }
 function parallelSceneContext(node,campaign){
-  const aff=node?.affordances || {};
+  const aff=parallelNodeAffordances(node);
   const visible=[];
   if(aff.hasClue && aff.clue) visible.push(`단서: ${aff.clue}`);
   if(aff.hasPerson && aff.person) visible.push(`인물: ${aff.person}`);
@@ -1939,7 +1990,7 @@ function parallelSceneContext(node,campaign){
   return `${node?.title || campaign?.title || '현재 장면'} · ${visible.slice(0,4).join(' · ')}`;
 }
 function parallelChoiceReason(choice,node){
-  const aff=node?.affordances||{};
+  const aff=parallelNodeAffordances(node);
   const intent=parallelChoiceIntent(choice,node).split('|')[0];
   if(choice?.kind==='parallel-social') return '같은 장소에 있는 동료와 직접 결정할 수 있다.';
   if(choice?.kind==='parallel-item-transfer') return '지금 곁에 있는 동료에게 가진 물건을 건넬 수 있다.';
@@ -1952,10 +2003,24 @@ function parallelChoiceReason(choice,node){
   if(aff.obstacle && /우회|돌파|문|통로|길/.test(String(choice?.label||''))) return `${aff.obstacle} 때문에 다른 접근이 필요하다.`;
   return '';
 }
+function parallelContextualLabel(choice,node){
+  const label=String(choice?.label||'').trim(); const aff=parallelNodeAffordances(node);
+  if(!label) return label;
+  if(label==='소리를 듣는다') return aff.clue?`${aff.clue} 주변의 소리와 반응을 확인한다`:`${node?.title||'현재 장소'} 주변에서 들리는 소리를 확인한다`;
+  if(label==='다음 곳으로 간다') return aff.clue?`${aff.clue}의 흔적이 이어지는 방향으로 이동한다`:aff.obstacle?`${aff.obstacle} 너머로 이어지는 길을 찾는다`:`${String(node?.objective||'현재 목표').replace(/[.!?]+$/,'')}와 연결된 다음 장소로 이동한다`;
+  if(label==='몰래 접근한다') return aff.hostile?`${aff.hostile}의 시야를 피해 접근한다`:aff.obstacle?`${aff.obstacle} 주변의 사각으로 접근한다`:`발각될 만한 움직임을 피해서 접근한다`;
+  if(label==='사람을 지킨다') return aff.rescue?`${aff.rescue}을 위험에서 먼저 보호한다`:aff.person?`${aff.person}이 휘말리지 않게 앞을 막는다`:label;
+  if(label==='주변을 살핀다') return aff.clue?`${aff.clue} 주변에서 놓친 흔적을 찾는다`:aff.obstacle?`${aff.obstacle} 주변의 다른 접근로를 확인한다`:label;
+  if(label==='기다린다') return `상황이 먼저 변하는지 잠시 지켜본다`;
+  if(label==='길을 연다' && aff.obstacle) return `${aff.obstacle}을 치워 통로를 연다`;
+  if(label==='우회한다' && aff.obstacle) return `${aff.obstacle}을 피해 다른 길로 우회한다`;
+  if(label==='맞서 싸운다' && aff.hostile) return `${aff.hostile}과 정면으로 맞선다`;
+  return label;
+}
 function parallelSceneNarrative(room,campaign,player,node){
   if(!node) return [];
   const ps=parallelPlayerState(room,player);
-  const aff=node.affordances||{};
+  const aff=parallelNodeAffordances(node);
   const source=[...(node.text||[])].map(x=>String(x).trim()).filter(Boolean);
   const out=[];
   // Keep the scene itself first. Give enough concrete fiction to understand place, danger, and people before asking for a decision.
@@ -2006,21 +2071,23 @@ function parallelChoiceScore(choice,node){
 }
 function parallelChoiceIntent(choice,node){
   const label=String(choice?.label||'').replace(/\s+/g,' ').trim();
-  const aff=node?.affordances||{};
+  const aff=parallelNodeAffordances(node);
   let action='other';
   if(choice?.kind==='parallel-social') action=`social:${choice.action||'talk'}:${choice.targetId||''}`;
   else if(choice?.kind==='parallel-item-transfer') action=`transfer:${choice.targetId||''}:${choice.itemId||''}`;
   else if(/물물교환|바꾼다/.test(label)) action='trade:barter';
   else if(/구매|산다/.test(label)) action='trade:buy';
+  else if(/거래|교환|흥정|대가를 제시/.test(label)) action='trade';
   else if(/훔|몰래.*챙|몰래.*빼/.test(label)) action='acquire:steal';
   else if(/줍|찾아 챙|주변에서.*찾/.test(label)) action='acquire:find';
   else if(/건넨다/.test(label)) action='transfer';
   else if(/묻|말한다|설득|협상|대화/.test(label)) action='talk';
   else if(/싸|공격|정면.*막|돌파|부순/.test(label)) action='combat';
-  else if(/돕|구조|치료|보호|수습/.test(label)) action='help';
+  else if(/돕|구조|치료|보호|지킨|수습/.test(label)) action='help';
+  else if(/몰래|잠입|숨어|숨는다|사각/.test(label)) action='sneak';
   else if(/우회|다른 길|돌아간다|향한다|간다|들어간다|나간다|따라간다/.test(label)) action='move';
   else if(/확인|조사|살핀|분석|기록|대조|듣|본다|읽/.test(label)) action='inspect';
-  else if(/기다|숨|관찰/.test(label)) action='wait';
+  else if(/기다|관찰/.test(label)) action='wait';
   const targets=[aff.person,aff.clue,aff.obstacle,aff.hostile,aff.item].filter(Boolean);
   let target=targets.find(t=>label.includes(String(t))) || '';
   if(!target){
@@ -2030,6 +2097,7 @@ function parallelChoiceIntent(choice,node){
   if(action==='talk' && aff.person) target=aff.person;
   if(action==='inspect' && aff.clue) target=aff.clue;
   if(action==='combat' && aff.hostile) target=aff.hostile;
+  if(action==='help' && aff.rescue) target=aff.rescue;
   return `${action}|${target}`;
 }
 
@@ -2037,24 +2105,28 @@ function parallelChoiceFitsCurrentScene(room,campaign,player,choice,node){
   if(!choice || !node) return false;
   if(choice.kind==='parallel-social' || choice.kind==='parallel-item-transfer') return true;
   const intent=parallelChoiceIntent(choice,node).split('|')[0];
-  const aff=node.affordances||{};
+  const aff=parallelNodeAffordances(node);
   const label=String(choice.label||'');
   const context=`${node.title||''} ${node.objective||''} ${(node.text||[]).join(' ')} ${aff.clue||''} ${aff.person||''} ${aff.hostile||''} ${aff.obstacle||''} ${aff.rescue||''} ${aff.item||''}`;
   if(intent==='talk' && !(aff.hasPerson&&aff.person)) return false;
   if(intent==='combat' && !(aff.hasHostile&&aff.hostile) && !room.parallel?.encounters?.[parallelPlayerState(room,player)?.location]) return false;
-  if(intent==='help' && !((aff.hasRescue&&aff.rescue)||(aff.hasPerson&&aff.person))) return false;
+  if(intent==='help' && !(aff.hasRescue&&aff.rescue)) return false;
+  if(intent==='trade' && !((aff.hasPerson&&aff.person) && (/거래|시장|상인|브로커|대가|교환|흥정|보급|경매|협상/.test(context) || choice.costCoins || choice.grantItem || choice.consumeItem))) return false;
+  if(intent==='sneak' && !(aff.hasStealthPressure||aff.hasHostile||/감시|경비|시야|추적|센서|봉쇄|몰래|잠입/.test(context))) return false;
   if(intent==='inspect' && !((aff.hasClue&&aff.clue)||(aff.hasItem&&aff.item)||label.split(/\s+/).some(w=>w.length>1&&context.includes(w)))) return false;
   if(/^acquire:/.test(intent) && !(aff.hasItem&&aff.item) && !choice.grantItem) return false;
+  if(intent==='wait' && !(/시간|곧|급|추격|감시|경계|반복|자정|첫차|침수|산소|붕괴/.test(context))) return false;
   if(intent==='move') {
     const next=choice.nextSuccess||choice.nextFailure||choice.next;
-    if(!next || next===node.id) return /돌아|남아|기다/.test(label);
+    if(!next || next===node.id) return /돌아|남아/.test(label);
+    if(!(/길|통로|문|입구|출구|복도|계단|승강장|골목|터널|경로|방향|향|이동|들어/.test(context+' '+label))) return false;
   }
   return true;
 }
 
 function parallelCurateChoices(room,campaign,player,node,dynamic,base){
   const encounter=room.parallel?.encounters?.[parallelPlayerState(room,player)?.location];
-  if(encounter?.hp>0) return dynamic.slice(0,7);
+  if(encounter?.hp>0) return dynamic.slice(0,6);
   const all=[...dynamic,...base].filter(choice=>choice && parallelChoiceFitsCurrentScene(room,campaign,player,choice,node));
   const ranked=[...all].sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
   const bestByIntent=new Map();
@@ -2073,16 +2145,16 @@ function parallelCurateChoices(room,campaign,player,node,dynamic,base){
     if(/^(trade|acquire):/.test(intent)) acquisition++;
     if(/^social:/.test(intent)) social++;
     selected.push(c);
-    if(selected.length>=7) break;
+    if(selected.length>=5) break;
   }
   // Preserve meaningful action diversity when the scene has it.
   const categories=new Set(selected.map(c=>parallelChoiceIntent(c,node).split('|')[0]));
   for(const wanted of ['inspect','talk','move','help','combat']){
     if(categories.has(wanted)) continue;
     const candidate=pool.find(c=>parallelChoiceIntent(c,node).startsWith(`${wanted}|`) && !selected.includes(c));
-    if(candidate && selected.length<7){ selected.push(candidate); categories.add(wanted); }
+    if(candidate && selected.length<5){ selected.push(candidate); categories.add(wanted); }
   }
-  return selected.slice(0,7);
+  return selected.slice(0,5);
 }
 function parallelRenderedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player);
@@ -2100,13 +2172,13 @@ function parallelRenderedScene(room,campaign,player){
     const fallback=(node.choices||[])
       .filter(choice=>!choice.requiredJob && !choice.requiredJobs && !choice.requiredTag && !choice.requiredTags && !choice.requiredAnyTag && !choice.requiredAnyTags && !choice.requiredFlag && !choice.requiredFlags && !choice.requiredWorldFlag && !choice.requiredWorldFlags)
       .map((choice,index)=>({id:`fallback:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
-    choices.push(...fallback.filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node)).slice(0,7));
+    choices.push(...fallback.filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node)).slice(0,5));
   }
-  const explainedChoices=choices.slice(0,7).map(choice=>({...choice,reason:parallelChoiceReason(choice,node)}));
+  const explainedChoices=choices.slice(0,6).map(choice=>{ const contextual={...choice,label:parallelContextualLabel(choice,node)}; return {...contextual,reason:parallelChoiceReason(contextual,node)}; });
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
-    sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:node.affordances||{}, text:(node.text||[]).join(' '),
+    sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:parallelNodeAffordances(node), text:(node.text||[]).join(' '),
     paragraphs:parallelSceneNarrative(room,campaign,player,node), choices:explainedChoices, freeActionAllowed:false,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',

@@ -24,7 +24,9 @@ export class DiceTheater {
     this.fxGroup = new THREE.Group();
     this.fxItems = [];
     this.fxOrbiters = [];
-    for (const c of this.fxClouds) { if (c?.obj?.parent) c.obj.parent.remove(c.obj); c?.obj?.geometry?.dispose?.(); c?.obj?.material?.dispose?.(); }
+    // Must exist before any cleanup/tick code touches it. v8.2.5 accidentally
+    // iterated this.fxClouds before initialization, which prevented DiceTheater
+    // from being constructed at all in the browser.
     this.fxClouds = [];
     this.fxTrailClock = 0;
     this.glowTexture = null;
@@ -160,7 +162,7 @@ export class DiceTheater {
     for (let i = 0; i < count; i++) {
       const u = Math.random(), v = Math.random();
       const theta = u * Math.PI * 2, phi = Math.acos(2 * v - 1);
-      const r = radius * (.45 + Math.random() * .55);
+      const r = radius * (.74 + Math.random() * .26);
       positions[i*3] = Math.sin(phi) * Math.cos(theta) * r;
       positions[i*3+1] = Math.cos(phi) * r * .72;
       positions[i*3+2] = Math.sin(phi) * Math.sin(theta) * r;
@@ -400,6 +402,22 @@ export class DiceTheater {
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: skin.accent || '#ffe6c6', transparent: true, opacity: premium?.98:.84 })); group.add(edges); return group;
   }
 
+  prioritizeDie(die) {
+    // Keep the physical die readable even when premium additive FX are active.
+    die.scale.setScalar(1.12);
+    die.traverse(obj => {
+      if (obj.isMesh) {
+        obj.renderOrder = obj.userData?.material ? 14 : 12;
+        if (obj.material && !Array.isArray(obj.material)) {
+          obj.material.depthTest = true;
+          if ('depthWrite' in obj.material && !obj.material.transparent) obj.material.depthWrite = true;
+        }
+      } else if (obj.isLineSegments) {
+        obj.renderOrder = 13;
+      }
+    });
+  }
+
   synthHit(volume = .12, pitch = 90, style = null) {
     try {
       const ctx = this.audio || (this.audio = new AudioContext()); const o = ctx.createOscillator(), g = ctx.createGain();
@@ -415,7 +433,11 @@ export class DiceTheater {
     this.clearFx();
     const dieStyle = skin || color; const profile = this.fxProfile(typeof dieStyle === 'object' ? dieStyle : { base: dieStyle });
     const die = sides === 6 ? this.d6(dieStyle) : this.d20(dieStyle);
-    this.active = die; this.scene.add(die); die.position.set(-3.1, 3.6, 0); die.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+    this.active = die;
+    this.scene.add(die);
+    this.prioritizeDie(die);
+    die.position.set(-3.2, 2.85, 0);
+    die.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
     this.setupRollFx(die, profile);
     const normal = this.faceNormals[Math.max(0, Math.min(this.faceNormals.length - 1, result - 1))] || new THREE.Vector3(0, 1, 0);
     const align = new THREE.Quaternion().setFromUnitVectors(normal, new THREE.Vector3(0, 1, 0));
@@ -425,18 +447,27 @@ export class DiceTheater {
     return new Promise(resolve => {
       const frame = now => {
         const dt = Math.min(.05, (now-lastNow)/1000 || .016); lastNow = now;
-        const t = Math.min(1, (now - start) / duration); const ease = 1 - Math.pow(1 - t, 3);
-        const travel = -3.1 + 3.1 * ease; const bounceAmp = (1 - t) * 2.2; const bounce = Math.abs(Math.sin(t * Math.PI * 5.3)) * bounceAmp;
-        die.position.set(travel, -.05 + bounce, .15 * Math.sin(t * 13));
+        const t = Math.min(1, (now - start) / duration);
+        const ease = 1 - Math.pow(1 - t, 2.45);
+        // A readable tabletop toss: enter high from the left, fall under gravity,
+        // then make several diminishing bounces before the result settles.
+        const travel = -3.2 + 3.2 * ease;
+        const fall = 2.85 * Math.pow(1 - t, 1.75);
+        const bounce = Math.abs(Math.sin(t * Math.PI * 6.4)) * .82 * Math.pow(1 - t, 1.15);
+        die.position.set(travel, -.02 + fall + bounce, .18 * Math.sin(t * 12.5));
         if (t < .73) { die.rotation.x += .19 * (1 - t) + .03; die.rotation.y += .24 * (1 - t) + .035; die.rotation.z += .16 * (1 - t) + .025; }
         else { const local = (t - .73) / .27; die.quaternion.slerp(finalQ, Math.min(1, local * .12 + .08)); die.quaternion.slerp(finalQ, Math.min(1, local * .23)); }
         this.trailFx(die, profile, dt); this.tickFx(dt, (now-start)/1000);
         const b = Math.floor(t * 5.3); if (b !== lastBounce && t > .08 && t < .9) { lastBounce = b; this.synthHit(.045 + (.9 - t) * .06, 70 + Math.random() * 65, profile); if(profile.tier>=2 && t>.35) this.ring(new THREE.Vector3(die.position.x,-1.4,die.position.z),profile.accent,.08,.8+profile.tier*.25,.25,.28); }
-        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=3?.18:profile.tier===2?.09:.045); this.camera.position.y = 4.6 + Math.sin(t*31)*(1-t)*(profile.tier>=3?.055:0); this.camera.lookAt(0, .05, 0);
+        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=3?.18:profile.tier===2?.09:.045);
+        this.camera.position.y = 4.6 + Math.sin(t*31)*(1-t)*(profile.tier>=3?.055:0);
+        this.camera.lookAt(die.position.x * .12, Math.max(.05, die.position.y * .16), 0);
         this.renderer.render(this.scene, this.camera);
         if (t < 1) requestAnimationFrame(frame);
         else {
-          die.quaternion.copy(finalQ); die.position.set(0, -.02, 0); this.highlightResult(result); this.landingFx(profile); this.synthHit(profile.tier>=3?.22:.15, profile.tier>=3?48:55, profile);
+          die.quaternion.copy(finalQ); die.position.set(0, -.02, 0);
+          this.camera.lookAt(0, .05, 0);
+          this.highlightResult(result); this.landingFx(profile); this.synthHit(profile.tier>=3?.22:.15, profile.tier>=3?48:55, profile);
           const settleStart=performance.now(); let settleLast=settleStart;
           const settle=ts=>{ const dt2=Math.min(.05,(ts-settleLast)/1000||.016); settleLast=ts; this.tickFx(dt2,(ts-start)/1000); this.renderer.render(this.scene,this.camera); if(ts-settleStart<1050+profile.tier*260) requestAnimationFrame(settle); else { this.running=false; resolve(); } };
           requestAnimationFrame(settle);

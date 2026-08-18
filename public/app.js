@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=8290';
 
-const CLIENT_BUILD = '8.2.9-context-dice-identity';
+const CLIENT_BUILD = '8.3.0-shared-turn-branch-clarity';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -1499,6 +1499,9 @@ function renderCharacterHud(player, storyItems = []) {
 function renderParallelStory() {
   const c = currentCampaign();
   const p = me();
+  const actorId = state?.turnPlayerId && state?.parallel?.playerStates?.[state.turnPlayerId] ? state.turnPlayerId : playerToken;
+  const actor = state?.players?.find(x => x.id === actorId) || p;
+  const myPs = state?.parallel?.playerStates?.[playerToken];
   const choiceBox = $('#choiceArea');
   if (choiceBox) {
     choiceBox.classList.remove('hidden');
@@ -1507,12 +1510,12 @@ function renderParallelStory() {
     choiceBox.style.opacity = '1';
   }
 
-  const ps = state?.parallel?.playerStates?.[playerToken];
+  const ps = state?.parallel?.playerStates?.[actorId];
   const scene = ps?.scene;
-  const isMyTurn = state?.turnPlayerId === playerToken && state?.phase === 'story' && !state?.resumeBarrier;
+  const isMyTurn = actorId === playerToken && state?.phase === 'story' && !state?.resumeBarrier;
   if (!scene || !ps) return;
 
-  renderCharacterHud(p, scene.storyItems || []);
+  renderCharacterHud(p, myPs?.scene?.storyItems || scene.storyItems || []);
   $('#deckCount').textContent = '—';
   $('#eventCadence').textContent = '개인 진행 · 종료 시점은 선택에 따라 달라짐';
   $('#threatValue').textContent = state.threat;
@@ -1548,33 +1551,37 @@ function renderParallelStory() {
   const linked = Array.isArray(scene.linked) ? scene.linked : [];
 
   $('#turnBanner').textContent = isMyTurn
-    ? `당신의 차례 · ${scene.locationLabel || '현재 장소'}`
-    : `${state.turnPlayerName || '다른 플레이어'}의 행동을 기다리고 있습니다.`;
+    ? `당신의 차례 · ${scene.locationLabel || '현재 장소'} · 이 장면은 모두에게 공유됩니다`
+    : `${actor?.name || state.turnPlayerName || '다른 플레이어'}의 차례 · 같은 장면을 함께 보고 있습니다.`;
   setSceneImage($('#storySceneImg'), c, { act: scene.act, actName: scene.actName, title: scene.title, visual: scene.locationLabel, id: scene.id });
-  $('#storySceneCaption').textContent = `${scene.locationLabel || '개인 진행'}${nearby.length ? ` · 같은 장소: ${nearby.map(x => x.name).join(', ')}` : ''}`;
+  $('#storySceneCaption').textContent = `${actor?.name || '플레이어'}의 장면 · ${scene.locationLabel || '개인 진행'}${nearby.length ? ` · 같은 장소: ${nearby.map(x => x.name).join(', ')}` : ''}`;
   $('#actLabel').textContent = encounter ? `LOCAL ENCOUNTER · ACT ${scene.act}` : `PARALLEL STORY · ACT ${scene.act}`;
   $('#eventTitle').textContent = encounter ? `${scene.title} · ${encounter.name}` : scene.title;
 
-  const trail = parallelStoryTrail(scene, ps, p);
-  if (encounter) trail.now = `${scene.sceneContext || scene.title}. ${encounter.name}이 길을 막고 있다.`;
-  setStoryTrail(trail.before, trail.bridge, trail.now);
+  const clarity = $('#storyClarity');
+  if (clarity) { clarity.innerHTML = ''; clarity.style.display = 'none'; }
 
-  $('#storyPrompt').innerHTML = `<strong>${isMyTurn ? '당신은 어떻게 하나요?' : `${esc(state.turnPlayerName || '다른 플레이어')}의 행동을 기다리는 중`}</strong><span>같이 다니는 중이어도 각자의 행동은 직접 정합니다.</span>`;
-  const paragraphs = parallelNarrationHTML((scene.paragraphs || []).slice(0, 4));
-  const sceneDialogue = Array.isArray(scene.dialogue) ? scene.dialogue.filter(x => x?.text).slice(0, 1) : [];
-  const dialogueHtml = sceneDialogue.length
-    ? `<div class="story-dialogue table-npc-line"><span>${esc(sceneDialogue[0].speaker || '등장인물')}</span><p>${esc(sceneDialogue[0].text)}</p></div>`
-    : '';
-  const pressureHtml = scene.immediatePressure
-    ? `<div class="table-pressure"><span>상황이 움직인다</span><p>${esc(conciseSceneText(scene.immediatePressure, 120))}</p></div>`
-    : '';
-  const encounterInfo = encounter
-    ? `<div class="story-inline-help danger"><b>${esc(encounter.name)}</b> · HP ${encounter.hp}/${encounter.maxHp}${encounter.weak ? ` · 약점: ${esc(encounter.weak)}` : ''}</div>`
-    : '';
-  const nearbyInfo = nearby.length
-    ? `<div class="story-inline-help"><b>같은 장소</b> · ${nearby.map(x => `${esc(x.name)}${x.job ? `(${esc(x.job)})` : ''}`).join(' · ')}</div>`
-    : '';
-  $('#eventText').innerHTML = `<article class="tabletop-first-story">${paragraphs}${dialogueHtml}${pressureHtml}${encounterInfo}${nearbyInfo}</article>`;
+  $('#storyPrompt').innerHTML = `<strong>${isMyTurn ? '당신은 어떻게 하나요?' : `${esc(actor?.name || state.turnPlayerName || '다른 플레이어')}은 어떻게 할까?`}</strong><span>${isMyTurn ? '현재 상황에서 실제로 가능한 행동을 고르세요.' : '현재 턴의 장면과 선택지를 모든 플레이어가 같이 보고 있습니다.'}</span>`;
+  const brief = scene.brief || {};
+  const extraParagraphs = parallelNarrationHTML((scene.paragraphs || []).slice(2, 4));
+  const sceneDialogue = Array.isArray(scene.dialogue) ? scene.dialogue.filter(x => x?.text).slice(0, 2) : [];
+  const dialogueHtml = sceneDialogue.map(line => `<div class="story-dialogue table-npc-line"><span>${esc(line.speaker || '등장인물')}</span><p>${esc(line.text)}</p></div>`).join('');
+  const visibleHtml = Array.isArray(brief.visible) && brief.visible.length
+    ? `<div class="scene-visible"><span>눈앞에 보이는 것</span><div>${brief.visible.map(x=>`<i>${esc(x)}</i>`).join('')}</div></div>` : '';
+  const dangerText = encounter ? `${encounter.name}이 길을 막고 있다. HP ${encounter.hp}/${encounter.maxHp}${encounter.weak ? ` · 약점 ${encounter.weak}` : ''}` : (brief.danger || '');
+  const last = state?.lastResolution?.source === 'parallel-story' && state.lastResolution.playerId !== actorId ? state.lastResolution : null;
+  const lastHtml = last ? `<div class="shared-last-action"><span>방금 전 · ${esc(last.playerName || '플레이어')}</span><p><b>${esc(last.choiceLabel || '')}</b>${last.consequence ? ` · ${esc(last.consequence)}` : ''}</p></div>` : '';
+  $('#eventText').innerHTML = `<article class="tabletop-first-story shared-turn-story">
+    ${lastHtml}
+    <div class="turn-scene-brief">
+      <div class="scene-brief-location"><span>현재 위치</span><b>${esc(brief.location || scene.locationLabel || '')}</b></div>
+      <div class="scene-brief-main"><span>지금 무슨 상황인가</span><p>${esc(brief.situation || scene.sceneContext || scene.title)}</p></div>
+      ${brief.objective ? `<div class="scene-brief-goal"><span>지금 해야 할 일</span><p>${esc(brief.objective)}</p></div>` : ''}
+      ${dangerText ? `<div class="scene-brief-danger"><span>당장 걸린 문제</span><p>${esc(dangerText)}</p></div>` : ''}
+    </div>
+    ${visibleHtml}${dialogueHtml}${extraParagraphs}
+    ${nearby.length ? `<div class="story-inline-help"><b>같은 장소</b> · ${nearby.map(x => `${esc(x.name)}${x.job ? `(${esc(x.job)})` : ''}`).join(' · ')}</div>` : ''}
+  </article>`;
 
   $('#storyActionBox').style.setProperty('display', 'none', 'important');
   $('#storyActionBox').classList.add('disabled');
@@ -1585,7 +1592,7 @@ function renderParallelStory() {
 
   const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 6) : [];
   choiceBox.innerHTML = choices.length
-    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>이 장면에서 가능한 행동 ${choices.length}가지</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}상황에 맞지 않는 행동은 표시하지 않습니다.</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)}`}</small></span></button>`).join('')
+    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>이 장면에서 가능한 행동 ${choices.length}가지</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}${isMyTurn?'지금 장면에 실제로 연결된 행동만 표시됩니다.':`${esc(actor?.name||'플레이어')}에게 보이는 선택지입니다.`}</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)}`}</small></span></button>`).join('')
     : '<div class="choice-empty">현재 장면에서 가능한 행동을 정리하는 중입니다.</div>';
   forceChoiceLayout(choiceBox);
   choiceBox.querySelectorAll('[data-parallel-index]').forEach(btn=>{
@@ -1630,7 +1637,7 @@ function forceChoiceLayout(root = document) {
     set(card, 'position', 'relative');
     set(card, 'display', rowStyle ? 'grid' : 'flex');
     if (rowStyle) {
-      set(card, 'grid-template-columns', '30px minmax(0,1fr) 70px');
+      set(card, 'grid-template-columns', '26px minmax(0,1fr) 64px');
       set(card, 'align-items', 'center');
       set(card, 'gap', '10px');
     } else {
@@ -1640,9 +1647,9 @@ function forceChoiceLayout(root = document) {
     set(card, 'justify-content', 'flex-start');
     set(card, 'width', '100%');
     set(card, 'height', 'auto');
-    set(card, 'min-height', rowStyle ? '72px' : '96px');
+    set(card, 'min-height', rowStyle ? '56px' : '84px');
     set(card, 'max-height', 'none');
-    set(card, 'padding', rowStyle ? '10px 12px' : '12px');
+    set(card, 'padding', rowStyle ? '8px 10px' : '10px');
     set(card, 'overflow', 'visible');
     set(card, 'scroll-snap-align', 'none');
     set(card, 'scroll-snap-stop', 'normal');
@@ -1661,11 +1668,11 @@ function forceChoiceLayout(root = document) {
       const num = card.querySelector('.choice-number');
       const copy = card.querySelector('.choice-copy');
       const check = card.querySelector('.choice-check');
-      if (num) { set(num, 'width', '26px'); set(num, 'height', '26px'); set(num, 'font-size', '11px'); }
+      if (num) { set(num, 'width', '22px'); set(num, 'height', '22px'); set(num, 'font-size', '10px'); }
       if (copy) { set(copy, 'display', 'grid'); set(copy, 'gap', '3px'); set(copy, 'min-width', '0'); }
       if (check) { set(check, 'display', 'flex'); set(check, 'flex-direction', 'column'); set(check, 'align-items', 'flex-end'); set(check, 'white-space', 'nowrap'); }
       const copyTitle = copy?.querySelector('b');
-      if (copyTitle) { set(copyTitle, 'font-size', '14px'); set(copyTitle, 'line-height', '1.42'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
+      if (copyTitle) { set(copyTitle, 'font-size', '13px'); set(copyTitle, 'line-height', '1.35'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
       const copyReason = copy?.querySelector('small');
       if (copyReason) { set(copyReason, 'font-size', '11px'); set(copyReason, 'line-height', '1.45'); set(copyReason, 'white-space', 'normal'); set(copyReason, 'word-break', 'keep-all'); }
     }

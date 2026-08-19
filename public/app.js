@@ -1,4 +1,4 @@
-import { DiceTheater } from './dice3d.js?v=8324';
+import { DiceTheater } from './dice3d.js?v=8340';
 
 const CLIENT_BUILD = '8.3.0-shared-turn-branch-clarity';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
@@ -33,6 +33,14 @@ function getDiceTheater() {
   catch (error) { console.error('[dice] 3D renderer unavailable:', error); dice = null; }
   return dice;
 }
+
+// Pre-warm the WebGL renderer before the first roll. Creating the renderer on
+// the first dice event was one of the main causes of the apparent two-beat lag.
+const warmDiceTheater = () => {
+  try { getDiceTheater(); } catch {}
+};
+if ('requestIdleCallback' in window) requestIdleCallback(warmDiceTheater, { timeout: 900 });
+else setTimeout(warmDiceTheater, 120);
 let campaigns = [];
 let state = null;
 let account = null;
@@ -46,6 +54,7 @@ let roomCode = localStorage.getItem('cg_room') || '';
 let playerToken = localStorage.getItem('cg_token') || '';
 let diceQueue = Promise.resolve();
 let resumeInFlight = false;
+let sessionEpoch = 0;
 let shownEncounterId = '';
 let encounterIntroTimer = null;
 let lastChatRenderKey = '';
@@ -375,6 +384,7 @@ function resetTransientUi() {
   $('#diceFinal')?.classList.remove('is-result');
 }
 function clearSavedSession(message = '') {
+  sessionEpoch += 1;
   localStorage.removeItem('cg_room');
   localStorage.removeItem('cg_token');
   roomCode = '';
@@ -387,9 +397,19 @@ function clearSavedSession(message = '') {
 }
 function resumeSavedSession(attempt = 0) {
   if (!roomCode || !playerToken || !socket.connected || resumeInFlight) return;
+  const expectedRoom = roomCode;
+  const expectedToken = playerToken;
+  const expectedEpoch = sessionEpoch;
   resumeInFlight = true;
   $('#connectionText').textContent = 'RESTORING';
-  socket.timeout(12_000).emit('room:join', { roomCode, playerToken }, (err, res) => {
+  socket.timeout(12_000).emit('room:join', { roomCode: expectedRoom, playerToken: expectedToken }, (err, res) => {
+    // A create/join action may have replaced the session while this async
+    // resume request was still in flight. Never let a stale callback switch
+    // the UI back to HOME or overwrite the newly joined room.
+    if (expectedEpoch !== sessionEpoch || expectedRoom !== roomCode || expectedToken !== playerToken) {
+      resumeInFlight = false;
+      return;
+    }
     resumeInFlight = false;
     if (!err && res?.ok) {
       state = res.state;
@@ -403,17 +423,17 @@ function resumeSavedSession(attempt = 0) {
       clearSavedSession('이전 세션이 만료되었거나 존재하지 않아 메인으로 돌아왔습니다.');
       return;
     }
-    resetTransientUi();
-    state = null;
-    view('homeView');
+    // On a transient timeout keep the current screen in place. Flashing HOME
+    // during reconnect made room creation and story selection look broken.
     $('#connectionText').textContent = 'RECONNECTING';
     if (attempt < 2) {
       setTimeout(() => {
+        if (expectedEpoch !== sessionEpoch || expectedRoom !== roomCode || expectedToken !== playerToken) return;
         if (!socket.connected) socket.connect();
         else resumeSavedSession(attempt + 1);
-      }, 1_200 * (attempt + 1));
+      }, 700 * (attempt + 1));
     } else {
-      toast('서버 재연결이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.');
+      toast('서버 재연결이 지연되고 있습니다. 현재 화면을 유지한 채 다시 연결합니다.');
     }
   });
 }
@@ -1224,6 +1244,8 @@ $('#entrySubmit').onclick = () => {
 
 function onJoined(res) {
   if (!res?.ok) { $('#entryError').textContent = res?.error || '연결에 실패했습니다.'; return; }
+  sessionEpoch += 1;
+  resumeInFlight = false;
   roomCode = res.roomCode;
   playerToken = res.playerToken;
   localStorage.setItem('cg_room', roomCode);
@@ -1281,13 +1303,16 @@ function enqueueDice(payload) {
     $('#diceFinal').classList.remove('is-result');
     $('#diceBreakdown').innerHTML = '';
     $('#diceSub').textContent = `${payload.rollerName}의 주사위를 모든 플레이어가 함께 봅니다…`;
-    const startsAt = Number(payload.startsAt || 0);
-    if (startsAt > Date.now()) await new Promise(r => setTimeout(r, Math.min(1200, startsAt - Date.now())));
-    $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     const theater = getDiceTheater();
+    const startsAt = Number(payload.startsAt || 0);
+    // Keep multiplayer synchronization, but never hold a visible roll for a
+    // full second. A tiny cap is enough to hide network jitter without making
+    // the game feel unresponsive.
+    if (startsAt > Date.now()) await new Promise(r => setTimeout(r, Math.min(90, startsAt - Date.now())));
+    $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     if (theater) {
       try {
-        await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 3000 : 2550 });
+        await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 2350 : 2050 });
       } catch (error) {
         console.error('[dice3d] roll failed', error);
         $('#diceSub').textContent = '3D 연출 오류가 발생해 숫자 결과로 이어갑니다.';
@@ -1304,7 +1329,7 @@ function enqueueDice(payload) {
       $('#diceFinal').textContent = natural;
       $('#diceFinal').classList.add('is-result');
       $('#diceSub').textContent = '판정이 확정되었습니다.';
-      await new Promise(r => setTimeout(r, 1900));
+      await new Promise(r => setTimeout(r, 1250));
       view('storyView');
       renderStory();
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -1320,7 +1345,7 @@ function enqueueDice(payload) {
     $('#diceSub').textContent = '주사위 원값이 확정되었습니다.';
 
     if (payload.total != null) {
-      await new Promise(r => setTimeout(r, 650));
+      await new Promise(r => setTimeout(r, 360));
       const mods = Array.isArray(payload.modifiers) ? payload.modifiers : [];
       let expression = `${payload.result}`;
       for (const mod of mods) {
@@ -1329,7 +1354,7 @@ function enqueueDice(payload) {
         expression += ` ${value >= 0 ? '+' : '−'} ${Math.abs(value)}`;
         $('#diceBreakdown').insertAdjacentHTML('beforeend', `<span class="roll-plus">${value >= 0 ? '+' : '−'}</span><span class="roll-mod"><small>${esc(mod.label || '보정')}</small><b>${value >= 0 ? '+' : ''}${value}</b></span>`);
         $('#diceSub').textContent = `${esc(mod.label || '보정')} ${value >= 0 ? '+' : ''}${value} 적용…`;
-        await new Promise(r => setTimeout(r, 520));
+        await new Promise(r => setTimeout(r, 280));
       }
       $('#diceBreakdown').insertAdjacentHTML('beforeend', `<span class="roll-equals">=</span><span class="roll-total"><small>최종</small><b>${payload.total}</b></span>`);
       $('#diceFinal').textContent = `최종 ${payload.total}`;
@@ -1337,10 +1362,10 @@ function enqueueDice(payload) {
       $('#diceSub').textContent = `${expression} = ${payload.total}${payload.dc != null ? ` · 기준 ${payload.dc}` : ''}${payload.damage ? ` · 피해 ${payload.damage}` : ''} · ${outcome}`;
       if (payload.success === true) audioManager.fx('success',1);
       else if (payload.success === false) audioManager.fx('failure',1);
-      await new Promise(r => setTimeout(r, 1400));
+      await new Promise(r => setTimeout(r, 900));
     } else {
       $('#diceSub').textContent = '주사위 결과가 확정되었습니다.';
-      await new Promise(r => setTimeout(r, 950));
+      await new Promise(r => setTimeout(r, 650));
     }
     $('#diceOverlay').classList.remove('show');
     await new Promise(r => setTimeout(r, 180));

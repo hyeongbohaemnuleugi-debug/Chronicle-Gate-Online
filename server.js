@@ -207,7 +207,7 @@ async function registerAccount({ email, password, displayName }) {
   const normalizedEmail = normalizeEmail(email);
   const name = normalizeName(displayName);
   if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error('올바른 이메일 주소를 입력하세요.');
-  if (String(password || '').length < 8 || String(password || '').length > 72) throw new Error('비밀번호는 8~72자로 입력하세요.');
+  if (!/^\d{4}$/.test(String(password || ''))) throw new Error('비밀번호는 숫자 4자리로 입력하세요.');
   if (name.length < 2) throw new Error('닉네임은 2자 이상 입력하세요.');
   if (await findAccountByEmail(normalizedEmail)) throw new Error('이미 가입된 이메일입니다.');
   const id = crypto.randomUUID();

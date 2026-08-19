@@ -213,7 +213,7 @@ export class DiceTheater {
 
 
 
-  addFloorSigil(profile, pos = new THREE.Vector3(0, -1.445, 0)) {
+  addFloorSigil(profile, pos = new THREE.Vector3(0, -1.455, 0)) {
     const tier = Number(profile?.tier || 0);
     if (tier < 3) return;
     const accent = profile?.accent || '#ffffff';
@@ -240,7 +240,7 @@ export class DiceTheater {
         obj.rotation.z += rotation.z || 0;
       }
       obj.scale.setScalar(scale);
-      obj.renderOrder = 5;
+      obj.renderOrder = 2;
       this.fxGroup.add(obj);
       this.fxItems.push({ obj, life, maxLife: life, kind: 'ring', start: scale, end: scale * 1.08, opacity });
       return obj;
@@ -254,7 +254,7 @@ export class DiceTheater {
         obj.rotation.z += rotation.z || 0;
       }
       obj.scale.setScalar(scale);
-      obj.renderOrder = 6;
+      obj.renderOrder = 3;
       this.fxGroup.add(obj);
       this.fxItems.push({ obj, life, maxLife: life, kind: 'crown', spin: new THREE.Vector3(0, spin, 0) });
       return obj;
@@ -267,8 +267,8 @@ export class DiceTheater {
       }
     };
 
-    addFlat(new THREE.RingGeometry(1.72, 1.94, 96), accent, tier >= 4 ? .76 : .66, tier >= 4 ? 2.3 : 1.9);
-    addFlat(new THREE.RingGeometry(.76, .9, 72), emissive, tier >= 4 ? .62 : .5, tier >= 4 ? 2.2 : 1.75);
+    addFlat(new THREE.RingGeometry(1.72, 1.94, 96), accent, tier >= 4 ? .9 : .8, tier >= 4 ? 2.3 : 1.9);
+    addFlat(new THREE.RingGeometry(.76, .9, 72), emissive, tier >= 4 ? .76 : .64, tier >= 4 ? 2.2 : 1.75);
     addFlat(new THREE.CircleGeometry(.18, 24), accent, .36, tier >= 4 ? 1.9 : 1.5);
 
     if (theme === 'celestial') {
@@ -319,19 +319,19 @@ export class DiceTheater {
     const accent = new THREE.Color(profile.accent);
     const emissive = new THREE.Color(profile.emissive || profile.accent);
     const tier = Number(profile.tier || 0);
-    const orbCount = tier >= 4 ? 16 : tier === 3 ? 10 : tier === 2 ? 5 : 3;
+    const orbCount = tier >= 4 ? 10 : tier === 3 ? 7 : tier === 2 ? 5 : 3;
     const orbSize = tier >= 4 ? .29 : tier === 3 ? .24 : .17;
     for (let i = 0; i < orbCount; i++) this.addOrbiter(die, i % 2 ? accent : emissive, 1.75 + (i % 4) * .18, .78 + i * .11, (i % 2 ? .32 : -.18), i * .75, orbSize);
     if (tier >= 2) this.addHalo(die, accent, 1.85, tier >= 4 ? .42 : tier === 3 ? .34 : .28);
-    this.addAuraField(die, [accent, emissive], tier >= 4 ? 1420 : tier === 3 ? 860 : tier === 2 ? 460 : 220, tier >= 4 ? 3.35 : tier === 3 ? 2.95 : 2.35, tier >= 4 ? .155 : tier === 3 ? .135 : .105, tier >= 4 ? .82 : tier === 3 ? .62 : .38);
+    this.addAuraField(die, [accent, emissive], tier >= 4 ? 760 : tier === 3 ? 520 : tier === 2 ? 380 : 220, tier >= 4 ? 3.35 : tier === 3 ? 2.95 : 2.35, tier >= 4 ? .155 : tier === 3 ? .135 : .105, tier >= 4 ? .82 : tier === 3 ? .62 : .38);
     if (tier >= 3) {
       const h2 = this.addHalo(die, emissive, tier >= 4 ? 2.32 : 2.2, tier >= 4 ? .28 : .18); h2.rotation.y = Math.PI / 2;
-      this.addAuraField(die, [profile.accent, profile.emissive || profile.accent, '#ffffff'], tier >= 4 ? 1080 : 620, tier >= 4 ? 3.95 : 3.55, tier >= 4 ? .11 : .085, tier >= 4 ? -.68 : -.48);
+      this.addAuraField(die, [profile.accent, profile.emissive || profile.accent, '#ffffff'], tier >= 4 ? 620 : 420, tier >= 4 ? 3.95 : 3.55, tier >= 4 ? .11 : .085, tier >= 4 ? -.68 : -.48);
     }
     if (tier >= 4) {
       const h3 = this.addHalo(die, '#ffffff', 2.72, .16); h3.rotation.set(.62, .25, .18);
       const h4 = this.addHalo(die, profile.accent, 3.05, .12); h4.rotation.set(-.48, .82, .4);
-      this.addAuraField(die, ['#ffffff', profile.accent, profile.emissive || profile.accent, '#ff8df1'], 760, 4.55, .09, .92);
+      this.addAuraField(die, ['#ffffff', profile.accent, profile.emissive || profile.accent, '#ff8df1'], 420, 4.1, .085, .72);
       for (let i = 0; i < 6; i++) this.addOrbiter(die, i % 2 ? '#ffffff' : accent, 2.7 + (i % 3) * .18, 1.25 + i * .08, -.55 + i * .2, i * .8, .14 + (i % 2) * .04);
     }
     if (profile.theme === 'clockwork') {
@@ -587,12 +587,9 @@ export class DiceTheater {
 
 
   prepareLegendaryCore(group, skin = {}, sides = 20) {
-    const id = String(skin?.id || '');
-    const legendaryIds = new Set(['neon_prism','celestial_choir','crown_steel','void_monarch','rift_shard','prismatic_tide']);
-    const mythic = id === 'mythic_aeon';
-    if (!legendaryIds.has(id) && !mythic) return;
-    const scale = mythic ? (sides === 6 ? .62 : .67) : (sides === 6 ? .72 : .76);
-    for (const child of group.children) child.scale.multiplyScalar(scale);
+    // Keep the numbered physical die fully readable. Legendary/mythic silhouettes
+    // are added outside the core instead of shrinking or hiding it.
+    return group;
   }
 
   decorateDie(group, skin={}, sides=20) {
@@ -882,7 +879,7 @@ export class DiceTheater {
 
   prioritizeDie(die) {
     // Keep the physical die readable even when premium additive FX are active.
-    die.scale.multiplyScalar(1.12);
+    die.scale.multiplyScalar(Number(die?.userData?.skin?.price || 0) >= 12 ? 1.0 : 1.08);
     die.traverse(obj => {
       if (obj.isMesh) {
         obj.renderOrder = obj.userData?.material ? 14 : 12;
@@ -915,7 +912,7 @@ export class DiceTheater {
     this.active.userData.skin = typeof dieStyle === 'object' ? dieStyle : {base:dieStyle,id:'classic'};
     this.scene.add(die);
     this.prioritizeDie(die);
-    die.position.set(-3.2, 2.85, 0);
+    die.position.set(-2.7, 2.55, 0);
     die.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
     this.setupRollFx(die, profile);
     const normal = this.faceNormals[Math.max(0, Math.min(this.faceNormals.length - 1, result - 1))] || new THREE.Vector3(0, 1, 0);
@@ -930,16 +927,16 @@ export class DiceTheater {
         const ease = 1 - Math.pow(1 - t, 2.45);
         // A readable tabletop toss: enter high from the left, fall under gravity,
         // then make several diminishing bounces before the result settles.
-        const travel = -3.2 + 3.2 * ease;
-        const fall = 2.85 * Math.pow(1 - t, 1.75);
+        const travel = -2.7 + 2.7 * ease;
+        const fall = 2.55 * Math.pow(1 - t, 1.75);
         const bounce = Math.abs(Math.sin(t * Math.PI * 6.4)) * .82 * Math.pow(1 - t, 1.15);
         die.position.set(travel, -.02 + fall + bounce, .18 * Math.sin(t * 12.5));
         if (t < .73) { die.rotation.x += .19 * (1 - t) + .03; die.rotation.y += .24 * (1 - t) + .035; die.rotation.z += .16 * (1 - t) + .025; }
         else { const local = (t - .73) / .27; die.quaternion.slerp(finalQ, Math.min(1, local * .12 + .08)); die.quaternion.slerp(finalQ, Math.min(1, local * .23)); }
         this.trailFx(die, profile, dt); this.tickFx(dt, (now-start)/1000);
         const b = Math.floor(t * (profile.tier >= 4 ? 6.2 : 5.3)); if (b !== lastBounce && t > .08 && t < .9) { lastBounce = b; this.synthHit(.045 + (.9 - t) * .06 + (profile.tier >= 4 ? .025 : 0), 70 + Math.random() * 65, profile); if(profile.tier>=2 && t>.35) this.ring(new THREE.Vector3(die.position.x,-1.4,die.position.z),profile.accent,.08,.8+profile.tier*.32,.25 + (profile.tier>=4?.08:0),.32); if(profile.tier>=4 && t>.28) this.ring(new THREE.Vector3(die.position.x,-1.35,die.position.z),0xffffff,.06,1.15+profile.tier*.35,.2,.18); }
-        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=4?.28:profile.tier>=3?.18:profile.tier===2?.09:.045);
-        this.camera.position.y = 4.6 + Math.sin(t*31)*(1-t)*(profile.tier>=4?.095:profile.tier>=3?.055:0);
+        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=4?.14:profile.tier>=3?.10:profile.tier===2?.07:.04);
+        this.camera.position.y = 4.6 + Math.sin(t*31)*(1-t)*(profile.tier>=4?.045:profile.tier>=3?.03:0);
         this.camera.lookAt(die.position.x * .12, Math.max(.05, die.position.y * .16), 0);
         this.renderer.render(this.scene, this.camera);
         if (t < 1) requestAnimationFrame(frame);

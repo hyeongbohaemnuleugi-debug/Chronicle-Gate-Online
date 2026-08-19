@@ -554,28 +554,6 @@ export class DiceTheater {
     const addPoints=(count,color,radius,size=.045)=>{ const arr=new Float32Array(count*3); for(let i=0;i<count;i++){ const u=Math.random(),v=Math.random(),th=u*Math.PI*2,ph=Math.acos(2*v-1),r=radius*(.55+Math.random()*.45); arr[i*3]=Math.sin(ph)*Math.cos(th)*r;arr[i*3+1]=Math.cos(ph)*r;arr[i*3+2]=Math.sin(ph)*Math.sin(th)*r; } const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(arr,3));const m=new THREE.PointsMaterial({map:this.getGlowTexture(),color,size,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false});const p=new THREE.Points(g,m);p.renderOrder=16;group.add(p);return p; };
     const refinedElite = new Set(['neon_prism','celestial_choir','crown_steel','void_monarch','rift_shard','prismatic_tide','mythic_aeon']);
     if (refinedElite.has(id)) {
-      if (id === 'neon_prism') {
-        const shell=new THREE.Mesh(shellGeom(),new THREE.MeshPhysicalMaterial({color:skin.base,transparent:true,opacity:.1,roughness:.04,metalness:.08,transmission:.24,clearcoat:1.6,depthWrite:false})); shell.scale.setScalar(1.03); shell.renderOrder=10; group.add(shell);
-        addWire(0x58fff0,.36,1.01); addWire(0xff55e8,.18,1.03);
-      } else if (id === 'celestial_choir') {
-        addWire(0xfff0c9,.44,1.01);
-        const halo=new THREE.Mesh(new THREE.TorusGeometry(sides===6?1.68:1.58,.035,8,42),new THREE.MeshBasicMaterial({color:0x94a7ff,transparent:true,opacity:.24,blending:THREE.AdditiveBlending,depthWrite:false}));
-        halo.rotation.set(.22,.6,.05); group.add(halo);
-      } else if (id === 'crown_steel') {
-        addWire(0xffe29b,.4,1.01);
-        const band=new THREE.Mesh(new THREE.TorusGeometry(sides===6?1.62:1.56,.05,10,42),new THREE.MeshStandardMaterial({color:0xcaa45c,metalness:1,roughness:.18})); band.rotation.x=Math.PI/2; group.add(band);
-      } else if (id === 'void_monarch') {
-        const core=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.12:1.04,18,14),new THREE.MeshStandardMaterial({color:0x12061c,roughness:.1,metalness:.75,emissive:0x5b17a1,emissiveIntensity:.34})); group.add(core);
-        addWire(0xff9af2,.28,1.02);
-      } else if (id === 'rift_shard') {
-        addWire(0xffbcf5,.34,1.01);
-      } else if (id === 'prismatic_tide') {
-        const shell=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.44:1.34,22,16),new THREE.MeshPhysicalMaterial({color:0x83f7ff,transparent:true,opacity:.18,roughness:.02,metalness:.04,transmission:.52,clearcoat:1.8,depthWrite:false})); shell.scale.set(1.02, .98, 1.02); shell.renderOrder=10; group.add(shell);
-        addWire(0xb9ffff,.24,1.01);
-      } else if (id === 'mythic_aeon') {
-        const shell=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.54:1.44,22,16),new THREE.MeshPhysicalMaterial({color:0x171126,transparent:true,opacity:.12,roughness:.03,metalness:.12,transmission:.28,clearcoat:1.9,depthWrite:false})); shell.renderOrder=9; group.add(shell);
-        addWire(0xf5edc3,.24,1.01); addWire(0x6cefff,.16,1.04);
-      }
       this.addEliteForm(group, skin, sides);
       return;
     }
@@ -668,10 +646,7 @@ export class DiceTheater {
     const price = Number(skin.price || 0);
     if (price < 12) return;
     const id = String(skin.id || '');
-    const accent = new THREE.Color(skin.accent || '#ffffff');
-    const emissive = new THREE.Color(skin.emissive || skin.accent || '#ffffff');
-    const outerR = sides === 6 ? 1.58 : 1.86;
-    const shellR = sides === 6 ? 1.9 : 2.12;
+    const outerR = sides === 6 ? 1.16 : 1.42;
 
     const getFaceDirs = () => {
       if (sides === 6) {
@@ -687,165 +662,188 @@ export class DiceTheater {
       ].map(v => v.normalize());
     };
 
-    const addRingSet = (items) => items.forEach(item => this.addEliteRing(group, item.color, item.radius, item.tube, item.rotation, { opacity: item.opacity, arc: item.arc, segments: item.segments }));
-
-    const addFacePlate = (dir, color, width = .72, height = .72, depth = .08, offset = outerR - .02, opts = {}) => {
-      const plate = new THREE.Mesh(
-        new THREE.BoxGeometry(width, height, depth),
+    const addSurfacePlate = (dir, color, w = .62, h = .62, d = .06, offset = outerR, opts = {}) => {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
         new THREE.MeshPhysicalMaterial({
           color,
-          metalness: opts.metalness ?? .16,
-          roughness: opts.roughness ?? .08,
+          metalness: opts.metalness ?? .28,
+          roughness: opts.roughness ?? .12,
           transparent: opts.transparent ?? false,
           opacity: opts.opacity ?? 1,
           transmission: opts.transmission ?? 0,
-          clearcoat: opts.clearcoat ?? 1.25,
+          clearcoat: opts.clearcoat ?? 1.2,
           clearcoatRoughness: opts.clearcoatRoughness ?? .05,
           emissive: opts.emissive ?? 0x000000,
           emissiveIntensity: opts.emissiveIntensity ?? 0,
           depthWrite: opts.depthWrite ?? !(opts.transparent ?? false),
         })
       );
-      plate.position.copy(dir.clone().normalize().multiplyScalar(offset));
-      plate.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
-      group.add(plate);
-      return plate;
+      mesh.position.copy(dir.clone().normalize().multiplyScalar(offset));
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir.clone().normalize());
+      group.add(mesh);
+      return mesh;
     };
 
-    const addFaceFrame = (dir, color, size = .92, thick = .08, depth = .06, offset = outerR + .02, opts = {}) => {
+    const addFrame = (dir, color, size = .78, thick = .06, depth = .05, offset = outerR + .018, opts = {}) => {
       const frame = new THREE.Group();
       const mat = new THREE.MeshPhysicalMaterial({
         color,
         metalness: opts.metalness ?? .78,
         roughness: opts.roughness ?? .18,
-        emissive: opts.emissive ?? 0x000000,
-        emissiveIntensity: opts.emissiveIntensity ?? 0,
         clearcoat: opts.clearcoat ?? 1.18,
         clearcoatRoughness: opts.clearcoatRoughness ?? .08,
+        emissive: opts.emissive ?? 0x000000,
+        emissiveIntensity: opts.emissiveIntensity ?? 0,
       });
-      const long = size, short = thick;
-      [
-        { x: 0, y: size / 2, w: long, h: short },
-        { x: 0, y: -size / 2, w: long, h: short },
-        { x: size / 2, y: 0, w: short, h: long },
-        { x: -size / 2, y: 0, w: short, h: long },
-      ].forEach(seg => {
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(seg.w, seg.h, depth), mat);
-        bar.position.set(seg.x, seg.y, 0);
+      const bars = [
+        [size, thick, 0, size/2],
+        [size, thick, 0, -size/2],
+        [thick, size, size/2, 0],
+        [thick, size, -size/2, 0],
+      ];
+      for (const [w,h,x,y] of bars) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(w, h, depth), mat);
+        bar.position.set(x, y, 0);
         frame.add(bar);
-      });
+      }
       frame.position.copy(dir.clone().normalize().multiplyScalar(offset));
-      frame.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
+      frame.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir.clone().normalize());
       group.add(frame);
       return frame;
     };
 
-    const addGem = (dir, color, scale = .12, offset = outerR + .14, opts = {}) => {
+    const addCornerStud = (dir, offsetX, offsetY, color, size = .08, offset = outerR + .03, opts = {}) => {
+      const stud = new THREE.Mesh(
+        new THREE.SphereGeometry(size, 12, 10),
+        new THREE.MeshPhysicalMaterial({ color, metalness: opts.metalness ?? .7, roughness: opts.roughness ?? .16, emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0, clearcoat: 1.2, clearcoatRoughness: .08 })
+      );
+      const n = dir.clone().normalize();
+      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), n);
+      const pos = new THREE.Vector3(offsetX, offsetY, 0).applyQuaternion(q).add(n.multiplyScalar(offset));
+      stud.position.copy(pos);
+      group.add(stud);
+      return stud;
+    };
+
+    const addGem = (dir, color, size = .12, offset = outerR + .025, opts = {}) => {
       const gem = new THREE.Mesh(
-        new THREE.OctahedronGeometry(scale, 0),
-        new THREE.MeshPhysicalMaterial({ color, transparent: true, opacity: opts.opacity ?? .9, transmission: opts.transmission ?? .22, roughness: .04, metalness: .08, clearcoat: 1.55, emissive: opts.emissive ?? color, emissiveIntensity: opts.emissiveIntensity ?? .05, depthWrite: false })
+        new THREE.OctahedronGeometry(size, 0),
+        new THREE.MeshPhysicalMaterial({ color, transparent: true, opacity: opts.opacity ?? .9, transmission: opts.transmission ?? .25, roughness: .04, metalness: .08, clearcoat: 1.6, emissive: opts.emissive ?? color, emissiveIntensity: opts.emissiveIntensity ?? .05, depthWrite: false })
       );
       gem.position.copy(dir.clone().normalize().multiplyScalar(offset));
       group.add(gem);
       return gem;
     };
 
-    const addPetal = (dir, color, length = .74, width = .3, depth = .08, offset = shellR, opts = {}) => {
-      const petal = new THREE.Mesh(
-        new THREE.BoxGeometry(width, length, depth),
-        new THREE.MeshPhysicalMaterial({ color, metalness: opts.metalness ?? .3, roughness: opts.roughness ?? .1, transparent: opts.transparent ?? false, opacity: opts.opacity ?? 1, transmission: opts.transmission ?? 0, clearcoat: 1.3, clearcoatRoughness: .06, emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0, depthWrite: opts.depthWrite ?? !(opts.transparent ?? false) })
+    const addOvalCore = (dir, color, scaleX = .3, scaleY = .42, depth = .08, offset = outerR + .01, opts = {}) => {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 18, 14),
+        new THREE.MeshPhysicalMaterial({ color, transparent: opts.transparent ?? false, opacity: opts.opacity ?? 1, transmission: opts.transmission ?? 0, roughness: opts.roughness ?? .06, metalness: opts.metalness ?? .18, clearcoat: 1.45, clearcoatRoughness: .04, emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0, depthWrite: opts.depthWrite ?? !(opts.transparent ?? false) })
       );
-      petal.position.copy(dir.clone().normalize().multiplyScalar(offset));
-      petal.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-      group.add(petal);
-      return petal;
+      mesh.scale.set(scaleX, scaleY, depth);
+      mesh.position.copy(dir.clone().normalize().multiplyScalar(offset));
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir.clone().normalize());
+      group.add(mesh);
+      return mesh;
     };
 
-    const addDroplet = (dir, color, scale = .12, offset = outerR + .18) => {
-      const drop = new THREE.Mesh(
-        new THREE.SphereGeometry(scale, 18, 14),
-        new THREE.MeshPhysicalMaterial({ color, transparent: true, opacity: .78, transmission: .72, roughness: .02, metalness: .02, clearcoat: 1.95, clearcoatRoughness: .02, depthWrite: false })
+    const addBevelShard = (dir, color, w = .34, h = .28, d = .12, offset = outerR + .015, opts = {}) => {
+      const shard = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshPhysicalMaterial({ color, metalness: opts.metalness ?? .26, roughness: opts.roughness ?? .14, transparent: opts.transparent ?? false, opacity: opts.opacity ?? 1, transmission: opts.transmission ?? 0, clearcoat: 1.15, clearcoatRoughness: .06, emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0, depthWrite: opts.depthWrite ?? !(opts.transparent ?? false) })
       );
+      shard.position.copy(dir.clone().normalize().multiplyScalar(offset));
+      shard.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir.clone().normalize());
+      shard.rotation.z += opts.rotZ ?? 0;
+      shard.rotation.x += opts.rotX ?? 0;
+      group.add(shard);
+      return shard;
+    };
+
+    const addSurfaceDroplet = (dir, color, sx = .18, sy = .24, sz = .08, offset = outerR + .02) => {
+      const drop = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 16, 12),
+        new THREE.MeshPhysicalMaterial({ color, transparent: true, opacity: .72, transmission: .82, roughness: .02, metalness: .02, clearcoat: 1.95, clearcoatRoughness: .02, depthWrite: false })
+      );
+      drop.scale.set(sx, sy, sz);
       drop.position.copy(dir.clone().normalize().multiplyScalar(offset));
-      drop.scale.set(.92, 1.38, .92);
+      drop.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir.clone().normalize());
       group.add(drop);
       return drop;
     };
 
-    const addLobe = (dir, color, sx = .44, sy = .3, sz = .18, offset = outerR + .04, opts = {}) => {
+    const addTinyLine = (dir, color, y = 0, len = .46, thick = .03, offset = outerR + .018, opts = {}) => {
       const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 18, 14),
-        new THREE.MeshPhysicalMaterial({ color, transparent: opts.transparent ?? false, opacity: opts.opacity ?? 1, transmission: opts.transmission ?? 0, roughness: opts.roughness ?? .08, metalness: opts.metalness ?? .14, clearcoat: opts.clearcoat ?? 1.35, clearcoatRoughness: .05, emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0, depthWrite: opts.depthWrite ?? !(opts.transparent ?? false) })
+        new THREE.BoxGeometry(len, thick, .045),
+        new THREE.MeshPhysicalMaterial({ color, metalness: opts.metalness ?? .65, roughness: opts.roughness ?? .18, emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0, clearcoat: 1.2, clearcoatRoughness: .08 })
       );
-      mesh.scale.set(sx, sy, sz);
-      mesh.position.copy(dir.clone().normalize().multiplyScalar(offset));
-      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.clone().normalize());
+      const n = dir.clone().normalize();
+      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), n);
+      mesh.position.copy(new THREE.Vector3(0, y, 0).applyQuaternion(q).add(n.multiplyScalar(offset)));
+      mesh.quaternion.copy(q);
       group.add(mesh);
       return mesh;
     };
 
     const dirs = getFaceDirs();
+    const faceDirs = dirs.slice(0, sides === 6 ? 6 : 10);
 
     if (id === 'neon_prism') {
-      dirs.slice(0, 6).forEach((dir, i) => {
-        const palette = [0x49fff1, 0xff5ed6, 0x8b7cff];
-        addFacePlate(dir, palette[i % 3], sides === 6 ? .7 : .56, sides === 6 ? .7 : .56, .06, outerR - .02, { transparent: true, opacity: .42, transmission: .46, emissive: palette[i % 3], emissiveIntensity: .06 });
-        addFaceFrame(dir, 0xefffff, sides === 6 ? .78 : .64, .05, .05, outerR + .02, { metalness: .28, roughness: .08 });
+      faceDirs.forEach((dir, i) => {
+        const col = [0x4dfff0, 0xff64d9, 0x8d79ff][i % 3];
+        addSurfacePlate(dir, col, sides === 6 ? .66 : .5, sides === 6 ? .66 : .5, .045, outerR - .005, { transparent: true, opacity: .42, transmission: .55, emissive: col, emissiveIntensity: .08, metalness: .08, roughness: .04 });
+        addFrame(dir, 0xf4ffff, sides === 6 ? .72 : .56, .045, .04, outerR + .02, { metalness: .26, roughness: .1 });
       });
-      dirs.slice(0, 6).forEach((dir, i) => addGem(dir, [0xffffff, 0x49fff1, 0xff5ed6][i % 3], .08, outerR + .18));
-      addRingSet([
-        { color: 0x49fff1, radius: outerR + .2, tube: .016, rotation: { x: .22, y: .58, z: .18 }, opacity: .18, arc: Math.PI * 1.45 },
-        { color: 0xff5ed6, radius: outerR + .36, tube: .014, rotation: { x: .66, y: .16, z: .52 }, opacity: .14, arc: Math.PI * 1.28 },
-      ]);
+      [ [.23,.23], [-.23,.23], [.23,-.23], [-.23,-.23] ].forEach(([x,y], idx) => addCornerStud(faceDirs[0], x, y, [0xffffff,0x4dfff0,0xff64d9,0x8d79ff][idx], .045, outerR + .028, { metalness: .18, roughness: .06 }));
     } else if (id === 'celestial_choir') {
-      dirs.slice(0, 4).forEach((dir, i) => addPetal(new THREE.Vector3(dir.x * 1.08, .32 + (i % 2) * .14, dir.z * 1.08).normalize(), i % 2 ? 0x9cadff : 0xfff0c9, .78, .22, .06, shellR + .02, { metalness: .12, roughness: .05, transparent: true, opacity: .88, transmission: .32, emissive: i % 2 ? 0x5665d6 : 0x9e8a54, emissiveIntensity: .04 }));
-      dirs.slice(0, 4).forEach((dir, i) => addFaceFrame(dir, i % 2 ? 0x9cadff : 0xfff0c9, sides === 6 ? .76 : .6, .05, .05, outerR + .04, { metalness: .58, roughness: .12 }));
-      addRingSet([{ color: 0xfff0c9, radius: outerR + .24, tube: .018, rotation: { x: Math.PI / 2, y: 0, z: .08 }, opacity: .18 }, { color: 0x9cadff, radius: outerR + .36, tube: .014, rotation: { x: .26, y: .58, z: .04 }, opacity: .14, arc: Math.PI * 1.4 }]);
-      addGem(new THREE.Vector3(0, 1, 0), 0xfff0c9, .12, outerR + .26);
-      addGem(new THREE.Vector3(0, -1, 0), 0x9cadff, .09, outerR + .16);
+      faceDirs.slice(0, 6).forEach((dir, i) => {
+        addSurfacePlate(dir, i % 2 ? 0xfcf6de : 0xc8d4ff, sides === 6 ? .6 : .48, sides === 6 ? .72 : .54, .04, outerR - .004, { metalness: .08, roughness: .06, transparent: true, opacity: .92, transmission: .22 });
+        addFrame(dir, i % 2 ? 0xb59f67 : 0x8399ff, sides === 6 ? .7 : .54, .04, .038, outerR + .016, { metalness: .56, roughness: .14 });
+      });
+      addGem(new THREE.Vector3(0,1,0), 0xfff4cf, .11, outerR + .03);
+      addGem(new THREE.Vector3(0,-1,0), 0x9ab0ff, .08, outerR + .02);
+      addTinyLine(new THREE.Vector3(0,1,0), 0xfff4cf, -.08, .34, .024, outerR + .022);
+      addTinyLine(new THREE.Vector3(0,1,0), 0xfff4cf, .08, .24, .022, outerR + .022);
     } else if (id === 'crown_steel') {
-      dirs.slice(0, 4).forEach(dir => addFaceFrame(dir, 0xcaa45c, sides === 6 ? .84 : .66, .07, .06, outerR + .02, { metalness: .98, roughness: .18 }));
-      const band = new THREE.Mesh(new THREE.TorusGeometry(outerR + .04, .07, 10, 56), new THREE.MeshStandardMaterial({ color: 0xcaa45c, metalness: 1, roughness: .16 }));
-      band.rotation.x = Math.PI / 2; group.add(band);
-      for (let i = 0; i < 8; i++) {
-        const a = i / 8 * Math.PI * 2;
-        const dir = new THREE.Vector3(Math.cos(a), .46 + (i % 2) * .1, Math.sin(a)).normalize();
-        addPetal(dir, 0xffe29b, .58 + (i % 2) * .08, .14, .08, shellR - .04, { metalness: .96, roughness: .12 });
-      }
-      dirs.slice(0, 4).forEach((dir, i) => addGem(dir, i % 2 ? 0x82d8ff : 0xffd379, .1, outerR + .14));
+      faceDirs.forEach((dir, i) => {
+        addFrame(dir, 0xcaa45c, sides === 6 ? .76 : .58, .055, .045, outerR + .018, { metalness: .98, roughness: .18 });
+        addSurfacePlate(dir, i % 2 ? 0x45331e : 0x5b4630, sides === 6 ? .48 : .36, sides === 6 ? .48 : .36, .035, outerR - .008, { metalness: .36, roughness: .18 });
+        [ [.22,.22],[-.22,.22],[.22,-.22],[-.22,-.22] ].forEach(([x,y]) => addCornerStud(dir, x, y, 0xffd57d, .035, outerR + .024, { metalness: 1, roughness: .14 }));
+      });
+      addGem(new THREE.Vector3(0,1,0), 0x8fd3ff, .1, outerR + .03);
     } else if (id === 'void_monarch') {
-      dirs.slice(0, 6).forEach((dir, i) => addLobe(dir, i % 2 ? 0x29113d : 0x15081d, sides === 6 ? .34 : .28, sides === 6 ? .26 : .22, .18, outerR + .03, { metalness: .64, roughness: .08, emissive: i % 2 ? 0x6121a4 : 0x2f0d52, emissiveIntensity: .08 }));
-      addRingSet([{ color: 0xff9af2, radius: outerR + .16, tube: .016, rotation: { x: .44, y: .36, z: .12 }, opacity: .14, arc: Math.PI * 1.42 }, { color: 0x7b31cf, radius: outerR + .34, tube: .014, rotation: { x: .96, y: .08, z: .54 }, opacity: .12, arc: Math.PI * 1.15 }]);
-      dirs.slice(0, 4).forEach((dir, i) => addGem(dir, i % 2 ? 0xff9af2 : 0x7b31cf, .09, outerR + .12));
-      const crown = new THREE.Mesh(new THREE.SphereGeometry(sides === 6 ? .36 : .3, 16, 12), new THREE.MeshPhysicalMaterial({ color: 0x1b0930, roughness: .02, metalness: .22, transparent: true, opacity: .78, transmission: .42, clearcoat: 1.8, emissive: 0x6a22c9, emissiveIntensity: .08, depthWrite: false }));
-      crown.position.set(0, .12, 0); group.add(crown);
+      faceDirs.forEach((dir, i) => {
+        addSurfacePlate(dir, i % 2 ? 0x20102d : 0x12091c, sides === 6 ? .6 : .46, sides === 6 ? .6 : .46, .05, outerR - .004, { metalness: .58, roughness: .08, emissive: i % 2 ? 0x35104d : 0x1c0b31, emissiveIntensity: .05 });
+        addOvalCore(dir, i % 2 ? 0x471b68 : 0x2a0f45, sides === 6 ? .2 : .16, sides === 6 ? .3 : .24, .08, outerR + .012, { transparent: true, opacity: .82, transmission: .3, emissive: i % 2 ? 0xd47eff : 0x7b31cf, emissiveIntensity: .08 });
+      });
+      [new THREE.Vector3(0,1,0), new THREE.Vector3(0,-1,0)].forEach((dir, i) => addGem(dir, i ? 0x8e52ff : 0xff9af2, .085, outerR + .026));
     } else if (id === 'rift_shard') {
       const shardDirs = [
-        new THREE.Vector3(1,.22,.14), new THREE.Vector3(-.86,.18,.36), new THREE.Vector3(.26,.64,-1),
-        new THREE.Vector3(-.18,-.24,1), new THREE.Vector3(.42,-.32,-.94), new THREE.Vector3(-.54,.48,-.26),
-        new THREE.Vector3(.12,.94,.08), new THREE.Vector3(-.08,-.92,-.12)
+        new THREE.Vector3(1,.2,.14), new THREE.Vector3(-.86,.18,.36), new THREE.Vector3(.26,.64,-1), new THREE.Vector3(-.18,-.24,1),
+        new THREE.Vector3(.42,-.32,-.94), new THREE.Vector3(-.54,.48,-.26), new THREE.Vector3(.12,.94,.08), new THREE.Vector3(-.08,-.92,-.12)
       ].map(v => v.normalize());
-      shardDirs.forEach((dir, i) => {
-        const frag = addFacePlate(dir, i % 2 ? 0xf9c4ff : 0x5b49b8, sides === 6 ? .42 : .34, sides === 6 ? .34 : .28, .16 + (i % 3) * .04, outerR + .02 + (i % 4) * .08, { transparent: i % 3 === 0, opacity: i % 3 === 0 ? .8 : .98, transmission: i % 3 === 0 ? .18 : 0, metalness: .28, roughness: .12, emissive: i % 2 ? 0x8e2e82 : 0x3b2c90, emissiveIntensity: .03 });
-        frag.rotation.z += (i % 4 - 1.5) * .18;
-      });
-      dirs.slice(0, 4).forEach((dir, i) => addGem(dir, i % 2 ? 0xffddff : 0x8d6cff, .07, outerR + .12));
+      shardDirs.forEach((dir, i) => addBevelShard(dir, i % 2 ? 0xf6ceff : 0x5f50bf, sides === 6 ? .34 : .26, sides === 6 ? .28 : .22, .12 + (i % 3) * .03, outerR + .01 + (i % 3) * .015, { transparent: i % 3 === 0, opacity: i % 3 === 0 ? .78 : .98, transmission: i % 3 === 0 ? .18 : 0, metalness: .22, roughness: .14, emissive: i % 2 ? 0x96368f : 0x43349f, emissiveIntensity: .03, rotZ: (i % 4 - 1.5) * .26, rotX: (i % 3 - 1) * .08 }));
+      addGem(new THREE.Vector3(0,1,0), 0xffd8ff, .065, outerR + .022);
+      addGem(new THREE.Vector3(0,-1,0), 0x8f6dff, .06, outerR + .022);
     } else if (id === 'prismatic_tide') {
-      const shell = new THREE.Mesh(new THREE.SphereGeometry(sides === 6 ? 1.26 : 1.18, 24, 18), new THREE.MeshPhysicalMaterial({ color: 0x8cfbff, transparent: true, opacity: .18, transmission: .78, roughness: .02, metalness: .02, clearcoat: 2.0, clearcoatRoughness: .02, depthWrite: false }));
-      shell.scale.set(1.14, .96, 1.14); group.add(shell);
-      dirs.slice(0, 6).forEach((dir, i) => addLobe(new THREE.Vector3(dir.x * .9, dir.y * .76 + .1, dir.z * .9).normalize(), i % 2 ? 0x9afcff : 0xeaffff, sides === 6 ? .24 : .22, sides === 6 ? .18 : .16, .14, outerR + .08, { transparent: true, opacity: .66, transmission: .76, roughness: .02, metalness: .02 }));
-      dirs.slice(0, 6).forEach((dir, i) => addDroplet(new THREE.Vector3(dir.x * .88, dir.y * .72 + .18, dir.z * .88).normalize(), i % 2 ? 0xeaffff : 0x9afcff, .08 + (i % 3) * .018, outerR + .18 + (i % 2) * .04));
-      addRingSet([{ color: 0xb9ffff, radius: outerR + .2, tube: .014, rotation: { x: .16, y: .54, z: .12 }, opacity: .12, arc: Math.PI * 1.44 }, { color: 0x62d8dc, radius: outerR + .34, tube: .012, rotation: { x: .78, y: .14, z: .42 }, opacity: .1, arc: Math.PI * 1.22 }]);
+      faceDirs.forEach((dir, i) => {
+        addSurfacePlate(dir, i % 2 ? 0xdafcff : 0x8bf6ff, sides === 6 ? .62 : .48, sides === 6 ? .62 : .48, .032, outerR - .01, { transparent: true, opacity: .3, transmission: .7, metalness: .02, roughness: .02, clearcoat: 1.95, clearcoatRoughness: .02 });
+        addSurfaceDroplet(dir, i % 2 ? 0xdafcff : 0x9afcff, sides === 6 ? .16 : .12, sides === 6 ? .22 : .18, .055, outerR + .014);
+      });
+      [ [.18,.18],[-.2,.1],[.1,-.2] ].forEach(([x,y], idx) => addCornerStud(faceDirs[0], x, y, [0xffffff,0xc8ffff,0x9afcff][idx], .04, outerR + .018, { metalness: .04, roughness: .02 }));
     } else if (id === 'mythic_aeon') {
-      const core = new THREE.Mesh(new THREE.SphereGeometry(sides === 6 ? .92 : 1.0, 24, 18), new THREE.MeshPhysicalMaterial({ color: 0x171126, transparent: true, opacity: .24, transmission: .42, roughness: .03, metalness: .06, emissive: 0x6cefff, emissiveIntensity: .1, clearcoat: 1.95, clearcoatRoughness: .03, depthWrite: false }));
-      group.add(core);
-      dirs.slice(0, 8).forEach((dir, i) => addPetal(dir, [0xf5edc3, 0x6cefff, 0x9d8cff, 0xffffff][i % 4], .58 + (i % 2) * .08, .14, .08, shellR + .02, { metalness: .18, roughness: .06, transparent: i % 3 === 0, opacity: i % 3 === 0 ? .84 : .98, transmission: i % 3 === 0 ? .22 : 0, emissive: i % 2 ? 0x58d8e7 : 0x8f77ff, emissiveIntensity: .03 }));
-      dirs.slice(0, 6).forEach((dir, i) => addFaceFrame(dir, [0xf5edc3, 0x6cefff, 0x9d8cff][i % 3], sides === 6 ? .76 : .6, .05, .05, outerR + .03, { metalness: .32, roughness: .08 }));
-      addRingSet([{ color: 0xf5edc3, radius: outerR + .12, tube: .018, rotation: { x: .22, y: .48, z: .1 }, opacity: .16 }, { color: 0x6cefff, radius: outerR + .28, tube: .014, rotation: { x: .58, y: .88, z: .34 }, opacity: .12, arc: Math.PI * 1.52 }, { color: 0x9d8cff, radius: outerR + .44, tube: .012, rotation: { x: .92, y: .22, z: .6 }, opacity: .1, arc: Math.PI * 1.18 }]);
-      dirs.slice(0, 6).forEach((dir, i) => addGem(dir, [0xf5edc3, 0x6cefff, 0x9d8cff, 0xffffff][i % 4], .08, outerR + .18));
+      faceDirs.forEach((dir, i) => {
+        addFrame(dir, [0xf3ebc1,0x8fefff,0x9d8cff][i % 3], sides === 6 ? .72 : .54, .04, .04, outerR + .018, { metalness: .34, roughness: .08 });
+        addSurfacePlate(dir, i % 2 ? 0x251a3f : 0x171126, sides === 6 ? .44 : .34, sides === 6 ? .44 : .34, .04, outerR - .008, { metalness: .08, roughness: .06, transparent: true, opacity: .85, transmission: .18, emissive: i % 2 ? 0x4d34a1 : 0x264a6b, emissiveIntensity: .03 });
+        addGem(dir, [0xf5edc3,0x6cefff,0x9d8cff,0xffffff][i % 4], .06, outerR + .024, { opacity: .88, transmission: .32 });
+      });
+      addGem(new THREE.Vector3(0,1,0), 0xf5edc3, .11, outerR + .036);
+      addGem(new THREE.Vector3(0,-1,0), 0x6cefff, .09, outerR + .028);
     } else {
-      dirs.slice(0, 4).forEach((dir, i) => addFaceFrame(dir, i % 2 ? emissive : accent, sides === 6 ? .76 : .62, .06, .05, outerR + .02, { metalness: .36, roughness: .12 }));
-      dirs.slice(0, 4).forEach((dir, i) => addGem(dir, i % 2 ? emissive : accent, .08, outerR + .12));
+      faceDirs.forEach((dir, i) => {
+        addFrame(dir, i % 2 ? skin.emissive || '#ffffff' : skin.accent || '#ffffff', sides === 6 ? .7 : .54, .05, .04, outerR + .016, { metalness: .4, roughness: .12 });
+      });
     }
   }
 

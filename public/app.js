@@ -1304,7 +1304,7 @@ function enqueueDice(payload) {
       $('#diceFinal').textContent = natural;
       $('#diceFinal').classList.add('is-result');
       $('#diceSub').textContent = '판정이 확정되었습니다.';
-      await new Promise(r => setTimeout(r, 950));
+      await new Promise(r => setTimeout(r, 1600));
       $('#diceOverlay').classList.remove('show');
       await new Promise(r => setTimeout(r, 320));
       renderStory();

@@ -526,6 +526,19 @@ export class DiceTheater {
   }
 
 
+  bodyMaterialTuning(skin = {}) {
+    const id = String(skin?.id || 'classic');
+    const map = {
+      celestial_choir: { roughness: .12, metalness: .34, clearcoat: 1.7, clearcoatRoughness: .05 },
+      crown_steel: { roughness: .15, metalness: .78, clearcoat: 1.35, clearcoatRoughness: .08 },
+      void_monarch: { roughness: .1, metalness: .62, clearcoat: 1.45, clearcoatRoughness: .06 },
+      rift_shard: { roughness: .14, metalness: .46, clearcoat: 1.3, clearcoatRoughness: .07 },
+      prismatic_tide: { roughness: .05, metalness: .08, transmission: .24, transparent: true, opacity: .95, clearcoat: 1.85, clearcoatRoughness: .03 },
+      mythic_aeon: { roughness: .08, metalness: .28, transmission: .08, transparent: false, clearcoat: 1.9, clearcoatRoughness: .04 },
+    };
+    return map[id] || {};
+  }
+
   prepareLegendaryCore(group, skin = {}, sides = 20) {
     // Keep the numbered physical die fully readable. Legendary/mythic silhouettes
     // are added outside the core instead of shrinking or hiding it.
@@ -539,6 +552,33 @@ export class DiceTheater {
     const shellGeom=()=>sides===6?new THREE.BoxGeometry(2.34,2.34,2.34):new THREE.IcosahedronGeometry(1.62,0);
     const addWire=(color,opacity=.5,scale=1)=>{ const e=new THREE.LineSegments(new THREE.EdgesGeometry(shellGeom()),new THREE.LineBasicMaterial({color,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false})); e.scale.setScalar(scale); e.renderOrder=15; group.add(e); return e; };
     const addPoints=(count,color,radius,size=.045)=>{ const arr=new Float32Array(count*3); for(let i=0;i<count;i++){ const u=Math.random(),v=Math.random(),th=u*Math.PI*2,ph=Math.acos(2*v-1),r=radius*(.55+Math.random()*.45); arr[i*3]=Math.sin(ph)*Math.cos(th)*r;arr[i*3+1]=Math.cos(ph)*r;arr[i*3+2]=Math.sin(ph)*Math.sin(th)*r; } const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(arr,3));const m=new THREE.PointsMaterial({map:this.getGlowTexture(),color,size,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false});const p=new THREE.Points(g,m);p.renderOrder=16;group.add(p);return p; };
+    const refinedElite = new Set(['neon_prism','celestial_choir','crown_steel','void_monarch','rift_shard','prismatic_tide','mythic_aeon']);
+    if (refinedElite.has(id)) {
+      if (id === 'neon_prism') {
+        const shell=new THREE.Mesh(shellGeom(),new THREE.MeshPhysicalMaterial({color:skin.base,transparent:true,opacity:.1,roughness:.04,metalness:.08,transmission:.24,clearcoat:1.6,depthWrite:false})); shell.scale.setScalar(1.03); shell.renderOrder=10; group.add(shell);
+        addWire(0x58fff0,.36,1.01); addWire(0xff55e8,.18,1.03);
+      } else if (id === 'celestial_choir') {
+        addWire(0xfff0c9,.44,1.01);
+        const halo=new THREE.Mesh(new THREE.TorusGeometry(sides===6?1.68:1.58,.035,8,42),new THREE.MeshBasicMaterial({color:0x94a7ff,transparent:true,opacity:.24,blending:THREE.AdditiveBlending,depthWrite:false}));
+        halo.rotation.set(.22,.6,.05); group.add(halo);
+      } else if (id === 'crown_steel') {
+        addWire(0xffe29b,.4,1.01);
+        const band=new THREE.Mesh(new THREE.TorusGeometry(sides===6?1.62:1.56,.05,10,42),new THREE.MeshStandardMaterial({color:0xcaa45c,metalness:1,roughness:.18})); band.rotation.x=Math.PI/2; group.add(band);
+      } else if (id === 'void_monarch') {
+        const core=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.12:1.04,18,14),new THREE.MeshStandardMaterial({color:0x12061c,roughness:.1,metalness:.75,emissive:0x5b17a1,emissiveIntensity:.34})); group.add(core);
+        addWire(0xff9af2,.28,1.02);
+      } else if (id === 'rift_shard') {
+        addWire(0xffbcf5,.34,1.01);
+      } else if (id === 'prismatic_tide') {
+        const shell=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.44:1.34,22,16),new THREE.MeshPhysicalMaterial({color:0x83f7ff,transparent:true,opacity:.18,roughness:.02,metalness:.04,transmission:.52,clearcoat:1.8,depthWrite:false})); shell.scale.set(1.02, .98, 1.02); shell.renderOrder=10; group.add(shell);
+        addWire(0xb9ffff,.24,1.01);
+      } else if (id === 'mythic_aeon') {
+        const shell=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.54:1.44,22,16),new THREE.MeshPhysicalMaterial({color:0x171126,transparent:true,opacity:.12,roughness:.03,metalness:.12,transmission:.28,clearcoat:1.9,depthWrite:false})); shell.renderOrder=9; group.add(shell);
+        addWire(0xf5edc3,.24,1.01); addWire(0x6cefff,.16,1.04);
+      }
+      this.addEliteForm(group, skin, sides);
+      return;
+    }
     if(id==='nebula_glass'){
       const shell=new THREE.Mesh(shellGeom(),new THREE.MeshPhysicalMaterial({color:skin.base,transparent:true,opacity:.16,roughness:.02,metalness:.05,transmission:.45,clearcoat:1.5,depthWrite:false}));shell.scale.setScalar(1.035);shell.renderOrder=10;group.add(shell);addPoints(54,accent,1.36,.055);addWire(accent,.42,1.035);
     } else if(id==='abyss_pearl'){
@@ -823,11 +863,12 @@ export class DiceTheater {
     const visual = this.skinVisual(skin);
     const base = new THREE.Color(skin.base || '#c24a35'); const emissive = new THREE.Color(skin.emissive || '#000000'); const labelColor = skin.accent || '#fff9ec';
     const premium = Number(skin.price||0) >= 12;
+    const bodyTune = this.bodyMaterialTuning(skin);
     for (let f = 0; f < 20; f++) {
       const a = new THREE.Vector3().fromBufferAttribute(pos, f * 3), b = new THREE.Vector3().fromBufferAttribute(pos, f * 3 + 1), c = new THREE.Vector3().fromBufferAttribute(pos, f * 3 + 2);
       const tri = new THREE.BufferGeometry().setFromPoints([a, b, c]); tri.computeVertexNormals();
       const tint = base.clone().offsetHSL(0, 0, (f % 4 - 1.5) * .025);
-      const mat = new THREE.MeshPhysicalMaterial({ color: tint, roughness: Number(skin.roughness ?? .24), metalness: Number(skin.metalness ?? .36), clearcoat: premium?1.45:1.05, clearcoatRoughness: .08, emissive, emissiveIntensity: skin.id==='classic'?0:(premium?.52:.34), transmission: (skin.id==='aurora_crystal'||skin.id==='nebula_glass')?.06:0 });
+      const mat = new THREE.MeshPhysicalMaterial({ color: tint, roughness: Number(bodyTune.roughness ?? skin.roughness ?? .24), metalness: Number(bodyTune.metalness ?? skin.metalness ?? .36), clearcoat: Number(bodyTune.clearcoat ?? (premium?1.45:1.05)), clearcoatRoughness: Number(bodyTune.clearcoatRoughness ?? .08), emissive, emissiveIntensity: skin.id==='classic'?0:(premium?.52:.34), transmission: Number(bodyTune.transmission ?? ((skin.id==='aurora_crystal'||skin.id==='nebula_glass')?.06:0)), transparent: Boolean(bodyTune.transparent ?? false), opacity: Number(bodyTune.opacity ?? 1) });
       const mesh = new THREE.Mesh(tri, mat); mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh); this.faceMaterials[f] = mat;
       const center = a.clone().add(b).add(c).divideScalar(3); const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize(); if (normal.dot(center) < 0) normal.negate(); this.faceNormals.push(normal.clone());
       const label = this.makeLabel(String(f + 1), .44, labelColor, {font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:4,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:skin.id==='classic'?8:14}); label.position.copy(center.clone().add(normal.clone().multiplyScalar(.022))); label.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal); group.add(label); this.labelMaterials[f] = label.userData.material;
@@ -840,14 +881,14 @@ export class DiceTheater {
     this.faceNormals = []; this.faceMaterials = []; this.labelMaterials = [];
     const skin = typeof style === 'object' && style ? style : { base: style || '#b94836' };
     const visual = this.skinVisual(skin);
-    const labelColor = skin.accent || '#fff9ec'; const emissive = new THREE.Color(skin.emissive || '#000000'); const premium = Number(skin.price||0)>=12;
+    const labelColor = skin.accent || '#fff9ec'; const emissive = new THREE.Color(skin.emissive || '#000000'); const premium = Number(skin.price||0)>=12; const bodyTune = this.bodyMaterialTuning(skin);
     const faces = [
       { normal: [1, 0, 0], roll: 1 }, { normal: [-1, 0, 0], roll: 6 }, { normal: [0, 1, 0], roll: 2 },
       { normal: [0, -1, 0], roll: 5 }, { normal: [0, 0, 1], roll: 3 }, { normal: [0, 0, -1], roll: 4 },
     ];
     faces.forEach(({ roll }, idx) => {
       const tint = new THREE.Color(skin.base || '#b94836').offsetHSL(0, 0, (idx % 3 - 1) * .025);
-      const mat = new THREE.MeshPhysicalMaterial({ color: tint, roughness: Number(skin.roughness ?? .22), metalness: Number(skin.metalness ?? .32), clearcoat: premium?1.45:1.05, clearcoatRoughness: .08, emissive, emissiveIntensity: skin.id==='classic'?0:(premium?.52:.34) });
+      const mat = new THREE.MeshPhysicalMaterial({ color: tint, roughness: Number(bodyTune.roughness ?? skin.roughness ?? .22), metalness: Number(bodyTune.metalness ?? skin.metalness ?? .32), clearcoat: Number(bodyTune.clearcoat ?? (premium?1.45:1.05)), clearcoatRoughness: Number(bodyTune.clearcoatRoughness ?? .08), emissive, emissiveIntensity: skin.id==='classic'?0:(premium?.52:.34), transmission: Number(bodyTune.transmission ?? 0), transparent: Boolean(bodyTune.transparent ?? false), opacity: Number(bodyTune.opacity ?? 1) });
       this.faceMaterials[roll - 1] = mat;
     });
     const materials = [this.faceMaterials[0], this.faceMaterials[5], this.faceMaterials[1], this.faceMaterials[4], this.faceMaterials[2], this.faceMaterials[3]];

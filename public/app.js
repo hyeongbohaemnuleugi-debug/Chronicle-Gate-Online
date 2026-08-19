@@ -1,4 +1,4 @@
-import { DiceTheater } from './dice3d.js?v=8290';
+import { DiceTheater } from './dice3d.js?v=8324';
 
 const CLIENT_BUILD = '8.3.0-shared-turn-branch-clarity';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
@@ -1304,10 +1304,12 @@ function enqueueDice(payload) {
       $('#diceFinal').textContent = natural;
       $('#diceFinal').classList.add('is-result');
       $('#diceSub').textContent = '판정이 확정되었습니다.';
-      await new Promise(r => setTimeout(r, 1600));
-      $('#diceOverlay').classList.remove('show');
-      await new Promise(r => setTimeout(r, 320));
+      await new Promise(r => setTimeout(r, 1900));
+      view('storyView');
       renderStory();
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      $('#diceOverlay').classList.remove('show');
+      await new Promise(r => setTimeout(r, 180));
       return;
     }
 

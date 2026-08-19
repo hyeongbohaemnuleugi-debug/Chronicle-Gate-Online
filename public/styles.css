@@ -1112,6 +1112,10 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 .dice-skin-card[data-skin="neon_prism"] .dice-preview i{outline:2px solid #58fff0;filter:drop-shadow(5px 0 0 #ff55e8) drop-shadow(-5px 0 0 #7f71ff)}
 .dice-skin-card[data-skin="crown_steel"] .dice-preview:after{content:"♛";position:absolute;top:-4px;font-size:27px;color:#ffe29b;text-shadow:0 0 10px #ffd16b}
 .dice-skin-card[data-skin="rift_shard"] .dice-preview i{clip-path:polygon(50% 0,87% 15%,76% 42%,100% 58%,70% 75%,50% 100%,31% 74%,0 61%,23% 42%,12% 17%);filter:drop-shadow(0 0 12px #ff8ff1)}
+.dice-skin-card[data-skin="prismatic_tide"] .dice-preview i{border-radius:28% 42% 34% 40%;opacity:.85;background:radial-gradient(circle at 30% 28%,#ffffff 0 10%,#b9ffff 18%,#74edf5 42%,#1b7f8d 78%,#0a2233 100%);filter:drop-shadow(0 0 12px #7ffcff)}
+.dice-skin-card[data-skin="prismatic_tide"] .dice-preview:after{content:"";position:absolute;width:42px;height:18px;border:2px solid rgba(185,255,255,.85);border-left-color:transparent;border-right-color:transparent;border-radius:50%;transform:rotate(-18deg);filter:drop-shadow(0 0 8px #7ffcff)}
+.dice-skin-card[data-skin="mythic_aeon"] .dice-preview i{clip-path:polygon(50% 0,76% 18%,100% 50%,77% 82%,50% 100%,22% 80%,0 50%,24% 18%);background:radial-gradient(circle at 34% 28%,#ffffff 0 8%,#f5edc3 15%,#6cefff 38%,#7054d8 68%,#120f24 100%);filter:drop-shadow(0 0 14px #8eefff)}
+.dice-skin-card[data-skin="mythic_aeon"] .dice-preview:after{content:"✦";position:absolute;font-size:44px;color:#f5edc3;opacity:.4;text-shadow:0 0 16px #6cefff}
 @keyframes dicePreviewSpin{to{transform:rotate(360deg)}}
 
 /* v8.3.0 - shared-turn readability + compact contextual choices */

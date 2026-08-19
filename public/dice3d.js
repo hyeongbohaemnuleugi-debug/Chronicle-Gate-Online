@@ -82,7 +82,7 @@ export class DiceTheater {
   fxProfile(style = {}) {
     const id = String(style?.id || 'classic');
     const price = Number(style?.price || 0);
-    const tier = price >= 12 ? 3 : price >= 8 ? 2 : price > 0 ? 1 : 0;
+    const tier = price >= 30 ? 4 : price >= 12 ? 3 : price >= 8 ? 2 : price > 0 ? 1 : 0;
     const themes = {
       classic: 'classic', nebula_glass: 'nebula', abyss_pearl: 'abyss', twilight_gilt: 'gilt', clockwork: 'clockwork',
       aurora_crystal: 'aurora', eclipse_obsidian: 'eclipse', starseed: 'starseed', runic_tempest: 'tempest', phoenix_ember: 'phoenix', verdant_relic: 'relic',
@@ -210,13 +210,21 @@ export class DiceTheater {
     if (!profile.tier) return;
     const accent = new THREE.Color(profile.accent);
     const emissive = new THREE.Color(profile.emissive || profile.accent);
-    const orbCount = profile.tier === 1 ? 3 : profile.tier === 2 ? 5 : 8;
-    for (let i = 0; i < orbCount; i++) this.addOrbiter(die, i % 2 ? accent : emissive, 1.75 + (i % 3) * .18, .75 + i * .09, (i % 2 ? .3 : -.15), i * .85, profile.tier === 3 ? .24 : .17);
-    if (profile.tier >= 2) this.addHalo(die, accent, 1.85, .28);
-    this.addAuraField(die, [accent, emissive], profile.tier===1?220:profile.tier===2?420:760, profile.tier===3?2.9:2.35, profile.tier===3?.135:.105, profile.tier===3?.62:.38);
-    if (profile.tier >= 3) {
-      const h2 = this.addHalo(die, emissive, 2.2, .18); h2.rotation.y = Math.PI / 2;
-      this.addAuraField(die, [profile.accent, profile.emissive || profile.accent, '#ffffff'], 620, 3.55, .085, -.48);
+    const tier = Number(profile.tier || 0);
+    const orbCount = tier >= 4 ? 16 : tier === 3 ? 10 : tier === 2 ? 5 : 3;
+    const orbSize = tier >= 4 ? .29 : tier === 3 ? .24 : .17;
+    for (let i = 0; i < orbCount; i++) this.addOrbiter(die, i % 2 ? accent : emissive, 1.75 + (i % 4) * .18, .78 + i * .11, (i % 2 ? .32 : -.18), i * .75, orbSize);
+    if (tier >= 2) this.addHalo(die, accent, 1.85, tier >= 4 ? .42 : tier === 3 ? .34 : .28);
+    this.addAuraField(die, [accent, emissive], tier >= 4 ? 1420 : tier === 3 ? 860 : tier === 2 ? 460 : 220, tier >= 4 ? 3.35 : tier === 3 ? 2.95 : 2.35, tier >= 4 ? .155 : tier === 3 ? .135 : .105, tier >= 4 ? .82 : tier === 3 ? .62 : .38);
+    if (tier >= 3) {
+      const h2 = this.addHalo(die, emissive, tier >= 4 ? 2.32 : 2.2, tier >= 4 ? .28 : .18); h2.rotation.y = Math.PI / 2;
+      this.addAuraField(die, [profile.accent, profile.emissive || profile.accent, '#ffffff'], tier >= 4 ? 1080 : 620, tier >= 4 ? 3.95 : 3.55, tier >= 4 ? .11 : .085, tier >= 4 ? -.68 : -.48);
+    }
+    if (tier >= 4) {
+      const h3 = this.addHalo(die, '#ffffff', 2.72, .16); h3.rotation.set(.62, .25, .18);
+      const h4 = this.addHalo(die, profile.accent, 3.05, .12); h4.rotation.set(-.48, .82, .4);
+      this.addAuraField(die, ['#ffffff', profile.accent, profile.emissive || profile.accent, '#ff8df1'], 760, 4.55, .09, .92);
+      for (let i = 0; i < 6; i++) this.addOrbiter(die, i % 2 ? '#ffffff' : accent, 2.7 + (i % 3) * .18, 1.25 + i * .08, -.55 + i * .2, i * .8, .14 + (i % 2) * .04);
     }
     if (profile.theme === 'clockwork') {
       for (let i = 0; i < 2; i++) {
@@ -224,57 +232,107 @@ export class DiceTheater {
         const g = new THREE.Mesh(new THREE.TorusGeometry(1.9 + i * .22, .025, 8, 16), m); g.userData.die = die; g.userData.gear = true; g.userData.speed = i ? -1.6 : 1.2; g.rotation.x = i ? .7 : 1.1; this.fxGroup.add(g); this.fxOrbiters.push(g);
       }
     }
-    if (profile.theme === 'nebula') { this.addOrbiter(die,0xd9d0ff,2.15,.55,.25,0,.18); this.addOrbiter(die,0x8c78ff,2.55,-.42,-.15,2.1,.13); }
-    if (profile.theme === 'abyss') { this.addHalo(die,0x8eefff,2.0,.18); this.addOrbiter(die,0xbaf8ff,1.8,.35,-.55,1.2,.14); }
-    if (profile.theme === 'gilt') { const h=this.addHalo(die,0xffd67a,2.05,.32); h.rotation.x=.35; this.addOrbiter(die,0xff8c5a,2.25,.62,.3,.5,.14); }
-    if (profile.theme === 'aurora') { const h=this.addHalo(die,0xbaffd8,2.15,.22); h.rotation.y=.85; this.addOrbiter(die,0x79bfff,2.45,.48,.35,2.4,.16); }
-    if (profile.theme === 'eclipse') { const h=this.addHalo(die,0xd998ff,2.25,.28); h.rotation.x=.82; this.addOrbiter(die,0x4c1764,1.75,-.35,0,1.7,.22); }
-    if (profile.theme === 'starseed') { this.addOrbiter(die,0xf8f29b,2.0,.42,.45,.3,.18); this.addOrbiter(die,0x8ed88a,2.35,-.3,-.25,2.7,.13); }
-    if (profile.theme === 'neon') { [0x58fff0,0xff55e8,0x7f71ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.85+i*.18,.23);h.rotation.set(.35*i,.55*i,.8*i);}); }
-    if (profile.theme === 'crown') { const h=this.addHalo(die,0xffe29b,2.15,.34);h.rotation.x=.45;this.addOrbiter(die,0xffc851,2.45,.72,.4,0,.16); }
-    if (profile.theme === 'rift') { for(let i=0;i<3;i++){const h=this.addHalo(die,i%2?0xffbcf5:0x8b4dff,1.9+i*.22,.2);h.rotation.set(.4+i*.5,.2+i*.7,.3+i*.35);} }
-    if (profile.theme === 'tempest') { [0xd7f1ff,0x7ab4ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.95+i*.22,.24);h.rotation.set(.45*i,.25+i*.4,.8+i*.25);}); this.addOrbiter(die,0xd7f1ff,2.5,.9,.18,0,.17); }
-    if (profile.theme === 'phoenix') { const h=this.addHalo(die,0xffcf7a,2.12,.28); h.rotation.x=.8; this.addOrbiter(die,0xff7d4f,2.35,.58,.42,1.2,.18); }
-    if (profile.theme === 'relic') { const h=this.addHalo(die,0xdcffd1,2.08,.26); h.rotation.y=.55; this.addOrbiter(die,0x8cff9f,2.32,-.35,-.2,2.3,.15); }
-    if (profile.theme === 'celestial') { [0xfff0c9,0x94a7ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.9+i*.28,.24);h.rotation.set(Math.PI/2*(i%2),i*.45,.2+i*.35);}); }
-    if (profile.theme === 'void') { for(let i=0;i<3;i++){const h=this.addHalo(die,i%2?0xff9af2:0x7b31cf,2.0+i*.2,.2);h.rotation.set(.35+i*.4,.5+i*.45,.1+i*.3);} }
-    if (profile.theme === 'prism') { [0x7ffcff,0xff4ecb,0x7c8dff].forEach((col,i)=>{const h=this.addHalo(die,col,1.9+i*.18,.22);h.rotation.set(.25*i,.65*i,.42*i);}); }
-    if (profile.theme === 'mythic') { [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((col,i)=>{const h=this.addHalo(die,col,1.86+i*.22,.24);h.rotation.set(.35*i,.6*i,.9*i);}); this.addAuraField(die,[0xfff6bf,0x63f8ff,0xff78df,0xffffff],980,3.95,.095,.68); }
+    if (profile.theme === 'nebula') {
+      [0xd9d0ff,0x8c78ff,0xffb7f5].forEach((col,i)=>{ const h=this.addHalo(die,col,1.9+i*.22,.2+i*.03); h.rotation.set(.25+i*.3,.55*i,.8*i); });
+      this.addOrbiter(die,0xd9d0ff,2.15,.55,.25,0,.18); this.addOrbiter(die,0x8c78ff,2.55,-.42,-.15,2.1,.13); this.addOrbiter(die,0xffb7f5,2.85,.3,.05,1.2,.11);
+    }
+    if (profile.theme === 'abyss') {
+      this.addHalo(die,0x8eefff,2.0,.18); const h=this.addHalo(die,0x6ee6ff,2.36,.12); h.rotation.y=.75;
+      this.addOrbiter(die,0xbaf8ff,1.8,.35,-.55,1.2,.14); this.addOrbiter(die,0x78dbf8,2.2,.26,.62,2.4,.12);
+    }
+    if (profile.theme === 'gilt') {
+      const h=this.addHalo(die,0xffd67a,2.05,.32); h.rotation.x=.35; const h2=this.addHalo(die,0xfff2c2,2.42,.14); h2.rotation.set(.55,.15,.25);
+      [0xff8c5a,0xffd67a,0xffe6aa].forEach((c,i)=>this.addOrbiter(die,c,2.18+i*.18,.54+i*.15,.3-i*.18,.5+i*.8,.12+i*.015));
+    }
+    if (profile.theme === 'aurora') {
+      const h=this.addHalo(die,0xbaffd8,2.15,.22); h.rotation.y=.85; const h2=this.addHalo(die,0x79bfff,2.48,.16); h2.rotation.set(.15,1.2,.62);
+      this.addOrbiter(die,0x79bfff,2.45,.48,.35,2.4,.16); this.addOrbiter(die,0xbaffd8,2.72,.36,-.18,.8,.14);
+    }
+    if (profile.theme === 'eclipse') {
+      const h=this.addHalo(die,0xd998ff,2.25,.28); h.rotation.x=.82; const h2=this.addHalo(die,0x4c1764,1.72,.22); h2.rotation.set(.22,.5,1.05);
+      this.addOrbiter(die,0x4c1764,1.75,-.35,0,1.7,.22); this.addOrbiter(die,0xd998ff,2.42,.48,.12,3.2,.12);
+    }
+    if (profile.theme === 'starseed') {
+      this.addOrbiter(die,0xf8f29b,2.0,.42,.45,.3,.18); this.addOrbiter(die,0x8ed88a,2.35,-.3,-.25,2.7,.13); this.addOrbiter(die,0xffffff,2.64,.22,.05,1.1,.1);
+    }
+    if (profile.theme === 'neon') {
+      [0x58fff0,0xff55e8,0x7f71ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.85+i*.18,.23);h.rotation.set(.35*i,.55*i,.8*i);});
+      this.addOrbiter(die,0x58fff0,2.3,.95,.1,.4,.14); this.addOrbiter(die,0xff55e8,2.56,.82,-.25,1.7,.12);
+    }
+    if (profile.theme === 'crown') {
+      const h=this.addHalo(die,0xffe29b,2.15,.34);h.rotation.x=.45; const h2=this.addHalo(die,0xcaa45c,2.44,.16); h2.rotation.y=.8;
+      this.addOrbiter(die,0xffc851,2.45,.72,.4,0,.16); this.addOrbiter(die,0xffe29b,2.72,.52,.72,2.2,.12);
+    }
+    if (profile.theme === 'rift') {
+      for(let i=0;i<4;i++){const h=this.addHalo(die,i%2?0xffbcf5:0x8b4dff,1.9+i*.22,.2);h.rotation.set(.4+i*.5,.2+i*.7,.3+i*.35);} 
+      this.addOrbiter(die,0xffbcf5,2.5,.78,.15,.8,.13);
+    }
+    if (profile.theme === 'tempest') {
+      [0xd7f1ff,0x7ab4ff,0x6c8cff].forEach((col,i)=>{const h=this.addHalo(die,col,1.95+i*.22,.24);h.rotation.set(.45*i,.25+i*.4,.8+i*.25);});
+      this.addOrbiter(die,0xd7f1ff,2.5,.9,.18,0,.17); this.addOrbiter(die,0x7ab4ff,2.82,1.18,-.28,1.7,.11);
+    }
+    if (profile.theme === 'phoenix') {
+      const h=this.addHalo(die,0xffcf7a,2.12,.28); h.rotation.x=.8; const h2=this.addHalo(die,0xff7d4f,2.42,.14); h2.rotation.set(.4,.1,.55);
+      this.addOrbiter(die,0xff7d4f,2.35,.58,.42,1.2,.18); this.addOrbiter(die,0xffcf7a,2.62,.76,-.15,2.5,.14);
+    }
+    if (profile.theme === 'relic') {
+      const h=this.addHalo(die,0xdcffd1,2.08,.26); h.rotation.y=.55; const h2=this.addHalo(die,0x8cff9f,2.32,.14); h2.rotation.set(.7,.2,.7);
+      this.addOrbiter(die,0x8cff9f,2.32,-.35,-.2,2.3,.15); this.addOrbiter(die,0xdcffd1,2.56,.42,.25,.8,.12);
+    }
+    if (profile.theme === 'celestial') {
+      [0xfff0c9,0x94a7ff,0xffffff].forEach((col,i)=>{const h=this.addHalo(die,col,1.9+i*.28,.24);h.rotation.set(Math.PI/2*(i%2),i*.45,.2+i*.35);});
+      this.addOrbiter(die,0xfff0c9,2.42,.44,.55,.5,.14); this.addOrbiter(die,0x94a7ff,2.68,.38,-.18,2.1,.12);
+    }
+    if (profile.theme === 'void') {
+      for(let i=0;i<4;i++){const h=this.addHalo(die,i%2?0xff9af2:0x7b31cf,2.0+i*.2,.2);h.rotation.set(.35+i*.4,.5+i*.45,.1+i*.3);} 
+      this.addOrbiter(die,0xff9af2,2.4,.62,.12,.8,.12);
+    }
+    if (profile.theme === 'prism') {
+      [0x7ffcff,0xff4ecb,0x7c8dff,0xffffff].forEach((col,i)=>{const h=this.addHalo(die,col,1.9+i*.18,.22);h.rotation.set(.25*i,.65*i,.42*i);});
+      this.addOrbiter(die,0x7ffcff,2.28,.92,.15,.25,.14); this.addOrbiter(die,0xff4ecb,2.56,.78,-.2,1.35,.12); this.addOrbiter(die,0xffffff,2.84,.58,.45,2.4,.1);
+    }
+    if (profile.theme === 'mythic') {
+      [0xfff6bf,0x63f8ff,0xff78df,0xffffff,0xb089ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.86+i*.2,.24-(i*.015));h.rotation.set(.35*i,.6*i,.9*i);});
+      this.addAuraField(die,[0xfff6bf,0x63f8ff,0xff78df,0xffffff],1180,4.15,.105,.84);
+      [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((c,i)=>this.addOrbiter(die,c,2.4+i*.22,1.0+i*.12,-.3+i*.22,.6+i*.9,.14+(i%2)*.03));
+    }
   }
 
   trailFx(die, profile, dt) {
     if (!profile.tier) return;
     this.fxTrailClock += dt;
-    const interval = profile.tier === 3 ? .028 : profile.tier === 2 ? .055 : .09;
+    const interval = profile.tier >= 4 ? .014 : profile.tier === 3 ? .022 : profile.tier === 2 ? .055 : .09;
     if (this.fxTrailClock < interval) return;
     this.fxTrailClock = 0;
     const basePos = die.position.clone();
     const accent = new THREE.Color(profile.accent);
     const secondary = new THREE.Color(profile.emissive || profile.accent);
-    const count = profile.tier === 3 ? 3 : profile.tier === 2 ? 2 : 1;
+    const count = profile.tier >= 4 ? 5 : profile.tier === 3 ? 4 : profile.tier === 2 ? 2 : 1;
     for (let i = 0; i < count; i++) {
       const p = basePos.clone().add(new THREE.Vector3((Math.random() - .5) * .8, (Math.random() - .5) * .8, (Math.random() - .5) * .8));
       const c = i % 2 ? secondary : accent;
       const velocity = new THREE.Vector3(-.15 - Math.random() * .55, .18 + Math.random() * .4, (Math.random() - .5) * .35);
-      this.addSprite(p, c, profile.tier === 3 ? .28 : .2, .35 + Math.random() * .3, velocity, .15);
+      this.addSprite(p, c, profile.tier >= 4 ? .34 : profile.tier === 3 ? .28 : .2, .35 + Math.random() * .3 + (profile.tier >= 4 ? .12 : 0), velocity.multiplyScalar(profile.tier >= 4 ? 1.2 : 1), .15);
     }
-    if (profile.theme === 'abyss' && Math.random() < .45) this.addSprite(basePos.clone().add(new THREE.Vector3(0, -.5, 0)), 0xa7f4ff, .13, .7, new THREE.Vector3((Math.random()-.5)*.2, .7+Math.random()*.5, (Math.random()-.5)*.2), -.05);
-    if (profile.theme === 'starseed' && Math.random() < .4) this.addSprite(basePos.clone(), 0xf8f29b, .12, .65, new THREE.Vector3((Math.random()-.5)*.4, .3+Math.random()*.25, (Math.random()-.5)*.4), .25);
-    if (profile.theme === 'nebula' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xd9d0ff:0x806dff,.14,.75,new THREE.Vector3(-.25,.12,(Math.random()-.5)*.5),.05);
-    if (profile.theme === 'gilt' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xffd67a:0xff7b55,.13,.5,new THREE.Vector3(-.6,.35,(Math.random()-.5)*.25),.5);
-    if (profile.theme === 'clockwork' && Math.random()<.4) this.shardBurst(basePos.clone(),0xf5cf84,2,.42);
-    if (profile.theme === 'aurora' && Math.random()<.42) this.addSprite(basePos.clone(),Math.random()<.5?0xbaffd8:0x79bfff,.18,.8,new THREE.Vector3(-.25,.65,(Math.random()-.5)*.35),-.08);
-    if (profile.theme === 'eclipse' && Math.random()<.35) this.addSprite(basePos.clone(),0xd998ff,.16,.7,new THREE.Vector3(-.2,.05,(Math.random()-.5)*.3),.1);
-    if (profile.theme === 'neon' && Math.random()<.65) this.addSprite(basePos.clone(),[0x58fff0,0xff55e8,0x7f71ff][Math.floor(Math.random()*3)],.15,.48,new THREE.Vector3(-.75,.1,(Math.random()-.5)*.25),.05);
-    if (profile.theme === 'crown' && Math.random()<.45) this.addSprite(basePos.clone(),0xffe29b,.13,.55,new THREE.Vector3(-.4,.45,(Math.random()-.5)*.25),.4);
-    if (profile.theme === 'rift' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xffbcf5:0x8b4dff,.17,.55,new THREE.Vector3(-.45,(Math.random()-.5)*.4,(Math.random()-.5)*.7),.1);
-    if (profile.theme === 'tempest' && Math.random()<.55) this.addSprite(basePos.clone(),Math.random()<.5?0xd7f1ff:0x7ab4ff,.16,.56,new THREE.Vector3(-.55,.22,(Math.random()-.5)*.55),.06);
-    if (profile.theme === 'phoenix' && Math.random()<.55) this.addSprite(basePos.clone(),Math.random()<.5?0xffcf7a:0xff7d4f,.18,.7,new THREE.Vector3(-.18,.82,(Math.random()-.5)*.28),-.12);
-    if (profile.theme === 'relic' && Math.random()<.42) this.addSprite(basePos.clone(),Math.random()<.5?0xdcffd1:0x8cff9f,.16,.74,new THREE.Vector3(-.22,.36,(Math.random()-.5)*.3),.12);
-    if (profile.theme === 'celestial' && Math.random()<.52) this.addSprite(basePos.clone(),Math.random()<.5?0xfff0c9:0x94a7ff,.17,.65,new THREE.Vector3(-.35,.45,(Math.random()-.5)*.3),.08);
-    if (profile.theme === 'void' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xff9af2:0x7b31cf,.18,.62,new THREE.Vector3(-.28,.18,(Math.random()-.5)*.45),.06);
-    if (profile.theme === 'prism' && Math.random()<.65) this.addSprite(basePos.clone(),[0x7ffcff,0xff4ecb,0x7c8dff][Math.floor(Math.random()*3)],.17,.58,new THREE.Vector3(-.65,.2,(Math.random()-.5)*.45),.06);
-    if (profile.theme === 'mythic' && Math.random()<.75) this.addSprite(basePos.clone(),[0xfff6bf,0x63f8ff,0xff78df,0xffffff][Math.floor(Math.random()*4)],.2,.8,new THREE.Vector3(-.45,.55,(Math.random()-.5)*.4),.03);
+    if (profile.tier >= 3 && Math.random() < .55) this.addSprite(basePos.clone(), Math.random() < .5 ? accent : secondary, profile.tier >= 4 ? .18 : .14, profile.tier >= 4 ? .95 : .7, new THREE.Vector3((Math.random()-.5)*.42, .48+Math.random()*.55, (Math.random()-.5)*.42), -.03);
+    if (profile.tier >= 4 && Math.random() < .6) this.addSprite(basePos.clone().add(new THREE.Vector3((Math.random()-.5)*.15,(Math.random()-.5)*.15,(Math.random()-.5)*.15)), 0xffffff, .14 + Math.random() * .06, .9, new THREE.Vector3((Math.random()-.5)*.35, .8+Math.random()*.55, (Math.random()-.5)*.35), -.02);
+    if (profile.theme === 'abyss' && Math.random() < .5) this.addSprite(basePos.clone().add(new THREE.Vector3(0, -.5, 0)), 0xa7f4ff, .13, .82, new THREE.Vector3((Math.random()-.5)*.2, .8+Math.random()*.55, (Math.random()-.5)*.2), -.05);
+    if (profile.theme === 'starseed' && Math.random() < .45) this.addSprite(basePos.clone(), Math.random()<.75?0xf8f29b:0x8ed88a, .12+.02*Math.random(), .72, new THREE.Vector3((Math.random()-.5)*.4, .32+Math.random()*.35, (Math.random()-.5)*.4), .25);
+    if (profile.theme === 'nebula' && Math.random()<.55) this.addSprite(basePos.clone(),[0xd9d0ff,0x806dff,0xffb7f5][Math.floor(Math.random()*3)],.14,.86,new THREE.Vector3(-.28,.14,(Math.random()-.5)*.5),.04);
+    if (profile.theme === 'gilt' && Math.random()<.52) this.addSprite(basePos.clone(),Math.random()<.6?0xffd67a:0xff7b55,.13,.62,new THREE.Vector3(-.68,.42,(Math.random()-.5)*.25),.5);
+    if (profile.theme === 'clockwork' && Math.random()<.34) this.shardBurst(basePos.clone(),Math.random()<.5?0xf5cf84:0xb78948,2,.42);
+    if (profile.theme === 'aurora' && Math.random()<.48) this.addSprite(basePos.clone(),Math.random()<.5?0xbaffd8:0x79bfff,.18,.92,new THREE.Vector3(-.25,.72,(Math.random()-.5)*.35),-.08);
+    if (profile.theme === 'eclipse' && Math.random()<.42) this.addSprite(basePos.clone(),Math.random()<.5?0xd998ff:0x4c1764,.16,.78,new THREE.Vector3(-.2,.05,(Math.random()-.5)*.3),.1);
+    if (profile.theme === 'neon' && Math.random()<.72) this.addSprite(basePos.clone(),[0x58fff0,0xff55e8,0x7f71ff,0x53ff8c][Math.floor(Math.random()*4)],.15,.56,new THREE.Vector3(-.82,.12,(Math.random()-.5)*.25),.05);
+    if (profile.theme === 'crown' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.7?0xffe29b:0xcaa45c,.14,.62,new THREE.Vector3(-.42,.55,(Math.random()-.5)*.25),.4);
+    if (profile.theme === 'rift' && Math.random()<.58) this.addSprite(basePos.clone(),Math.random()<.5?0xffbcf5:0x8b4dff,.17,.62,new THREE.Vector3(-.45,(Math.random()-.5)*.4,(Math.random()-.5)*.78),.1);
+    if (profile.theme === 'tempest' && Math.random()<.62) this.addSprite(basePos.clone(),Math.random()<.5?0xd7f1ff:0x7ab4ff,.16,.64,new THREE.Vector3(-.62,.22,(Math.random()-.5)*.6),.06);
+    if (profile.theme === 'phoenix' && Math.random()<.62) this.addSprite(basePos.clone(),Math.random()<.5?0xffcf7a:0xff7d4f,.18,.82,new THREE.Vector3(-.18,.92,(Math.random()-.5)*.28),-.12);
+    if (profile.theme === 'relic' && Math.random()<.46) this.addSprite(basePos.clone(),Math.random()<.5?0xdcffd1:0x8cff9f,.16,.84,new THREE.Vector3(-.22,.38,(Math.random()-.5)*.3),.12);
+    if (profile.theme === 'celestial' && Math.random()<.58) this.addSprite(basePos.clone(),Math.random()<.55?0xfff0c9:0x94a7ff,.17,.78,new THREE.Vector3(-.35,.5,(Math.random()-.5)*.3),.08);
+    if (profile.theme === 'void' && Math.random()<.56) this.addSprite(basePos.clone(),Math.random()<.5?0xff9af2:0x7b31cf,.18,.72,new THREE.Vector3(-.28,.18,(Math.random()-.5)*.45),.06);
+    if (profile.theme === 'prism' && Math.random()<.72) this.addSprite(basePos.clone(),[0x7ffcff,0xff4ecb,0x7c8dff,0xffffff][Math.floor(Math.random()*4)],.17,.7,new THREE.Vector3(-.7,.22,(Math.random()-.5)*.45),.06);
+    if (profile.theme === 'mythic' && Math.random()<.82) this.addSprite(basePos.clone(),[0xfff6bf,0x63f8ff,0xff78df,0xffffff,0xb089ff][Math.floor(Math.random()*5)],.22,.94,new THREE.Vector3(-.48,.65,(Math.random()-.5)*.45),.03);
   }
 
   landingFx(profile) {
@@ -282,35 +340,47 @@ export class DiceTheater {
     const p = new THREE.Vector3(0, -1.39, 0);
     const accent = new THREE.Color(profile.accent);
     const emissive = new THREE.Color(profile.emissive || profile.accent);
-    this.ring(p, accent, .25, profile.tier === 3 ? 5.8 : profile.tier === 2 ? 4.5 : 3.4, profile.tier === 3 ? .95 : .7, .85);
-    if (profile.tier >= 2) this.ring(p.clone().add(new THREE.Vector3(0,.015,0)), emissive, .2, profile.tier === 3 ? 4.8 : 3.8, .85, .55);
-    this.burst(new THREE.Vector3(0, -.9, 0), accent, profile.tier === 3 ? 40 : profile.tier === 2 ? 24 : 14, profile.tier === 3 ? 4.2 : 2.8, profile.tier === 3 ? .32 : .23, profile.tier === 3 ? 1.2 : .85, .8);
-    if (profile.tier >= 2) this.shardBurst(new THREE.Vector3(0, -.65, 0), emissive, profile.tier === 3 ? 22 : 10, profile.tier === 3 ? 1.35 : .95);
+    const tier = Number(profile.tier || 0);
+    this.ring(p, accent, .25, tier >= 4 ? 7.4 : tier === 3 ? 6.7 : tier === 2 ? 4.5 : 3.4, tier >= 4 ? 1.08 : tier === 3 ? .95 : .7, .88);
+    if (tier >= 2) this.ring(p.clone().add(new THREE.Vector3(0,.015,0)), emissive, .2, tier >= 4 ? 6.1 : tier === 3 ? 5.4 : 3.8, tier >= 4 ? 1.02 : .85, .62);
+    this.burst(new THREE.Vector3(0, -.9, 0), accent, tier >= 4 ? 62 : tier === 3 ? 52 : tier === 2 ? 24 : 14, tier >= 4 ? 5.6 : tier === 3 ? 4.7 : 2.8, tier >= 4 ? .36 : tier === 3 ? .32 : .23, tier >= 4 ? 1.45 : tier === 3 ? 1.2 : .85, tier >= 4 ? 1.05 : .8);
+    if (tier >= 2) this.shardBurst(new THREE.Vector3(0, -.65, 0), emissive, tier >= 4 ? 34 : tier === 3 ? 28 : 10, tier >= 4 ? 1.75 : tier === 3 ? 1.45 : .95);
 
     // Ultra-dense batched particles: thousands of visible sparks in only a few draw calls.
     const cloudColors=[accent,emissive,new THREE.Color(0xffffff)];
-    if (profile.tier===1) this.cloudBurst(new THREE.Vector3(0,-1.0,0),cloudColors,360,3.0,.95,.10,.45,.3);
-    if (profile.tier===2) {
+    if (tier===1) this.cloudBurst(new THREE.Vector3(0,-1.0,0),cloudColors,360,3.0,.95,.10,.45,.3);
+    if (tier===2) {
       this.cloudBurst(new THREE.Vector3(0,-.95,0),cloudColors,820,4.5,1.2,.115,.75,.38);
       this.flashDisc(new THREE.Vector3(0,-.35,0),accent,4.6,.34,.72);
     }
-    if (profile.tier===3) {
-      this.cloudBurst(new THREE.Vector3(0,-.92,0),cloudColors,1450,6.1,1.55,.13,1.0,.45);
-      this.cloudBurst(new THREE.Vector3(0,-.72,0),[emissive,accent],950,3.7,1.85,.095,1.65,.3);
-      this.flashDisc(new THREE.Vector3(0,-.2,0),0xffffff,8.2,.28,.92);
-      this.flashDisc(new THREE.Vector3(0,-.1,0),accent,6.4,.62,.68);
-      for(let i=0;i<4;i++) this.ring(p.clone().add(new THREE.Vector3(0,.02*i,0)),i%2?emissive:accent,.14+i*.05,6.2+i*.9,.72+i*.11,.46);
+    if (tier===3) {
+      this.cloudBurst(new THREE.Vector3(0,-.92,0),cloudColors,1900,6.8,1.7,.14,1.12,.48);
+      this.cloudBurst(new THREE.Vector3(0,-.72,0),[emissive,accent,'#ffffff'],1260,4.4,2.0,.105,1.85,.33);
+      this.flashDisc(new THREE.Vector3(0,-.2,0),0xffffff,9.6,.32,.96);
+      this.flashDisc(new THREE.Vector3(0,-.1,0),accent,7.2,.72,.78);
+      for(let i=0;i<6;i++) this.ring(p.clone().add(new THREE.Vector3(0,.02*i,0)),i%2?emissive:accent,.14+i*.05,7.1+i*.95,.8+i*.11,.52);
+    }
+    if (tier>=4) {
+      this.cloudBurst(new THREE.Vector3(0,-.9,0),[accent,emissive,new THREE.Color('#ffffff')],2600,8.1,2.05,.16,1.45,.52);
+      this.cloudBurst(new THREE.Vector3(0,-.58,0),[new THREE.Color('#ffffff'),accent,emissive,new THREE.Color('#ff8df1')],1800,5.3,2.45,.11,2.2,.34);
+      this.flashDisc(new THREE.Vector3(0,-.16,0),0xffffff,12.6,.36,1.0);
+      this.flashDisc(new THREE.Vector3(0,-.05,0),accent,9.8,.78,.82);
+      this.flashDisc(new THREE.Vector3(0,.15,0),emissive,7.4,.98,.45);
+      for(let i=0;i<9;i++) this.ring(p.clone().add(new THREE.Vector3(0,.022*i,0)),i%3===0?'#ffffff':i%2?emissive:accent,.16+i*.05,7.8+i*1.02,.9+i*.12,.58,Math.PI/2*(i%2));
+      for(let i=0;i<28;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4.8,-.92+(Math.random()-.5)*.35,(Math.random()-.5)*3.4), i%4===0?0xffffff:i%3===0?0xff8df1:i%2?profile.accent:profile.emissive, .2+Math.random()*.08, 1.4+Math.random()*.35, new THREE.Vector3((Math.random()-.5)*.32,1.1+Math.random()*1.9,(Math.random()-.5)*.32), .02);
     }
 
     if (profile.theme === 'eclipse') {
       this.ring(new THREE.Vector3(0, .15, 0), 0xd998ff, .2, 2.9, 1.15, .95, Math.PI / 2);
       const dark = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.getGlowTexture(), color: 0x3a0d4f, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
       dark.position.set(0,.1,0); dark.scale.setScalar(3.3); this.fxGroup.add(dark); this.fxItems.push({obj:dark,life:1.05,maxLife:1.05,kind:'sprite',velocity:new THREE.Vector3(),gravity:0,baseScale:3.3});
+      this.flashDisc(new THREE.Vector3(0,.08,0),0xd998ff,5.8,.46,.6);
     }
     if (profile.theme === 'neon') {
       const colors = [0x58fff0,0xff55e8,0x7f71ff,0x53ff8c];
       colors.forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,i*.012,0)),c,.18+i*.05,6.8-i*.35,.88+i*.1,.62));
-      this.cloudBurst(new THREE.Vector3(0,-.75,0),colors,1200,5.2,1.5,.115,1.05,.25);
+      this.cloudBurst(new THREE.Vector3(0,-.75,0),colors,1500,5.6,1.7,.12,1.2,.25);
+      this.flashDisc(new THREE.Vector3(0,-.15,0),0xffffff,8.0,.28,.65);
     }
     if (profile.theme === 'crown') {
       for (let i=0;i<12;i++) {
@@ -318,26 +388,29 @@ export class DiceTheater {
         const geom=new THREE.ConeGeometry(.13,.8,4); const mat=new THREE.MeshBasicMaterial({color:0xffe29b,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false});
         const obj=new THREE.Mesh(geom,mat); obj.position.copy(pos); obj.rotation.z=Math.PI; this.fxGroup.add(obj); this.fxItems.push({obj,life:1.1,maxLife:1.1,kind:'crown'});
       }
+      this.flashDisc(new THREE.Vector3(0,-.4,0),0xffe29b,5.8,.48,.6);
     }
     if (profile.theme === 'rift') {
       for (let i=0;i<9;i++) this.ring(new THREE.Vector3(0,-.15+i*.08,0), i%2?0xffbcf5:0x8b4dff, .15+i*.05, 3.3+i*.5, .95+i*.08, .55, Math.PI/2 + (i-.2)*.15);
+      this.shardBurst(new THREE.Vector3(0,-.58,0),0xffbcf5,18,1.25);
     }
     if (profile.theme === 'aurora') {
-      this.cloudBurst(new THREE.Vector3(0,-1.05,0),[0xbaffd8,0x79bfff,0xffd9ff],1050,3.2,1.8,.11,1.8,.55);
-      for (let i=0;i<28;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4,-1.2,(Math.random()-.5)*2.6), i%2?0xbaffd8:0x79bfff, .24, 1.3, new THREE.Vector3((Math.random()-.5)*.3,1.2+Math.random()*1.7,(Math.random()-.5)*.25), -.05);
+      this.cloudBurst(new THREE.Vector3(0,-1.05,0),[0xbaffd8,0x79bfff,0xffd9ff],1350,3.8,1.95,.12,1.95,.55);
+      for (let i=0;i<34;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4,-1.2,(Math.random()-.5)*2.6), i%2?0xbaffd8:0x79bfff, .24, 1.42, new THREE.Vector3((Math.random()-.5)*.3,1.25+Math.random()*1.8,(Math.random()-.5)*.25), -.05);
+      this.flashDisc(new THREE.Vector3(0,-.18,0),0xbaffd8,6.6,.42,.48);
     }
-    if (profile.theme === 'nebula') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0xd9d0ff,0x806dff,0xffb7f5],760,3.6,1.45,.1,.9,.75); for(let i=0;i<5;i++) this.ring(p.clone().add(new THREE.Vector3(0,.04*i,0)),i%2?0xd9d0ff:0x806dff,.12+i*.05,3.6+i*.6,.9+i*.08,.32,Math.PI/2*(i%2)); }
-    if (profile.theme === 'abyss') { for(let i=0;i<34;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3,-1.25,(Math.random()-.5)*2),0xbaf8ff,.1+Math.random()*.12,1.2+Math.random()*.6,new THREE.Vector3((Math.random()-.5)*.15,.75+Math.random()*1.3,(Math.random()-.5)*.15),-.03); this.ring(p,0x6ee6ff,.2,5.2,1.15,.48); }
-    if (profile.theme === 'gilt') { this.cloudBurst(new THREE.Vector3(0,-.9,0),[0xffd67a,0xff8c5a,0xfff2c2],620,4.3,1.05,.09,1.0,.45); for(let i=0;i<3;i++) this.ring(p.clone().add(new THREE.Vector3(0,.025*i,0)),i===1?0xff7d50:0xffd67a,.16+i*.08,4.5+i*.8,.75+i*.12,.5); }
-    if (profile.theme === 'clockwork') { for(let i=0;i<4;i++){const m=new THREE.MeshBasicMaterial({color:i%2?0xb78948:0xf5cf84,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false});const g=new THREE.Mesh(new THREE.TorusGeometry(.65+i*.18,.035,8,18),m);g.position.set(0,-.7+i*.12,0);g.rotation.set(Math.PI/2,i*.4,i*.6);this.fxGroup.add(g);this.fxItems.push({obj:g,life:1.1,maxLife:1.1,kind:'crown'});} this.shardBurst(new THREE.Vector3(0,-.65,0),0xf5cf84,18,1.0); }
-    if (profile.theme === 'starseed') { this.cloudBurst(new THREE.Vector3(0,-.85,0),[0xf8f29b,0x8ed88a,0xffffff],780,3.6,1.55,.1,1.2,.5); for(let i=0;i<18;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3.4,-1.05,(Math.random()-.5)*2.5),i%3?0xf8f29b:0x8ed88a,.16,1.35,new THREE.Vector3((Math.random()-.5)*.25,.7+Math.random()*1.4,(Math.random()-.5)*.25),.1); }
-    if (profile.theme === 'tempest') { this.cloudBurst(new THREE.Vector3(0,-.88,0),[0xd7f1ff,0x7ab4ff,0xffffff],920,4.6,1.25,.095,1.0,.4); for(let i=0;i<6;i++) this.ring(p.clone().add(new THREE.Vector3(0,.03*i,0)),i%2?0x7ab4ff:0xd7f1ff,.13+i*.05,4.2+i*.55,.78+i*.08,.42,Math.PI/2+(.2*i)); }
-    if (profile.theme === 'phoenix') { this.cloudBurst(new THREE.Vector3(0,-.86,0),[0xffcf7a,0xff7d4f,0xffffff],980,4.4,1.35,.1,1.3,.34); for(let i=0;i<20;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3.2,-1.05,(Math.random()-.5)*2.2),i%2?0xffcf7a:0xff7d4f,.18,1.15,new THREE.Vector3((Math.random()-.5)*.2,1.05+Math.random()*1.6,(Math.random()-.5)*.2),-.08); }
-    if (profile.theme === 'relic') { this.cloudBurst(new THREE.Vector3(0,-.9,0),[0xdcffd1,0x8cff9f,0xffffff],860,3.2,1.5,.09,1.0,.42); for(let i=0;i<4;i++) this.ring(p.clone().add(new THREE.Vector3(0,.05*i,0)),i%2?0x8cff9f:0xdcffd1,.14+i*.05,3.6+i*.45,1.0+i*.08,.38); }
-    if (profile.theme === 'celestial') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0xfff0c9,0x94a7ff,0xffffff],1150,4.8,1.45,.11,1.1,.28); for(let i=0;i<7;i++) this.ring(p.clone().add(new THREE.Vector3(0,.03*i,0)),i%2?0x94a7ff:0xfff0c9,.14+i*.05,4.6+i*.55,.9+i*.1,.5,Math.PI/2*(i%2)); }
-    if (profile.theme === 'void') { this.cloudBurst(new THREE.Vector3(0,-.82,0),[0xff9af2,0x7b31cf,0x1b0930],1080,4.9,1.5,.105,1.05,.3); for(let i=0;i<6;i++) this.ring(new THREE.Vector3(0,-.08+i*.06,0), i%2?0xff9af2:0x7b31cf, .14+i*.05, 3.6+i*.55, .95+i*.1, .5, Math.PI/2 + i*.18); }
-    if (profile.theme === 'prism') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0x7ffcff,0xff4ecb,0x7c8dff,0xffffff],1250,5.0,1.55,.11,1.15,.26); [0x7ffcff,0xff4ecb,0x7c8dff,0xffffff].forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,.015*i,0)),c,.16+i*.04,5.1+i*.45,.85+i*.08,.48)); }
-    if (profile.theme === 'mythic') { this.cloudBurst(new THREE.Vector3(0,-.78,0),[0xfff6bf,0x63f8ff,0xff78df,0xffffff],1900,6.6,1.95,.125,1.5,.34); this.cloudBurst(new THREE.Vector3(0,-.58,0),[0x63f8ff,0xfff6bf],1200,4.6,2.15,.095,1.95,.25); [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,.02*i,0)),c,.14+i*.05,6.5+i*.65,1.0+i*.12,.56,Math.PI/2*(i%2))); this.flashDisc(new THREE.Vector3(0,0,0),0xffffff,10.4,.34,.98); for(let i=0;i<24;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4.4,-1.0,(Math.random()-.5)*3.2), [0xfff6bf,0x63f8ff,0xff78df,0xffffff][i%4], .22, 1.55, new THREE.Vector3((Math.random()-.5)*.28,1.15+Math.random()*1.8,(Math.random()-.5)*.28), .02); }
+    if (profile.theme === 'nebula') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0xd9d0ff,0x806dff,0xffb7f5],980,4.2,1.65,.105,1.05,.75); for(let i=0;i<6;i++) this.ring(p.clone().add(new THREE.Vector3(0,.04*i,0)),i%2?0xd9d0ff:0x806dff,.12+i*.05,4.0+i*.68,.96+i*.08,.36,Math.PI/2*(i%2)); }
+    if (profile.theme === 'abyss') { for(let i=0;i<40;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3,-1.25,(Math.random()-.5)*2),Math.random()<.7?0xbaf8ff:0x6ee6ff,.1+Math.random()*.13,1.3+Math.random()*.65,new THREE.Vector3((Math.random()-.5)*.15,.85+Math.random()*1.35,(Math.random()-.5)*.15),-.03); this.ring(p,0x6ee6ff,.2,5.6,1.2,.52); }
+    if (profile.theme === 'gilt') { this.cloudBurst(new THREE.Vector3(0,-.9,0),[0xffd67a,0xff8c5a,0xfff2c2],860,4.9,1.15,.1,1.15,.45); for(let i=0;i<4;i++) this.ring(p.clone().add(new THREE.Vector3(0,.025*i,0)),i===1?0xff7d50:0xffd67a,.16+i*.08,4.7+i*.84,.78+i*.12,.54); }
+    if (profile.theme === 'clockwork') { for(let i=0;i<5;i++){const m=new THREE.MeshBasicMaterial({color:i%2?0xb78948:0xf5cf84,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false});const g=new THREE.Mesh(new THREE.TorusGeometry(.65+i*.18,.035,8,18),m);g.position.set(0,-.7+i*.12,0);g.rotation.set(Math.PI/2,i*.4,i*.6);this.fxGroup.add(g);this.fxItems.push({obj:g,life:1.18,maxLife:1.18,kind:'crown'});} this.shardBurst(new THREE.Vector3(0,-.65,0),0xf5cf84,22,1.06); }
+    if (profile.theme === 'starseed') { this.cloudBurst(new THREE.Vector3(0,-.85,0),[0xf8f29b,0x8ed88a,0xffffff],980,4.0,1.7,.11,1.35,.5); for(let i=0;i<22;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3.4,-1.05,(Math.random()-.5)*2.5),i%3?0xf8f29b:0x8ed88a,.16,1.45,new THREE.Vector3((Math.random()-.5)*.25,.78+Math.random()*1.5,(Math.random()-.5)*.25),.1); }
+    if (profile.theme === 'tempest') { this.cloudBurst(new THREE.Vector3(0,-.88,0),[0xd7f1ff,0x7ab4ff,0xffffff],1320,5.3,1.45,.105,1.15,.4); for(let i=0;i<7;i++) this.ring(p.clone().add(new THREE.Vector3(0,.03*i,0)),i%2?0x7ab4ff:0xd7f1ff,.13+i*.05,4.5+i*.62,.82+i*.08,.46,Math.PI/2+(.2*i)); this.flashDisc(new THREE.Vector3(0,-.08,0),0xffffff,8.2,.22,.82); }
+    if (profile.theme === 'phoenix') { this.cloudBurst(new THREE.Vector3(0,-.86,0),[0xffcf7a,0xff7d4f,0xffffff],1420,5.1,1.55,.11,1.45,.34); for(let i=0;i<26;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3.2,-1.05,(Math.random()-.5)*2.2),i%2?0xffcf7a:0xff7d4f,.18,1.28,new THREE.Vector3((Math.random()-.5)*.2,1.18+Math.random()*1.8,(Math.random()-.5)*.2),-.08); }
+    if (profile.theme === 'relic') { this.cloudBurst(new THREE.Vector3(0,-.9,0),[0xdcffd1,0x8cff9f,0xffffff],1120,3.8,1.7,.1,1.15,.42); for(let i=0;i<5;i++) this.ring(p.clone().add(new THREE.Vector3(0,.05*i,0)),i%2?0x8cff9f:0xdcffd1,.14+i*.05,3.8+i*.52,1.02+i*.08,.42); }
+    if (profile.theme === 'celestial') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0xfff0c9,0x94a7ff,0xffffff],1480,5.3,1.58,.115,1.18,.28); for(let i=0;i<8;i++) this.ring(p.clone().add(new THREE.Vector3(0,.03*i,0)),i%2?0x94a7ff:0xfff0c9,.14+i*.05,4.9+i*.58,.94+i*.1,.54,Math.PI/2*(i%2)); this.flashDisc(new THREE.Vector3(0,-.04,0),0xffffff,7.6,.3,.58); }
+    if (profile.theme === 'void') { this.cloudBurst(new THREE.Vector3(0,-.82,0),[0xff9af2,0x7b31cf,0x1b0930],1360,5.5,1.65,.11,1.2,.3); for(let i=0;i<7;i++) this.ring(new THREE.Vector3(0,-.08+i*.06,0), i%2?0xff9af2:0x7b31cf, .14+i*.05, 3.8+i*.58, 1.0+i*.1, .54, Math.PI/2 + i*.18); }
+    if (profile.theme === 'prism') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0x7ffcff,0xff4ecb,0x7c8dff,0xffffff],1680,5.7,1.72,.12,1.25,.26); [0x7ffcff,0xff4ecb,0x7c8dff,0xffffff].forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,.015*i,0)),c,.16+i*.04,5.5+i*.48,.92+i*.08,.52)); this.shardBurst(new THREE.Vector3(0,-.55,0),0xffffff,20,1.3); }
+    if (profile.theme === 'mythic') { this.cloudBurst(new THREE.Vector3(0,-.76,0),[0xfff6bf,0x63f8ff,0xff78df,0xffffff],3600,9.6,2.45,.145,1.95,.36); this.cloudBurst(new THREE.Vector3(0,-.44,0),[0x63f8ff,0xfff6bf,0xff78df,0xffffff],2500,6.5,2.95,.115,2.45,.28); [0xfff6bf,0x63f8ff,0xff78df,0xffffff,0xb089ff].forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,.024*i,0)),c,.16+i*.05,7.8+i*.9,1.12+i*.12,.66,Math.PI/2*(i%2))); this.flashDisc(new THREE.Vector3(0,0,0),0xffffff,14.8,.4,1.0); this.flashDisc(new THREE.Vector3(0,.12,0),0x63f8ff,10.8,.76,.66); for(let i=0;i<54;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*5.4,-1.02+(Math.random()-.5)*.25,(Math.random()-.5)*3.9), [0xfff6bf,0x63f8ff,0xff78df,0xffffff,0xb089ff][i%5], .24+Math.random()*.1, 1.9+Math.random()*.48, new THREE.Vector3((Math.random()-.5)*.38,1.45+Math.random()*2.2,(Math.random()-.5)*.38), .02); }
   }
 
   tickFx(dt, elapsed = 0) {
@@ -552,10 +625,10 @@ export class DiceTheater {
   synthHit(volume = .12, pitch = 90, style = null) {
     try {
       const ctx = this.audio || (this.audio = new AudioContext()); const o = ctx.createOscillator(), g = ctx.createGain();
-      const profile = this.fxProfile(style || {}); o.type = profile.tier >= 3 ? 'triangle' : 'sine';
-      o.frequency.setValueAtTime(pitch * (profile.tier >= 2 ? 1.08 : 1), ctx.currentTime); o.frequency.exponentialRampToValueAtTime(profile.tier >= 3 ? 34 : 42, ctx.currentTime + .09);
-      g.gain.setValueAtTime(volume, ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .14);
-      o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime + .15);
+      const profile = this.fxProfile(style || {}); o.type = profile.tier >= 4 ? 'sawtooth' : (profile.tier >= 3 ? 'triangle' : 'sine');
+      o.frequency.setValueAtTime(pitch * (profile.tier >= 4 ? 1.16 : profile.tier >= 2 ? 1.08 : 1), ctx.currentTime); o.frequency.exponentialRampToValueAtTime(profile.tier >= 4 ? 28 : profile.tier >= 3 ? 34 : 42, ctx.currentTime + .09);
+      g.gain.setValueAtTime(volume * (profile.tier >= 4 ? 1.18 : 1), ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + (profile.tier >= 4 ? .18 : .14));
+      o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime + (profile.tier >= 4 ? .19 : .15));
     } catch {}
   }
 
@@ -590,18 +663,18 @@ export class DiceTheater {
         if (t < .73) { die.rotation.x += .19 * (1 - t) + .03; die.rotation.y += .24 * (1 - t) + .035; die.rotation.z += .16 * (1 - t) + .025; }
         else { const local = (t - .73) / .27; die.quaternion.slerp(finalQ, Math.min(1, local * .12 + .08)); die.quaternion.slerp(finalQ, Math.min(1, local * .23)); }
         this.trailFx(die, profile, dt); this.tickFx(dt, (now-start)/1000);
-        const b = Math.floor(t * 5.3); if (b !== lastBounce && t > .08 && t < .9) { lastBounce = b; this.synthHit(.045 + (.9 - t) * .06, 70 + Math.random() * 65, profile); if(profile.tier>=2 && t>.35) this.ring(new THREE.Vector3(die.position.x,-1.4,die.position.z),profile.accent,.08,.8+profile.tier*.25,.25,.28); }
-        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=3?.18:profile.tier===2?.09:.045);
-        this.camera.position.y = 4.6 + Math.sin(t*31)*(1-t)*(profile.tier>=3?.055:0);
+        const b = Math.floor(t * (profile.tier >= 4 ? 6.2 : 5.3)); if (b !== lastBounce && t > .08 && t < .9) { lastBounce = b; this.synthHit(.045 + (.9 - t) * .06 + (profile.tier >= 4 ? .025 : 0), 70 + Math.random() * 65, profile); if(profile.tier>=2 && t>.35) this.ring(new THREE.Vector3(die.position.x,-1.4,die.position.z),profile.accent,.08,.8+profile.tier*.32,.25 + (profile.tier>=4?.08:0),.32); if(profile.tier>=4 && t>.28) this.ring(new THREE.Vector3(die.position.x,-1.35,die.position.z),0xffffff,.06,1.15+profile.tier*.35,.2,.18); }
+        this.camera.position.x = Math.sin(t * 24) * (1 - t) * (profile.tier>=4?.28:profile.tier>=3?.18:profile.tier===2?.09:.045);
+        this.camera.position.y = 4.6 + Math.sin(t*31)*(1-t)*(profile.tier>=4?.095:profile.tier>=3?.055:0);
         this.camera.lookAt(die.position.x * .12, Math.max(.05, die.position.y * .16), 0);
         this.renderer.render(this.scene, this.camera);
         if (t < 1) requestAnimationFrame(frame);
         else {
           die.quaternion.copy(finalQ); die.position.set(0, -.02, 0);
           this.camera.lookAt(0, .05, 0);
-          this.highlightResult(result); this.landingFx(profile); this.synthHit(profile.tier>=3?.22:.15, profile.tier>=3?48:55, profile);
+          this.highlightResult(result); this.landingFx(profile); this.synthHit(profile.tier>=4?.28:profile.tier>=3?.22:.15, profile.tier>=4?42:profile.tier>=3?48:55, profile);
           const settleStart=performance.now(); let settleLast=settleStart;
-          const settle=ts=>{ const dt2=Math.min(.05,(ts-settleLast)/1000||.016); settleLast=ts; this.tickFx(dt2,(ts-start)/1000); this.renderer.render(this.scene,this.camera); if(ts-settleStart<1050+profile.tier*260) requestAnimationFrame(settle); else { this.running=false; resolve(); } };
+          const settle=ts=>{ const dt2=Math.min(.05,(ts-settleLast)/1000||.016); settleLast=ts; this.tickFx(dt2,(ts-start)/1000); this.renderer.render(this.scene,this.camera); if(ts-settleStart<1200+profile.tier*(profile.tier>=4?360:280)) requestAnimationFrame(settle); else { this.running=false; resolve(); } };
           requestAnimationFrame(settle);
         }
       };

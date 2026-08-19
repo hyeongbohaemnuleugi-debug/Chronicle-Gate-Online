@@ -205,6 +205,95 @@ export class DiceTheater {
     this.fxItems.push({obj,life,maxLife:life,kind:'flash',baseScale:size,opacity}); return obj;
   }
 
+
+
+  addFloorSigil(profile, pos = new THREE.Vector3(0, -1.36, 0)) {
+    const tier = Number(profile?.tier || 0);
+    if (tier < 3) return;
+    const accent = profile?.accent || '#ffffff';
+    const emissive = profile?.emissive || accent;
+    const theme = String(profile?.theme || 'arcane');
+    const addFlat = (geometry, color, opacity = .65, life = 1.4, rotation = null, position = null) => {
+      const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      const obj = new THREE.Mesh(geometry, mat);
+      obj.position.copy(position || pos);
+      obj.rotation.x = -Math.PI / 2;
+      if (rotation) {
+        obj.rotation.x += rotation.x || 0;
+        obj.rotation.y = rotation.y || 0;
+        obj.rotation.z += rotation.z || 0;
+      }
+      this.fxGroup.add(obj);
+      this.fxItems.push({ obj, life, maxLife: life, kind: 'ring', start: 1, end: 1.12, opacity });
+      return obj;
+    };
+    const addRotator = (geometry, color, opacity = .55, life = 1.55, spin = .45, scale = 1, rotation = null) => {
+      const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      const obj = new THREE.Mesh(geometry, mat);
+      obj.position.copy(pos);
+      obj.rotation.x = -Math.PI / 2;
+      if (rotation) {
+        obj.rotation.y = rotation.y || 0;
+        obj.rotation.z += rotation.z || 0;
+      }
+      obj.scale.setScalar(scale);
+      this.fxGroup.add(obj);
+      this.fxItems.push({ obj, life, maxLife: life, kind: 'crown', spin: new THREE.Vector3(0, spin, 0) });
+      return obj;
+    };
+    const addRadials = (count, length, width, color, radius, opacity = .5, life = 1.35, tiltOffset = 0) => {
+      for (let i = 0; i < count; i++) {
+        const a = tiltOffset + i / count * Math.PI * 2;
+        const geo = new THREE.PlaneGeometry(width, length);
+        const itemPos = pos.clone().add(new THREE.Vector3(Math.cos(a) * radius, .01, Math.sin(a) * radius));
+        const obj = addFlat(geo, color, opacity, life, { y: a, z: Math.PI / 2 }, itemPos);
+        obj.rotation.y = a;
+      }
+    };
+
+    addFlat(new THREE.RingGeometry(1.7, 1.88, 96), accent, tier >= 4 ? .72 : .62, tier >= 4 ? 1.95 : 1.55);
+    addFlat(new THREE.RingGeometry(.72, .82, 72), emissive, tier >= 4 ? .58 : .46, tier >= 4 ? 1.85 : 1.45);
+
+    if (theme === 'celestial') {
+      addRotator(new THREE.RingGeometry(1.05, 1.18, 6), 0xfff0c9, .6, 1.7, .18, 1.18);
+      addRadials(8, .72, .07, 0x94a7ff, 1.28, .52, 1.55, Math.PI / 8);
+      this.flashDisc(pos.clone().add(new THREE.Vector3(0, .04, 0)), 0xffffff, 6.2, .32, .5);
+    } else if (theme === 'crown') {
+      addRotator(new THREE.RingGeometry(1.1, 1.24, 8), 0xffe29b, .62, 1.75, .16, 1.1);
+      addRadials(8, .88, .08, 0xcaa45c, 1.38, .54, 1.55);
+      addFlat(new THREE.RingGeometry(.36, .46, 6), 0xfff1c4, .7, 1.45);
+    } else if (theme === 'void') {
+      addRotator(new THREE.RingGeometry(1.0, 1.14, 5, 48, Math.PI * 1.5), 0xff9af2, .58, 1.75, -.2, 1.2, { y: .4 });
+      addRotator(new THREE.RingGeometry(1.38, 1.5, 5, 48, Math.PI * 1.2), 0x7b31cf, .42, 1.8, .28, 1.1, { y: 1.4 });
+      addFlat(new THREE.CircleGeometry(.26, 32), 0x1b0930, .42, 1.55);
+    } else if (theme === 'rift') {
+      addRotator(new THREE.RingGeometry(1.04, 1.2, 10), 0xffbcf5, .45, 1.7, .12, 1.1);
+      addRadials(7, .78, .06, 0x8b4dff, 1.36, .5, 1.4, .25);
+      for (let i = 0; i < 6; i++) {
+        const a = i / 6 * Math.PI * 2 + .2;
+        const shard = new THREE.Mesh(new THREE.TetrahedronGeometry(.12 + Math.random() * .04, 0), new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffbcf5 : 0x8b4dff, transparent: true, opacity: .78, blending: THREE.AdditiveBlending, depthWrite: false }));
+        shard.position.copy(pos.clone().add(new THREE.Vector3(Math.cos(a) * 1.46, .05, Math.sin(a) * 1.46)));
+        shard.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+        this.fxGroup.add(shard);
+        this.fxItems.push({ obj: shard, life: 1.5, maxLife: 1.5, kind: 'crown', spin: new THREE.Vector3(.6, .4, .7) });
+      }
+    } else if (theme === 'prism') {
+      addRotator(new THREE.RingGeometry(1.02, 1.18, 6), 0x7ffcff, .48, 1.7, .16, 1.1);
+      addRadials(6, .84, .08, 0xffffff, 1.3, .5, 1.48, Math.PI / 6);
+      addRadials(6, .72, .05, 0xff4ecb, .98, .42, 1.42);
+    } else if (theme === 'mythic') {
+      addRotator(new THREE.RingGeometry(.95, 1.08, 12), 0xffffff, .72, 2.2, .2, 1.25);
+      addRotator(new THREE.RingGeometry(1.24, 1.36, 8), 0xff78df, .54, 2.15, -.16, 1.18, { y: .2 });
+      addRotator(new THREE.RingGeometry(1.55, 1.68, 16), 0x63f8ff, .44, 2.25, .12, 1.08, { y: .45 });
+      addRadials(12, 1.08, .08, 0xfff6bf, 1.52, .56, 2.05, Math.PI / 12);
+      addRadials(6, .92, .12, 0xb089ff, .76, .42, 1.95);
+      this.flashDisc(pos.clone().add(new THREE.Vector3(0, .05, 0)), 0xffffff, 8.6, .42, .62);
+    } else {
+      addRotator(new THREE.RingGeometry(1.04, 1.18, 6), accent, .48, 1.65, .18, 1.12);
+      addRadials(6, .8, .06, emissive, 1.22, .45, 1.35);
+    }
+  }
+
   setupRollFx(die, profile) {
     this.clearFx();
     if (!profile.tier) return;
@@ -348,6 +437,7 @@ export class DiceTheater {
 
     // Ultra-dense batched particles: thousands of visible sparks in only a few draw calls.
     const cloudColors=[accent,emissive,new THREE.Color(0xffffff)];
+    if (tier >= 3) this.addFloorSigil(profile, p.clone().add(new THREE.Vector3(0, .02, 0)));
     if (tier===1) this.cloudBurst(new THREE.Vector3(0,-1.0,0),cloudColors,360,3.0,.95,.10,.45,.3);
     if (tier===2) {
       this.cloudBurst(new THREE.Vector3(0,-.95,0),cloudColors,820,4.5,1.2,.115,.75,.38);
@@ -528,6 +618,143 @@ export class DiceTheater {
       [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((col,i)=>{ const e=addWire(col,.74-i*.1,1.01+i*.025); e.rotation.set(i*.42,i*.58,i*.3); });
       addPoints(72,0xfff6bf,1.78,.078); addPoints(40,0x63f8ff,1.58,.055);
       for(let i=0;i<14;i++){ const shard=new THREE.Mesh(new THREE.OctahedronGeometry(.08+Math.random()*.05,0),new THREE.MeshBasicMaterial({color:i%3===0?0xfff6bf:i%3===1?0x63f8ff:0xff78df,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false})); const dir=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize(); shard.position.copy(dir.multiplyScalar(1.65+Math.random()*.22)); group.add(shard); }
+    }
+    this.addEliteForm(group, skin, sides);
+  }
+
+
+
+  addEliteSpike(group, color, position, direction, length = .56, radius = .09, opts = {}) {
+    const mat = new THREE.MeshPhysicalMaterial({
+      color,
+      metalness: opts.metalness ?? .55,
+      roughness: opts.roughness ?? .12,
+      emissive: opts.emissive ?? color,
+      emissiveIntensity: opts.emissiveIntensity ?? .22,
+      transparent: opts.transparent ?? false,
+      opacity: opts.opacity ?? 1,
+      transmission: opts.transmission ?? 0,
+      clearcoat: opts.clearcoat ?? 1.2,
+      clearcoatRoughness: opts.clearcoatRoughness ?? .08,
+      depthWrite: opts.depthWrite ?? !opts.transparent,
+    });
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(radius, length, opts.radialSegments || 5), mat);
+    spike.position.copy(position);
+    spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+    group.add(spike);
+    return spike;
+  }
+
+  addEliteRing(group, color, radius = 1.8, tube = .05, rotation = null, opts = {}) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(radius, tube, 10, opts.segments || 48, opts.arc || Math.PI * 2),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: opts.opacity ?? .58, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    if (rotation) ring.rotation.set(rotation.x || 0, rotation.y || 0, rotation.z || 0);
+    if (opts.position) ring.position.copy(opts.position);
+    group.add(ring);
+    return ring;
+  }
+
+  addEliteForm(group, skin = {}, sides = 20) {
+    if (sides !== 6) return;
+    const price = Number(skin.price || 0);
+    if (price < 12) return;
+    const id = String(skin.id || '');
+    const accent = new THREE.Color(skin.accent || '#ffffff');
+    const emissive = new THREE.Color(skin.emissive || skin.accent || '#ffffff');
+    const base = new THREE.Color(skin.base || '#444444');
+    const corners = [
+      new THREE.Vector3(1,1,1), new THREE.Vector3(-1,1,1), new THREE.Vector3(1,1,-1), new THREE.Vector3(-1,1,-1),
+      new THREE.Vector3(1,-1,1), new THREE.Vector3(-1,-1,1), new THREE.Vector3(1,-1,-1), new THREE.Vector3(-1,-1,-1),
+    ];
+    const addCornerFrame = (cols = [accent, emissive]) => {
+      corners.forEach((v, i) => {
+        const dir = v.clone().normalize();
+        this.addEliteSpike(group, cols[i % cols.length], dir.clone().multiplyScalar(1.58), dir, .42, .06, { metalness: .85, roughness: .16, emissiveIntensity: .12 });
+      });
+    };
+
+    if (id === 'celestial_choir') {
+      addCornerFrame([accent, new THREE.Color('#94a7ff')]);
+      for (let i = 0; i < 4; i++) {
+        const a = i / 4 * Math.PI * 2;
+        const dir = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
+        const wing = new THREE.Mesh(
+          new THREE.ConeGeometry(.16, .88, 3),
+          new THREE.MeshPhysicalMaterial({ color: i % 2 ? 0xfff0c9 : 0x94a7ff, transparent: true, opacity: .78, transmission: .18, roughness: .05, metalness: .18, depthWrite: false, emissive: i % 2 ? 0x6d5a25 : 0x425cff, emissiveIntensity: .28 })
+        );
+        wing.position.copy(dir.clone().multiplyScalar(1.56)).add(new THREE.Vector3(0, .2, 0));
+        wing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().add(new THREE.Vector3(0, .45, 0)).normalize());
+        group.add(wing);
+      }
+      this.addEliteRing(group, 0xfff0c9, 1.8, .055, { x: Math.PI / 2, y: 0, z: .18 }, { opacity: .78 });
+      this.addEliteRing(group, 0x94a7ff, 2.02, .035, { x: .15, y: .55, z: 0 }, { opacity: .52, arc: Math.PI * 1.55 });
+    } else if (id === 'crown_steel') {
+      addCornerFrame([accent, new THREE.Color('#caa45c')]);
+      const topCorners = [new THREE.Vector3(1,1,1), new THREE.Vector3(-1,1,1), new THREE.Vector3(1,1,-1), new THREE.Vector3(-1,1,-1)];
+      topCorners.forEach((v, i) => {
+        const dir = v.clone().normalize();
+        this.addEliteSpike(group, i % 2 ? 0xffe29b : 0xcaa45c, dir.clone().multiplyScalar(1.7), new THREE.Vector3(dir.x * .35, 1, dir.z * .35).normalize(), .78, .11, { metalness: 1, roughness: .12, emissiveIntensity: .08 });
+      });
+      const band = new THREE.Mesh(new THREE.TorusGeometry(1.66, .08, 10, 48), new THREE.MeshStandardMaterial({ color: 0xcaa45c, metalness: 1, roughness: .16 }));
+      band.rotation.x = Math.PI / 2; group.add(band);
+      this.addEliteRing(group, 0xffe29b, 1.95, .03, { x: .35, y: .2, z: .35 }, { opacity: .5 });
+    } else if (id === 'void_monarch') {
+      addCornerFrame([accent, new THREE.Color('#7b31cf')]);
+      const core = new THREE.Mesh(new THREE.SphereGeometry(.72, 20, 14), new THREE.MeshPhysicalMaterial({ color: base, metalness: .88, roughness: .08, transparent: true, opacity: .28, transmission: .12, emissive: 0x5b17a1, emissiveIntensity: .42, depthWrite: false }));
+      group.add(core);
+      for (let i = 0; i < 5; i++) {
+        const a = i / 5 * Math.PI * 2;
+        const dir = new THREE.Vector3(Math.cos(a), .48, Math.sin(a)).normalize();
+        this.addEliteSpike(group, i % 2 ? 0xff9af2 : 0x7b31cf, dir.clone().multiplyScalar(1.62), dir, .65, .095, { metalness: .5, roughness: .08, emissiveIntensity: .22, transparent: true, opacity: .88, transmission: .08, depthWrite: false });
+      }
+      this.addEliteRing(group, 0xff9af2, 1.82, .04, { x: .45, y: .35, z: .15 }, { opacity: .58, arc: Math.PI * 1.55 });
+      this.addEliteRing(group, 0x7b31cf, 2.1, .03, { x: 1.1, y: .15, z: .6 }, { opacity: .42, arc: Math.PI * 1.25 });
+    } else if (id === 'rift_shard') {
+      addCornerFrame([accent, new THREE.Color('#8b4dff')]);
+      const shardDirs = [
+        new THREE.Vector3(1,.35,0), new THREE.Vector3(-1,.18,.35), new THREE.Vector3(.25,.65,-1), new THREE.Vector3(-.2,-.25,1)
+      ];
+      shardDirs.forEach((dir, i) => {
+        const d = dir.clone().normalize();
+        const shard = new THREE.Mesh(
+          new THREE.TetrahedronGeometry(.34 + i * .03, 0),
+          new THREE.MeshPhysicalMaterial({ color: i % 2 ? 0xffbcf5 : 0x8b4dff, transparent: true, opacity: .86, transmission: .08, roughness: .06, metalness: .3, depthWrite: false, emissive: i % 2 ? 0x6f205d : 0x4724aa, emissiveIntensity: .25 })
+        );
+        shard.position.copy(d.multiplyScalar(1.72 + i * .1));
+        shard.rotation.set(.5 * i, .8 * i, .4 * i);
+        group.add(shard);
+      });
+      this.addEliteRing(group, 0xffbcf5, 1.92, .03, { x: .7, y: .2, z: .45 }, { opacity: .42, arc: Math.PI * 1.3 });
+    } else if (id === 'prismatic_tide') {
+      addCornerFrame([accent, new THREE.Color('#ff4ecb'), new THREE.Color('#7c8dff'), new THREE.Color('#ffffff')]);
+      const faceDirs = [new THREE.Vector3(1,0,0), new THREE.Vector3(-1,0,0), new THREE.Vector3(0,1,0), new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,-1)];
+      faceDirs.forEach((dir, i) => {
+        const fin = new THREE.Mesh(
+          new THREE.OctahedronGeometry(.28 + (i % 2) * .03, 0),
+          new THREE.MeshPhysicalMaterial({ color: [0x7ffcff,0xff4ecb,0x7c8dff,0xffffff][i % 4], transparent: true, opacity: .58, transmission: .32, roughness: .03, metalness: .12, clearcoat: 1.6, depthWrite: false, emissive: [0x7ffcff,0xff4ecb,0x7c8dff,0xffffff][i % 4], emissiveIntensity: .18 })
+        );
+        fin.position.copy(dir.clone().multiplyScalar(1.62));
+        fin.scale.set(.78, 1.5, .78);
+        fin.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+        group.add(fin);
+      });
+      const shell = new THREE.Mesh(new THREE.OctahedronGeometry(1.92, 0), new THREE.MeshPhysicalMaterial({ color: 0x7ffcff, transparent: true, opacity: .11, transmission: .48, roughness: .02, metalness: .05, clearcoat: 1.7, depthWrite: false }));
+      shell.rotation.set(.35, .78, .12); group.add(shell);
+    } else if (id === 'mythic_aeon') {
+      corners.forEach((v, i) => {
+        const dir = v.clone().normalize();
+        this.addEliteSpike(group, [0xfff6bf,0x63f8ff,0xff78df,0xffffff][i % 4], dir.clone().multiplyScalar(1.84), dir, .9, .12, { metalness: .42, roughness: .05, emissiveIntensity: .3, transparent: true, opacity: .92, transmission: .12, depthWrite: false, clearcoat: 1.85 });
+      });
+      const shell = new THREE.Mesh(new THREE.OctahedronGeometry(2.04, 0), new THREE.MeshPhysicalMaterial({ color: 0xb089ff, transparent: true, opacity: .12, transmission: .52, roughness: .02, metalness: .08, clearcoat: 1.9, depthWrite: false }));
+      shell.rotation.set(.22, .85, .42); group.add(shell);
+      const core = new THREE.Mesh(new THREE.SphereGeometry(.95, 24, 18), new THREE.MeshPhysicalMaterial({ color: 0x24115f, transparent: true, opacity: .18, transmission: .4, roughness: .03, metalness: .14, emissive: 0x63f8ff, emissiveIntensity: .26, depthWrite: false }));
+      group.add(core);
+      [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((col, i) => this.addEliteRing(group, col, 1.82 + i * .16, .03 + i * .004, { x: .3 * i, y: .48 * i, z: .62 * i }, { opacity: .58 - i * .08, arc: Math.PI * (1.65 - i * .08) }));
+    } else {
+      addCornerFrame([accent, emissive]);
+      this.addEliteRing(group, accent, 1.84, .036, { x: Math.PI / 2, y: 0, z: 0 }, { opacity: .48 });
     }
   }
 

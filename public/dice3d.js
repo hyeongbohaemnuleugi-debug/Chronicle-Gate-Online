@@ -85,7 +85,8 @@ export class DiceTheater {
     const tier = price >= 12 ? 3 : price >= 8 ? 2 : price > 0 ? 1 : 0;
     const themes = {
       classic: 'classic', nebula_glass: 'nebula', abyss_pearl: 'abyss', twilight_gilt: 'gilt', clockwork: 'clockwork',
-      aurora_crystal: 'aurora', eclipse_obsidian: 'eclipse', starseed: 'starseed', neon_prism: 'neon', crown_steel: 'crown', rift_shard: 'rift',
+      aurora_crystal: 'aurora', eclipse_obsidian: 'eclipse', starseed: 'starseed', runic_tempest: 'tempest', phoenix_ember: 'phoenix', verdant_relic: 'relic',
+      neon_prism: 'neon', celestial_choir: 'celestial', crown_steel: 'crown', void_monarch: 'void', rift_shard: 'rift', prismatic_tide: 'prism', mythic_aeon: 'mythic',
     };
     return { id, price, tier, theme: themes[id] || 'arcane', base: style?.base || '#b94d36', accent: style?.accent || '#ffe6c6', emissive: style?.emissive || '#000000' };
   }
@@ -232,6 +233,13 @@ export class DiceTheater {
     if (profile.theme === 'neon') { [0x58fff0,0xff55e8,0x7f71ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.85+i*.18,.23);h.rotation.set(.35*i,.55*i,.8*i);}); }
     if (profile.theme === 'crown') { const h=this.addHalo(die,0xffe29b,2.15,.34);h.rotation.x=.45;this.addOrbiter(die,0xffc851,2.45,.72,.4,0,.16); }
     if (profile.theme === 'rift') { for(let i=0;i<3;i++){const h=this.addHalo(die,i%2?0xffbcf5:0x8b4dff,1.9+i*.22,.2);h.rotation.set(.4+i*.5,.2+i*.7,.3+i*.35);} }
+    if (profile.theme === 'tempest') { [0xd7f1ff,0x7ab4ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.95+i*.22,.24);h.rotation.set(.45*i,.25+i*.4,.8+i*.25);}); this.addOrbiter(die,0xd7f1ff,2.5,.9,.18,0,.17); }
+    if (profile.theme === 'phoenix') { const h=this.addHalo(die,0xffcf7a,2.12,.28); h.rotation.x=.8; this.addOrbiter(die,0xff7d4f,2.35,.58,.42,1.2,.18); }
+    if (profile.theme === 'relic') { const h=this.addHalo(die,0xdcffd1,2.08,.26); h.rotation.y=.55; this.addOrbiter(die,0x8cff9f,2.32,-.35,-.2,2.3,.15); }
+    if (profile.theme === 'celestial') { [0xfff0c9,0x94a7ff].forEach((col,i)=>{const h=this.addHalo(die,col,1.9+i*.28,.24);h.rotation.set(Math.PI/2*(i%2),i*.45,.2+i*.35);}); }
+    if (profile.theme === 'void') { for(let i=0;i<3;i++){const h=this.addHalo(die,i%2?0xff9af2:0x7b31cf,2.0+i*.2,.2);h.rotation.set(.35+i*.4,.5+i*.45,.1+i*.3);} }
+    if (profile.theme === 'prism') { [0x7ffcff,0xff4ecb,0x7c8dff].forEach((col,i)=>{const h=this.addHalo(die,col,1.9+i*.18,.22);h.rotation.set(.25*i,.65*i,.42*i);}); }
+    if (profile.theme === 'mythic') { [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((col,i)=>{const h=this.addHalo(die,col,1.86+i*.22,.24);h.rotation.set(.35*i,.6*i,.9*i);}); this.addAuraField(die,[0xfff6bf,0x63f8ff,0xff78df,0xffffff],980,3.95,.095,.68); }
   }
 
   trailFx(die, profile, dt) {
@@ -260,6 +268,13 @@ export class DiceTheater {
     if (profile.theme === 'neon' && Math.random()<.65) this.addSprite(basePos.clone(),[0x58fff0,0xff55e8,0x7f71ff][Math.floor(Math.random()*3)],.15,.48,new THREE.Vector3(-.75,.1,(Math.random()-.5)*.25),.05);
     if (profile.theme === 'crown' && Math.random()<.45) this.addSprite(basePos.clone(),0xffe29b,.13,.55,new THREE.Vector3(-.4,.45,(Math.random()-.5)*.25),.4);
     if (profile.theme === 'rift' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xffbcf5:0x8b4dff,.17,.55,new THREE.Vector3(-.45,(Math.random()-.5)*.4,(Math.random()-.5)*.7),.1);
+    if (profile.theme === 'tempest' && Math.random()<.55) this.addSprite(basePos.clone(),Math.random()<.5?0xd7f1ff:0x7ab4ff,.16,.56,new THREE.Vector3(-.55,.22,(Math.random()-.5)*.55),.06);
+    if (profile.theme === 'phoenix' && Math.random()<.55) this.addSprite(basePos.clone(),Math.random()<.5?0xffcf7a:0xff7d4f,.18,.7,new THREE.Vector3(-.18,.82,(Math.random()-.5)*.28),-.12);
+    if (profile.theme === 'relic' && Math.random()<.42) this.addSprite(basePos.clone(),Math.random()<.5?0xdcffd1:0x8cff9f,.16,.74,new THREE.Vector3(-.22,.36,(Math.random()-.5)*.3),.12);
+    if (profile.theme === 'celestial' && Math.random()<.52) this.addSprite(basePos.clone(),Math.random()<.5?0xfff0c9:0x94a7ff,.17,.65,new THREE.Vector3(-.35,.45,(Math.random()-.5)*.3),.08);
+    if (profile.theme === 'void' && Math.random()<.5) this.addSprite(basePos.clone(),Math.random()<.5?0xff9af2:0x7b31cf,.18,.62,new THREE.Vector3(-.28,.18,(Math.random()-.5)*.45),.06);
+    if (profile.theme === 'prism' && Math.random()<.65) this.addSprite(basePos.clone(),[0x7ffcff,0xff4ecb,0x7c8dff][Math.floor(Math.random()*3)],.17,.58,new THREE.Vector3(-.65,.2,(Math.random()-.5)*.45),.06);
+    if (profile.theme === 'mythic' && Math.random()<.75) this.addSprite(basePos.clone(),[0xfff6bf,0x63f8ff,0xff78df,0xffffff][Math.floor(Math.random()*4)],.2,.8,new THREE.Vector3(-.45,.55,(Math.random()-.5)*.4),.03);
   }
 
   landingFx(profile) {
@@ -316,6 +331,13 @@ export class DiceTheater {
     if (profile.theme === 'gilt') { this.cloudBurst(new THREE.Vector3(0,-.9,0),[0xffd67a,0xff8c5a,0xfff2c2],620,4.3,1.05,.09,1.0,.45); for(let i=0;i<3;i++) this.ring(p.clone().add(new THREE.Vector3(0,.025*i,0)),i===1?0xff7d50:0xffd67a,.16+i*.08,4.5+i*.8,.75+i*.12,.5); }
     if (profile.theme === 'clockwork') { for(let i=0;i<4;i++){const m=new THREE.MeshBasicMaterial({color:i%2?0xb78948:0xf5cf84,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false});const g=new THREE.Mesh(new THREE.TorusGeometry(.65+i*.18,.035,8,18),m);g.position.set(0,-.7+i*.12,0);g.rotation.set(Math.PI/2,i*.4,i*.6);this.fxGroup.add(g);this.fxItems.push({obj:g,life:1.1,maxLife:1.1,kind:'crown'});} this.shardBurst(new THREE.Vector3(0,-.65,0),0xf5cf84,18,1.0); }
     if (profile.theme === 'starseed') { this.cloudBurst(new THREE.Vector3(0,-.85,0),[0xf8f29b,0x8ed88a,0xffffff],780,3.6,1.55,.1,1.2,.5); for(let i=0;i<18;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3.4,-1.05,(Math.random()-.5)*2.5),i%3?0xf8f29b:0x8ed88a,.16,1.35,new THREE.Vector3((Math.random()-.5)*.25,.7+Math.random()*1.4,(Math.random()-.5)*.25),.1); }
+    if (profile.theme === 'tempest') { this.cloudBurst(new THREE.Vector3(0,-.88,0),[0xd7f1ff,0x7ab4ff,0xffffff],920,4.6,1.25,.095,1.0,.4); for(let i=0;i<6;i++) this.ring(p.clone().add(new THREE.Vector3(0,.03*i,0)),i%2?0x7ab4ff:0xd7f1ff,.13+i*.05,4.2+i*.55,.78+i*.08,.42,Math.PI/2+(.2*i)); }
+    if (profile.theme === 'phoenix') { this.cloudBurst(new THREE.Vector3(0,-.86,0),[0xffcf7a,0xff7d4f,0xffffff],980,4.4,1.35,.1,1.3,.34); for(let i=0;i<20;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*3.2,-1.05,(Math.random()-.5)*2.2),i%2?0xffcf7a:0xff7d4f,.18,1.15,new THREE.Vector3((Math.random()-.5)*.2,1.05+Math.random()*1.6,(Math.random()-.5)*.2),-.08); }
+    if (profile.theme === 'relic') { this.cloudBurst(new THREE.Vector3(0,-.9,0),[0xdcffd1,0x8cff9f,0xffffff],860,3.2,1.5,.09,1.0,.42); for(let i=0;i<4;i++) this.ring(p.clone().add(new THREE.Vector3(0,.05*i,0)),i%2?0x8cff9f:0xdcffd1,.14+i*.05,3.6+i*.45,1.0+i*.08,.38); }
+    if (profile.theme === 'celestial') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0xfff0c9,0x94a7ff,0xffffff],1150,4.8,1.45,.11,1.1,.28); for(let i=0;i<7;i++) this.ring(p.clone().add(new THREE.Vector3(0,.03*i,0)),i%2?0x94a7ff:0xfff0c9,.14+i*.05,4.6+i*.55,.9+i*.1,.5,Math.PI/2*(i%2)); }
+    if (profile.theme === 'void') { this.cloudBurst(new THREE.Vector3(0,-.82,0),[0xff9af2,0x7b31cf,0x1b0930],1080,4.9,1.5,.105,1.05,.3); for(let i=0;i<6;i++) this.ring(new THREE.Vector3(0,-.08+i*.06,0), i%2?0xff9af2:0x7b31cf, .14+i*.05, 3.6+i*.55, .95+i*.1, .5, Math.PI/2 + i*.18); }
+    if (profile.theme === 'prism') { this.cloudBurst(new THREE.Vector3(0,-.8,0),[0x7ffcff,0xff4ecb,0x7c8dff,0xffffff],1250,5.0,1.55,.11,1.15,.26); [0x7ffcff,0xff4ecb,0x7c8dff,0xffffff].forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,.015*i,0)),c,.16+i*.04,5.1+i*.45,.85+i*.08,.48)); }
+    if (profile.theme === 'mythic') { this.cloudBurst(new THREE.Vector3(0,-.78,0),[0xfff6bf,0x63f8ff,0xff78df,0xffffff],1900,6.6,1.95,.125,1.5,.34); this.cloudBurst(new THREE.Vector3(0,-.58,0),[0x63f8ff,0xfff6bf],1200,4.6,2.15,.095,1.95,.25); [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((c,i)=>this.ring(p.clone().add(new THREE.Vector3(0,.02*i,0)),c,.14+i*.05,6.5+i*.65,1.0+i*.12,.56,Math.PI/2*(i%2))); this.flashDisc(new THREE.Vector3(0,0,0),0xffffff,10.4,.34,.98); for(let i=0;i<24;i++) this.addSprite(new THREE.Vector3((Math.random()-.5)*4.4,-1.0,(Math.random()-.5)*3.2), [0xfff6bf,0x63f8ff,0xff78df,0xffffff][i%4], .22, 1.55, new THREE.Vector3((Math.random()-.5)*.28,1.15+Math.random()*1.8,(Math.random()-.5)*.28), .02); }
   }
 
   tickFx(dt, elapsed = 0) {
@@ -367,9 +389,16 @@ export class DiceTheater {
       aurora_crystal:{font:'Arial',weight:'800',scale:1.05,edge:'#baffd8',shell:'crystal-spires'},
       eclipse_obsidian:{font:'Georgia',weight:'900',scale:1.04,edge:'#d998ff',shell:'eclipse-core'},
       starseed:{font:'Georgia',weight:'900',scale:1.03,edge:'#f8f29b',shell:'living-stars'},
+      runic_tempest:{font:'Arial Black',weight:'900',scale:1.05,edge:'#d7f1ff',shell:'storm-runes'},
+      phoenix_ember:{font:'Georgia',weight:'900',scale:1.05,edge:'#ffcf7a',shell:'ember-feather'},
+      verdant_relic:{font:'Trebuchet MS',weight:'900',scale:1.05,edge:'#dcffd1',shell:'jade-vines'},
       neon_prism:{font:'Arial Black',weight:'900',scale:1.04,edge:'#58fff0',shell:'neon-wire'},
+      celestial_choir:{font:'Georgia',weight:'900',scale:1.06,edge:'#fff0c9',shell:'halo-feathers'},
       crown_steel:{font:'Georgia',weight:'900',scale:1.05,edge:'#ffe29b',shell:'royal-spikes'},
+      void_monarch:{font:'Arial Black',weight:'900',scale:1.06,edge:'#ff9af2',shell:'void-crown'},
       rift_shard:{font:'Trebuchet MS',weight:'900',scale:1.06,edge:'#ffbcf5',shell:'fractured-shell'},
+      prismatic_tide:{font:'Arial Black',weight:'900',scale:1.07,edge:'#7ffcff',shell:'prism-wave'},
+      mythic_aeon:{font:'Arial Black',weight:'900',scale:1.1,edge:'#fff6bf',shell:'aeon-nova'},
     };
     return map[id]||map.classic;
   }
@@ -401,6 +430,31 @@ export class DiceTheater {
       addWire(0xffe29b,.92,1.01);for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const dir=new THREE.Vector3(Math.cos(a),.35+Math.sin(a*2)*.15,Math.sin(a)).normalize();const spike=new THREE.Mesh(new THREE.ConeGeometry(.095,.52,4),new THREE.MeshStandardMaterial({color:0xffe29b,metalness:1,roughness:.15}));spike.position.copy(dir.clone().multiplyScalar(1.68));spike.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);group.add(spike);} const band=new THREE.Mesh(new THREE.TorusGeometry(1.61,.055,10,48),new THREE.MeshStandardMaterial({color:0xcaa45c,metalness:1,roughness:.18}));band.rotation.x=Math.PI/2;group.add(band);
     } else if(id==='rift_shard'){
       addWire(0xffbcf5,.7,1.02);for(let i=0;i<11;i++){const shard=new THREE.Mesh(new THREE.TetrahedronGeometry(.12+Math.random()*.1,0),new THREE.MeshPhysicalMaterial({color:i%2?0xffbcf5:0x8b4dff,transparent:true,opacity:.65,roughness:.08,metalness:.35,depthWrite:false}));const dir=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize();shard.position.copy(dir.multiplyScalar(1.58+Math.random()*.28));shard.rotation.set(Math.random()*6,Math.random()*6,Math.random()*6);group.add(shard);}
+    } else if(id==='runic_tempest'){
+      [0xd7f1ff,0x8ac8ff,0x6c8cff].forEach((col,i)=>{ const e=addWire(col,.76-i*.16,1.01+i*.02); e.rotation.set(i*.35,i*.6,i*.22); });
+      for(let i=0;i<9;i++){ const ring=new THREE.Mesh(new THREE.TorusGeometry(1.48+i*.03,.03,8,36,Math.PI*(1.15+Math.random()*.55)),new THREE.MeshBasicMaterial({color:i%2?0xd7f1ff:0x7ab4ff,transparent:true,opacity:.62,blending:THREE.AdditiveBlending,depthWrite:false})); ring.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI); group.add(ring); }
+      addPoints(34,0xd7f1ff,1.58,.065);
+    } else if(id==='phoenix_ember'){
+      addWire(0xffcf7a,.72,1.02); addPoints(20,0xffcf7a,1.46,.075);
+      for(let i=0;i<12;i++){ const feather=new THREE.Mesh(new THREE.ConeGeometry(.055,.4,5),new THREE.MeshPhysicalMaterial({color:i%2?0xffcf7a:0xff7d4f,transparent:true,opacity:.72,roughness:.08,metalness:.22,emissive:0x8e2d15,emissiveIntensity:.45,depthWrite:false})); const a=i/12*Math.PI*2; const dir=new THREE.Vector3(Math.cos(a),-.18+Math.sin(a*2)*.3,Math.sin(a)).normalize(); feather.position.copy(dir.clone().multiplyScalar(1.58)); feather.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir); group.add(feather); }
+    } else if(id==='verdant_relic'){
+      addWire(0xdcffd1,.6,1.01); addPoints(24,0xdcffd1,1.52,.06);
+      for(let i=0;i<3;i++){ const vine=new THREE.Mesh(new THREE.TorusKnotGeometry(1.22+i*.08,.028,72,10,2+i,3),new THREE.MeshBasicMaterial({color:i%2?0x94ff9e:0xdcffd1,transparent:true,opacity:.18+i*.06,blending:THREE.AdditiveBlending,depthWrite:false})); vine.rotation.set(i*.75,i*.35,i*.5); group.add(vine); }
+    } else if(id==='celestial_choir'){
+      [0xfff0c9,0x8ea0ff].forEach((col,i)=>{ const h=addWire(col,.7-i*.12,1.01+i*.03); h.rotation.set(Math.PI/2*(i%2),i*.55,i*.25); });
+      for(let i=0;i<8;i++){ const wing=new THREE.Mesh(new THREE.ConeGeometry(.08,.46,3),new THREE.MeshBasicMaterial({color:i%2?0xfff0c9:0x94a7ff,transparent:true,opacity:.78,blending:THREE.AdditiveBlending,depthWrite:false})); const a=i/8*Math.PI*2; wing.position.set(Math.cos(a)*1.55,.35*Math.cos(a*2),Math.sin(a)*1.55); wing.rotation.set(Math.PI/2,0,-a); group.add(wing); }
+      addPoints(30,0xfff0c9,1.6,.07);
+    } else if(id==='void_monarch'){
+      const core=new THREE.Mesh(new THREE.SphereGeometry(1.2,26,18),new THREE.MeshStandardMaterial({color:0x12061c,roughness:.08,metalness:.85,emissive:0x5b17a1,emissiveIntensity:.68})); group.add(core);
+      addWire(0xff9af2,.72,1.03); for(let i=0;i<3;i++){ const h=new THREE.Mesh(new THREE.TorusGeometry(1.58+i*.18,.05,10,48,Math.PI*(1.2+i*.18)),new THREE.MeshBasicMaterial({color:i%2?0xff9af2:0x7b31cf,transparent:true,opacity:.46,blending:THREE.AdditiveBlending,depthWrite:false})); h.rotation.set(.35+i*.42,.22+i*.55,.18+i*.3); group.add(h); }
+    } else if(id==='prismatic_tide'){
+      [0x7ffcff,0xff4ecb,0x7c8dff,0xffffff].forEach((col,i)=>{ const e=addWire(col,.66-i*.1,1.01+i*.015); e.rotation.set(i*.25,i*.8,i*.14); });
+      const shell=new THREE.Mesh(shellGeom(),new THREE.MeshPhysicalMaterial({color:skin.base,transparent:true,opacity:.13,roughness:.02,metalness:.06,transmission:.42,clearcoat:1.7,depthWrite:false})); shell.scale.setScalar(1.05); shell.renderOrder=10; group.add(shell); addPoints(42,0x7ffcff,1.64,.062);
+    } else if(id==='mythic_aeon'){
+      const shell=new THREE.Mesh(new THREE.SphereGeometry(sides===6?1.72:1.82,28,18),new THREE.MeshPhysicalMaterial({color:0x24115f,transparent:true,opacity:.11,roughness:.03,metalness:.16,transmission:.58,clearcoat:1.9,depthWrite:false})); shell.renderOrder=9; group.add(shell);
+      [0xfff6bf,0x63f8ff,0xff78df,0xffffff].forEach((col,i)=>{ const e=addWire(col,.74-i*.1,1.01+i*.025); e.rotation.set(i*.42,i*.58,i*.3); });
+      addPoints(72,0xfff6bf,1.78,.078); addPoints(40,0x63f8ff,1.58,.055);
+      for(let i=0;i<14;i++){ const shard=new THREE.Mesh(new THREE.OctahedronGeometry(.08+Math.random()*.05,0),new THREE.MeshBasicMaterial({color:i%3===0?0xfff6bf:i%3===1?0x63f8ff:0xff78df,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false})); const dir=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize(); shard.position.copy(dir.multiplyScalar(1.65+Math.random()*.22)); group.add(shard); }
     }
   }
 

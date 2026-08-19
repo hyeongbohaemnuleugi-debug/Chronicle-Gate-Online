@@ -371,8 +371,8 @@ const DICE_CATALOG = [
   {id:'crown_steel',name:'왕관 강철',price:14,rarity:'전설',base:'#3c3f49',accent:'#ffe29b',emissive:'#684516',metalness:.9,roughness:.18,visual:'royal-spikes'},
   {id:'void_monarch',name:'공허 군주',price:15,rarity:'전설',base:'#221432',accent:'#ff9af2',emissive:'#5b17a1',metalness:.68,roughness:.09,visual:'void-crown'},
   {id:'rift_shard',name:'경계의 파편',price:16,rarity:'전설',base:'#472d6f',accent:'#ffbcf5',emissive:'#6e1c78',metalness:.48,roughness:.09,visual:'fractured-shell'},
-  {id:'prismatic_tide',name:'분광 해일',price:18,rarity:'전설',base:'#0f4a65',accent:'#7ffcff',emissive:'#ff4ecb',metalness:.44,roughness:.07,visual:'prism-wave'},
-  {id:'mythic_aeon',name:'신화 · 아이온 노바',price:30,rarity:'신화',base:'#1d1145',accent:'#fff6bf',emissive:'#63f8ff',metalness:.74,roughness:.04,visual:'aeon-nova'},
+  {id:'prismatic_tide',name:'분광 해일',price:18,rarity:'전설',base:'#155a67',accent:'#b9ffff',emissive:'#2aa7a7',metalness:.16,roughness:.05,visual:'prism-wave'},
+  {id:'mythic_aeon',name:'오리진',price:30,rarity:'신화',base:'#120f24',accent:'#f5edc3',emissive:'#6cefff',metalness:.34,roughness:.06,visual:'origin-core'},
 ];
 const DICE_BY_ID = Object.fromEntries(DICE_CATALOG.map(d=>[d.id,d]));
 

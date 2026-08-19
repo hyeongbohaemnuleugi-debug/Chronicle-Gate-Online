@@ -1083,7 +1083,21 @@ function renderAccountBar(){
   if(logged && !$('#nameInput').value) $('#nameInput').value=account.displayName||'';
 }
 function setModal(id,show){ const el=$(id); if(!el)return; el.hidden=!show; el.classList.toggle('show',show); el.setAttribute('aria-hidden',show?'false':'true'); }
-function setAuthMode(mode){ authMode=mode==='register'?'register':'login'; const reg=authMode==='register'; $('#authLoginTab').classList.toggle('selected',!reg); $('#authRegisterTab').classList.toggle('selected',reg); $('#authNameField').classList.toggle('hidden',!reg); $('#authSubmitBtn').textContent=reg?'계정 만들기':'로그인'; $('#authPassword').autocomplete=reg?'new-password':'current-password'; $('#authError').textContent=''; }
+function setAuthMode(mode){
+  authMode=mode==='register'?'register':'login';
+  const reg=authMode==='register';
+  $('#authLoginTab').classList.toggle('selected',!reg);
+  $('#authRegisterTab').classList.toggle('selected',reg);
+  $('#authNameField').classList.toggle('hidden',!reg);
+  $('#authSubmitBtn').textContent=reg?'계정 만들기':'로그인';
+  const password=$('#authPassword');
+  password.autocomplete=reg?'new-password':'current-password';
+  password.maxLength=reg?4:72;
+  password.inputMode=reg?'numeric':'text';
+  password.pattern=reg?'[0-9]{4}':'';
+  password.placeholder=reg?'숫자 4자리':'비밀번호';
+  $('#authError').textContent='';
+}
 function openAuth(mode='login',after=null){ pendingEntryMode=after; setAuthMode(mode); setModal('#authModal',true); setTimeout(()=>$('#authEmail').focus(),30); }
 async function refreshAccount(){ try{ const data=await apiJson('/api/account/me'); account=data.account||null; diceCatalog=data.diceCatalog||diceCatalog||[]; renderAccountBar(); return account; }catch{account=null;renderAccountBar();return null;} }
 async function reconnectForAccount(){
@@ -1118,7 +1132,7 @@ $('#loginOpenBtn').onclick=()=>openAuth('login');
 $('#authCloseBtn').onclick=()=>{pendingEntryMode=null;setModal('#authModal',false);};
 $('#authLoginTab').onclick=()=>setAuthMode('login');
 $('#authRegisterTab').onclick=()=>setAuthMode('register');
-$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register')body.displayName=$('#authDisplayName').value.trim(); const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); if(data.accountStore==='local-fallback') setTimeout(()=>toast('계정은 로컬 안전 저장소에 저장되었습니다. 상용 배포 전에는 Supabase 영속 저장을 연결해 주세요.'),350); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
+$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register'){ if(!/^\d{4}$/.test(body.password)) throw new Error('비밀번호는 숫자 4자리로 입력하세요.'); body.displayName=$('#authDisplayName').value.trim(); } const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); if(data.accountStore==='local-fallback') setTimeout(()=>toast('계정은 로컬 안전 저장소에 저장되었습니다. 상용 배포 전에는 Supabase 영속 저장을 연결해 주세요.'),350); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
 $('#logoutBtn').onclick=async()=>{ try{await apiJson('/api/account/logout',{method:'POST',body:'{}'});}catch{} account=null;renderAccountBar(); if(socket.connected)socket.disconnect();socket.connect();toast('로그아웃했습니다.'); };
 $('#collectionOpenBtn').onclick=loadCollection;
 $('#collectionCloseBtn').onclick=()=>setModal('#collectionModal',false);

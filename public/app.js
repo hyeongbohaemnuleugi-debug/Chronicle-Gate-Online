@@ -1286,7 +1286,13 @@ function enqueueDice(payload) {
     $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     const theater = getDiceTheater();
     if (theater) {
-      await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 2850 : 2350 });
+      try {
+        await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 3000 : 2550 });
+      } catch (error) {
+        console.error('[dice3d] roll failed', error);
+        $('#diceSub').textContent = '3D 연출 오류가 발생해 숫자 결과로 이어갑니다.';
+        await new Promise(r => setTimeout(r, 550));
+      }
     } else {
       $('#diceSub').textContent = '3D 렌더러를 사용할 수 없어 판정을 진행합니다.';
       await new Promise(r => setTimeout(r, 450));
@@ -1294,10 +1300,13 @@ function enqueueDice(payload) {
 
     const narrativeRoll = ['story-choice','check','parallel-story'].includes(payload.kind);
     if (narrativeRoll) {
-      // 스토리/이벤트 판정은 3D 주사위에서 이미 결과를 확인했으므로 숫자 결과창을 다시 띄우지 않는다.
-      // 서버 state에 들어온 장면 결과가 오버레이 뒤의 본문에 바로 렌더링되어 다음 내용으로 자연스럽게 이어진다.
+      const natural = payload.sides === 20 && payload.result === 20 ? 'NATURAL 20' : payload.sides === 20 && payload.result === 1 ? 'NATURAL 1' : `D${payload.sides} ${payload.result}`;
+      $('#diceFinal').textContent = natural;
+      $('#diceFinal').classList.add('is-result');
+      $('#diceSub').textContent = '판정이 확정되었습니다.';
+      await new Promise(r => setTimeout(r, 950));
       $('#diceOverlay').classList.remove('show');
-      await new Promise(r => setTimeout(r, 220));
+      await new Promise(r => setTimeout(r, 320));
       renderStory();
       return;
     }

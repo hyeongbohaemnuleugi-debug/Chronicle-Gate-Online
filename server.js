@@ -9,6 +9,7 @@ import {
   appendSessionEvent,
   loadRoomSnapshot,
   persistenceEnabled,
+  persistenceMode,
   roomSnapshotExists,
   scheduleRoomSave,
   flushRoomSave,
@@ -86,6 +87,7 @@ const DEVELOPER_EMAILS = new Set(['wezxcw1457@gmail.com']);
 const ALL_DICE_IDS = [
   'classic','nebula_glass','abyss_pearl','twilight_gilt','clockwork',
   'aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard',
+  'runic_tempest','phoenix_ember','verdant_relic','celestial_choir','void_monarch','prismatic_tide','mythic_aeon',
 ];
 const isDeveloperEmail = email => DEVELOPER_EMAILS.has(normalizeEmail(email));
 
@@ -140,6 +142,15 @@ function verifyPassword(password, encoded) {
   catch { return false; }
 }
 
+
+function shortAccountCode(accountId) {
+  const source = String(accountId || '').trim();
+  if (!source) return '0000';
+  const digest = crypto.createHash('sha256').update(source).digest();
+  const numeric = digest.readUInt32BE(0) % 10000;
+  return String(numeric).padStart(4, '0');
+}
+
 function publicAccount(account) {
   if (!account) return null;
   const developer = isDeveloperEmail(account.email);
@@ -147,6 +158,7 @@ function publicAccount(account) {
     id: account.id,
     email: account.email,
     displayName: account.display_name || account.displayName || '플레이어',
+    accountCode: shortAccountCode(account.id),
     chroniclePoints: Number(account.chronicle_points ?? account.chroniclePoints ?? 0),
     ownedDice: developer ? [...ALL_DICE_IDS] : (Array.isArray(account.owned_dice) ? account.owned_dice : (account.ownedDice || ['classic'])),
     equippedDice: account.equipped_dice || account.equippedDice || 'classic',
@@ -331,7 +343,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.3.1-shared-party-prologue';
+const APP_VERSION = '8.3.0-shared-turn-branch-clarity';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -351,9 +363,16 @@ const DICE_CATALOG = [
   {id:'aurora_crystal',name:'극광 수정',price:9,rarity:'영웅',base:'#277f78',accent:'#baffd8',emissive:'#164e64',metalness:.2,roughness:.08,visual:'crystal-spires'},
   {id:'eclipse_obsidian',name:'월식 흑요석',price:10,rarity:'영웅',base:'#17151d',accent:'#d998ff',emissive:'#4c1764',metalness:.55,roughness:.14,visual:'eclipse-core'},
   {id:'starseed',name:'별씨앗',price:11,rarity:'영웅',base:'#315a3a',accent:'#f8f29b',emissive:'#163b24',metalness:.24,roughness:.3,visual:'living-stars'},
+  {id:'runic_tempest',name:'룬 폭풍',price:9,rarity:'영웅',base:'#274a82',accent:'#d7f1ff',emissive:'#19386c',metalness:.46,roughness:.13,visual:'storm-runes'},
+  {id:'phoenix_ember',name:'불사조 잿불',price:10,rarity:'영웅',base:'#7c2b1f',accent:'#ffcf7a',emissive:'#8e2d15',metalness:.54,roughness:.16,visual:'ember-feather'},
+  {id:'verdant_relic',name:'비취 유산',price:11,rarity:'영웅',base:'#1f6b4c',accent:'#dcffd1',emissive:'#275f2a',metalness:.34,roughness:.11,visual:'jade-vines'},
   {id:'neon_prism',name:'네온 프리즘',price:12,rarity:'전설',base:'#142a54',accent:'#58fff0',emissive:'#a213a9',metalness:.42,roughness:.1,visual:'neon-wire'},
+  {id:'celestial_choir',name:'천공 성가',price:13,rarity:'전설',base:'#284176',accent:'#fff0c9',emissive:'#6a78ff',metalness:.58,roughness:.08,visual:'halo-feathers'},
   {id:'crown_steel',name:'왕관 강철',price:14,rarity:'전설',base:'#3c3f49',accent:'#ffe29b',emissive:'#684516',metalness:.9,roughness:.18,visual:'royal-spikes'},
+  {id:'void_monarch',name:'공허 군주',price:15,rarity:'전설',base:'#221432',accent:'#ff9af2',emissive:'#5b17a1',metalness:.68,roughness:.09,visual:'void-crown'},
   {id:'rift_shard',name:'경계의 파편',price:16,rarity:'전설',base:'#472d6f',accent:'#ffbcf5',emissive:'#6e1c78',metalness:.48,roughness:.09,visual:'fractured-shell'},
+  {id:'prismatic_tide',name:'분광 해일',price:18,rarity:'전설',base:'#0f4a65',accent:'#7ffcff',emissive:'#ff4ecb',metalness:.44,roughness:.07,visual:'prism-wave'},
+  {id:'mythic_aeon',name:'신화 · 아이온 노바',price:30,rarity:'신화',base:'#1d1145',accent:'#fff6bf',emissive:'#63f8ff',metalness:.74,roughness:.04,visual:'aeon-nova'},
 ];
 const DICE_BY_ID = Object.fromEntries(DICE_CATALOG.map(d=>[d.id,d]));
 
@@ -416,7 +435,7 @@ app.get('/health', (_req, res) => res.json({
   ok: true,
   version: APP_VERSION,
   rooms: rooms.size,
-  persistence: persistenceEnabled ? 'supabase' : 'memory',
+  persistence: persistenceMode,
   accountStore: accountStoreMode,
   accountStoreDurable: accountPersistenceEnabled || localAccountDurable,
   timestamp: new Date().toISOString(),
@@ -1082,25 +1101,7 @@ function normalizeLoadedRoom(room) {
   room.facilityEncounterCount = Number(room.facilityEncounterCount || 0);
   room.lastFacilityEventSerial = Number(room.lastFacilityEventSerial ?? -99);
   const campaign = CAMPAIGNS.find(item => item.id === room.campaignId);
-  // v8.3.1: all campaigns use one shared party story after a common prologue.
-  // Existing split-party sessions are migrated once instead of continuing the unstable parallel graph.
-  if (campaign && room.phase !== 'lobby' && room.parallel?.enabled && !room.sharedPartyMode) {
-    room.sharedPartyMode = true;
-    room.parallel = null;
-    room.phase = 'prologue';
-    room.story = 0;
-    room.storyNodeId = campaign.storyBeats?.[0]?.id || null;
-    room.storyComplete = false;
-    room.storySeenIds = [];
-    room.storyHistory = [];
-    room.lastStoryAction = null;
-    room.lastResolution = null;
-    room.pendingContinue = null;
-    room.prologue = buildCampaignPrologue(room, campaign);
-  }
-  if (room.sharedPartyMode) {
-    room.parallel = null;
-  } else if (campaign?.parallelStory?.enabled && room.phase !== 'lobby') {
+  if (campaign?.parallelStory?.enabled && room.phase !== 'lobby') {
     if (!room.parallel?.enabled) initializeParallelStory(room, campaign);
     room.parallel.worldFlags ||= {}; room.parallel.links ||= {}; room.parallel.offers ||= {}; room.parallel.encounters ||= {}; room.parallel.incidentLog ||= [];
     for (const player of room.players || []) {
@@ -3395,7 +3396,7 @@ function renderedStoryBeat(room, campaign) {
 
   // v7.8: open on what is happening NOW. Previous choices alter the world mechanically,
   // but we do not narrate the player's own log back at them before every scene.
-  // Shared-party prologue is shown once before the first scene; do not repeat it inside chapter 1.
+  if (beat.chapter === 1 && room.storyMemory?.prologueMeeting) paragraphs.push(room.storyMemory.prologueMeeting);
   if (prev) {
     const world=LIVING_NOVEL[campaign?.id];
     const carry=world?.opening?.[prev.branchValue || 'careful'];
@@ -3562,28 +3563,13 @@ function buildPlayerPrologue(campaign, player) {
 }
 
 function buildCampaignPrologue(room, campaign) {
-  const individual = room.players.map(player => ({ player, scene: buildPlayerPrologue(campaign, player) }));
-  const meta = PROLOGUE_META[campaign?.id] || PROLOGUE_META.ember;
-  const arrivalLines = individual.map(({player,scene}) => {
-    const first = Array.isArray(scene?.paragraphs) ? scene.paragraphs[0] : '';
-    return `${player.name} — ${player.job?.name || '모험가'}\n${first || scene?.lead || '각자의 이유로 사건의 중심에 도착했다.'}`;
-  });
-  const sharedScene = {
-    id: `${campaign?.id || 'campaign'}-shared-prologue`,
-    title: '우리가 같은 곳에 모인 이유',
-    lead: campaign?.intro || '',
-    objective: '',
-    prompt: '',
-    paragraphs: [
-      campaign?.intro || '',
-      ...arrivalLines,
-      meta.meet || '서로 다른 길을 따라온 사람들은 같은 사건 앞에서 마주쳤다.',
-      `처음에는 서로가 왜 여기까지 왔는지 알지 못했다. 하지만 ${room.players.map(p=>p.name).join(', ')} 앞에 놓인 사건은 한 사람만의 힘으로 넘기 어려웠고, 짧은 대화 끝에 함께 움직이기로 했다. 그 순간부터 이 연대기는 개인의 이야기가 아니라 파티의 이야기가 된다.`
-    ].filter(Boolean),
-  };
   const scenes = {};
-  for (const player of room.players) scenes[player.id] = sharedScene;
-  return { scenes, ready:{}, meetingText: meta.meet || '', shared:true };
+  for (const player of room.players) scenes[player.id] = buildPlayerPrologue(campaign, player);
+  return {
+    scenes,
+    ready: {},
+    meetingText: (PROLOGUE_META[campaign?.id] || PROLOGUE_META.ember).meet,
+  };
 }
 
 function publicRoom(room) {
@@ -3603,7 +3589,7 @@ function publicRoom(room) {
       subtitle: campaign.subtitle, intro: campaign.intro, acts: campaign.acts,
       icon: campaign.icon, accent: campaign.accent, accent2: campaign.accent2,
       jobs: campaign.jobs, monsters: campaign.monsters, items: campaign.items || [], eventCount: campaign.events.length, storyBeatCount: campaign.storyBeats.length,
-      parallelMode: Boolean(campaign.parallelStory?.enabled && !room.sharedPartyMode),
+      parallelMode: Boolean(campaign.parallelStory?.enabled),
     } : null,
     players: room.players.map(p => ({
       id: p.id, name: p.name, host: p.host, connected: p.connected, diceSkinId: p.diceSkinId || 'classic',
@@ -3679,7 +3665,7 @@ function sync(room) {
   room.lastActiveAt = Date.now();
   room.revision = Number(room.revision || 0) + 1;
   io.to(room.code).emit('state', publicRoom(room));
-  scheduleRoomSave(room, 220);
+  scheduleRoomSave(room, room.phase === 'lobby' ? 140 : 60);
   if (room.phase === 'ending') void ensureEndingRewards(room);
 }
 
@@ -4872,8 +4858,6 @@ io.on('connection', async socket => {
     room.pendingContinue = null;
     room.failureCount = 0;
     room.jobStory = {};
-    room.sharedPartyMode = true;
-    room.parallel = null;
     room.prologue = buildCampaignPrologue(room, campaign);
     for (const member of room.players) {
       member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
@@ -4887,8 +4871,20 @@ io.on('connection', async socket => {
     room.abandonVote = null;
     room.turnIndex = 0;
     currentTurnPlayer(room);
+    if (campaign.parallelStory?.enabled) {
+      room.phase = 'story';
+      room.prologue = null;
+      room.deck = [];
+      initializeParallelStory(room, campaign);
+      currentTurnPlayer(room);
+      pushChat(room, { type:'system', text:`「${campaign.title}」는 각 플레이어가 서로 다른 시작점에서 이야기를 시작합니다. 진행 중 같은 장소에 도착하면 만나고, 함께 다니거나 다시 헤어지는 것도 각자의 선택으로 결정됩니다.` });
+      sync(room);
+      emitRoomDirectory();
+      void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name), mode:'parallel-story' });
+      return ack?.({ ok:true, parallel:true });
+    }
     room.storyMemory.prologueMeeting = room.prologue.meetingText;
-    pushChat(room, { type: 'system', text: '모두가 같은 프롤로그를 보고 있습니다. 전원이 준비되면 하나의 파티 스토리가 시작됩니다.' });
+    pushChat(room, { type: 'system', text: '각 플레이어의 개인 프롤로그가 시작되었습니다. 모두가 합류 준비를 마치면 메인 스토리가 열립니다.' });
     sync(room);
     emitRoomDirectory();
     void appendSessionEvent(room.code, 'game_started', { campaignId: campaign.id, players: room.players.map(player => player.name) });
@@ -5582,7 +5578,7 @@ setInterval(() => {
 }, 1000 * 60 * 30).unref();
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Chronicle Gate Online running on 0.0.0.0:${PORT} · persistence=${persistenceEnabled ? 'supabase' : 'memory'}`);
+  console.log(`Chronicle Gate Online running on 0.0.0.0:${PORT} · persistence=${persistenceMode}`);
 });
 
 let shuttingDown = false;

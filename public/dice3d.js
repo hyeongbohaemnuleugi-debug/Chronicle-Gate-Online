@@ -1,12 +1,14 @@
 import * as THREE from '/vendor/three.module.js';
 
+console.info('[Chronicle Gate] DiceTheater visual build 8360');
+
 export class DiceTheater {
   constructor(canvas) {
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
@@ -14,7 +16,6 @@ export class DiceTheater {
     this.camera = new THREE.PerspectiveCamera(34, 1, .1, 100);
     this.camera.position.set(0, 4.6, 8.5);
     this.camera.lookAt(0, .2, 0);
-    this.clock = new THREE.Clock();
     this.active = null;
     this.running = false;
     this.faceNormals = [];
@@ -508,20 +509,20 @@ export class DiceTheater {
       nebula_glass:{font:'Georgia',weight:'700',scale:1.02,edge:'#d9d0ff',shell:'glass-stars'},
       abyss_pearl:{font:'Trebuchet MS',weight:'800',scale:1.04,edge:'#baf8ff',shell:'pearl-bubble'},
       twilight_gilt:{font:'Georgia',weight:'900',scale:1.02,edge:'#ffd67a',shell:'gilded-studs'},
-      clockwork:{font:'Courier New',weight:'900',scale:1.03,edge:'#f5cf84',shell:'mechanical-gears'},
-      aurora_crystal:{font:'Arial',weight:'800',scale:1.05,edge:'#baffd8',shell:'crystal-spires'},
-      eclipse_obsidian:{font:'Georgia',weight:'900',scale:1.04,edge:'#d998ff',shell:'eclipse-core'},
-      starseed:{font:'Georgia',weight:'900',scale:1.03,edge:'#f8f29b',shell:'living-stars'},
+      clockwork:{font:'Courier New',weight:'900',scale:1.08,edge:'#f5cf84',shell:'mechanical-gears'},
+      aurora_crystal:{font:'Arial',weight:'800',scale:1.09,edge:'#baffd8',shell:'crystal-spires'},
+      eclipse_obsidian:{font:'Georgia',weight:'900',scale:1.1,edge:'#d998ff',shell:'eclipse-core'},
+      starseed:{font:'Georgia',weight:'900',scale:1.09,edge:'#f8f29b',shell:'living-stars'},
       runic_tempest:{font:'Arial Black',weight:'900',scale:1.05,edge:'#d7f1ff',shell:'storm-runes'},
       phoenix_ember:{font:'Georgia',weight:'900',scale:1.05,edge:'#ffcf7a',shell:'ember-feather'},
       verdant_relic:{font:'Trebuchet MS',weight:'900',scale:1.05,edge:'#dcffd1',shell:'jade-vines'},
-      neon_prism:{font:'Arial Black',weight:'900',scale:1.04,edge:'#58fff0',shell:'neon-wire'},
-      celestial_choir:{font:'Georgia',weight:'900',scale:1.06,edge:'#fff0c9',shell:'halo-feathers'},
-      crown_steel:{font:'Georgia',weight:'900',scale:1.05,edge:'#ffe29b',shell:'royal-spikes'},
-      void_monarch:{font:'Arial Black',weight:'900',scale:1.06,edge:'#ff9af2',shell:'void-crown'},
-      rift_shard:{font:'Trebuchet MS',weight:'900',scale:1.06,edge:'#ffbcf5',shell:'fractured-shell'},
-      prismatic_tide:{font:'Arial Black',weight:'900',scale:1.07,edge:'#7ffcff',shell:'prism-wave'},
-      mythic_aeon:{font:'Arial Black',weight:'900',scale:1.1,edge:'#fff6bf',shell:'aeon-nova'},
+      neon_prism:{font:'Arial Black',weight:'900',scale:1.11,edge:'#58fff0',shell:'neon-wire'},
+      celestial_choir:{font:'Georgia',weight:'900',scale:1.11,edge:'#fff0c9',shell:'halo-feathers'},
+      crown_steel:{font:'Georgia',weight:'900',scale:1.14,edge:'#ffe29b',shell:'royal-spikes'},
+      void_monarch:{font:'Arial Black',weight:'900',scale:1.12,edge:'#ff9af2',shell:'void-crown'},
+      rift_shard:{font:'Trebuchet MS',weight:'900',scale:1.13,edge:'#ffbcf5',shell:'fractured-shell'},
+      prismatic_tide:{font:'Arial Black',weight:'900',scale:1.12,edge:'#7ffcff',shell:'prism-wave'},
+      mythic_aeon:{font:'Arial Black',weight:'900',scale:1.16,edge:'#fff6bf',shell:'aeon-nova'},
     };
     return map[id]||map.classic;
   }
@@ -529,59 +530,61 @@ export class DiceTheater {
 
   addSignatureSilhouette(group, skin = {}, sides = 20) {
     const id = String(skin?.id || 'classic');
-    if (sides !== 6) return;
-
+    const scale = sides === 6 ? 1 : .82;
+    const topY = sides === 6 ? 1.08 : 1.34;
+    const frontZ = sides === 6 ? 1.08 : 1.24;
+    const sideX = sides === 6 ? .42 : .34;
     const gold = (c = 0xf1c56d, metalness = .9, roughness = .18) => new THREE.MeshPhysicalMaterial({ color:c, metalness, roughness, clearcoat:1.35, clearcoatRoughness:.06 });
-    const gem = (c, opts = {}) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:opts.opacity ?? .92, transmission:opts.transmission ?? .28, roughness:opts.roughness ?? .03, metalness:opts.metalness ?? .08, clearcoat:1.8, clearcoatRoughness:.03, emissive:opts.emissive ?? c, emissiveIntensity:opts.emissiveIntensity ?? .08, depthWrite:false });
-    const orb = (x,y,z,r,c) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r,22,18), gem(c)); m.position.set(x,y,z); group.add(m); return m; };
-    const jewel = (x,y,z,sx,sy,sz,c,rot=0) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(1,0), gem(c,{opacity:.96,transmission:.18})); m.scale.set(sx,sy,sz); m.position.set(x,y,z); m.rotation.y = rot; group.add(m); return m; };
-    const rose = (x,y,z,scale=1,palette=[0xf39fb6,0xffd9e3,0xf7f1cf]) => {
+    const gem = (c, opts = {}) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:opts.opacity ?? .94, transmission:opts.transmission ?? .24, roughness:opts.roughness ?? .03, metalness:opts.metalness ?? .08, clearcoat:1.8, clearcoatRoughness:.03, emissive:opts.emissive ?? c, emissiveIntensity:opts.emissiveIntensity ?? .08, depthWrite:false });
+    const orb = (x,y,z,r,c) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r,24,18), gem(c)); m.position.set(x,y,z); group.add(m); return m; };
+    const jewel = (x,y,z,sx,sy,sz,c,rot=0) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(1,0), gem(c,{opacity:.96,transmission:.16})); m.scale.set(sx,sy,sz); m.position.set(x,y,z); m.rotation.y = rot; group.add(m); return m; };
+    const rose = (x,y,z,localScale=1,palette=[0xf39fb6,0xffd9e3,0xf7f1cf]) => {
       const g = new THREE.Group();
-      for (let i=0;i<6;i++) { const p = new THREE.Mesh(new THREE.SphereGeometry(.1*scale,12,10), new THREE.MeshPhysicalMaterial({ color:palette[i%palette.length], roughness:.28, metalness:.02, clearcoat:.5 })); const a = i/6*Math.PI*2; p.scale.set(1.25,.8,.6); p.position.set(Math.cos(a)*.12*scale,.02,Math.sin(a)*.12*scale); g.add(p); }
-      const c = new THREE.Mesh(new THREE.SphereGeometry(.08*scale,12,10), new THREE.MeshPhysicalMaterial({ color:0xfff3d8, roughness:.26, metalness:.02 })); g.add(c); g.position.set(x,y,z); group.add(g); return g;
+      for (let i=0;i<7;i++) { const p = new THREE.Mesh(new THREE.SphereGeometry(.085*localScale,14,12), new THREE.MeshPhysicalMaterial({ color:palette[i%palette.length], roughness:.28, metalness:.02, clearcoat:.55 })); const a = i/7*Math.PI*2; p.scale.set(1.35,.82,.62); p.position.set(Math.cos(a)*.11*localScale,.02,Math.sin(a)*.11*localScale); g.add(p); }
+      const c = new THREE.Mesh(new THREE.SphereGeometry(.07*localScale,14,12), new THREE.MeshPhysicalMaterial({ color:0xfff3d8, roughness:.26, metalness:.02 })); g.add(c); g.position.set(x,y,z); group.add(g); return g;
     };
-    const catHead = (x,y,z,scale=1) => {
+    const catHead = (x,y,z,localScale=1) => {
       const g = new THREE.Group();
-      const head = new THREE.Mesh(new THREE.SphereGeometry(.17*scale,18,14), new THREE.MeshPhysicalMaterial({ color:0x1e1a26, roughness:.22, metalness:.14, clearcoat:1.1 })); g.add(head);
-      [[-.1,.12],[.1,.12]].forEach(([ex,ez])=>{ const ear=new THREE.Mesh(new THREE.ConeGeometry(.07*scale,.14*scale,4), gold(0x6320a5,.55,.2)); ear.position.set(ex,.13*scale,ez); ear.rotation.z = ex < 0 ? .25 : -.25; g.add(ear); });
-      [[-.06,.05],[.06,.05]].forEach(([ex,ez])=>{ const eye=new THREE.Mesh(new THREE.SphereGeometry(.028*scale,12,10), gem(0xffd560,{opacity:.98,transmission:.05,emissive:0xfcae00,emissiveIntensity:.22})); eye.position.set(ex,.02*scale,.14*scale); g.add(eye); });
-      const collar = new THREE.Mesh(new THREE.TorusGeometry(.12*scale,.02*scale,8,22,Math.PI), gold(0xd3415d,.35,.38)); collar.rotation.x = Math.PI/2; collar.position.set(0,-.06*scale,.02*scale); g.add(collar);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(.16*localScale,20,16), new THREE.MeshPhysicalMaterial({ color:0x1e1a26, roughness:.22, metalness:.14, clearcoat:1.1 })); g.add(head);
+      [[-.1,.12],[.1,.12]].forEach(([ex,ez])=>{ const ear=new THREE.Mesh(new THREE.ConeGeometry(.065*localScale,.14*localScale,4), gold(0x7421b2,.55,.2)); ear.position.set(ex,.12*localScale,ez); ear.rotation.z = ex < 0 ? .25 : -.25; g.add(ear); });
+      [[-.06,.05],[.06,.05]].forEach(([ex,ez])=>{ const eye=new THREE.Mesh(new THREE.SphereGeometry(.025*localScale,12,10), gem(0xffd560,{opacity:.98,transmission:.05,emissive:0xfcae00,emissiveIntensity:.22})); eye.position.set(ex,.02*localScale,.14*localScale); g.add(eye); });
       g.position.set(x,y,z); group.add(g); return g;
     };
-    const butterfly = (x,y,z,scale=1) => {
+    const butterfly = (x,y,z,localScale=1) => {
       const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.CapsuleGeometry(.035*scale,.18*scale,4,8), gold(0xead8ff,.2,.24)); body.rotation.z = Math.PI/2; g.add(body);
-      [[-.12,.1,.18,.14],[.12,.1,.18,.14],[-.14,-.08,.15,.11],[.14,-.08,.15,.11]].forEach(([sx,sy,wx,wy],i)=>{ const wing=new THREE.Mesh(new THREE.SphereGeometry(1,18,14), new THREE.MeshPhysicalMaterial({ color:i<2?0x8e61ff:0x4f2e7d, transparent:true, opacity:.92, transmission:.08, roughness:.08, metalness:.12, clearcoat:1.2 })); wing.scale.set(wx*scale,wy*scale,.03*scale); wing.position.set(sx*scale,sy*scale,0); g.add(wing); const stroke=new THREE.Mesh(new THREE.TorusGeometry(Math.max(wx,wy)*.95*scale,.01*scale,6,24,Math.PI*1.4), gold(0xdbcbef,.35,.22)); stroke.position.copy(wing.position); stroke.rotation.z = i%2?1.2:-1.2; g.add(stroke); });
-      g.position.set(x,y,z); g.rotation.x = -.28; group.add(g); return g;
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(.03*localScale,.16*localScale,4,8), gold(0xead8ff,.2,.24)); body.rotation.z = Math.PI/2; g.add(body);
+      [[-.11,.1,.17,.13],[.11,.1,.17,.13],[-.13,-.08,.14,.1],[.13,-.08,.14,.1]].forEach(([sx,sy,wx,wy],i)=>{ const wing=new THREE.Mesh(new THREE.SphereGeometry(1,18,14), new THREE.MeshPhysicalMaterial({ color:i<2?0x8e61ff:0x4f2e7d, transparent:true, opacity:.94, transmission:.08, roughness:.08, metalness:.12, clearcoat:1.2 })); wing.scale.set(wx*localScale,wy*localScale,.03*localScale); wing.position.set(sx*localScale,sy*localScale,0); g.add(wing); const stroke=new THREE.Mesh(new THREE.TorusGeometry(Math.max(wx,wy)*.95*localScale,.01*localScale,6,24,Math.PI*1.4), gold(0xdbcbef,.35,.22)); stroke.position.copy(wing.position); stroke.rotation.z = i%2?1.2:-1.2; g.add(stroke); });
+      g.position.set(x,y,z); g.rotation.x = -.2; group.add(g); return g;
     };
 
     if (id === 'crown_steel' || id === 'mythic_aeon') {
-      [0,1,2].forEach(i=>{ const ring = new THREE.Mesh(new THREE.TorusGeometry(1.1 + i*.06, .028, 12, 48), gold(i===1?0xc98df4:0xd7ab58, .72, .18)); ring.rotation.set(i===0?Math.PI/2:0, i===1?Math.PI/2:0, i===2?Math.PI/2:0); ring.position.y = .02; ring.renderOrder = 18; group.add(ring); });
-      orb(0, 1.08, 0, .23, id === 'mythic_aeon' ? 0xfff0b4 : 0xf29dff);
-      orb(0, 0, 1.08, .19, 0xf29dff);
-      jewel(0, -.02, -1.08, .18, .18, .18, 0xa6f6ff);
-      if (id === 'mythic_aeon') { jewel(0,1.36,0,.14,.2,.14,0x7deaff); const halo=new THREE.Mesh(new THREE.TorusGeometry(.42,.03,10,44), new THREE.MeshBasicMaterial({color:0xfff3be,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false})); halo.position.set(0,1.26,0); halo.rotation.x=Math.PI/2; group.add(halo); }
+      [0,1,2].forEach(i=>{ const ring = new THREE.Mesh(new THREE.TorusGeometry((sides===6?1.05:.98) + i*.06, .03, 12, 48), gold(i===1?0xc98df4:0xd7ab58, .72, .18)); ring.rotation.set(i===0?Math.PI/2:0, i===1?Math.PI/2:0, i===2?Math.PI/2:0); ring.position.y = .02; ring.renderOrder = 18; group.add(ring); });
+      orb(0, topY, 0, .2*scale, id === 'mythic_aeon' ? 0xfff0b4 : 0xf29dff);
+      orb(0, 0, frontZ, .17*scale, 0xf29dff);
+      jewel(0, -.02, -frontZ, .16*scale, .16*scale, .16*scale, 0xa6f6ff);
+      if (id === 'mythic_aeon') { jewel(0,topY+.24*scale,0,.13*scale,.18*scale,.13*scale,0x7deaff); const halo=new THREE.Mesh(new THREE.TorusGeometry(.36*scale,.028*scale,10,44), new THREE.MeshBasicMaterial({color:0xfff3be,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false})); halo.position.set(0,topY+.18*scale,0); halo.rotation.x=Math.PI/2; group.add(halo); }
     } else if (id === 'neon_prism' || id === 'rift_shard') {
-      jewel(0,1.11,0,.28,.28,.18,id==='neon_prism'?0xf8f0ca:0xfff1cc,.3);
+      jewel(0,topY,0,.25*scale,.25*scale,.16*scale,id==='neon_prism'?0xf8f0ca:0xfff1cc,.3);
       const starMat = gold(id==='neon_prism'?0xdfb55a:0xd09b43,.84,.16);
-      for (let i=0;i<8;i++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.42,.04,.04), starMat); bar.position.set(0,1.11,0); bar.rotation.y = i*Math.PI/4; bar.rotation.x = Math.PI/2; group.add(bar); }
-      if (id === 'rift_shard') { jewel(0,0,1.1,.14,.22,.14,0x8836ff,.5); }
+      for (let i=0;i<8;i++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.34*scale,.035*scale,.035*scale), starMat); bar.position.set(0,topY,0); bar.rotation.y = i*Math.PI/4; bar.rotation.x = Math.PI/2; group.add(bar); }
+      if (id === 'rift_shard') { jewel(0,0,frontZ,.12*scale,.18*scale,.12*scale,0x8836ff,.5); }
     } else if (id === 'clockwork') {
-      catHead(-.42,1.08,0,.95); catHead(.42,1.08,0,.95);
-      const med = new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.08,22), gold(0xf0b24f,.85,.18)); med.rotation.x = Math.PI/2; med.position.set(0,0,1.1); group.add(med);
+      catHead(-sideX,topY,0,.9*scale); catHead(sideX,topY,0,.9*scale);
+      const med = new THREE.Mesh(new THREE.CylinderGeometry(.15*scale,.15*scale,.07*scale,22), gold(0xf0b24f,.85,.18)); med.rotation.x = Math.PI/2; med.position.set(0,0,frontZ); group.add(med);
     } else if (id === 'aurora_crystal') {
-      rose(-.35,1.08,-.1,1.05,[0xf2a0ae,0xffe1bf,0xf4f2d6]);
-      rose(.05,1.1,.18,.95,[0xe77b92,0xfbf5de,0xf3d18d]);
-      rose(.38,1.07,-.16,.9,[0xfff4da,0xf4a5b3,0xf6eacd]);
-      const band = new THREE.Mesh(new THREE.TorusGeometry(.86,.05,8,36,Math.PI*1.08), new THREE.MeshPhysicalMaterial({color:0xb78c5e,roughness:.62,metalness:.04,clearcoat:.3})); band.rotation.x = Math.PI/2; band.position.y = .92; group.add(band);
+      rose(-.32*scale,topY,-.08*scale,.95*scale,[0xf2a0ae,0xffe1bf,0xf4f2d6]);
+      rose(.02*scale,topY+.02*scale,.16*scale,.88*scale,[0xe77b92,0xfbf5de,0xf3d18d]);
+      rose(.34*scale,topY,-.14*scale,.84*scale,[0xfff4da,0xf4a5b3,0xf6eacd]);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(.7*scale,.045*scale,8,36,Math.PI*1.08), new THREE.MeshPhysicalMaterial({color:0xb78c5e,roughness:.62,metalness:.04,clearcoat:.3})); band.rotation.x = Math.PI/2; band.position.y = topY-.14*scale; group.add(band);
     } else if (id === 'eclipse_obsidian') {
-      butterfly(0,1.1,0,1.12);
-      const wand=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.78,8), gold(0xe8d7f4,.18,.22)); wand.position.set(.52,1.1,-.12); wand.rotation.z=.8; group.add(wand);
+      butterfly(0,topY,0,1.02*scale);
+      const wand=new THREE.Mesh(new THREE.CylinderGeometry(.018*scale,.018*scale,.64*scale,8), gold(0xe8d7f4,.18,.22)); wand.position.set(.44*scale,topY,-.1*scale); wand.rotation.z=.8; group.add(wand);
     } else if (id === 'starseed') {
-      rose(-.24,1.08,0,.95,[0xf2b0c8,0xffffff,0xd5efff]); rose(.25,1.06,.02,.85,[0xffdce8,0xf7fbff,0xc7d9ff]);
-      for (let i=0;i<10;i++){ const bead = new THREE.Mesh(new THREE.SphereGeometry(.035,10,8), new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.08,metalness:.02,clearcoat:1.5})); const a=i/10*Math.PI*2; bead.position.set(Math.cos(a)*.62,1.0,Math.sin(a)*.42); group.add(bead); }
+      rose(-.2*scale,topY,0,.86*scale,[0xf2b0c8,0xffffff,0xd5efff]); rose(.22*scale,topY-.02*scale,.02*scale,.78*scale,[0xffdce8,0xf7fbff,0xc7d9ff]);
+      for (let i=0;i<10;i++){ const bead = new THREE.Mesh(new THREE.SphereGeometry(.03*scale,10,8), new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.08,metalness:.02,clearcoat:1.5})); const a=i/10*Math.PI*2; bead.position.set(Math.cos(a)*.5*scale,topY-.06*scale,Math.sin(a)*.34*scale); group.add(bead); }
     }
   }
+
 
   bodyMaterialTuning(skin = {}) {
     const id = String(skin?.id || 'classic');
@@ -1016,31 +1019,31 @@ export class DiceTheater {
       color: palette.face[index % palette.face.length],
       roughness: palette.rough,
       metalness: palette.metal,
-      clearcoat: 1.65,
+      clearcoat: 1.7,
       clearcoatRoughness: .04,
       transparent: palette.transmit > 0,
-      opacity: palette.transmit > 0 ? .95 : 1,
+      opacity: palette.transmit > 0 ? .96 : 1,
       transmission: palette.transmit,
       emissive: new THREE.Color(skin.emissive || '#000000'),
-      emissiveIntensity: ['void_monarch','eclipse_obsidian'].includes(id) ? .18 : ['crown_steel','mythic_aeon'].includes(id) ? .12 : .05,
+      emissiveIntensity: ['void_monarch','eclipse_obsidian'].includes(id) ? .18 : ['crown_steel','mythic_aeon','neon_prism','rift_shard'].includes(id) ? .14 : .07,
       depthWrite: palette.transmit <= 0,
     });
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(1.52,1.52,.06), mat);
-    plate.position.copy(dir.clone().multiplyScalar(1.145));
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(1.62,1.62,.08), mat);
+    plate.position.copy(dir.clone().multiplyScalar(1.135));
     plate.quaternion.copy(q);
     group.add(plate);
 
-    const frameMat = new THREE.MeshPhysicalMaterial({ color: palette.edge, metalness: .82, roughness: .18, clearcoat: 1.28, clearcoatRoughness: .07 });
+    const frameMat = new THREE.MeshPhysicalMaterial({ color: palette.edge, metalness: .9, roughness: .16, clearcoat: 1.32, clearcoatRoughness: .06 });
     const frame = new THREE.Group();
-    [[1.66,.06,0,.81],[1.66,.06,0,-.81],[.06,1.66,.81,0],[.06,1.66,-.81,0]].forEach(([w,h,x,y])=>{
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(w,h,.04), frameMat);
+    [[1.76,.085,0,.84],[1.76,.085,0,-.84],[.085,1.76,.84,0],[.085,1.76,-.84,0]].forEach(([w,h,x,y])=>{
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(w,h,.05), frameMat);
       bar.position.set(x,y,0); frame.add(bar);
     });
-    frame.position.copy(dir.clone().multiplyScalar(1.178));
+    frame.position.copy(dir.clone().multiplyScalar(1.185));
     frame.quaternion.copy(q);
     group.add(frame);
 
-    const addLocal = (geom, material, x=0, y=0, z=.055, sx=1, sy=1, sz=1, rz=0, rx=0) => {
+    const addLocal = (geom, material, x=0, y=0, z=.075, sx=1, sy=1, sz=1, rz=0, rx=0) => {
       const mesh = new THREE.Mesh(geom, material);
       mesh.position.set(x,y,z);
       mesh.scale.set(sx,sy,sz);
@@ -1049,79 +1052,69 @@ export class DiceTheater {
       frame.add(mesh);
       return mesh;
     };
-    const metal = c => new THREE.MeshPhysicalMaterial({ color:c, metalness:.86, roughness:.18, clearcoat:1.25, clearcoatRoughness:.07 });
-    const crystal = (c, emissive = null) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:.94, transmission:.24, roughness:.03, metalness:.06, clearcoat:1.8, clearcoatRoughness:.03, emissive:emissive ?? c, emissiveIntensity:.08, depthWrite:false });
-    const addGem = (x,y,size=.18,color=0xffffff,rz=0,sx=1,sy=1,sz=.6) => addLocal(new THREE.OctahedronGeometry(size,0), crystal(color), x,y,.08,sx,sy,sz,rz);
-    const addOrb = (x,y,r=.16,color=0xffd4ff,sx=1,sy=1,sz=.7) => addLocal(new THREE.SphereGeometry(r,18,14), crystal(color), x,y,.08,sx,sy,sz);
-    const addStuds = (coords, size=.05, color=null) => coords.forEach(([x,y])=>addLocal(new THREE.SphereGeometry(size,10,8), metal(color || palette.edge), x,y,.06));
-    const addStarFrame = (size=.45, color=palette.edge) => {
-      for (let i=0;i<8;i++) addLocal(new THREE.BoxGeometry(size,.045,.03), metal(color), 0,0,.06,1,1,1, i*Math.PI/4);
-    };
-    const addRose = (x,y,scale=1,paletteColors=[0xf3a0b6,0xffe4e8,0xf8efce]) => {
-      for (let i=0;i<6;i++) {
-        const a = i/6*Math.PI*2;
-        addLocal(new THREE.SphereGeometry(.1,12,10), new THREE.MeshPhysicalMaterial({ color:paletteColors[i%paletteColors.length], roughness:.3, metalness:.02, clearcoat:.45 }), x+Math.cos(a)*.12*scale, y+Math.sin(a)*.12*scale, .07, 1.25*scale,.8*scale,.55*scale, a);
-      }
-      addLocal(new THREE.SphereGeometry(.08,12,10), new THREE.MeshPhysicalMaterial({ color:0xfff4dd, roughness:.3, metalness:.02 }), x, y, .08, scale,scale,.7*scale);
-    };
+    const metal = c => new THREE.MeshPhysicalMaterial({ color:c, metalness:.88, roughness:.16, clearcoat:1.28, clearcoatRoughness:.06 });
+    const crystal = (c, emissive = null) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:.95, transmission:.22, roughness:.03, metalness:.06, clearcoat:1.8, clearcoatRoughness:.03, emissive:emissive ?? c, emissiveIntensity:.08, depthWrite:false });
+    const addGem = (x,y,size=.18,color=0xffffff,rz=0,sx=1,sy=1,sz=.6) => addLocal(new THREE.OctahedronGeometry(size,0), crystal(color), x,y,.105,sx,sy,sz,rz);
+    const addOrb = (x,y,r=.16,color=0xffd4ff,sx=1,sy=1,sz=.7) => addLocal(new THREE.SphereGeometry(r,18,14), crystal(color), x,y,.105,sx,sy,sz);
+    const addStuds = (coords, size=.05, color=null) => coords.forEach(([x,y])=>addLocal(new THREE.SphereGeometry(size,10,8), metal(color || palette.edge), x,y,.075));
+    const addStarFrame = (size=.52, color=palette.edge) => { for (let i=0;i<8;i++) addLocal(new THREE.BoxGeometry(size,.05,.035), metal(color), 0,0,.07,1,1,1, i*Math.PI/4); };
+    const addRose = (x,y,scale=1,paletteColors=[0xf3a0b6,0xffe4e8,0xf8efce]) => { for (let i=0;i<7;i++) { const a = i/7*Math.PI*2; addLocal(new THREE.SphereGeometry(.095,12,10), new THREE.MeshPhysicalMaterial({ color:paletteColors[i%paletteColors.length], roughness:.3, metalness:.02, clearcoat:.45 }), x+Math.cos(a)*.12*scale, y+Math.sin(a)*.12*scale, .08, 1.35*scale,.82*scale,.56*scale, a); } addLocal(new THREE.SphereGeometry(.08,12,10), new THREE.MeshPhysicalMaterial({ color:0xfff4dd, roughness:.3, metalness:.02 }), x, y, .09, scale,scale,.74*scale); };
     const addButterfly = (x,y,scale=1) => {
-      addLocal(new THREE.CapsuleGeometry(.03,.16,4,8), metal(0xe6dff4), x,y,.07,1,1,1,0,Math.PI/2);
-      [[-.16,.1,.2,.15,0x9e6bff],[.16,.1,.2,.15,0x9e6bff],[-.18,-.08,.16,.11,0x5c3a8f],[.18,-.08,.16,.11,0x5c3a8f]].forEach(([dx,dy,sx,sy,col],i)=>{
-        addLocal(new THREE.SphereGeometry(1,18,14), new THREE.MeshPhysicalMaterial({color:col,transparent:true,opacity:.94,transmission:.06,roughness:.08,metalness:.1,clearcoat:1.1}), x+dx*scale,y+dy*scale,.065,sx*scale,sy*scale,.04*scale,0);
-        addLocal(new THREE.TorusGeometry(Math.max(sx,sy)*.8*scale,.01*scale,6,18,Math.PI*1.45), metal(0xddd3f4), x+dx*scale,y+dy*scale,.07,1,1,1, i%2?1.1:-1.1);
+      addLocal(new THREE.CapsuleGeometry(.03,.18,4,8), metal(0xe6dff4), x,y,.08,1,1,1,0,Math.PI/2);
+      [[-.18,.12,.23,.16,0x9e6bff],[.18,.12,.23,.16,0x9e6bff],[-.2,-.1,.17,.12,0x5c3a8f],[.2,-.1,.17,.12,0x5c3a8f]].forEach(([dx,dy,sx,sy,col],i)=>{
+        addLocal(new THREE.SphereGeometry(1,18,14), new THREE.MeshPhysicalMaterial({color:col,transparent:true,opacity:.94,transmission:.06,roughness:.08,metalness:.1,clearcoat:1.1}), x+dx*scale,y+dy*scale,.075,sx*scale,sy*scale,.045*scale,0);
+        addLocal(new THREE.TorusGeometry(Math.max(sx,sy)*.82*scale,.012*scale,6,18,Math.PI*1.45), metal(0xddd3f4), x+dx*scale,y+dy*scale,.08,1,1,1, i%2?1.1:-1.1);
       });
     };
     const addCatEmblem = () => {
-      addOrb(-.23,.2,.11,0x26212b,.95,.95,.75); addOrb(.23,.2,.11,0x26212b,.95,.95,.75);
-      [[-.28,.33],[.28,.33]].forEach(([x,y],i)=>addLocal(new THREE.ConeGeometry(.08,.13,4), metal(0x6c29ac), x,y,.08,1,1,1, i?-.2:.2));
-      [[-.23,.2],[.23,.2]].forEach(([x,y])=>addLocal(new THREE.SphereGeometry(.024,10,8), crystal(0xffd965,0xffb300), x,y,.14));
-      addLocal(new THREE.CylinderGeometry(.14,.14,.06,18), metal(0xe4aa4d), 0,-.44,.07,1,1,1,0,Math.PI/2);
+      addOrb(-.25,.22,.12,0x26212b,.98,.98,.78); addOrb(.25,.22,.12,0x26212b,.98,.98,.78);
+      [[-.31,.37],[.31,.37]].forEach(([x,y],i)=>addLocal(new THREE.ConeGeometry(.085,.14,4), metal(0x6c29ac), x,y,.085,1,1,1, i?-.2:.2));
+      [[-.25,.22],[.25,.22]].forEach(([x,y])=>addLocal(new THREE.SphereGeometry(.026,10,8), crystal(0xffd965,0xffb300), x,y,.15));
+      addLocal(new THREE.CylinderGeometry(.17,.17,.08,18), metal(0xe4aa4d), 0,-.44,.08,1,1,1,0,Math.PI/2);
+    };
+    const addBasketWeave = () => {
+      for (let i=-1;i<=1;i++) addLocal(new THREE.BoxGeometry(1.15,.05,.03), new THREE.MeshPhysicalMaterial({color:0xb68b60,roughness:.58,metalness:.03,clearcoat:.25}), 0, i*.26, .06, 1,1,1, i%2 ? .25 : -.25);
+      for (let i=-1;i<=1;i++) addLocal(new THREE.BoxGeometry(.05,1.05,.03), new THREE.MeshPhysicalMaterial({color:0xb68b60,roughness:.58,metalness:.03,clearcoat:.25}), i*.28, 0, .06, 1,1,1, i%2 ? -.25 : .25);
+    };
+    const addOrbCage = () => {
+      addOrb(0,0,.28,0xf0b3ff,1.18,1.18,.86);
+      for (let i=0;i<4;i++) addLocal(new THREE.TorusGeometry(.38,.022,10,30), metal(0xdfb86a), 0,0,.12,1,1,1, i*Math.PI/4, Math.PI/2);
+      addStuds([[-.56,.56],[.56,.56],[-.56,-.56],[.56,-.56]], .045, 0xdfb86a);
+    };
+    const addBlackGoldPlaque = () => {
+      addLocal(new THREE.BoxGeometry(.82,.82,.045), new THREE.MeshPhysicalMaterial({color:0x0d1020,roughness:.08,metalness:.65,clearcoat:1.4}),0,0,.065);
+      addStarFrame(.46, 0xefc97c);
+      addGem(0,0,.28,0xfff1d3,.14,1.3,1.3,.8);
+      addLocal(new THREE.BoxGeometry(.58,.09,.035), metal(0xc06bff), 0,-.44,.08);
+      addStuds([[-.58,.58],[.58,.58],[-.58,-.58],[.58,-.58]], .04, 0xefc97c);
     };
 
     if (id === 'clockwork') {
-      addCatEmblem();
-      addStuds([[-.55,.55],[.55,.55],[-.55,-.55],[.55,-.55]], .04, 0xd39b43);
+      addCatEmblem(); addStuds([[-.58,.58],[.58,.58],[-.58,-.58],[.58,-.58]], .045, 0xd39b43);
     } else if (id === 'aurora_crystal') {
-      addRose(-.26,.18,.95,[0xf0a0af,0xffecd4,0xf5e8cb]);
-      addRose(.18,-.08,.78,[0xe36f8b,0xfff0d8,0xffd4a8]);
-      addLocal(new THREE.TorusGeometry(.54,.05,8,28,Math.PI*1.1), new THREE.MeshPhysicalMaterial({color:0xb68b60,roughness:.58,metalness:.03,clearcoat:.25}), 0,.02,.04,1,1,1,0,Math.PI/2);
+      addBasketWeave(); addRose(-.28,.18,.98,[0xf0a0af,0xffecd4,0xf5e8cb]); addRose(.2,-.1,.82,[0xe36f8b,0xfff0d8,0xffd4a8]);
     } else if (id === 'eclipse_obsidian') {
-      addButterfly(0,.06,.96);
-      addLocal(new THREE.CylinderGeometry(.02,.02,.7,8), metal(0xe6d7f2), .42,.24,.08,1,1,1,.78);
-      addOrb(0,-.42,.08,0x2d1f58,1.2,.85,.35);
+      addButterfly(0,.06,1.02); addLocal(new THREE.CylinderGeometry(.02,.02,.74,8), metal(0xe6d7f2), .46,.26,.085,1,1,1,.82); addOrb(0,-.44,.09,0x2d1f58,1.25,.88,.38);
     } else if (id === 'starseed') {
-      addRose(-.18,.14,.72,[0xf2b6ca,0xffffff,0xd6ebff]);
-      addRose(.22,-.1,.65,[0xffdde9,0xf6faff,0xc9ddff]);
-      for (let i=0;i<8;i++) { const a=i/8*Math.PI*2; addLocal(new THREE.SphereGeometry(.035,10,8), new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.08,metalness:.02,clearcoat:1.4}), Math.cos(a)*.48, Math.sin(a)*.38, .07); }
+      addLocal(new THREE.BoxGeometry(.92,.92,.04), new THREE.MeshPhysicalMaterial({color:0xf5fbff,transparent:true,opacity:.88,transmission:.16,roughness:.04,metalness:.04,clearcoat:1.45}),0,0,.07,1.05,1.05,1);
+      addRose(-.2,.16,.76,[0xf2b6ca,0xffffff,0xd6ebff]); addRose(.24,-.1,.72,[0xffdde9,0xf6faff,0xc9ddff]);
+      for (let i=0;i<10;i++) { const a=i/10*Math.PI*2; addLocal(new THREE.SphereGeometry(.04,10,8), new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.08,metalness:.02,clearcoat:1.4}), Math.cos(a)*.5, Math.sin(a)*.38, .08); }
     } else if (id === 'neon_prism') {
-      addStarFrame(.44, 0xe1b866);
-      addGem(0,0,.24,0xeaf1ff,.15,1.2,1.2,.72);
-      addStuds([[-.58,.58],[.58,.58],[-.58,-.58],[.58,-.58]], .04, 0xe1b866);
+      addLocal(new THREE.BoxGeometry(.9,.9,.04), new THREE.MeshPhysicalMaterial({color:0x102142,roughness:.06,metalness:.55,clearcoat:1.6}),0,0,.07);
+      addStarFrame(.52, 0xe1b866); addGem(0,0,.3,0xeaf1ff,.15,1.28,1.28,.76); addStuds([[-.6,.6],[.6,.6],[-.6,-.6],[.6,-.6]], .045, 0xe1b866);
     } else if (id === 'crown_steel') {
-      addStarFrame(.34, 0xdfb86a);
-      addOrb(0,0,.26,0xf0b3ff,1.18,1.18,.82);
-      addStuds([[-.52,.52],[.52,.52],[-.52,-.52],[.52,-.52]], .038, 0xdfb86a);
-      addLocal(new THREE.TorusGeometry(.42,.028,10,30), metal(0xdfb86a), 0,0,.11,1,1,1,0,Math.PI/2);
+      addOrbCage();
     } else if (id === 'rift_shard') {
-      addStarFrame(.42, 0xefc97c);
-      addGem(0,0,.25,0xfff1d3,.14,1.25,1.25,.75);
-      addLocal(new THREE.BoxGeometry(.52,.09,.04), metal(0xc06bff), 0,-.42,.07);
-      addStuds([[-.56,.56],[.56,.56],[-.56,-.56],[.56,-.56]], .04, 0xefc97c);
+      addBlackGoldPlaque();
     } else if (id === 'mythic_aeon') {
-      addStarFrame(.46, 0xf0d98e);
-      addGem(0,0,.26,0xfff3c5,.1,1.28,1.28,.8);
-      addGem(0,.42,.12,0x78eaff,.1,1.1,1.1,.9);
-      addLocal(new THREE.TorusGeometry(.48,.024,10,36), new THREE.MeshBasicMaterial({color:0xffefb0,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false}), 0,0,.12,1,1,1,0,Math.PI/2);
+      addLocal(new THREE.BoxGeometry(.92,.92,.045), new THREE.MeshPhysicalMaterial({color:0x0f1020,roughness:.07,metalness:.5,clearcoat:1.6}),0,0,.065);
+      addStarFrame(.54, 0xf0d98e); addOrb(0,0,.22,0xfff3c5,1.12,1.12,.5); addGem(0,0,.24,0xfff3c5,.1,1.3,1.3,.82); addGem(0,.44,.13,0x78eaff,.1,1.15,1.15,.95); addLocal(new THREE.TorusGeometry(.5,.025,10,36), new THREE.MeshBasicMaterial({color:0xffefb0,transparent:true,opacity:.76,blending:THREE.AdditiveBlending,depthWrite:false}), 0,0,.13,1,1,1,0,Math.PI/2);
     } else if (id === 'celestial_choir') {
-      addGem(0,.12,.16,0xfff0c8,.15,1.1,1.25,.7);
-      addLocal(new THREE.BoxGeometry(.26,.06,.03), metal(0xbfa96d), -.22,-.1,.07,1,1,1,.6);
-      addLocal(new THREE.BoxGeometry(.26,.06,.03), metal(0xbfa96d), .22,-.1,.07,1,1,1,-.6);
+      addGem(0,.12,.19,0xfff0c8,.15,1.18,1.32,.74); addLocal(new THREE.BoxGeometry(.3,.065,.035), metal(0xbfa96d), -.24,-.1,.08,1,1,1,.6); addLocal(new THREE.BoxGeometry(.3,.065,.035), metal(0xbfa96d), .24,-.1,.08,1,1,1,-.6);
     } else if (id === 'void_monarch') {
-      addOrb(0,0,.18,0x5a2392,1.05,1.25,.45);
-      addGem(0,.38,.1,0xff9cf2,.12,1,1,.8);
+      addOrb(0,0,.2,0x5a2392,1.08,1.3,.48); addGem(0,.4,.11,0xff9cf2,.13,1,1,.85);
     } else if (id === 'prismatic_tide') {
-      addOrb(.12,.12,.16,0xbefcff,1.4,1.1,.35);
-      addOrb(-.28,-.22,.08,0xd9ffff,1.1,1.0,.3);
+      addOrb(.14,.14,.18,0xbefcff,1.45,1.15,.38); addOrb(-.3,-.24,.09,0xd9ffff,1.14,1.04,.32);
     }
     return mat;
   }
@@ -1131,32 +1124,41 @@ export class DiceTheater {
     const id = String(skin?.id || '');
     const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), normal.clone().normalize());
     const motif = new THREE.Group();
-    motif.position.copy(center.clone().add(normal.clone().multiplyScalar(.055)));
+    motif.position.copy(center.clone().add(normal.clone().multiplyScalar(.07)));
     motif.quaternion.copy(q);
     group.add(motif);
-    const metal = c => new THREE.MeshPhysicalMaterial({ color:c, metalness:.84, roughness:.18, clearcoat:1.15, clearcoatRoughness:.07 });
-    const crystal = (c, e=null) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:.92, transmission:.18, roughness:.04, metalness:.06, clearcoat:1.7, clearcoatRoughness:.03, emissive:e ?? c, emissiveIntensity:.06, depthWrite:false });
-    const add = (geom, mat, x=0, y=0, z=.015, sx=1, sy=1, sz=1, rz=0) => { const m=new THREE.Mesh(geom,mat); m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.rotation.z=rz; motif.add(m); return m; };
+    const metal = c => new THREE.MeshPhysicalMaterial({ color:c, metalness:.86, roughness:.16, clearcoat:1.18, clearcoatRoughness:.07 });
+    const crystal = (c, e=null) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:.94, transmission:.18, roughness:.04, metalness:.06, clearcoat:1.7, clearcoatRoughness:.03, emissive:e ?? c, emissiveIntensity:.06, depthWrite:false });
+    const add = (geom, mat, x=0, y=0, z=.02, sx=1, sy=1, sz=1, rz=0) => { const m=new THREE.Mesh(geom,mat); m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.rotation.z=rz; motif.add(m); return m; };
+    const gemCore = (x,y,size,col,sx=1,sy=1,sz=.7)=>add(new THREE.OctahedronGeometry(size,0), crystal(col), x,y,.03,sx,sy,sz,.15);
+
     if (id === 'clockwork') {
-      add(new THREE.SphereGeometry(.06,10,8), metal(0x1e1a26), -.08,.03,.02,1,1,.7);
-      add(new THREE.SphereGeometry(.06,10,8), metal(0x1e1a26), .08,.03,.02,1,1,.7);
-      [[-.11,.08],[.11,.08]].forEach(([x,y],i)=>add(new THREE.ConeGeometry(.03,.05,4), metal(0x6c29ac), x,y,.03,1,1,1, i?-.2:.2));
+      add(new THREE.SphereGeometry(.07,10,8), metal(0x1e1a26), -.1,.04,.02,1,1,.7);
+      add(new THREE.SphereGeometry(.07,10,8), metal(0x1e1a26), .1,.04,.02,1,1,.7);
+      [[-.13,.1],[.13,.1]].forEach(([x,y],i)=>add(new THREE.ConeGeometry(.035,.06,4), metal(0x6c29ac), x,y,.03,1,1,1, i?-.2:.2));
     } else if (id === 'aurora_crystal' || id === 'starseed') {
       const colA = id === 'aurora_crystal' ? 0xf0a0af : 0xf3c2d7;
       const colB = id === 'aurora_crystal' ? 0xffefd8 : 0xd8ebff;
-      for (let i=0;i<5;i++){ const a=i/5*Math.PI*2; add(new THREE.SphereGeometry(.04,10,8), metal(i%2?colA:colB), Math.cos(a)*.08, Math.sin(a)*.08,.02,1.2, .8, .5); }
-      add(new THREE.SphereGeometry(.03,10,8), metal(0xfff6df),0,0,.02);
+      for (let i=0;i<6;i++){ const a=i/6*Math.PI*2; add(new THREE.SphereGeometry(.045,10,8), metal(i%2?colA:colB), Math.cos(a)*.1, Math.sin(a)*.1,.02,1.25, .86, .55); }
+      add(new THREE.SphereGeometry(.036,10,8), metal(0xfff6df),0,0,.03);
     } else if (id === 'eclipse_obsidian') {
-      [[-.08,.05,.09,.07,0x956bff],[.08,.05,.09,.07,0x956bff],[-.08,-.05,.07,.05,0x5c3a8f],[.08,-.05,.07,.05,0x5c3a8f]].forEach(([x,y,sx,sy,col])=>add(new THREE.SphereGeometry(1,12,10), crystal(col), x,y,.015,sx,sy,.02));
-    } else if (id === 'neon_prism' || id === 'rift_shard' || id === 'mythic_aeon') {
-      const col = id === 'neon_prism' ? 0xe7cb7c : id === 'rift_shard' ? 0xffefcf : 0xffefb4;
-      for (let i=0;i<4;i++) add(new THREE.BoxGeometry(.16,.02,.012), metal(col), 0,0,.02,1,1,1, i*Math.PI/4);
-      add(new THREE.OctahedronGeometry(id==='mythic_aeon' ? .08 : .06,0), crystal(id==='neon_prism'?0xe7f1ff:id==='rift_shard'?0xfff1d0:0xfff3c5), 0,0,.03,1.05,1.05,.7,.15);
+      [[-.09,.06,.1,.08,0x956bff],[.09,.06,.1,.08,0x956bff],[-.09,-.06,.08,.06,0x5c3a8f],[.09,-.06,.08,.06,0x5c3a8f]].forEach(([x,y,sx,sy,col])=>add(new THREE.SphereGeometry(1,12,10), crystal(col), x,y,.02,sx,sy,.024));
+    } else if (id === 'neon_prism') {
+      for (let i=0;i<4;i++) add(new THREE.BoxGeometry(.2,.026,.014), metal(0xe7cb7c), 0,0,.02,1,1,1, i*Math.PI/4);
+      gemCore(0,0,.085,0xe7f1ff,1.12,1.12,.8);
     } else if (id === 'crown_steel') {
-      add(new THREE.SphereGeometry(.07,12,10), crystal(0xf0b2ff),0,0,.025,1.1,1.1,.65);
-      add(new THREE.TorusGeometry(.12,.012,8,20), metal(0xdfb86a),0,0,.03,1,1,1,0);
+      add(new THREE.SphereGeometry(.08,12,10), crystal(0xf0b2ff),0,0,.03,1.18,1.18,.78);
+      for (let i=0;i<4;i++) add(new THREE.TorusGeometry(.11,.012,8,20), metal(0xdfb86a),0,0,.032,1,1,1, i*Math.PI/4);
+    } else if (id === 'rift_shard') {
+      add(new THREE.BoxGeometry(.22,.22,.02), new THREE.MeshPhysicalMaterial({color:0x0d1020,roughness:.08,metalness:.62,clearcoat:1.3}),0,0,.015);
+      for (let i=0;i<4;i++) add(new THREE.BoxGeometry(.18,.022,.014), metal(0xefc97c), 0,0,.02,1,1,1, i*Math.PI/4);
+      gemCore(0,0,.09,0xfff1d0,1.08,1.08,.8);
+    } else if (id === 'mythic_aeon') {
+      for (let i=0;i<4;i++) add(new THREE.BoxGeometry(.22,.025,.014), metal([0xf0d98e,0x7deaff,0xf09cff,0xffffff][i]), 0,0,.02,1,1,1, i*Math.PI/4);
+      gemCore(0,0,.09,0xfff3c5,1.18,1.18,.85); gemCore(0,.13,.04,0x78eaff,1.05,1.05,.95);
     }
   }
+
 
   d20(style) {
     const group = new THREE.Group();
@@ -1172,7 +1174,7 @@ export class DiceTheater {
     const labelColor = palette?.number || skin.accent || '#fff9ec';
 
     if (premium) {
-      const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.52,0), new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.9,palette.metal+.12),clearcoat:1.35,clearcoatRoughness:.07,emissive,emissiveIntensity:.08}));
+      const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.58,0), new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.9,palette.metal+.12),clearcoat:1.35,clearcoatRoughness:.07,emissive,emissiveIntensity:.08}));
       shell.castShadow=true; shell.receiveShadow=true; group.add(shell);
     }
 
@@ -1207,12 +1209,12 @@ export class DiceTheater {
       });
       const mesh = new THREE.Mesh(tri,mat); mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh); this.faceMaterials[f]=mat;
 
-      if (premium && (f % 4 === 0 || ['clockwork','aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard','mythic_aeon'].includes(skin.id))) {
+      if (premium && (f % 3 === 0 || ['clockwork','aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard','mythic_aeon'].includes(skin.id))) {
         this.addD20FaceMotif(group, center, normal, skin, f);
       }
 
       const label = this.makeLabel(String(f+1), premium?.42:.44, labelColor, {font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:premium?3:4,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:premium?9:(skin.id==='classic'?8:14)});
-      label.position.copy(center.clone().add(normal.clone().multiplyScalar(premium?.065:.022)));
+      label.position.copy(center.clone().add(normal.clone().multiplyScalar(premium?.078:.022)));
       label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal); group.add(label); this.labelMaterials[f]=label.userData.material;
     }
     const edgeColor = palette?.edge || visual.edge || skin.accent || '#ffe2ba';
@@ -1235,13 +1237,13 @@ export class DiceTheater {
     ];
 
     if (premium) {
-      const shell = new THREE.Mesh(this.roundedBoxGeometry(2.28,.2,5),new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.92,palette.metal+.12),clearcoat:1.45,clearcoatRoughness:.06,emissive,emissiveIntensity:.06}));
+      const shell = new THREE.Mesh(this.roundedBoxGeometry(2.34,.22,5),new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.92,palette.metal+.12),clearcoat:1.45,clearcoatRoughness:.06,emissive,emissiveIntensity:.06}));
       shell.castShadow=true; shell.receiveShadow=true; group.add(shell);
       faces.forEach(({normal,roll},idx)=>{
         const v=new THREE.Vector3(...normal); this.faceNormals[roll-1]=v.clone();
         this.faceMaterials[roll-1]=this.addD6FaceInlay(group,v,palette,idx,skin);
         const label=this.makeLabel(String(roll),.7,labelColor,{font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:3,shadow:skin.emissive||'rgba(0,0,0,.85)',shadowBlur:9});
-        label.position.copy(v.clone().multiplyScalar(1.195)); label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),v); group.add(label); this.labelMaterials[roll-1]=label.userData.material;
+        label.position.copy(v.clone().multiplyScalar(1.225)); label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),v); group.add(label); this.labelMaterials[roll-1]=label.userData.material;
       });
     } else {
       const geom=new THREE.BoxGeometry(2.25,2.25,2.25,1,1,1);

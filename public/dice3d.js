@@ -324,14 +324,14 @@ export class DiceTheater {
 
     const haloSpecs = tier >= 4
       ? [
-          { color: accent, radius: 1.88, opacity: .36, rotation: [Math.PI / 2, 0, .12] },
-          { color: emissive, radius: 2.14, opacity: .24, rotation: [.35, .65, .18] },
-          { color: '#ffffff', radius: 2.42, opacity: .16, rotation: [.68, .18, .52] },
+          { color: accent, radius: 1.88, opacity: .48, rotation: [Math.PI / 2, 0, .12] },
+          { color: emissive, radius: 2.14, opacity: .34, rotation: [.35, .65, .18] },
+          { color: '#ffffff', radius: 2.42, opacity: .24, rotation: [.68, .18, .52] },
         ]
       : tier === 3
         ? [
-            { color: accent, radius: 1.84, opacity: .31, rotation: [Math.PI / 2, 0, 0] },
-            { color: emissive, radius: 2.08, opacity: .19, rotation: [.42, .52, .2] },
+            { color: accent, radius: 1.84, opacity: .42, rotation: [Math.PI / 2, 0, 0] },
+            { color: emissive, radius: 2.08, opacity: .28, rotation: [.42, .52, .2] },
           ]
         : tier === 2
           ? [ { color: accent, radius: 1.8, opacity: .22, rotation: [Math.PI / 2, 0, 0] } ]
@@ -342,14 +342,14 @@ export class DiceTheater {
       h.rotation.set(spec.rotation[0], spec.rotation[1], spec.rotation[2]);
     });
 
-    const orbCount = tier >= 4 ? 4 : tier === 3 ? 3 : tier === 2 ? 2 : 1;
+    const orbCount = tier >= 4 ? 5 : tier === 3 ? 4 : tier === 2 ? 2 : 1;
     for (let i = 0; i < orbCount; i++) {
       const color = i % 2 ? emissive : accent;
       const radius = (tier >= 3 ? 2.12 : 1.96) + i * .18;
       const speed = .34 + i * .14;
       const y = -.18 + i * .18;
       const phase = i * 1.45;
-      const size = tier >= 4 ? .14 + (i % 2) * .025 : tier === 3 ? .125 : .095;
+      const size = tier >= 4 ? .17 + (i % 2) * .03 : tier === 3 ? .145 : .105;
       this.addOrbiter(die, color, radius, speed, y, phase, size);
     }
 
@@ -379,7 +379,7 @@ export class DiceTheater {
   trailFx(die, profile, dt) {
     if (!profile.tier) return;
     this.fxTrailClock += dt;
-    const interval = profile.tier >= 4 ? .08 : profile.tier === 3 ? .11 : profile.tier === 2 ? .16 : .22;
+    const interval = profile.tier >= 4 ? .05 : profile.tier === 3 ? .07 : profile.tier === 2 ? .12 : .18;
     if (this.fxTrailClock < interval) return;
     this.fxTrailClock = 0;
 
@@ -387,16 +387,16 @@ export class DiceTheater {
     const accent = new THREE.Color(profile.accent);
     const secondary = new THREE.Color(profile.emissive || profile.accent);
     const tier = Number(profile.tier || 0);
-    const count = tier >= 4 ? 3 : tier === 3 ? 2 : 1;
+    const count = tier >= 4 ? 5 : tier === 3 ? 3 : 2;
 
     for (let i = 0; i < count; i++) {
       const p = basePos.clone().add(new THREE.Vector3((Math.random() - .5) * .45, (Math.random() - .5) * .35, (Math.random() - .5) * .45));
       const c = i % 2 ? secondary : accent;
       const velocity = new THREE.Vector3(-.08 - Math.random() * .22, .12 + Math.random() * .18, (Math.random() - .5) * .12);
-      this.addSprite(p, c, tier >= 4 ? .13 : tier === 3 ? .11 : .095, .28 + Math.random() * .18, velocity, .04);
+      this.addSprite(p, c, tier >= 4 ? .16 : tier === 3 ? .13 : .105, .34 + Math.random() * .22, velocity, .04);
     }
 
-    if (tier >= 3 && Math.random() < .22) {
+    if (tier >= 3 && Math.random() < .4) {
       this.addSprite(basePos.clone(), '#ffffff', tier >= 4 ? .09 : .08, .34, new THREE.Vector3((Math.random() - .5) * .08, .26 + Math.random() * .12, (Math.random() - .5) * .08), .02);
     }
     if (profile.theme === 'rift' && Math.random() < .14) this.shardBurst(basePos.clone(), 0xffbcf5, 1, .34);
@@ -415,11 +415,11 @@ export class DiceTheater {
     const tier = Number(profile.tier || 0);
     const theme = String(profile.theme || 'arcane');
 
-    this.ring(p, accent, .22, tier >= 4 ? 4.6 : tier === 3 ? 4.0 : tier === 2 ? 3.0 : 2.35, tier >= 4 ? .88 : .74, .7);
-    if (tier >= 2) this.ring(p.clone().add(new THREE.Vector3(0, .012, 0)), emissive, .18, tier >= 4 ? 3.7 : tier === 3 ? 3.25 : 2.45, tier >= 4 ? .8 : .66, .48);
-    if (tier >= 4) this.ring(p.clone().add(new THREE.Vector3(0, .024, 0)), '#ffffff', .16, 3.0, .72, .28);
+    this.ring(p, accent, .24, tier >= 4 ? 4.9 : tier === 3 ? 4.2 : tier === 2 ? 3.15 : 2.4, tier >= 4 ? .98 : .84, .8);
+    if (tier >= 2) this.ring(p.clone().add(new THREE.Vector3(0, .012, 0)), emissive, .2, tier >= 4 ? 3.9 : tier === 3 ? 3.4 : 2.55, tier >= 4 ? .9 : .74, .58);
+    if (tier >= 4) this.ring(p.clone().add(new THREE.Vector3(0, .024, 0)), '#ffffff', .18, 3.2, .82, .34);
 
-    this.burst(new THREE.Vector3(0, -.92, 0), accent, tier >= 4 ? 20 : tier === 3 ? 14 : tier === 2 ? 8 : 5, tier >= 4 ? 2.2 : tier === 3 ? 1.8 : 1.35, tier >= 4 ? .16 : .14, tier >= 4 ? .9 : .72, tier >= 4 ? .52 : .38);
+    this.burst(new THREE.Vector3(0, -.92, 0), accent, tier >= 4 ? 28 : tier === 3 ? 18 : tier === 2 ? 10 : 6, tier >= 4 ? 2.5 : tier === 3 ? 2.0 : 1.45, tier >= 4 ? .18 : .15, tier >= 4 ? 1.0 : .82, tier >= 4 ? .58 : .42);
     if (tier >= 3) this.addFloorSigil(profile, p.clone().add(new THREE.Vector3(0, .018, 0)));
     if (tier >= 4) this.flashDisc(new THREE.Vector3(0, -.22, 0), 0xffffff, 4.2, .2, .42);
     else if (tier === 3) this.flashDisc(new THREE.Vector3(0, -.22, 0), accent, 3.2, .18, .32);

@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=8353';
+import { DiceTheater } from './dice3d.js?v=8360';
 
-const CLIENT_BUILD = '8.3.0-shared-turn-branch-clarity';
+const CLIENT_BUILD = '8.3.0-dice-visual-8360';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });

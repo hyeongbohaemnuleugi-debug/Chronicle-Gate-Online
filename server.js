@@ -9,7 +9,6 @@ import {
   appendSessionEvent,
   loadRoomSnapshot,
   persistenceEnabled,
-  persistenceMode,
   roomSnapshotExists,
   scheduleRoomSave,
   flushRoomSave,
@@ -86,8 +85,7 @@ const normalizeName = name => String(name || '').replace(/[\u0000-\u001f\u007f<>
 const DEVELOPER_EMAILS = new Set(['wezxcw1457@gmail.com']);
 const ALL_DICE_IDS = [
   'classic','nebula_glass','abyss_pearl','twilight_gilt','clockwork',
-  'aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard',
-  'runic_tempest','phoenix_ember','verdant_relic','celestial_choir','void_monarch','prismatic_tide','mythic_aeon',
+  'aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard','mythic_aeon',
 ];
 const isDeveloperEmail = email => DEVELOPER_EMAILS.has(normalizeEmail(email));
 
@@ -142,15 +140,6 @@ function verifyPassword(password, encoded) {
   catch { return false; }
 }
 
-
-function shortAccountCode(accountId) {
-  const source = String(accountId || '').trim();
-  if (!source) return '0000';
-  const digest = crypto.createHash('sha256').update(source).digest();
-  const numeric = digest.readUInt32BE(0) % 10000;
-  return String(numeric).padStart(4, '0');
-}
-
 function publicAccount(account) {
   if (!account) return null;
   const developer = isDeveloperEmail(account.email);
@@ -158,7 +147,6 @@ function publicAccount(account) {
     id: account.id,
     email: account.email,
     displayName: account.display_name || account.displayName || '플레이어',
-    accountCode: shortAccountCode(account.id),
     chroniclePoints: Number(account.chronicle_points ?? account.chroniclePoints ?? 0),
     ownedDice: developer ? [...ALL_DICE_IDS] : (Array.isArray(account.owned_dice) ? account.owned_dice : (account.ownedDice || ['classic'])),
     equippedDice: account.equipped_dice || account.equippedDice || 'classic',
@@ -207,7 +195,7 @@ async function registerAccount({ email, password, displayName }) {
   const normalizedEmail = normalizeEmail(email);
   const name = normalizeName(displayName);
   if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error('올바른 이메일 주소를 입력하세요.');
-  if (!/^\d{4}$/.test(String(password || ''))) throw new Error('비밀번호는 숫자 4자리로 입력하세요.');
+  if (String(password || '').length < 8 || String(password || '').length > 72) throw new Error('비밀번호는 8~72자로 입력하세요.');
   if (name.length < 2) throw new Error('닉네임은 2자 이상 입력하세요.');
   if (await findAccountByEmail(normalizedEmail)) throw new Error('이미 가입된 이메일입니다.');
   const id = crypto.randomUUID();
@@ -359,20 +347,14 @@ const DICE_CATALOG = [
   {id:'nebula_glass',name:'성운 유리',price:5,rarity:'희귀',base:'#5948b8',accent:'#d9d0ff',emissive:'#251b6b',metalness:.18,roughness:.12,visual:'glass-stars'},
   {id:'abyss_pearl',name:'심해 진주',price:6,rarity:'희귀',base:'#0f7185',accent:'#baf8ff',emissive:'#063d56',metalness:.28,roughness:.16,visual:'pearl-bubble'},
   {id:'twilight_gilt',name:'황혼 금박',price:7,rarity:'희귀',base:'#7d3f36',accent:'#ffd67a',emissive:'#5b1d12',metalness:.72,roughness:.2,visual:'gilded-studs'},
-  {id:'clockwork',name:'시계태엽',price:8,rarity:'영웅',base:'#6b553a',accent:'#f5cf84',emissive:'#332515',metalness:.82,roughness:.3,visual:'mechanical-gears'},
-  {id:'aurora_crystal',name:'극광 수정',price:9,rarity:'영웅',base:'#277f78',accent:'#baffd8',emissive:'#164e64',metalness:.2,roughness:.08,visual:'crystal-spires'},
-  {id:'eclipse_obsidian',name:'월식 흑요석',price:10,rarity:'영웅',base:'#17151d',accent:'#d998ff',emissive:'#4c1764',metalness:.55,roughness:.14,visual:'eclipse-core'},
-  {id:'starseed',name:'별씨앗',price:11,rarity:'영웅',base:'#315a3a',accent:'#f8f29b',emissive:'#163b24',metalness:.24,roughness:.3,visual:'living-stars'},
-  {id:'runic_tempest',name:'룬 폭풍',price:9,rarity:'영웅',base:'#274a82',accent:'#d7f1ff',emissive:'#19386c',metalness:.46,roughness:.13,visual:'storm-runes'},
-  {id:'phoenix_ember',name:'불사조 잿불',price:10,rarity:'영웅',base:'#7c2b1f',accent:'#ffcf7a',emissive:'#8e2d15',metalness:.54,roughness:.16,visual:'ember-feather'},
-  {id:'verdant_relic',name:'비취 유산',price:11,rarity:'영웅',base:'#1f6b4c',accent:'#dcffd1',emissive:'#275f2a',metalness:.34,roughness:.11,visual:'jade-vines'},
-  {id:'neon_prism',name:'네온 프리즘',price:12,rarity:'전설',base:'#142a54',accent:'#58fff0',emissive:'#a213a9',metalness:.42,roughness:.1,visual:'neon-wire'},
-  {id:'celestial_choir',name:'천공 성가',price:13,rarity:'전설',base:'#284176',accent:'#fff0c9',emissive:'#6a78ff',metalness:.58,roughness:.08,visual:'halo-feathers'},
-  {id:'crown_steel',name:'왕관 강철',price:14,rarity:'전설',base:'#3c3f49',accent:'#ffe29b',emissive:'#684516',metalness:.9,roughness:.18,visual:'royal-spikes'},
-  {id:'void_monarch',name:'공허 군주',price:15,rarity:'전설',base:'#221432',accent:'#ff9af2',emissive:'#5b17a1',metalness:.68,roughness:.09,visual:'void-crown'},
-  {id:'rift_shard',name:'경계의 파편',price:16,rarity:'전설',base:'#472d6f',accent:'#ffbcf5',emissive:'#6e1c78',metalness:.48,roughness:.09,visual:'fractured-shell'},
-  {id:'prismatic_tide',name:'분광 해일',price:18,rarity:'전설',base:'#155a67',accent:'#b9ffff',emissive:'#2aa7a7',metalness:.16,roughness:.05,visual:'prism-wave'},
-  {id:'mythic_aeon',name:'오리진',price:30,rarity:'신화',base:'#120f24',accent:'#f5edc3',emissive:'#6cefff',metalness:.34,roughness:.06,visual:'origin-core'},
+  {id:'clockwork',name:'사역묘 축연',price:8,rarity:'영웅',base:'#641a23',accent:'#f3bf52',emissive:'#3a0711',metalness:.56,roughness:.22,visual:'familiar-cat'},
+  {id:'aurora_crystal',name:'장미 바스켓',price:9,rarity:'영웅',base:'#7b5738',accent:'#ffe7cf',emissive:'#52311d',metalness:.24,roughness:.38,visual:'rose-basket'},
+  {id:'eclipse_obsidian',name:'흑접 야상',price:10,rarity:'영웅',base:'#1f1d39',accent:'#d8c9ff',emissive:'#5b2b92',metalness:.42,roughness:.14,visual:'butterfly-nocturne'},
+  {id:'starseed',name:'새벽 로즈',price:11,rarity:'영웅',base:'#dce9ff',accent:'#fff7ff',emissive:'#d998c8',metalness:.08,roughness:.16,visual:'pastel-rose'},
+  {id:'neon_prism',name:'성좌 프리즘',price:12,rarity:'전설',base:'#102142',accent:'#f5d98a',emissive:'#274a90',metalness:.44,roughness:.1,visual:'constellation-gem'},
+  {id:'crown_steel',name:'오브 세라핌',price:14,rarity:'전설',base:'#d5dff4',accent:'#f4c66a',emissive:'#d177ff',metalness:.46,roughness:.08,visual:'orb-cage'},
+  {id:'rift_shard',name:'흑금 문장',price:16,rarity:'전설',base:'#121523',accent:'#f4d487',emissive:'#7a37d4',metalness:.62,roughness:.1,visual:'black-gilded-gem'},
+  {id:'mythic_aeon',name:'아스트라 노바',price:22,rarity:'신화',base:'#11101d',accent:'#fff0b2',emissive:'#7deaff',metalness:.54,roughness:.08,visual:'mythic-orbital-gem'},
 ];
 const DICE_BY_ID = Object.fromEntries(DICE_CATALOG.map(d=>[d.id,d]));
 
@@ -435,7 +417,7 @@ app.get('/health', (_req, res) => res.json({
   ok: true,
   version: APP_VERSION,
   rooms: rooms.size,
-  persistence: persistenceMode,
+  persistence: persistenceEnabled ? 'supabase' : 'memory',
   accountStore: accountStoreMode,
   accountStoreDurable: accountPersistenceEnabled || localAccountDurable,
   timestamp: new Date().toISOString(),
@@ -3665,7 +3647,7 @@ function sync(room) {
   room.lastActiveAt = Date.now();
   room.revision = Number(room.revision || 0) + 1;
   io.to(room.code).emit('state', publicRoom(room));
-  scheduleRoomSave(room, room.phase === 'lobby' ? 140 : 60);
+  scheduleRoomSave(room, 220);
   if (room.phase === 'ending') void ensureEndingRewards(room);
 }
 
@@ -5578,7 +5560,7 @@ setInterval(() => {
 }, 1000 * 60 * 30).unref();
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Chronicle Gate Online running on 0.0.0.0:${PORT} · persistence=${persistenceMode}`);
+  console.log(`Chronicle Gate Online running on 0.0.0.0:${PORT} · persistence=${persistenceEnabled ? 'supabase' : 'memory'}`);
 });
 
 let shuttingDown = false;

@@ -1,6 +1,6 @@
 import * as THREE from '/vendor/three.module.js';
 
-console.info('[Chronicle Gate] DiceTheater visual build 8360');
+console.info('[Chronicle Gate] DiceTheater visual build 8370');
 
 export class DiceTheater {
   constructor(canvas) {
@@ -52,18 +52,89 @@ export class DiceTheater {
     this.camera.updateProjectionMatrix();
   }
 
-  makeLabel(text, size = .34, color = '#fff9ec', opts = {}) {
-    const c = document.createElement('canvas'); c.width = 192; c.height = 192;
-    const x = c.getContext('2d'); x.clearRect(0, 0, 192, 192); x.textAlign = 'center'; x.textBaseline = 'middle';
+    makeLabel(text, size = .34, color = '#fff9ec', opts = {}) {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+    const x = c.getContext('2d'); x.clearRect(0, 0, 256, 256); x.textAlign = 'center'; x.textBaseline = 'middle';
     const font = opts.font || 'Georgia'; const weight = opts.weight || '800';
-    x.font = `${weight} ${opts.fontSize || 88}px ${font}`; x.shadowColor = opts.shadow || 'rgba(0,0,0,.9)'; x.shadowBlur = opts.shadowBlur ?? 10;
-    if(opts.stroke){ x.lineWidth=opts.strokeWidth||5; x.strokeStyle=opts.stroke; x.strokeText(text,96,104); }
-    x.fillStyle = color; x.fillText(text, 96, 104);
+    const premium = !!opts.premium;
+    const frame = opts.frameColor || 'rgba(255,255,255,.8)';
+    const badge = opts.badgeColor || 'rgba(8,10,18,.82)';
+    const glow = opts.glowColor || color;
+    const stroke = opts.stroke || 'rgba(0,0,0,.92)';
+
+    const roundRect = (ctx, x0, y0, w, h, r) => {
+      ctx.beginPath();
+      ctx.moveTo(x0 + r, y0);
+      ctx.arcTo(x0 + w, y0, x0 + w, y0 + h, r);
+      ctx.arcTo(x0 + w, y0 + h, x0, y0 + h, r);
+      ctx.arcTo(x0, y0 + h, x0, y0, r);
+      ctx.arcTo(x0, y0, x0 + w, y0, r);
+      ctx.closePath();
+    };
+
+    if (premium) {
+      x.shadowColor = glow; x.shadowBlur = 28;
+      if (opts.badgeShape === 'circle') {
+        x.fillStyle = badge; x.beginPath(); x.arc(128, 128, 66, 0, Math.PI * 2); x.fill();
+        x.lineWidth = 7; x.strokeStyle = frame; x.stroke();
+      } else if (opts.badgeShape === 'hex') {
+        x.fillStyle = badge; x.beginPath();
+        [[128,48],[194,88],[194,168],[128,208],[62,168],[62,88]].forEach(([px,py],i)=> i ? x.lineTo(px,py) : x.moveTo(px,py));
+        x.closePath(); x.fill(); x.lineWidth = 7; x.strokeStyle = frame; x.stroke();
+      } else {
+        roundRect(x, 52, 58, 152, 140, 28); x.fillStyle = badge; x.fill();
+        x.lineWidth = 7; x.strokeStyle = frame; x.stroke();
+      }
+      if (opts.oneVariant && String(text) === '1') {
+        x.lineWidth = 5; x.strokeStyle = frame;
+        x.beginPath(); x.moveTo(128, 34); x.lineTo(146, 56); x.lineTo(128, 78); x.lineTo(110, 56); x.closePath(); x.stroke();
+        x.fillStyle = glow; x.globalAlpha = .6; x.fill(); x.globalAlpha = 1;
+      }
+      if (opts.cornerMarks) {
+        x.fillStyle = frame;
+        [[72,78],[184,78],[72,178],[184,178]].forEach(([px,py])=>{ x.beginPath(); x.arc(px,py,5,0,Math.PI*2); x.fill(); });
+      }
+    }
+
+    x.font = `${weight} ${opts.fontSize || (premium ? 116 : 96)}px ${font}`;
+    x.shadowColor = opts.shadow || 'rgba(0,0,0,.9)'; x.shadowBlur = opts.shadowBlur ?? (premium ? 14 : 10);
+    x.lineWidth = opts.strokeWidth || (premium ? 9 : 5); x.strokeStyle = stroke; x.strokeText(text,128,136);
+    x.fillStyle = color; x.fillText(text, 128, 136);
+    if (premium && opts.underGlow) {
+      x.globalAlpha = .35; x.fillStyle = glow; x.fillRect(86, 182, 84, 7); x.globalAlpha = 1;
+    }
     const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide, color: 0xffffff });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
     mesh.userData.material = mat;
     return mesh;
+  }
+
+  labelSpec(roll, skin = {}, premium = false) {
+    const id = String(skin?.id || 'classic');
+    const text = String(roll);
+    if (!premium) return { text, opts: {} };
+    const spec = {
+      font: 'Arial Black', weight: '900', premium: true, oneVariant: true, cornerMarks: true, underGlow: true,
+      badgeShape: 'shield', badgeColor: 'rgba(10,12,20,.84)', frameColor: '#f0deb2', glowColor: skin.accent || '#ffffff',
+      stroke: 'rgba(4,6,10,.95)', shadow: 'rgba(0,0,0,.9)', shadowBlur: 16, strokeWidth: 10,
+    };
+    const paletteById = {
+      clockwork: { badgeShape:'circle', frameColor:'#f0c15f', badgeColor:'rgba(58,10,18,.88)', font:'Arial Black', glowColor:'#f0c15f' },
+      aurora_crystal: { badgeShape:'shield', frameColor:'#ffe7c6', badgeColor:'rgba(96,58,28,.72)', font:'Georgia', glowColor:'#ffb5c6' },
+      eclipse_obsidian: { badgeShape:'hex', frameColor:'#dbc8ff', badgeColor:'rgba(23,17,43,.82)', font:'Georgia', glowColor:'#b37cff' },
+      starseed: { badgeShape:'shield', frameColor:'#ffffff', badgeColor:'rgba(178,198,235,.68)', font:'Georgia', glowColor:'#ffd7ef' },
+      neon_prism: { badgeShape:'hex', frameColor:'#efd181', badgeColor:'rgba(8,22,48,.84)', font:'Arial Black', glowColor:'#7de6ff' },
+      celestial_choir: { badgeShape:'circle', frameColor:'#f0dfb0', badgeColor:'rgba(34,40,72,.8)', font:'Georgia', glowColor:'#fff1b8' },
+      crown_steel: { badgeShape:'circle', frameColor:'#dfb86a', badgeColor:'rgba(214,225,244,.58)', font:'Arial Black', glowColor:'#f2b3ff', stroke:'rgba(60,36,82,.8)' },
+      void_monarch: { badgeShape:'hex', frameColor:'#bc7cff', badgeColor:'rgba(10,8,18,.86)', font:'Arial Black', glowColor:'#ff9cf2' },
+      rift_shard: { badgeShape:'hex', frameColor:'#efc97c', badgeColor:'rgba(6,8,18,.9)', font:'Arial Black', glowColor:'#b26cff' },
+      prismatic_tide: { badgeShape:'circle', frameColor:'#dcffff', badgeColor:'rgba(18,74,86,.7)', font:'Arial Black', glowColor:'#baffff' },
+      mythic_aeon: { badgeShape:'hex', frameColor:'#ffe8a1', badgeColor:'rgba(6,10,20,.88)', font:'Arial Black', glowColor:'#7deaff', stroke:'rgba(20,16,34,.95)' },
+    };
+    Object.assign(spec, paletteById[id] || {});
+    if (roll === 1) spec.fontSize = 128;
+    return { text, opts: spec };
   }
 
   getGlowTexture() {
@@ -1028,7 +1099,7 @@ export class DiceTheater {
       emissiveIntensity: ['void_monarch','eclipse_obsidian'].includes(id) ? .18 : ['crown_steel','mythic_aeon','neon_prism','rift_shard'].includes(id) ? .14 : .07,
       depthWrite: palette.transmit <= 0,
     });
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(1.62,1.62,.08), mat);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(1.7,1.7,.09), mat);
     plate.position.copy(dir.clone().multiplyScalar(1.135));
     plate.quaternion.copy(q);
     group.add(plate);
@@ -1174,7 +1245,7 @@ export class DiceTheater {
     const labelColor = palette?.number || skin.accent || '#fff9ec';
 
     if (premium) {
-      const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.58,0), new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.9,palette.metal+.12),clearcoat:1.35,clearcoatRoughness:.07,emissive,emissiveIntensity:.08}));
+      const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.64,0), new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.9,palette.metal+.12),clearcoat:1.35,clearcoatRoughness:.07,emissive,emissiveIntensity:.08}));
       shell.castShadow=true; shell.receiveShadow=true; group.add(shell);
     }
 
@@ -1209,12 +1280,13 @@ export class DiceTheater {
       });
       const mesh = new THREE.Mesh(tri,mat); mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh); this.faceMaterials[f]=mat;
 
-      if (premium && (f % 3 === 0 || ['clockwork','aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard','mythic_aeon'].includes(skin.id))) {
+      if (premium && (f % 2 === 0 || ['clockwork','aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard','mythic_aeon'].includes(skin.id))) {
         this.addD20FaceMotif(group, center, normal, skin, f);
       }
 
-      const label = this.makeLabel(String(f+1), premium?.42:.44, labelColor, {font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:premium?3:4,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:premium?9:(skin.id==='classic'?8:14)});
-      label.position.copy(center.clone().add(normal.clone().multiplyScalar(premium?.078:.022)));
+      const labelCfg = this.labelSpec(f + 1, skin, !!premium);
+      const label = this.makeLabel(labelCfg.text, premium ? .56 : .44, labelColor, Object.assign({font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:premium?5:4,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:premium?12:(skin.id==='classic'?8:14)}, labelCfg.opts));
+      label.position.copy(center.clone().add(normal.clone().multiplyScalar(premium?.096:.022)));
       label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal); group.add(label); this.labelMaterials[f]=label.userData.material;
     }
     const edgeColor = palette?.edge || visual.edge || skin.accent || '#ffe2ba';
@@ -1237,13 +1309,14 @@ export class DiceTheater {
     ];
 
     if (premium) {
-      const shell = new THREE.Mesh(this.roundedBoxGeometry(2.34,.22,5),new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.92,palette.metal+.12),clearcoat:1.45,clearcoatRoughness:.06,emissive,emissiveIntensity:.06}));
+      const shell = new THREE.Mesh(this.roundedBoxGeometry(2.42,.24,5),new THREE.MeshPhysicalMaterial({color:palette.body,roughness:palette.rough+.08,metalness:Math.min(.92,palette.metal+.12),clearcoat:1.45,clearcoatRoughness:.06,emissive,emissiveIntensity:.06}));
       shell.castShadow=true; shell.receiveShadow=true; group.add(shell);
       faces.forEach(({normal,roll},idx)=>{
         const v=new THREE.Vector3(...normal); this.faceNormals[roll-1]=v.clone();
         this.faceMaterials[roll-1]=this.addD6FaceInlay(group,v,palette,idx,skin);
-        const label=this.makeLabel(String(roll),.7,labelColor,{font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:3,shadow:skin.emissive||'rgba(0,0,0,.85)',shadowBlur:9});
-        label.position.copy(v.clone().multiplyScalar(1.225)); label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),v); group.add(label); this.labelMaterials[roll-1]=label.userData.material;
+        const labelCfg=this.labelSpec(roll, skin, true);
+        const label=this.makeLabel(labelCfg.text,.9,labelColor,Object.assign({font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:5,shadow:skin.emissive||'rgba(0,0,0,.88)',shadowBlur:14},labelCfg.opts));
+        label.position.copy(v.clone().multiplyScalar(1.28)); label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),v); group.add(label); this.labelMaterials[roll-1]=label.userData.material;
       });
     } else {
       const geom=new THREE.BoxGeometry(2.25,2.25,2.25,1,1,1);
@@ -1253,7 +1326,7 @@ export class DiceTheater {
       });
       const materials=[this.faceMaterials[0],this.faceMaterials[5],this.faceMaterials[1],this.faceMaterials[4],this.faceMaterials[2],this.faceMaterials[3]];
       const cube=new THREE.Mesh(geom,materials);cube.castShadow=true;cube.receiveShadow=true;group.add(cube);
-      faces.forEach(({normal,roll})=>{const v=new THREE.Vector3(...normal);this.faceNormals[roll-1]=v.clone();const label=this.makeLabel(String(roll),.72,labelColor,{font:visual.font,weight:visual.weight,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:skin.id==='classic'?8:14});label.position.copy(v.clone().multiplyScalar(1.136));label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),v);group.add(label);this.labelMaterials[roll-1]=label.userData.material;});
+      faces.forEach(({normal,roll})=>{const v=new THREE.Vector3(...normal);this.faceNormals[roll-1]=v.clone();const labelCfg=this.labelSpec(roll, skin, false);const label=this.makeLabel(labelCfg.text,.76,labelColor,Object.assign({font:visual.font,weight:visual.weight,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:skin.id==='classic'?8:14},labelCfg.opts));label.position.copy(v.clone().multiplyScalar(1.15));label.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),v);group.add(label);this.labelMaterials[roll-1]=label.userData.material;});
       const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geom),new THREE.LineBasicMaterial({color:visual.edge||skin.accent||'#ffe6c6',transparent:true,opacity:.84}));group.add(edges);
     }
     this.decorateDie(group,skin,6); return group;

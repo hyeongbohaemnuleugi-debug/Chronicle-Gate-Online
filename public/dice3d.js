@@ -527,15 +527,76 @@ export class DiceTheater {
   }
 
 
+  addSignatureSilhouette(group, skin = {}, sides = 20) {
+    const id = String(skin?.id || 'classic');
+    if (sides !== 6) return;
+
+    const gold = (c = 0xf1c56d, metalness = .9, roughness = .18) => new THREE.MeshPhysicalMaterial({ color:c, metalness, roughness, clearcoat:1.35, clearcoatRoughness:.06 });
+    const gem = (c, opts = {}) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:opts.opacity ?? .92, transmission:opts.transmission ?? .28, roughness:opts.roughness ?? .03, metalness:opts.metalness ?? .08, clearcoat:1.8, clearcoatRoughness:.03, emissive:opts.emissive ?? c, emissiveIntensity:opts.emissiveIntensity ?? .08, depthWrite:false });
+    const orb = (x,y,z,r,c) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r,22,18), gem(c)); m.position.set(x,y,z); group.add(m); return m; };
+    const jewel = (x,y,z,sx,sy,sz,c,rot=0) => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(1,0), gem(c,{opacity:.96,transmission:.18})); m.scale.set(sx,sy,sz); m.position.set(x,y,z); m.rotation.y = rot; group.add(m); return m; };
+    const rose = (x,y,z,scale=1,palette=[0xf39fb6,0xffd9e3,0xf7f1cf]) => {
+      const g = new THREE.Group();
+      for (let i=0;i<6;i++) { const p = new THREE.Mesh(new THREE.SphereGeometry(.1*scale,12,10), new THREE.MeshPhysicalMaterial({ color:palette[i%palette.length], roughness:.28, metalness:.02, clearcoat:.5 })); const a = i/6*Math.PI*2; p.scale.set(1.25,.8,.6); p.position.set(Math.cos(a)*.12*scale,.02,Math.sin(a)*.12*scale); g.add(p); }
+      const c = new THREE.Mesh(new THREE.SphereGeometry(.08*scale,12,10), new THREE.MeshPhysicalMaterial({ color:0xfff3d8, roughness:.26, metalness:.02 })); g.add(c); g.position.set(x,y,z); group.add(g); return g;
+    };
+    const catHead = (x,y,z,scale=1) => {
+      const g = new THREE.Group();
+      const head = new THREE.Mesh(new THREE.SphereGeometry(.17*scale,18,14), new THREE.MeshPhysicalMaterial({ color:0x1e1a26, roughness:.22, metalness:.14, clearcoat:1.1 })); g.add(head);
+      [[-.1,.12],[.1,.12]].forEach(([ex,ez])=>{ const ear=new THREE.Mesh(new THREE.ConeGeometry(.07*scale,.14*scale,4), gold(0x6320a5,.55,.2)); ear.position.set(ex,.13*scale,ez); ear.rotation.z = ex < 0 ? .25 : -.25; g.add(ear); });
+      [[-.06,.05],[.06,.05]].forEach(([ex,ez])=>{ const eye=new THREE.Mesh(new THREE.SphereGeometry(.028*scale,12,10), gem(0xffd560,{opacity:.98,transmission:.05,emissive:0xfcae00,emissiveIntensity:.22})); eye.position.set(ex,.02*scale,.14*scale); g.add(eye); });
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(.12*scale,.02*scale,8,22,Math.PI), gold(0xd3415d,.35,.38)); collar.rotation.x = Math.PI/2; collar.position.set(0,-.06*scale,.02*scale); g.add(collar);
+      g.position.set(x,y,z); group.add(g); return g;
+    };
+    const butterfly = (x,y,z,scale=1) => {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(.035*scale,.18*scale,4,8), gold(0xead8ff,.2,.24)); body.rotation.z = Math.PI/2; g.add(body);
+      [[-.12,.1,.18,.14],[.12,.1,.18,.14],[-.14,-.08,.15,.11],[.14,-.08,.15,.11]].forEach(([sx,sy,wx,wy],i)=>{ const wing=new THREE.Mesh(new THREE.SphereGeometry(1,18,14), new THREE.MeshPhysicalMaterial({ color:i<2?0x8e61ff:0x4f2e7d, transparent:true, opacity:.92, transmission:.08, roughness:.08, metalness:.12, clearcoat:1.2 })); wing.scale.set(wx*scale,wy*scale,.03*scale); wing.position.set(sx*scale,sy*scale,0); g.add(wing); const stroke=new THREE.Mesh(new THREE.TorusGeometry(Math.max(wx,wy)*.95*scale,.01*scale,6,24,Math.PI*1.4), gold(0xdbcbef,.35,.22)); stroke.position.copy(wing.position); stroke.rotation.z = i%2?1.2:-1.2; g.add(stroke); });
+      g.position.set(x,y,z); g.rotation.x = -.28; group.add(g); return g;
+    };
+
+    if (id === 'crown_steel' || id === 'mythic_aeon') {
+      [0,1,2].forEach(i=>{ const ring = new THREE.Mesh(new THREE.TorusGeometry(1.1 + i*.06, .028, 12, 48), gold(i===1?0xc98df4:0xd7ab58, .72, .18)); ring.rotation.set(i===0?Math.PI/2:0, i===1?Math.PI/2:0, i===2?Math.PI/2:0); ring.position.y = .02; ring.renderOrder = 18; group.add(ring); });
+      orb(0, 1.08, 0, .23, id === 'mythic_aeon' ? 0xfff0b4 : 0xf29dff);
+      orb(0, 0, 1.08, .19, 0xf29dff);
+      jewel(0, -.02, -1.08, .18, .18, .18, 0xa6f6ff);
+      if (id === 'mythic_aeon') { jewel(0,1.36,0,.14,.2,.14,0x7deaff); const halo=new THREE.Mesh(new THREE.TorusGeometry(.42,.03,10,44), new THREE.MeshBasicMaterial({color:0xfff3be,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false})); halo.position.set(0,1.26,0); halo.rotation.x=Math.PI/2; group.add(halo); }
+    } else if (id === 'neon_prism' || id === 'rift_shard') {
+      jewel(0,1.11,0,.28,.28,.18,id==='neon_prism'?0xf8f0ca:0xfff1cc,.3);
+      const starMat = gold(id==='neon_prism'?0xdfb55a:0xd09b43,.84,.16);
+      for (let i=0;i<8;i++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(.42,.04,.04), starMat); bar.position.set(0,1.11,0); bar.rotation.y = i*Math.PI/4; bar.rotation.x = Math.PI/2; group.add(bar); }
+      if (id === 'rift_shard') { jewel(0,0,1.1,.14,.22,.14,0x8836ff,.5); }
+    } else if (id === 'clockwork') {
+      catHead(-.42,1.08,0,.95); catHead(.42,1.08,0,.95);
+      const med = new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.08,22), gold(0xf0b24f,.85,.18)); med.rotation.x = Math.PI/2; med.position.set(0,0,1.1); group.add(med);
+    } else if (id === 'aurora_crystal') {
+      rose(-.35,1.08,-.1,1.05,[0xf2a0ae,0xffe1bf,0xf4f2d6]);
+      rose(.05,1.1,.18,.95,[0xe77b92,0xfbf5de,0xf3d18d]);
+      rose(.38,1.07,-.16,.9,[0xfff4da,0xf4a5b3,0xf6eacd]);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(.86,.05,8,36,Math.PI*1.08), new THREE.MeshPhysicalMaterial({color:0xb78c5e,roughness:.62,metalness:.04,clearcoat:.3})); band.rotation.x = Math.PI/2; band.position.y = .92; group.add(band);
+    } else if (id === 'eclipse_obsidian') {
+      butterfly(0,1.1,0,1.12);
+      const wand=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.78,8), gold(0xe8d7f4,.18,.22)); wand.position.set(.52,1.1,-.12); wand.rotation.z=.8; group.add(wand);
+    } else if (id === 'starseed') {
+      rose(-.24,1.08,0,.95,[0xf2b0c8,0xffffff,0xd5efff]); rose(.25,1.06,.02,.85,[0xffdce8,0xf7fbff,0xc7d9ff]);
+      for (let i=0;i<10;i++){ const bead = new THREE.Mesh(new THREE.SphereGeometry(.035,10,8), new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.08,metalness:.02,clearcoat:1.5})); const a=i/10*Math.PI*2; bead.position.set(Math.cos(a)*.62,1.0,Math.sin(a)*.42); group.add(bead); }
+    }
+  }
+
   bodyMaterialTuning(skin = {}) {
     const id = String(skin?.id || 'classic');
     const map = {
+      clockwork: { roughness: .16, metalness: .54, clearcoat: 1.35, clearcoatRoughness: .07 },
+      aurora_crystal: { roughness: .26, metalness: .12, clearcoat: .8, clearcoatRoughness: .18 },
+      eclipse_obsidian: { roughness: .1, metalness: .46, clearcoat: 1.22, clearcoatRoughness: .06 },
+      starseed: { roughness: .12, metalness: .06, clearcoat: 1.35, clearcoatRoughness: .04, transmission: .1, transparent: false },
       celestial_choir: { roughness: .12, metalness: .34, clearcoat: 1.7, clearcoatRoughness: .05 },
-      crown_steel: { roughness: .15, metalness: .78, clearcoat: 1.35, clearcoatRoughness: .08 },
+      crown_steel: { roughness: .08, metalness: .42, clearcoat: 1.55, clearcoatRoughness: .04, transmission: .12 },
       void_monarch: { roughness: .1, metalness: .62, clearcoat: 1.45, clearcoatRoughness: .06 },
-      rift_shard: { roughness: .14, metalness: .46, clearcoat: 1.3, clearcoatRoughness: .07 },
+      rift_shard: { roughness: .09, metalness: .58, clearcoat: 1.44, clearcoatRoughness: .05 },
       prismatic_tide: { roughness: .05, metalness: .08, transmission: .24, transparent: true, opacity: .95, clearcoat: 1.85, clearcoatRoughness: .03 },
-      mythic_aeon: { roughness: .08, metalness: .28, transmission: .08, transparent: false, clearcoat: 1.9, clearcoatRoughness: .04 },
+      neon_prism: { roughness: .08, metalness: .44, clearcoat: 1.5, clearcoatRoughness: .04 },
+      mythic_aeon: { roughness: .06, metalness: .48, transmission: .12, transparent: false, clearcoat: 1.95, clearcoatRoughness: .03 },
     };
     return map[id] || {};
   }
@@ -553,10 +614,12 @@ export class DiceTheater {
     const shellGeom=()=>sides===6?new THREE.BoxGeometry(2.34,2.34,2.34):new THREE.IcosahedronGeometry(1.62,0);
     const addWire=(color,opacity=.5,scale=1)=>{ const e=new THREE.LineSegments(new THREE.EdgesGeometry(shellGeom()),new THREE.LineBasicMaterial({color,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false})); e.scale.setScalar(scale); e.renderOrder=15; group.add(e); return e; };
     const addPoints=(count,color,radius,size=.045)=>{ const arr=new Float32Array(count*3); for(let i=0;i<count;i++){ const u=Math.random(),v=Math.random(),th=u*Math.PI*2,ph=Math.acos(2*v-1),r=radius*(.55+Math.random()*.45); arr[i*3]=Math.sin(ph)*Math.cos(th)*r;arr[i*3+1]=Math.cos(ph)*r;arr[i*3+2]=Math.sin(ph)*Math.sin(th)*r; } const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(arr,3));const m=new THREE.PointsMaterial({map:this.getGlowTexture(),color,size,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false});const p=new THREE.Points(g,m);p.renderOrder=16;group.add(p);return p; };
-    const refinedElite = new Set(['neon_prism','celestial_choir','crown_steel','void_monarch','rift_shard','prismatic_tide','mythic_aeon']);
+    const refinedElite = new Set(['clockwork','aurora_crystal','eclipse_obsidian','starseed','neon_prism','celestial_choir','crown_steel','void_monarch','rift_shard','prismatic_tide','mythic_aeon']);
     if (refinedElite.has(id)) {
-      // Premium skins are sculpted directly into the D6/D20 body below. Keep
-      // this stage empty so the die does not become a pile of external props.
+      // Premium skins are sculpted directly into the D6/D20 body below. Only
+      // a few signature silhouette pieces are added for the cube to match the
+      // reference mood more closely.
+      this.addSignatureSilhouette(group, skin, sides);
       return;
     }
     if(id==='nebula_glass'){
@@ -931,13 +994,17 @@ export class DiceTheater {
   premiumPalette(skin = {}) {
     const id = String(skin.id || 'classic');
     const palettes = {
-      neon_prism: { body:'#071725', face:['#113b4b','#33254c','#183b58'], edge:'#dfffff', number:'#f5ffff', rough:.08, metal:.16, transmit:.22 },
+      clockwork: { body:'#59131f', face:['#852135','#612050','#431232'], edge:'#e3a94f', number:'#fff0c5', rough:.16, metal:.42, transmit:0 },
+      aurora_crystal: { body:'#815937', face:['#fff0d9','#f2d1a7','#e9c7a8','#f8f3e5'], edge:'#c79b69', number:'#fff9ef', rough:.28, metal:.08, transmit:0 },
+      eclipse_obsidian: { body:'#241b3f', face:['#34214f','#1f1838','#2d234a'], edge:'#ddd5e8', number:'#f5e9ff', rough:.1, metal:.34, transmit:.04 },
+      starseed: { body:'#dde8fb', face:['#fef9ff','#e7f1ff','#fde5ef','#fff6f9'], edge:'#c7d6f4', number:'#8f6b9d', rough:.12, metal:.04, transmit:.08 },
+      neon_prism: { body:'#0d1b36', face:['#1b325f','#0f2752','#15284a'], edge:'#e3bd67', number:'#fff7dd', rough:.08, metal:.48, transmit:0 },
       celestial_choir: { body:'#232a46', face:['#f3ecd7','#cbd4ff','#e8e2d2'], edge:'#c5ac73', number:'#fff7df', rough:.12, metal:.24, transmit:.08 },
-      crown_steel: { body:'#262830', face:['#3e424b','#51432d','#343740'], edge:'#d2ad62', number:'#ffe9ad', rough:.17, metal:.72, transmit:0 },
+      crown_steel: { body:'#d3dff2', face:['#eef4ff','#dce7f6','#e7dbff','#f9f6ff'], edge:'#dfb86a', number:'#7a5b8c', rough:.07, metal:.28, transmit:.22 },
       void_monarch: { body:'#090710', face:['#17101f','#251331','#120d18'], edge:'#9a5cd4', number:'#f1c6ff', rough:.08, metal:.52, transmit:.04 },
-      rift_shard: { body:'#211634', face:['#563f83','#72589b','#3d2e67','#8d6ab0'], edge:'#dec4ff', number:'#ffe8ff', rough:.14, metal:.34, transmit:.06 },
+      rift_shard: { body:'#0e1321', face:['#121b2d','#101320','#31214a','#182239'], edge:'#efc778', number:'#fff1cf', rough:.08, metal:.56, transmit:0 },
       prismatic_tide: { body:'#0c2b33', face:['#62c9d3','#9aeff2','#3b9ca8'], edge:'#d8ffff', number:'#f4ffff', rough:.04, metal:.05, transmit:.34 },
-      mythic_aeon: { body:'#0d0b18', face:['#201934','#28324a','#352552','#191b2d'], edge:'#e7dfbd', number:'#fff8d8', rough:.07, metal:.3, transmit:.1 },
+      mythic_aeon: { body:'#0e0d18', face:['#1f1931','#131724','#22173b','#202a3b'], edge:'#f0d98e', number:'#fff6ce', rough:.06, metal:.52, transmit:.06 },
     };
     return palettes[id] || null;
   }
@@ -949,61 +1016,146 @@ export class DiceTheater {
       color: palette.face[index % palette.face.length],
       roughness: palette.rough,
       metalness: palette.metal,
-      clearcoat: 1.5,
+      clearcoat: 1.65,
       clearcoatRoughness: .04,
       transparent: palette.transmit > 0,
-      opacity: palette.transmit > 0 ? .93 : 1,
+      opacity: palette.transmit > 0 ? .95 : 1,
       transmission: palette.transmit,
       emissive: new THREE.Color(skin.emissive || '#000000'),
-      emissiveIntensity: id === 'void_monarch' ? .18 : id === 'neon_prism' ? .12 : id === 'mythic_aeon' ? .09 : .035,
+      emissiveIntensity: ['void_monarch','eclipse_obsidian'].includes(id) ? .18 : ['crown_steel','mythic_aeon'].includes(id) ? .12 : .05,
       depthWrite: palette.transmit <= 0,
     });
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(1.55,1.55,.055), mat);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(1.52,1.52,.06), mat);
     plate.position.copy(dir.clone().multiplyScalar(1.145));
     plate.quaternion.copy(q);
     group.add(plate);
 
-    const frameMat = new THREE.MeshStandardMaterial({ color: palette.edge, metalness: .7, roughness: .18 });
+    const frameMat = new THREE.MeshPhysicalMaterial({ color: palette.edge, metalness: .82, roughness: .18, clearcoat: 1.28, clearcoatRoughness: .07 });
     const frame = new THREE.Group();
-    [[1.62,.055,0,.79],[1.62,.055,0,-.79],[.055,1.62,.79,0],[.055,1.62,-.79,0]].forEach(([w,h,x,y])=>{
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(w,h,.038), frameMat);
+    [[1.66,.06,0,.81],[1.66,.06,0,-.81],[.06,1.66,.81,0],[.06,1.66,-.81,0]].forEach(([w,h,x,y])=>{
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(w,h,.04), frameMat);
       bar.position.set(x,y,0); frame.add(bar);
     });
     frame.position.copy(dir.clone().multiplyScalar(1.178));
     frame.quaternion.copy(q);
     group.add(frame);
 
-    // Theme-specific details are embedded on the face rather than orbiting it.
-    if (id === 'rift_shard') {
-      const shardMatA = new THREE.MeshPhysicalMaterial({color:index%2?0xf0d4ff:0x7d64aa,metalness:.22,roughness:.12,clearcoat:1.2});
-      const shardMatB = new THREE.MeshPhysicalMaterial({color:index%2?0x6c55a0:0xe4bff0,metalness:.18,roughness:.14,clearcoat:1.1});
-      const a = new THREE.Mesh(new THREE.BoxGeometry(.72,.5,.075), shardMatA); a.position.set(-.28,.18,.04); a.rotation.z=.28; frame.add(a);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(.62,.42,.07), shardMatB); b.position.set(.3,-.22,.035); b.rotation.z=-.36; frame.add(b);
-    } else if (id === 'prismatic_tide') {
-      const water = new THREE.Mesh(new THREE.SphereGeometry(1,18,12), new THREE.MeshPhysicalMaterial({color:0xbfffff,transparent:true,opacity:.55,transmission:.82,roughness:.02,metalness:0,clearcoat:2,depthWrite:false}));
-      water.scale.set(.42,.28,.06); water.position.set(.22,.14,.06); frame.add(water);
-      const bead = water.clone(); bead.scale.set(.16,.12,.045); bead.position.set(-.38,-.32,.06); frame.add(bead);
-    } else if (id === 'crown_steel') {
-      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(.13,0), new THREE.MeshPhysicalMaterial({color:0x8edbff,roughness:.03,metalness:.05,transmission:.35,transparent:true,opacity:.92,clearcoat:1.7,depthWrite:false}));
-      gem.position.set(0,.54,.07); frame.add(gem);
-      for (const x of [-.5,.5]) for (const y of [-.5,.5]) { const stud=new THREE.Mesh(new THREE.SphereGeometry(.055,10,8),frameMat);stud.position.set(x,y,.05);frame.add(stud); }
-    } else if (id === 'celestial_choir') {
-      const wingMat=new THREE.MeshPhysicalMaterial({color:index%2?0xf6efd5:0xb9c8ff,transparent:true,opacity:.88,transmission:.15,roughness:.05,metalness:.08,depthWrite:false});
-      const left=new THREE.Mesh(new THREE.BoxGeometry(.52,.16,.045),wingMat);left.position.set(-.34,.28,.055);left.rotation.z=.5;frame.add(left);
-      const right=left.clone();right.position.x=.34;right.rotation.z=-.5;frame.add(right);
-    } else if (id === 'void_monarch') {
-      const core=new THREE.Mesh(new THREE.SphereGeometry(.22,16,12),new THREE.MeshPhysicalMaterial({color:0x5f2391,transparent:true,opacity:.82,transmission:.32,roughness:.02,metalness:.12,emissive:0x9f50e2,emissiveIntensity:.28,depthWrite:false}));
-      core.scale.z=.25; core.position.z=.06; frame.add(core);
+    const addLocal = (geom, material, x=0, y=0, z=.055, sx=1, sy=1, sz=1, rz=0, rx=0) => {
+      const mesh = new THREE.Mesh(geom, material);
+      mesh.position.set(x,y,z);
+      mesh.scale.set(sx,sy,sz);
+      mesh.rotation.z = rz;
+      mesh.rotation.x = rx;
+      frame.add(mesh);
+      return mesh;
+    };
+    const metal = c => new THREE.MeshPhysicalMaterial({ color:c, metalness:.86, roughness:.18, clearcoat:1.25, clearcoatRoughness:.07 });
+    const crystal = (c, emissive = null) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:.94, transmission:.24, roughness:.03, metalness:.06, clearcoat:1.8, clearcoatRoughness:.03, emissive:emissive ?? c, emissiveIntensity:.08, depthWrite:false });
+    const addGem = (x,y,size=.18,color=0xffffff,rz=0,sx=1,sy=1,sz=.6) => addLocal(new THREE.OctahedronGeometry(size,0), crystal(color), x,y,.08,sx,sy,sz,rz);
+    const addOrb = (x,y,r=.16,color=0xffd4ff,sx=1,sy=1,sz=.7) => addLocal(new THREE.SphereGeometry(r,18,14), crystal(color), x,y,.08,sx,sy,sz);
+    const addStuds = (coords, size=.05, color=null) => coords.forEach(([x,y])=>addLocal(new THREE.SphereGeometry(size,10,8), metal(color || palette.edge), x,y,.06));
+    const addStarFrame = (size=.45, color=palette.edge) => {
+      for (let i=0;i<8;i++) addLocal(new THREE.BoxGeometry(size,.045,.03), metal(color), 0,0,.06,1,1,1, i*Math.PI/4);
+    };
+    const addRose = (x,y,scale=1,paletteColors=[0xf3a0b6,0xffe4e8,0xf8efce]) => {
+      for (let i=0;i<6;i++) {
+        const a = i/6*Math.PI*2;
+        addLocal(new THREE.SphereGeometry(.1,12,10), new THREE.MeshPhysicalMaterial({ color:paletteColors[i%paletteColors.length], roughness:.3, metalness:.02, clearcoat:.45 }), x+Math.cos(a)*.12*scale, y+Math.sin(a)*.12*scale, .07, 1.25*scale,.8*scale,.55*scale, a);
+      }
+      addLocal(new THREE.SphereGeometry(.08,12,10), new THREE.MeshPhysicalMaterial({ color:0xfff4dd, roughness:.3, metalness:.02 }), x, y, .08, scale,scale,.7*scale);
+    };
+    const addButterfly = (x,y,scale=1) => {
+      addLocal(new THREE.CapsuleGeometry(.03,.16,4,8), metal(0xe6dff4), x,y,.07,1,1,1,0,Math.PI/2);
+      [[-.16,.1,.2,.15,0x9e6bff],[.16,.1,.2,.15,0x9e6bff],[-.18,-.08,.16,.11,0x5c3a8f],[.18,-.08,.16,.11,0x5c3a8f]].forEach(([dx,dy,sx,sy,col],i)=>{
+        addLocal(new THREE.SphereGeometry(1,18,14), new THREE.MeshPhysicalMaterial({color:col,transparent:true,opacity:.94,transmission:.06,roughness:.08,metalness:.1,clearcoat:1.1}), x+dx*scale,y+dy*scale,.065,sx*scale,sy*scale,.04*scale,0);
+        addLocal(new THREE.TorusGeometry(Math.max(sx,sy)*.8*scale,.01*scale,6,18,Math.PI*1.45), metal(0xddd3f4), x+dx*scale,y+dy*scale,.07,1,1,1, i%2?1.1:-1.1);
+      });
+    };
+    const addCatEmblem = () => {
+      addOrb(-.23,.2,.11,0x26212b,.95,.95,.75); addOrb(.23,.2,.11,0x26212b,.95,.95,.75);
+      [[-.28,.33],[.28,.33]].forEach(([x,y],i)=>addLocal(new THREE.ConeGeometry(.08,.13,4), metal(0x6c29ac), x,y,.08,1,1,1, i?-.2:.2));
+      [[-.23,.2],[.23,.2]].forEach(([x,y])=>addLocal(new THREE.SphereGeometry(.024,10,8), crystal(0xffd965,0xffb300), x,y,.14));
+      addLocal(new THREE.CylinderGeometry(.14,.14,.06,18), metal(0xe4aa4d), 0,-.44,.07,1,1,1,0,Math.PI/2);
+    };
+
+    if (id === 'clockwork') {
+      addCatEmblem();
+      addStuds([[-.55,.55],[.55,.55],[-.55,-.55],[.55,-.55]], .04, 0xd39b43);
+    } else if (id === 'aurora_crystal') {
+      addRose(-.26,.18,.95,[0xf0a0af,0xffecd4,0xf5e8cb]);
+      addRose(.18,-.08,.78,[0xe36f8b,0xfff0d8,0xffd4a8]);
+      addLocal(new THREE.TorusGeometry(.54,.05,8,28,Math.PI*1.1), new THREE.MeshPhysicalMaterial({color:0xb68b60,roughness:.58,metalness:.03,clearcoat:.25}), 0,.02,.04,1,1,1,0,Math.PI/2);
+    } else if (id === 'eclipse_obsidian') {
+      addButterfly(0,.06,.96);
+      addLocal(new THREE.CylinderGeometry(.02,.02,.7,8), metal(0xe6d7f2), .42,.24,.08,1,1,1,.78);
+      addOrb(0,-.42,.08,0x2d1f58,1.2,.85,.35);
+    } else if (id === 'starseed') {
+      addRose(-.18,.14,.72,[0xf2b6ca,0xffffff,0xd6ebff]);
+      addRose(.22,-.1,.65,[0xffdde9,0xf6faff,0xc9ddff]);
+      for (let i=0;i<8;i++) { const a=i/8*Math.PI*2; addLocal(new THREE.SphereGeometry(.035,10,8), new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.08,metalness:.02,clearcoat:1.4}), Math.cos(a)*.48, Math.sin(a)*.38, .07); }
     } else if (id === 'neon_prism') {
-      const neonMat=new THREE.MeshBasicMaterial({color:index%2?0xff58da:0x5bfff2,transparent:true,opacity:.75,blending:THREE.AdditiveBlending,depthWrite:false});
-      const slash=new THREE.Mesh(new THREE.BoxGeometry(.92,.055,.03),neonMat);slash.rotation.z=index%2?.65:-.65;slash.position.z=.06;frame.add(slash);
+      addStarFrame(.44, 0xe1b866);
+      addGem(0,0,.24,0xeaf1ff,.15,1.2,1.2,.72);
+      addStuds([[-.58,.58],[.58,.58],[-.58,-.58],[.58,-.58]], .04, 0xe1b866);
+    } else if (id === 'crown_steel') {
+      addStarFrame(.34, 0xdfb86a);
+      addOrb(0,0,.26,0xf0b3ff,1.18,1.18,.82);
+      addStuds([[-.52,.52],[.52,.52],[-.52,-.52],[.52,-.52]], .038, 0xdfb86a);
+      addLocal(new THREE.TorusGeometry(.42,.028,10,30), metal(0xdfb86a), 0,0,.11,1,1,1,0,Math.PI/2);
+    } else if (id === 'rift_shard') {
+      addStarFrame(.42, 0xefc97c);
+      addGem(0,0,.25,0xfff1d3,.14,1.25,1.25,.75);
+      addLocal(new THREE.BoxGeometry(.52,.09,.04), metal(0xc06bff), 0,-.42,.07);
+      addStuds([[-.56,.56],[.56,.56],[-.56,-.56],[.56,-.56]], .04, 0xefc97c);
     } else if (id === 'mythic_aeon') {
-      const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.11,0),new THREE.MeshPhysicalMaterial({color:index%2?0x77eeff:0xf0e6bd,transparent:true,opacity:.9,transmission:.28,roughness:.03,metalness:.12,emissive:index%2?0x3fc7da:0x8b7a45,emissiveIntensity:.1,depthWrite:false}));
-      gem.position.set(0,.46,.065);frame.add(gem);
-      const lineMat=new THREE.MeshBasicMaterial({color:index%2?0x76e9ff:0xdccf97,transparent:true,opacity:.48,blending:THREE.AdditiveBlending,depthWrite:false});
-      const line=new THREE.Mesh(new THREE.BoxGeometry(.72,.035,.025),lineMat);line.position.set(0,-.34,.06);frame.add(line);
+      addStarFrame(.46, 0xf0d98e);
+      addGem(0,0,.26,0xfff3c5,.1,1.28,1.28,.8);
+      addGem(0,.42,.12,0x78eaff,.1,1.1,1.1,.9);
+      addLocal(new THREE.TorusGeometry(.48,.024,10,36), new THREE.MeshBasicMaterial({color:0xffefb0,transparent:true,opacity:.72,blending:THREE.AdditiveBlending,depthWrite:false}), 0,0,.12,1,1,1,0,Math.PI/2);
+    } else if (id === 'celestial_choir') {
+      addGem(0,.12,.16,0xfff0c8,.15,1.1,1.25,.7);
+      addLocal(new THREE.BoxGeometry(.26,.06,.03), metal(0xbfa96d), -.22,-.1,.07,1,1,1,.6);
+      addLocal(new THREE.BoxGeometry(.26,.06,.03), metal(0xbfa96d), .22,-.1,.07,1,1,1,-.6);
+    } else if (id === 'void_monarch') {
+      addOrb(0,0,.18,0x5a2392,1.05,1.25,.45);
+      addGem(0,.38,.1,0xff9cf2,.12,1,1,.8);
+    } else if (id === 'prismatic_tide') {
+      addOrb(.12,.12,.16,0xbefcff,1.4,1.1,.35);
+      addOrb(-.28,-.22,.08,0xd9ffff,1.1,1.0,.3);
     }
     return mat;
+  }
+
+
+  addD20FaceMotif(group, center, normal, skin, index) {
+    const id = String(skin?.id || '');
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1), normal.clone().normalize());
+    const motif = new THREE.Group();
+    motif.position.copy(center.clone().add(normal.clone().multiplyScalar(.055)));
+    motif.quaternion.copy(q);
+    group.add(motif);
+    const metal = c => new THREE.MeshPhysicalMaterial({ color:c, metalness:.84, roughness:.18, clearcoat:1.15, clearcoatRoughness:.07 });
+    const crystal = (c, e=null) => new THREE.MeshPhysicalMaterial({ color:c, transparent:true, opacity:.92, transmission:.18, roughness:.04, metalness:.06, clearcoat:1.7, clearcoatRoughness:.03, emissive:e ?? c, emissiveIntensity:.06, depthWrite:false });
+    const add = (geom, mat, x=0, y=0, z=.015, sx=1, sy=1, sz=1, rz=0) => { const m=new THREE.Mesh(geom,mat); m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.rotation.z=rz; motif.add(m); return m; };
+    if (id === 'clockwork') {
+      add(new THREE.SphereGeometry(.06,10,8), metal(0x1e1a26), -.08,.03,.02,1,1,.7);
+      add(new THREE.SphereGeometry(.06,10,8), metal(0x1e1a26), .08,.03,.02,1,1,.7);
+      [[-.11,.08],[.11,.08]].forEach(([x,y],i)=>add(new THREE.ConeGeometry(.03,.05,4), metal(0x6c29ac), x,y,.03,1,1,1, i?-.2:.2));
+    } else if (id === 'aurora_crystal' || id === 'starseed') {
+      const colA = id === 'aurora_crystal' ? 0xf0a0af : 0xf3c2d7;
+      const colB = id === 'aurora_crystal' ? 0xffefd8 : 0xd8ebff;
+      for (let i=0;i<5;i++){ const a=i/5*Math.PI*2; add(new THREE.SphereGeometry(.04,10,8), metal(i%2?colA:colB), Math.cos(a)*.08, Math.sin(a)*.08,.02,1.2, .8, .5); }
+      add(new THREE.SphereGeometry(.03,10,8), metal(0xfff6df),0,0,.02);
+    } else if (id === 'eclipse_obsidian') {
+      [[-.08,.05,.09,.07,0x956bff],[.08,.05,.09,.07,0x956bff],[-.08,-.05,.07,.05,0x5c3a8f],[.08,-.05,.07,.05,0x5c3a8f]].forEach(([x,y,sx,sy,col])=>add(new THREE.SphereGeometry(1,12,10), crystal(col), x,y,.015,sx,sy,.02));
+    } else if (id === 'neon_prism' || id === 'rift_shard' || id === 'mythic_aeon') {
+      const col = id === 'neon_prism' ? 0xe7cb7c : id === 'rift_shard' ? 0xffefcf : 0xffefb4;
+      for (let i=0;i<4;i++) add(new THREE.BoxGeometry(.16,.02,.012), metal(col), 0,0,.02,1,1,1, i*Math.PI/4);
+      add(new THREE.OctahedronGeometry(id==='mythic_aeon' ? .08 : .06,0), crystal(id==='neon_prism'?0xe7f1ff:id==='rift_shard'?0xfff1d0:0xfff3c5), 0,0,.03,1.05,1.05,.7,.15);
+    } else if (id === 'crown_steel') {
+      add(new THREE.SphereGeometry(.07,12,10), crystal(0xf0b2ff),0,0,.025,1.1,1.1,.65);
+      add(new THREE.TorusGeometry(.12,.012,8,20), metal(0xdfb86a),0,0,.03,1,1,1,0);
+    }
   }
 
   d20(style) {
@@ -1055,13 +1207,8 @@ export class DiceTheater {
       });
       const mesh = new THREE.Mesh(tri,mat); mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh); this.faceMaterials[f]=mat;
 
-      // A tiny face-inset gem/pattern every few faces gives premium skins a
-      // crafted look without covering the number or adding detached ornaments.
-      if (premium && f % 4 === 0) {
-        const detailColor = skin.id==='prismatic_tide' ? 0xdfffff : skin.id==='rift_shard' ? 0xe6c8ff : skin.id==='crown_steel' ? 0xd4b56f : skin.id==='void_monarch' ? 0x8f4fd2 : skin.id==='celestial_choir' ? 0xffefc0 : skin.id==='mythic_aeon' ? 0xf3e9be : 0xbfffff;
-        const gem = new THREE.Mesh(new THREE.OctahedronGeometry(.055,0),new THREE.MeshPhysicalMaterial({color:detailColor,transparent:true,opacity:.86,transmission:.2,roughness:.03,metalness:.08,clearcoat:1.5,depthWrite:false}));
-        gem.position.copy(center.clone().add(normal.clone().multiplyScalar(.06)).add(new THREE.Vector3(0,.05,0)));
-        group.add(gem);
+      if (premium && (f % 4 === 0 || ['clockwork','aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard','mythic_aeon'].includes(skin.id))) {
+        this.addD20FaceMotif(group, center, normal, skin, f);
       }
 
       const label = this.makeLabel(String(f+1), premium?.42:.44, labelColor, {font:visual.font,weight:visual.weight,stroke:skin.id==='neon_prism'?'#061019':null,strokeWidth:premium?3:4,shadow:skin.emissive||'rgba(0,0,0,.9)',shadowBlur:premium?9:(skin.id==='classic'?8:14)});

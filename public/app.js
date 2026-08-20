@@ -1,6 +1,6 @@
-import { DiceTheater } from './dice3d.js?v=8360';
+import { DiceTheater } from './dice3d.js?v=8370';
 
-const CLIENT_BUILD = '8.3.0-dice-visual-8360';
+const CLIENT_BUILD = '8.3.0-dice-visual-8370';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });

@@ -1,4 +1,4 @@
-import { DiceTheater } from './dice3d.js?v=8340';
+import { DiceTheater } from './dice3d.js?v=8352';
 
 const CLIENT_BUILD = '8.3.0-shared-turn-branch-clarity';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
@@ -477,6 +477,7 @@ function toast(msg) {
   el._t = setTimeout(() => el.classList.remove('show'), 2400);
 }
 function view(id) {
+  if (id === 'homeView' && roomCode && playerToken && state) return;
   $$('.view').forEach(v => v.classList.remove('active'));
   $('#' + id).classList.add('active');
   $('#hudTop').classList.toggle('hidden', id === 'homeView' || id === 'entryView');
@@ -1303,16 +1304,17 @@ function enqueueDice(payload) {
     $('#diceFinal').classList.remove('is-result');
     $('#diceBreakdown').innerHTML = '';
     $('#diceSub').textContent = `${payload.rollerName}의 주사위를 모든 플레이어가 함께 봅니다…`;
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const theater = getDiceTheater();
     const startsAt = Number(payload.startsAt || 0);
     // Keep multiplayer synchronization, but never hold a visible roll for a
     // full second. A tiny cap is enough to hide network jitter without making
     // the game feel unresponsive.
-    if (startsAt > Date.now()) await new Promise(r => setTimeout(r, Math.min(90, startsAt - Date.now())));
+    if (startsAt > Date.now()) await new Promise(r => setTimeout(r, Math.min(40, startsAt - Date.now())));
     $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     if (theater) {
       try {
-        await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 2350 : 2050 });
+        await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 1880 : 1620 });
       } catch (error) {
         console.error('[dice3d] roll failed', error);
         $('#diceSub').textContent = '3D 연출 오류가 발생해 숫자 결과로 이어갑니다.';
@@ -1329,7 +1331,7 @@ function enqueueDice(payload) {
       $('#diceFinal').textContent = natural;
       $('#diceFinal').classList.add('is-result');
       $('#diceSub').textContent = '판정이 확정되었습니다.';
-      await new Promise(r => setTimeout(r, 1250));
+      await new Promise(r => setTimeout(r, 880));
       view('storyView');
       renderStory();
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -1345,7 +1347,7 @@ function enqueueDice(payload) {
     $('#diceSub').textContent = '주사위 원값이 확정되었습니다.';
 
     if (payload.total != null) {
-      await new Promise(r => setTimeout(r, 360));
+      await new Promise(r => setTimeout(r, 180));
       const mods = Array.isArray(payload.modifiers) ? payload.modifiers : [];
       let expression = `${payload.result}`;
       for (const mod of mods) {
@@ -1354,7 +1356,7 @@ function enqueueDice(payload) {
         expression += ` ${value >= 0 ? '+' : '−'} ${Math.abs(value)}`;
         $('#diceBreakdown').insertAdjacentHTML('beforeend', `<span class="roll-plus">${value >= 0 ? '+' : '−'}</span><span class="roll-mod"><small>${esc(mod.label || '보정')}</small><b>${value >= 0 ? '+' : ''}${value}</b></span>`);
         $('#diceSub').textContent = `${esc(mod.label || '보정')} ${value >= 0 ? '+' : ''}${value} 적용…`;
-        await new Promise(r => setTimeout(r, 280));
+        await new Promise(r => setTimeout(r, 150));
       }
       $('#diceBreakdown').insertAdjacentHTML('beforeend', `<span class="roll-equals">=</span><span class="roll-total"><small>최종</small><b>${payload.total}</b></span>`);
       $('#diceFinal').textContent = `최종 ${payload.total}`;
@@ -1362,10 +1364,10 @@ function enqueueDice(payload) {
       $('#diceSub').textContent = `${expression} = ${payload.total}${payload.dc != null ? ` · 기준 ${payload.dc}` : ''}${payload.damage ? ` · 피해 ${payload.damage}` : ''} · ${outcome}`;
       if (payload.success === true) audioManager.fx('success',1);
       else if (payload.success === false) audioManager.fx('failure',1);
-      await new Promise(r => setTimeout(r, 900));
+      await new Promise(r => setTimeout(r, 620));
     } else {
       $('#diceSub').textContent = '주사위 결과가 확정되었습니다.';
-      await new Promise(r => setTimeout(r, 650));
+      await new Promise(r => setTimeout(r, 420));
     }
     $('#diceOverlay').classList.remove('show');
     await new Promise(r => setTimeout(r, 180));

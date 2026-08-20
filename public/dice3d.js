@@ -1,6 +1,6 @@
 import * as THREE from '/vendor/three.module.js';
 
-console.info('[Chronicle Gate] DiceTheater visual build 8392');
+console.info('[Chronicle Gate] DiceTheater visual build 8393');
 
 export class DiceTheater {
   constructor(canvas) {
@@ -942,6 +942,24 @@ export class DiceTheater {
     }
   }
 
+
+  decorateDie(group, skin = {}, sides = 20) {
+    if (!group) return group;
+    const id = String(skin?.id || 'classic');
+    const price = Number(skin?.price || 0);
+
+    // Premium/hero dice use their own integrated body sculpting plus a small
+    // signature silhouette layer. Keep this lightweight so dice creation can
+    // never fail just because a cosmetic theme is unknown.
+    if (price >= 8) {
+      try {
+        this.addSignatureSilhouette(group, skin, sides);
+      } catch (err) {
+        console.warn('[Chronicle Gate] signature silhouette skipped', id, err);
+      }
+    }
+    return group;
+  }
 
   d20(style) {
     const group = new THREE.Group();

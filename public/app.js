@@ -18,7 +18,7 @@ const REQUIRED_IDS = [
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceBreakdown', 'diceSub',
-  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioTestBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel', 'resumeGate', 'openResume', 'homeAccountBar', 'accountStatus', 'accountPointLabel', 'loginOpenBtn', 'collectionOpenBtn', 'diceStoreOpenBtn', 'logoutBtn', 'authModal', 'authCloseBtn', 'authLoginTab', 'authRegisterTab', 'authEmail', 'authPassword', 'authNameField', 'authDisplayName', 'authSubmitBtn', 'authError', 'collectionModal', 'collectionCloseBtn', 'collectionGrid', 'diceStoreModal', 'diceStoreCloseBtn', 'diceWallet', 'diceStoreGrid', 'achievementToast', 'achievementTitle', 'achievementReward', 'endingReward'
+  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioTestBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel', 'resumeGate', 'openResume', 'homeAccountBar', 'accountStatus', 'accountPointLabel', 'loginOpenBtn', 'collectionOpenBtn', 'diceStoreOpenBtn', 'logoutBtn', 'authModal', 'authCloseBtn', 'authLoginTab', 'authRegisterTab', 'authEmail', 'authPassword', 'authPasswordHint', 'authNameField', 'authDisplayName', 'authSubmitBtn', 'authError', 'collectionModal', 'collectionCloseBtn', 'collectionGrid', 'diceStoreModal', 'diceStoreCloseBtn', 'diceWallet', 'diceStoreGrid', 'achievementToast', 'achievementTitle', 'achievementReward', 'endingReward'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
@@ -1113,10 +1113,15 @@ function setAuthMode(mode){
   $('#authSubmitBtn').textContent=reg?'계정 만들기':'로그인';
   const password=$('#authPassword');
   password.autocomplete=reg?'new-password':'current-password';
-  password.maxLength=reg?4:72;
-  password.inputMode=reg?'numeric':'text';
-  password.pattern=reg?'[0-9]{4}':'';
-  password.placeholder=reg?'숫자 4자리':'비밀번호';
+  password.maxLength=72;
+  password.minLength=reg?4:0;
+  password.inputMode='text';
+  password.pattern=reg?'.{4,72}':'';
+  password.placeholder=reg?'4자 이상 입력':'비밀번호';
+  const passwordLabel=password.closest('.field')?.querySelector('span');
+  if(passwordLabel) passwordLabel.textContent='비밀번호';
+  const passwordHint=$('#authPasswordHint');
+  if(passwordHint) passwordHint.classList.toggle('hidden',!reg);
   $('#authError').textContent='';
 }
 function openAuth(mode='login',after=null){ pendingEntryMode=after; setAuthMode(mode); setModal('#authModal',true); setTimeout(()=>$('#authEmail').focus(),30); }
@@ -1153,7 +1158,7 @@ $('#loginOpenBtn').onclick=()=>openAuth('login');
 $('#authCloseBtn').onclick=()=>{pendingEntryMode=null;setModal('#authModal',false);};
 $('#authLoginTab').onclick=()=>setAuthMode('login');
 $('#authRegisterTab').onclick=()=>setAuthMode('register');
-$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register'){ if(!/^\d{4}$/.test(body.password)) throw new Error('비밀번호는 숫자 4자리로 입력하세요.'); body.displayName=$('#authDisplayName').value.trim(); } const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); if(data.accountStore==='local-fallback') setTimeout(()=>toast('계정은 로컬 안전 저장소에 저장되었습니다. 상용 배포 전에는 Supabase 영속 저장을 연결해 주세요.'),350); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
+$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register'){ if(body.password.length<4||body.password.length>72) throw new Error('비밀번호는 4자 이상 72자 이하로 입력하세요.'); body.displayName=$('#authDisplayName').value.trim(); } const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); if(data.accountStore==='local-fallback') setTimeout(()=>toast('계정은 로컬 안전 저장소에 저장되었습니다. 상용 배포 전에는 Supabase 영속 저장을 연결해 주세요.'),350); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
 $('#logoutBtn').onclick=async()=>{ try{await apiJson('/api/account/logout',{method:'POST',body:'{}'});}catch{} account=null;renderAccountBar(); if(socket.connected)socket.disconnect();socket.connect();toast('로그아웃했습니다.'); };
 $('#collectionOpenBtn').onclick=loadCollection;
 $('#collectionCloseBtn').onclick=()=>setModal('#collectionModal',false);

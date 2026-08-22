@@ -85,7 +85,7 @@ const normalizeName = name => String(name || '').replace(/[\u0000-\u001f\u007f<>
 const DEVELOPER_EMAILS = new Set(['wezxcw1457@gmail.com']);
 const ALL_DICE_IDS = [
   'classic','nebula_glass','abyss_pearl','twilight_gilt','clockwork',
-  'aurora_crystal','eclipse_obsidian','starseed','neon_prism','crown_steel','rift_shard','mythic_aeon',
+  'aurora_crystal','eclipse_obsidian','starseed','neon_prism','celestial_choir','crown_steel','void_monarch','rift_shard','mythic_aeon',
 ];
 const isDeveloperEmail = email => DEVELOPER_EMAILS.has(normalizeEmail(email));
 
@@ -195,7 +195,8 @@ async function registerAccount({ email, password, displayName }) {
   const normalizedEmail = normalizeEmail(email);
   const name = normalizeName(displayName);
   if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error('올바른 이메일 주소를 입력하세요.');
-  if (String(password || '').length < 8 || String(password || '').length > 72) throw new Error('비밀번호는 8~72자로 입력하세요.');
+  const newPassword = String(password || '');
+  if (newPassword.length < 4 || newPassword.length > 72) throw new Error('비밀번호는 4자 이상 72자 이하로 입력하세요.');
   if (name.length < 2) throw new Error('닉네임은 2자 이상 입력하세요.');
   if (await findAccountByEmail(normalizedEmail)) throw new Error('이미 가입된 이메일입니다.');
   const id = crypto.randomUUID();
@@ -203,7 +204,7 @@ async function registerAccount({ email, password, displayName }) {
     id,
     email: normalizedEmail,
     display_name: name,
-    password_hash: hashPassword(password),
+    password_hash: hashPassword(newPassword),
     chronicle_points: 0,
     owned_dice: ['classic'],
     equipped_dice: 'classic',
@@ -331,7 +332,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.3.0-shared-turn-branch-clarity';
+const APP_VERSION = '8.3.0-dice-theme-pass-8385';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -347,14 +348,16 @@ const DICE_CATALOG = [
   {id:'nebula_glass',name:'성운 유리',price:5,rarity:'희귀',base:'#5948b8',accent:'#d9d0ff',emissive:'#251b6b',metalness:.18,roughness:.12,visual:'glass-stars'},
   {id:'abyss_pearl',name:'심해 진주',price:6,rarity:'희귀',base:'#0f7185',accent:'#baf8ff',emissive:'#063d56',metalness:.28,roughness:.16,visual:'pearl-bubble'},
   {id:'twilight_gilt',name:'황혼 금박',price:7,rarity:'희귀',base:'#7d3f36',accent:'#ffd67a',emissive:'#5b1d12',metalness:.72,roughness:.2,visual:'gilded-studs'},
-  {id:'clockwork',name:'사역묘 축연',price:8,rarity:'영웅',base:'#641a23',accent:'#f3bf52',emissive:'#3a0711',metalness:.56,roughness:.22,visual:'familiar-cat'},
-  {id:'aurora_crystal',name:'장미 바스켓',price:9,rarity:'영웅',base:'#7b5738',accent:'#ffe7cf',emissive:'#52311d',metalness:.24,roughness:.38,visual:'rose-basket'},
-  {id:'eclipse_obsidian',name:'흑접 야상',price:10,rarity:'영웅',base:'#1f1d39',accent:'#d8c9ff',emissive:'#5b2b92',metalness:.42,roughness:.14,visual:'butterfly-nocturne'},
-  {id:'starseed',name:'새벽 로즈',price:11,rarity:'영웅',base:'#dce9ff',accent:'#fff7ff',emissive:'#d998c8',metalness:.08,roughness:.16,visual:'pastel-rose'},
-  {id:'neon_prism',name:'성좌 프리즘',price:12,rarity:'전설',base:'#102142',accent:'#f5d98a',emissive:'#274a90',metalness:.44,roughness:.1,visual:'constellation-gem'},
-  {id:'crown_steel',name:'오브 세라핌',price:14,rarity:'전설',base:'#d5dff4',accent:'#f4c66a',emissive:'#d177ff',metalness:.46,roughness:.08,visual:'orb-cage'},
-  {id:'rift_shard',name:'흑금 문장',price:16,rarity:'전설',base:'#121523',accent:'#f4d487',emissive:'#7a37d4',metalness:.62,roughness:.1,visual:'black-gilded-gem'},
-  {id:'mythic_aeon',name:'아스트라 노바',price:22,rarity:'신화',base:'#11101d',accent:'#fff0b2',emissive:'#7deaff',metalness:.54,roughness:.08,visual:'mythic-orbital-gem'},
+  {id:'clockwork',name:'유수 결정',price:8,rarity:'영웅',base:'#16586a',accent:'#d9fbff',emissive:'#0e3440',metalness:.16,roughness:.08,visual:'water-flow'},
+  {id:'aurora_crystal',name:'홍염 심장',price:9,rarity:'영웅',base:'#51170e',accent:'#ffc66e',emissive:'#941b08',metalness:.22,roughness:.12,visual:'ember-flare'},
+  {id:'eclipse_obsidian',name:'오르골 야상',price:10,rarity:'영웅',base:'#2e264b',accent:'#f4e6c7',emissive:'#7868cd',metalness:.24,roughness:.12,visual:'music-box'},
+  {id:'starseed',name:'아케이드 펄스',price:11,rarity:'영웅',base:'#101a42',accent:'#7ffcff',emissive:'#ff59d8',metalness:.34,roughness:.08,visual:'arcade-pixel'},
+  {id:'neon_prism',name:'경계 파편',price:12,rarity:'전설',base:'#17192a',accent:'#ffd7ff',emissive:'#8a57ff',metalness:.46,roughness:.08,visual:'boundary-shard'},
+  {id:'celestial_choir',name:'성야 직조',price:14,rarity:'전설',base:'#081225',accent:'#ffe7a2',emissive:'#6da8ff',metalness:.28,roughness:.08,visual:'night-sky'},
+  {id:'crown_steel',name:'로얄 크라운',price:16,rarity:'전설',base:'#3f2918',accent:'#f1cd7a',emissive:'#8fd2ff',metalness:.72,roughness:.12,visual:'royal-regalia'},
+  {id:'void_monarch',name:'갤럭시 베일',price:18,rarity:'전설',base:'#160f29',accent:'#ffb6f7',emissive:'#7468ff',metalness:.38,roughness:.06,visual:'galaxy-veil'},
+  {id:'rift_shard',name:'비취 청자',price:20,rarity:'전설',base:'#6fae9f',accent:'#f2fff8',emissive:'#35635c',metalness:.12,roughness:.18,visual:'celadon-jade'},
+  {id:'mythic_aeon',name:'크로노스',price:26,rarity:'신화',base:'#171324',accent:'#ffe5a4',emissive:'#75ecff',metalness:.58,roughness:.06,visual:'chronos'},
 ];
 const DICE_BY_ID = Object.fromEntries(DICE_CATALOG.map(d=>[d.id,d]));
 

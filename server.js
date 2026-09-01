@@ -1874,14 +1874,11 @@ const PARALLEL_SCENE_COLOR={
   masque:['무대 어딘가에서 보이지 않는 관객이 한 번 박수를 쳤다.','가까운 가면 하나의 표정이 빛의 각도와 상관없이 잠깐 달라졌다.']
 };
 function parallelImmersiveOutcome(room,campaign,player,node,choice,grade,nextId){
-  const next=nextId && nextId!=='__ENDING__' ? campaign?.parallelStory?.nodes?.[nextId] : null;
   const colorPool=PARALLEL_SCENE_COLOR[campaign?.id]||PARALLEL_SCENE_COLOR.guardian;
   const seed=(Number(parallelPlayerState(room,player)?.progress||0)+String(node?.title||'').length+String(choice?.label||'').length)%colorPool.length;
-  const color=colorPool[seed]||'';
-  const transition=next && nextId!==parallelPlayerState(room,player)?.nodeId
-    ? `${parallelLocationLabel(campaign,next.location)} 쪽에서 다음 상황이 이어진다.`
-    : '';
-  return [color,transition].filter(Boolean).join(' ');
+  // v10.0: the following scene already contains authored prose.  Do not spoil it with
+  // a mechanical 'next location' sentence; end the resolution on a sensory beat instead.
+  return colorPool[seed]||'';
 }
 function parallelCombatAttemptText(player,choice,enc){
   const actor=player?.name||'플레이어', enemy=enc?.name||'적';
@@ -2048,7 +2045,7 @@ function parallelSceneNarrative(room,campaign,player,node){
   if(!node) return [];
   const source=[...(node.text||[])].map(x=>String(x).trim()).filter(Boolean);
   // The authored scene text is the fiction. Do not inject generic campaign catchphrases or repeat the objective as prose.
-  return source.slice(0,4);
+  return source.slice(0,5);
 }
 function compactSceneSentence(value='',limit=260){
   const text=String(value||'').replace(/\s+/g,' ').trim();
@@ -2210,34 +2207,69 @@ function parallelResolveNextId(room,campaign,player,node,choice,storyPass){
 
 function parallelCurateChoices(room,campaign,player,node,dynamic,base){
   const encounter=room.parallel?.encounters?.[parallelPlayerState(room,player)?.location];
-  if(encounter?.hp>0) return dynamic.slice(0,6);
-  const all=[...dynamic,...base].filter(choice=>choice && parallelChoiceFitsCurrentScene(room,campaign,player,choice,node));
-  const ranked=[...all].sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
-  const selected=[]; const seenIntent=new Set(); const seenDest=new Set();
+  if(encounter?.hp>0) return dynamic.slice(0,5);
+
+  // v10.0 Narrative Director:
+  // The choice list should read like a GM asking "what do you do?", not like a debug menu.
+  // Authored scene choices form the spine.  At most one context-only option (item, job,
+  // social or special route) may interrupt that spine, and only when it truly exists here.
+  const authored=(base||[])
+    .filter(choice=>choice && parallelChoiceFitsCurrentScene(room,campaign,player,choice,node))
+    .sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
+  const contextual=(dynamic||[])
+    .filter(choice=>choice && choice.choiceBadge!=='이전 선택의 여파')
+    .filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node))
+    .sort((a,b)=>parallelChoiceScore(b,node)-parallelChoiceScore(a,node));
+
+  // A final dilemma is not the moment for a shop/item/social side option. When the authored
+  // ending choices are explicit no-roll decisions, show those decisions and nothing else.
+  if(String(node?.phase||'')==='결단' && authored.length>=2 && authored.every(c=>c.automatic)) return authored.slice(0,4);
+
+  const selected=[];
+  const seenIntent=new Set();
+  const seenDestination=new Set();
   const currentId=parallelPlayerState(room,player)?.nodeId || '';
-  let acquisition=0, social=0;
-  // First pass: prefer distinct actions AND distinct destinations, so choices actually lead to different progress.
-  for(const c of ranked){
-    const intent=parallelChoiceIntent(c,node); const family=intent.split('|')[0];
-    const dest=parallelChoiceDestination(c,currentId,true) || parallelChoiceDestination(c,currentId,false) || '';
-    if(/^(trade|acquire):/.test(intent) && acquisition>=1) continue;
-    if(/^social:/.test(intent) && social>=2) continue;
-    if(seenIntent.has(intent)) continue;
-    if(dest && dest!==currentId && seenDest.has(dest) && selected.length>=2) continue;
-    selected.push(c); seenIntent.add(intent); if(dest&&dest!==currentId) seenDest.add(dest);
-    if(/^(trade|acquire):/.test(intent)) acquisition++;
-    if(/^social:/.test(intent)) social++;
-    if(selected.length>=5) break;
+  const targetCount=['대면','위기','결단'].includes(String(node?.phase||'')) ? 5 : 4;
+
+  const tryAdd=(choice,{allowSameDestination=false}={})=>{
+    if(!choice || selected.includes(choice)) return false;
+    const intent=parallelChoiceIntent(choice,node);
+    const family=intent.split('|')[0];
+    const dest=parallelChoiceDestination(choice,currentId,true) || parallelChoiceDestination(choice,currentId,false) || '';
+    if(seenIntent.has(intent)) return false;
+    if(!allowSameDestination && dest && dest!==currentId && seenDestination.has(dest) && selected.length>=2) return false;
+    // Keep the menu diverse: two near-identical social / acquire actions are worse than one.
+    if(['talk','trade','social:offer','social:accept','social:assist','social:coordinate'].some(x=>family.startsWith(x)) &&
+       selected.some(c=>/^(talk|trade|social)/.test(parallelChoiceIntent(c,node)))) return false;
+    if(/^(acquire|transfer)/.test(family) && selected.some(c=>/^(acquire|transfer)/.test(parallelChoiceIntent(c,node)))) return false;
+    selected.push(choice);
+    seenIntent.add(intent);
+    if(dest && dest!==currentId) seenDestination.add(dest);
+    return true;
+  };
+
+  // One genuinely surprising contextual action is desirable: a key fits, a person can be
+  // rescued, a carried item can be traded, a linked player can be coordinated with, etc.
+  const premiumContext=contextual.find(c=>
+    /핵심|특수|아이템 해금|직업 권한|구조 보상|현장 획득|위험한 줍기|물물교환|훔치기|구매|아이템 전달/.test(String(c.choiceBadge||''))
+    || ['parallel-social','parallel-item-transfer'].includes(c.kind)
+  );
+  if(premiumContext) tryAdd(premiumContext,{allowSameDestination:true});
+
+  for(const c of authored){
+    tryAdd(c);
+    if(selected.length>=targetCount) break;
   }
-  // Second pass: fill only when necessary, still avoiding exact duplicate intent.
-  for(const c of ranked){
-    if(selected.length>=5) break;
-    if(selected.includes(c)) continue;
-    const intent=parallelChoiceIntent(c,node);
-    if(seenIntent.has(intent)) continue;
-    selected.push(c); seenIntent.add(intent);
+  for(const c of contextual){
+    if(selected.length>=targetCount) break;
+    tryAdd(c,{allowSameDestination:selected.length<2});
   }
-  return selected.slice(0,5);
+  // If all authored edges converge, destination diversity should not blank out the scene.
+  for(const c of authored){
+    if(selected.length>=targetCount) break;
+    tryAdd(c,{allowSameDestination:true});
+  }
+  return selected.slice(0,targetCount);
 }
 function parallelRenderedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player);
@@ -2257,7 +2289,7 @@ function parallelRenderedScene(room,campaign,player){
       .map((choice,index)=>({id:`fallback:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
     choices.push(...fallback.filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node)).slice(0,5));
   }
-  const explainedChoices=choices.slice(0,6).map(choice=>{ const contextual={...choice,label:parallelContextualLabel(choice,node)}; return {...contextual,reason:parallelChoiceReason(contextual,node)}; });
+  const explainedChoices=choices.slice(0,5).map(choice=>{ const contextual={...choice,label:parallelContextualLabel(choice,node)}; return {...contextual,reason:parallelChoiceReason(contextual,node)}; });
   return {
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
@@ -2265,6 +2297,7 @@ function parallelRenderedScene(room,campaign,player){
     paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices, freeActionAllowed:false,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
+    carryover:ps.lastPersonalResult ? {choiceLabel:ps.lastPersonalResult.choiceLabel||'',text:ps.lastPersonalResult.text||'',grade:ps.lastPersonalResult.grade||'',success:Boolean(ps.lastPersonalResult.success)} : null,
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
     linked:parallelLinkedPlayers(room,player).map(p=>({id:p.id,name:p.name,location:room.parallel.playerStates?.[p.id]?.location,locationLabel:parallelLocationLabel(campaign,room.parallel.playerStates?.[p.id]?.location)})),
     worldSummary:parallelWorldSummary(room), clockTick:Number(room.parallel.clockTick||0), ended:Boolean(ps.ended), ending:ps.ending,
@@ -2484,7 +2517,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
       if(fightTemplate?.combat) choice.combat=fightTemplate.combat;
     }
   }
-  if(!choice) return ack?.({ok:false,error:'제시된 행동을 고르거나, 아래 입력창에 현재 장면과 연결된 행동을 직접 적어 주세요.'});
+  if(!choice) return ack?.({ok:false,error:'현재 장면에 표시된 선택지 중 하나를 골라 주세요.'});
 
   if(choice.freeAction && freeActionInterpretation){
     const validity={ok:true,intent:freeActionInterpretation.intent||freeActionIntent(choice.label),ctx:inferSceneAffordances(scene)};

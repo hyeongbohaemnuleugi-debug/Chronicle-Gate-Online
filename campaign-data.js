@@ -482,6 +482,32 @@ const STORY_TEXTURE = {
       '별빛을 머금은 짐승이 모습을 드러냈다가 공격하지 않고 몸을 낮췄다. 누군가에게 쫓기고 있었다.',
       '숲의 심장 쪽에서 거대한 숨소리가 들렸다. 들숨마다 하늘이 조금 어두워지고 날숨마다 나뭇잎이 빛났다.'
     ]
+  },
+  guardian: {
+    sense:[
+      '젖은 흙과 부서진 돌 냄새 사이로 멀리서 연기가 흘러왔다. 숲길 곳곳에는 왕실 마차 바퀴 자국과 침략자의 금속 발자국이 서로 다른 방향으로 겹쳐 있었다.',
+      '다음 지역으로 넘어갈 때마다 공기의 냄새부터 달라졌다. 기름 냄새가 밴 기계도시, 마력이 탄 교실, 향신료가 날리는 사막이 한 여정 안에서 이어졌다.',
+      '전투가 끝난 자리에는 쓰러진 적보다 급히 떠난 사람들의 흔적이 더 많이 남았다. 반쯤 먹은 식사와 열려 있는 가방이 이곳이 원래 누군가의 생활터였음을 보여 줬다.',
+      '낡은 유적의 룬은 침략자의 장비가 가까워질 때마다 같은 박자로 희미하게 빛났다. 서로 다른 시대의 기술이 하나의 언어를 공유하는 듯했다.',
+      '차원 균열이 열릴 때 주변의 소리가 먼저 얇아졌다. 바람과 발소리가 멀어지고, 눈앞의 풍경만 종잇장처럼 겹쳐 보였다.',
+      '헤븐홀드의 바닥은 오래된 전투 흔적으로 갈라져 있었지만, 균열 사이마다 누군가 최근에 남긴 구조 표식과 화살표가 이어져 있었다.'
+    ],
+    npc:[
+      '작은 공주는 울음을 삼킨 채 망가진 왕실 표식을 품에 넣었다. “돌아가야 해. 그런데 저쪽에서 도움을 부르는 소리가 나.”',
+      '로레인은 짐을 다시 묶으며 어깨를 으쓱했다. “영웅은 길을 잃어도 괜찮아요. 대신 같이 온 사람까지 잃으면 안 되죠.”',
+      '저항군 정찰병은 낡은 지도를 펼쳐 보였다. “이 선은 길이 아니라 우리가 사람을 빼낸 순서예요. 다음에도 같은 순서가 통한다는 보장은 없습니다.”',
+      '미래의 공주는 검집을 내려다보다가 작은 목소리로 말했다. “당신들이 기억하는 나는 아직 여기까지 오지 않았겠죠.”',
+      '구조된 주민은 왕실 배지를 한참 바라본 뒤 돌려주었다. “왕실 사람이라서 도운 게 아니에요. 우리를 두고 가지 않았으니까 도운 겁니다.”',
+      '챔피언 소드의 목소리는 금속에서 난다기보다 주변 모두의 기억에서 동시에 울리는 것 같았다. “힘을 증명하지 마라. 끝까지 남긴 약속을 보여라.”'
+    ],
+    omen:[
+      '침략자의 잔해 안쪽에서 캔터베리 유적과 같은 문양이 발견됐다. 누군가 두 기술을 훨씬 전부터 연결해 온 흔적이었다.',
+      '멀리 떠난 줄 알았던 동료의 신호가 낯선 지역의 통신기에 짧게 잡혔다. 서로 다른 세계가 완전히 끊어진 것은 아니었다.',
+      '왕실 배지가 한 번 뜨거워졌다. 바로 다음 순간, 오래 닫혀 있던 지역의 문 하나가 안쪽에서 열렸다.',
+      '차원 균열 너머로 같은 장소의 다른 시간이 잠깐 비쳤다. 한쪽에서는 성벽이 서 있었고 다른 쪽에서는 그 자리에 저항군의 모닥불만 남아 있었다.',
+      '구해 준 사람이 다음 지역의 검문소에서 먼저 파티 이름을 불렀다. 오래전의 작은 선택이 예상하지 못한 곳에서 길이 되어 돌아왔다.',
+      '챔피언 소드가 아주 짧게 울렸다. 검날에는 파티가 지나온 지역들의 빛이 하나씩 다른 색으로 비쳤다.'
+    ]
   }
 };
 
@@ -551,15 +577,11 @@ function enrichStoryProse(c, guide, baseText, act, step) {
   const sense = texture.sense[(act * 2 + step) % texture.sense.length];
   const npc = texture.npc[(act * 3 + step + 1) % texture.npc.length];
   const omen = texture.omen[(act * 4 + step + 2) % texture.omen.length];
-  const tone = storyTone[c.id] || [];
-  const actTone = tone[Math.min(act, Math.max(0, tone.length - 1))] || '';
-  // v7.5: scene prose is staged like a table session: concrete scene -> human reaction -> sensory beat -> hook.
-  // Each paragraph has a different job so the player does not read four versions of the same exposition.
-  const humanBeat = npc ? `사건을 설명하는 기록보다 먼저, 눈앞의 사람에게서 변화가 보였다. ${npc}` : '';
-  const sensoryBeat = sense ? `주변을 다시 의식하자 작은 감각 하나가 상황을 더 선명하게 만들었다. ${sense}` : '';
-  const directionBeat = ''; // v7.5: no meta act-summary inside live scene prose
-  const hookBeat = omen ? `그때, 아직 설명되지 않은 징후가 하나 더 남았다. ${omen}` : '';
-  return [baseText, humanBeat, sensoryBeat, directionBeat, hookBeat].filter(Boolean).join('\n\n');
+  // v10.0: every paragraph must belong to the fiction itself.  Earlier builds prefixed
+  // the prose with phrases such as "사건을 설명하는 기록보다 먼저" or
+  // "주변을 다시 의식하자".  They read like GM design notes, not a scene.
+  // Keep the same concrete material, but let characters, senses and omens speak for themselves.
+  return [baseText, npc, sense, omen].filter(Boolean).join('\n\n');
 }
 
 // v6.1.0 - LIVING STORY: explicit scene affordances.
@@ -707,8 +729,78 @@ function actionOpportunity(type) {
 function actionRisk(type) {
   return ({fight:'높음',threaten:'높음',steal:'높음',sneak:'보통',tail:'보통',investigate:'낮음',observe:'낮음',persuade:'보통',help:'낮음',trade:'낮음',bypass:'보통',wait:'낮음',trap:'보통',break:'높음',hide:'낮음'})[type] || '보통';
 }
+const RELEASE_FINAL_DECISIONS={
+  ember:[
+    {label:'잿빛 왕관을 완전히 파괴한다',path:'survival',stat:'근력',actionType:'decision-break',risk:'높음',success:'왕관의 힘을 끝내기 위해 가장 직접적인 방법을 택했다. 왕국은 큰 공백을 감수해야 하지만 더는 왕관이 다음 주인을 고를 수 없다.'},
+    {label:'왕관을 다시 봉인하고 누구도 쓰지 못하게 한다',path:'truth',stat:'지능',actionType:'decision-seal',risk:'보통',success:'왕관의 원리와 봉인 기록을 이용해 힘을 남기되 소유자를 없애는 길을 택했다. 진실은 기록으로 남고 왕좌는 비워진다.'},
+    {label:'새로운 주인을 세우되 왕관의 대가를 공개한다',path:'bond',stat:'매력',actionType:'decision-share',risk:'높음',success:'왕관을 없애는 대신 그 힘과 대가를 모두 공개한 채 새로운 질서를 세우기로 했다. 이제 왕권은 비밀이 아니라 감시받는 약속이 된다.'}
+  ],
+  neon:[
+    {label:'도시의 원본 기억을 복원한다',path:'truth',stat:'지능',actionType:'decision-restore',risk:'높음',success:'조작 이전의 기록을 가능한 한 복원하기로 했다. 많은 사람이 잃어버린 사실을 되찾지만 지금의 삶과 충돌하는 기억도 함께 돌아온다.'},
+    {label:'MOTHER-9의 기억 체계를 초기화한다',path:'survival',stat:'지능',actionType:'decision-reset',risk:'높음',success:'누구도 과거 기록을 독점하지 못하도록 중앙 기억 체계를 끊어 냈다. 도시는 혼란을 감수하는 대신 하나의 시스템이 진실을 정하는 시대를 끝낸다.'},
+    {label:'기억의 소유권을 각 시민에게 돌려준다',path:'bond',stat:'매력',actionType:'decision-return',risk:'보통',success:'원본을 강제로 덮어쓰지 않고 각자가 자신의 기억을 선택하고 보관할 권리를 갖게 했다. 완벽한 진실보다 동의와 증언을 우선한 결정이다.'}
+  ],
+  abyss:[
+    {label:'탈라스를 구조 대상으로 인정하고 함께 탈출한다',path:'bond',stat:'지혜',actionType:'decision-rescue',risk:'높음',success:'인간만 구조한다는 전제를 버리고 탈라스까지 구조 계획에 넣었다. 가장 어려운 상승이지만 심연과의 첫 접촉은 폭력이 아닌 구조로 기록된다.'},
+    {label:'기지를 폭파해 균열과 연구를 함께 끝낸다',path:'survival',stat:'근력',actionType:'decision-destroy',risk:'높음',success:'연구와 기지를 포기하더라도 더 큰 사고를 막는 쪽을 택했다. 남는 것은 생존자와 불완전한 증언뿐이지만 같은 실험은 다시 이어지기 어렵다.'},
+    {label:'생존자와 핵심 연구 기록을 싣고 수면으로 상승한다',path:'truth',stat:'지능',actionType:'decision-evidence',risk:'보통',success:'모든 것을 구하려 하지 않고 살아 있는 사람과 사건을 증명할 최소한의 기록을 선택했다. 진실을 지상에서 다시 판단할 기회를 남긴다.'}
+  ],
+  clock:[
+    {label:'완벽하지 않은 내일을 받아들이고 루프를 끝낸다',path:'survival',stat:'체력',actionType:'decision-forward',risk:'높음',success:'재앙이 완전히 사라지지 않더라도 한 번뿐인 내일을 선택했다. 도시는 처음으로 반복이 아닌 결과를 감당하게 된다.'},
+    {label:'루프의 원리를 공개하고 모두의 기억을 나눠 보존한다',path:'bond',stat:'매력',actionType:'decision-memory',risk:'보통',success:'한 사람이 시간을 짊어지는 대신 시민들이 반복의 기억과 대가를 함께 나누게 했다. 누구도 완전히 지워지지 않는 방식으로 내일을 준비한다.'},
+    {label:'종지기의 장치를 다시 설계해 재앙의 피해만 줄인다',path:'truth',stat:'지능',actionType:'decision-rewrite',risk:'높음',success:'영원한 반복도 즉시 파괴도 아닌 제3의 길을 택했다. 루프의 힘을 한 번의 완충 장치로 바꾸어 도시가 미래로 넘어갈 시간을 만든다.'}
+  ],
+  wild:[
+    {label:'마지막 별을 하늘로 돌려보낸다',path:'truth',stat:'지혜',actionType:'decision-star',risk:'보통',success:'숲이 별빛을 붙잡는 순환을 끊고 마지막 별을 하늘로 돌려보냈다. 숲은 힘을 잃지만 스스로 회복해야 하는 새로운 계절을 맞는다.'},
+    {label:'마지막 별을 숲의 심장에 넘긴다',path:'survival',stat:'체력',actionType:'decision-forest',risk:'높음',success:'하늘의 일부를 포기해 숲이 무너지지 않는 길을 택했다. 별자리의 모습은 달라지지만 숲의 생명은 당장의 멸망을 피한다.'},
+    {label:'부족과 오르바의 소원을 모아 새로운 별자리를 만든다',path:'bond',stat:'매력',actionType:'decision-constellation',risk:'높음',success:'누구 한쪽의 소원으로 별을 소유하지 않고 여러 약속을 하나의 새 별자리로 묶었다. 숲과 하늘이 서로의 몫을 다시 정하는 결말이 시작된다.'}
+  ],
+  guardian:[
+    {label:'작은 공주와 현재로 돌아가 캔터베리의 재건을 시작한다',path:'bond',stat:'매력',actionType:'decision-return',risk:'보통',success:'두 시간대의 사람들에게 작별을 고하고 작은 공주와 함께 현재의 캔터베리로 돌아간다. 지금까지 맺은 동맹과 구해 낸 사람들은 왕국을 다시 세우는 첫 약속이 된다.'},
+    {label:'미래에 남아 저항군과 함께 마지막 균열을 봉쇄한다',path:'survival',stat:'체력',actionType:'decision-stay',risk:'높음',success:'돌아갈 기회를 포기하고 폐허가 된 미래에 남는다. 이미 잃어버린 것을 되돌리기보다 아직 살아 있는 사람들의 내일을 지키는 수호자가 된다.'},
+    {label:'챔피언 소드로 두 시간대를 잇는 귀환로를 고정한다',path:'truth',stat:'지능',actionType:'decision-bridge',risk:'높음',success:'챔피언 소드가 가진 차원 공명을 이용해 한쪽을 버리지 않는 세 번째 길을 만든다. 두 공주는 서로의 존재를 기억하고, 동료들은 필요할 때 다시 만날 수 있는 하나의 통로를 남긴다.'}
+  ],
+  echo:[
+    {label:'0번선을 완전히 닫고 모든 사람을 정상 첫차 쪽으로 보낸다',path:'survival',stat:'체력',actionType:'decision-close',risk:'보통',success:'0번 승강장의 경로를 신호계에서 끊고 남은 사람들을 정상 첫차 쪽으로 이끈다. 청명역은 평범한 아침으로 돌아오지만, 이상 구역을 직접 증명할 흔적은 거의 남지 않는다.'},
+    {label:'0번선을 한 번 더 열어 아직 안쪽에 남은 사람을 데려온다',path:'bond',stat:'매력',actionType:'decision-rescue',risk:'높음',success:'첫차 진입 직전까지 문을 닫지 않고 안쪽의 마지막 신호를 따라간다. 가장 위험한 선택이지만 누구도 시간표 밖에 남겨 두지 않는 결말을 택한다.'},
+    {label:'운행 기록과 CCTV를 보존한 채 0번선을 봉쇄한다',path:'truth',stat:'지능',actionType:'decision-record',risk:'높음',success:'경로는 닫되 미래 영상과 충돌 운행표의 원본을 지운 채 끝내지 않는다. 다음 날 청명역은 정상 운행하지만, 누군가는 이 밤이 단순한 오류가 아니었다는 증거를 갖게 된다.'}
+  ],
+  aurora:[
+    {label:'기억층을 다시 얼음 속에 봉인하고 연구를 중단한다',path:'survival',stat:'지능',actionType:'decision-seal',risk:'보통',success:'현재 생존자의 안전을 우선해 기억층과 코어를 봉인했다. 발견은 사라지지 않지만 다시 열기 위해서는 새로운 합의와 절차가 필요하게 된다.'},
+    {label:'생존자와 원본 증거를 함께 데리고 세상에 공개한다',path:'truth',stat:'매력',actionType:'decision-publish',risk:'높음',success:'현상을 독점한 기관의 기록과 생존자의 증언을 함께 밖으로 가져갔다. 발견은 더 이상 한 조직의 비밀이 아니지만 그 책임도 공개된 세계의 몫이 된다.'},
+    {label:'위험한 코어만 파괴하고 관측소를 새로운 규칙 아래 유지한다',path:'bond',stat:'지혜',actionType:'decision-reform',risk:'높음',success:'기억층 자체를 없애지 않고 사람의 기억을 강제로 기록하는 장치만 끝냈다. 관측소는 발견을 지키는 곳에서 발견을 통제받게 하는 곳으로 바뀐다.'}
+  ],
+  masque:[
+    {label:'원래 마지막 장을 복원해 공연을 끝낸다',path:'truth',stat:'지능',actionType:'decision-original',risk:'높음',success:'숨겨진 원고를 완성해 주민들이 잊었던 이름과 역사를 마주하게 했다. 도시는 이전 모습으로 남지 못하더라도 반복되는 거짓말은 끝난다.'},
+    {label:'도시를 보존하되 누구나 배역을 거부할 수 있게 한다',path:'survival',stat:'지혜',actionType:'decision-preserve',risk:'보통',success:'공연을 즉시 무너뜨리지 않고 배역을 강제하는 규칙부터 없앴다. 나시라트는 남지만 주민은 처음으로 무대 밖의 삶을 고를 수 있게 된다.'},
+    {label:'새 결말을 써서 도시를 유랑극단으로 바꾼다',path:'bond',stat:'매력',actionType:'decision-rewrite',risk:'높음',success:'도시를 사막에 묶어 두는 대신 이름과 기억을 가진 채 세상으로 움직이는 새로운 마지막 장을 연기했다. 공연은 감옥이 아니라 주민이 선택한 삶의 형태가 된다.'}
+  ]
+};
+
+function buildDecisionChoices(c,guide,beat,act){
+  const finalAct=(actGuides[c.id]||[]).length===act+1;
+  const special=finalAct ? RELEASE_FINAL_DECISIONS[c.id] : null;
+  const aff=beat.affordances||sceneAffordances(c.id,act,5);
+  const target=String(guide.reveal||'지금까지 밝혀낸 사실').replace(/[.!?]+$/g,'');
+  const defs=special || [
+    {label:`${releaseKo(aff.clue||'확보한 증거','을','를')} 끝까지 검증해 사실을 먼저 확정한다`,path:'truth',stat:'지능',actionType:'decision-truth',risk:'보통',success:`${releaseKo(aff.clue||'증거','을','를')} 마지막까지 대조했다. ${target}. 다음 막은 이 사실을 모두가 알고 있는 상태에서 시작된다.`},
+    {label:`${aff.rescue||aff.person||'눈앞의 사람'}의 안전과 증언을 먼저 지킨다`,path:'bond',stat:'매력',actionType:'decision-bond',risk:'보통',success:`${aff.rescue||aff.person||'사람'}을 우선한 덕분에 사건의 진실을 말해 줄 살아 있는 증언과 관계가 다음 막까지 남는다.`},
+    {label:`${aff.hostile||aff.obstacle||'당장의 위험'}부터 통제해 다음 길을 확보한다`,path:'survival',stat:'체력',actionType:'decision-survival',risk:'높음',success:`${aff.hostile||aff.obstacle||'위험'}을 먼저 정리해 더 큰 피해를 막았다. 일부 단서는 놓칠 수 있지만 다음 장면에서 움직일 공간을 확보했다.`},
+    ...(aff.item?[{label:`${aff.item}${objJosa(aff.item)} 이용해 두 선택 사이의 제3의 길을 시도한다`,path:'truth',stat:'지혜',actionType:'decision-third',risk:'높음',success:`${aff.item}${objJosa(aff.item)} 단순한 도구가 아니라 협상 조건으로 사용했다. 어느 한쪽을 완전히 포기하지 않는 대신 더 어려운 책임을 떠안는 길이 열린다.`}]:[])
+  ];
+  const desired=finalAct?3:Math.min(4,defs.length);
+  return defs.slice(0,desired).map((d,i)=>({
+    id:`${beat.id}-DECISION-${i+1}`,label:d.label,detail:'',stat:d.stat,dc:finalAct?8:9+(i===2?1:0),path:d.path,
+    branchKey:`act${act+1}`,branchValue:d.path==='truth'?'careful':d.path==='bond'?'empathetic':'bold',actionType:d.actionType,
+    automatic:Boolean(finalAct),fatalRisk:false,isTravel:false,opportunity:d.path==='truth'?'진실':d.path==='bond'?'관계':'생존',risk:d.risk||'보통',
+    success:d.success,failure:`결정 자체는 되돌리지 않았다. 다만 실행 과정에서 예상하지 못한 대가가 생겼고, 그 대가가 다음 장면의 조건으로 남는다.`,
+    consequenceHint:{success:'선택한 가치가 다음 막과 결말에 누적됨',failure:'결정은 유지되지만 추가 대가가 남음'}
+  }));
+}
+
 function buildStoryChoices(c, guide, beat, act, step, index) {
   const phase = beat.phase || '장면';
+  if(phase==='결단') return buildDecisionChoices(c,guide,beat,act);
   const actNo = act + 1;
   const aff = beat.affordances || sceneAffordances(c.id, act, step);
   const hasPerson = Boolean(aff.hasPerson);
@@ -729,7 +821,7 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
       success:'현장의 움직임과 위험 순서를 읽어 먼저 움직일 틈을 찾았다.',failure:'결정적 순간은 놓쳤지만 가장 부자연스러운 움직임을 기억했다.'},
     {type:'listen',stat:'지혜',route:'careful',path:'truth',when:hasPerson||hasHostile||hasObstacle,label:'소리를 듣는다',risk:'낮음',
       success:'눈에 보이지 않는 움직임과 대화 방향을 소리로 구분해 안쪽 상황을 미리 파악했다.',failure:'정확한 위치는 잡지 못했지만 반복되는 소리를 다음 위험의 경고로 기억했다.'},
-    {type:'question',stat:'지혜',route:'empathetic',path:'truth',when:hasPerson,label:`${aff.person}에게 묻는다`,risk:'낮음',
+    {type:'question',stat:'지혜',route:'empathetic',path:'bond',when:hasPerson,label:`${aff.person}에게 묻는다`,risk:'낮음',
       success:`${aff.person}에게 필요한 사실을 직접 확인해 추측 하나를 확실한 정보로 바꿨다.`,failure:`대답은 흐렸지만 ${aff.person}${subjJosa(aff.person)} 피한 질문이 무엇인지 드러났다.`},
     {type:'persuade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,label:sceneActionLabel('persuade', aff),risk:'보통',
       success:`${aff.person}의 협조를 얻어 정보와 관계를 함께 확보했다.`,failure:`설득은 통하지 않았지만 ${aff.person}${subjJosa(aff.person)} 숨기는 이해관계가 드러났다.`},
@@ -765,7 +857,7 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
       success:'서두르지 않자 먼저 움직이는 쪽이 나타나 숨은 행동 순서를 확인했다.',failure:'작은 기회는 지나갔지만 반복되는 패턴을 읽었다.'},
     {type:'retreat',stat:'지혜',route:'careful',path:'survival',when:dangerPhase&&(hasHostile||hasObstacle),label:'잠시 물러난다',risk:'낮음',
       success:'안전한 거리로 빠져 상황을 다시 정리하고 다른 접근을 택할 여유를 얻었다.',failure:'후퇴가 늦어 압박이 따라붙었지만 추격 범위를 확실히 알게 됐다.'},
-    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:phase!=='결단',label:hasClue?`${aff.clue}의 흔적을 따라간다`:hasPerson?`${aff.person}${subjJosa(aff.person)} 가리킨 곳으로 간다`:`${guide.place} 안쪽으로 이동한다`,risk:'낮음',isTravel:true,
+    {type:'travel-a',stat:'지혜',route:'bold',path:'survival',when:phase!=='결단',label:hasClue?`${aff.clue}의 흔적을 따라간다`:hasPerson?`${aff.person}${subjJosa(aff.person)} 가리킨 곳으로 간다`:`${guide.place} 안쪽으로 이동한다`,risk:'낮음',isTravel:true,
       success:'확보한 정보에 따라 다음 현장으로 이동했다.',failure:'이동 중 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.'}
   ].filter(item=>item.when);
 
@@ -773,10 +865,10 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
   // but the list now begins with what people would naturally consider in THIS kind of scene.
   const phasePriority={
     '도입':['investigate','question','observe','persuade','help','listen','wait','bypass','travel-a'],
-    '탐색':['investigate','inspect-item','observe','question','tail','bypass','sneak','take-item','help','listen','wait','travel-a'],
+    '탐색':['investigate','inspect-item','question','bypass','tail','observe','take-item','sneak','help','listen','wait','travel-a'],
     '대면':['question','persuade','protect','help','fight','sneak','distract','bypass','hide','threaten','retreat','observe'],
     '진실':['investigate','inspect-item','question','observe','persuade','tail','trade','take-item','listen','wait'],
-    '위기':['protect','help','fight','bypass','break','sneak','trap','distract','retreat','question','persuade','hide'],
+    '위기':['protect','fight','investigate','bypass','question','break','sneak','trap','distract','retreat','persuade','hide'],
     '결단':['question','persuade','investigate','inspect-item','trade','protect','bypass','fight','break','help','retreat','travel-a']
   };
   const priority=phasePriority[phase] || ['investigate','observe','question','persuade','bypass','fight','help','wait','travel-a'];
@@ -787,9 +879,9 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
   // '묻는다 / 설득한다 / 소리를 듣는다' from crowding out genuinely different approaches.
   const familyOf=(type)=>({investigate:'inspect','inspect-item':'inspect',observe:'observe',listen:'observe',wait:'observe',question:'social',persuade:'social',trade:'social',threaten:'social',help:'help',protect:'help',fight:'force',break:'force',sneak:'stealth',hide:'stealth',tail:'stealth',distract:'stealth',bypass:'move',retreat:'move','travel-a':'move','take-item':'item',steal:'item',trap:'plan'}[type]||type);
   // v9.0: keep a tabletop-sized menu. Calm scenes expose five distinct approaches,
-  // while confrontation/crisis/decision scenes expose six. The player can still ignore
-  // these and declare a free-form action.
-  const desired=['대면','위기','결단'].includes(phase)?6:5;
+  // while confrontation/crisis/decision scenes keep one extra authored option.
+  // v10 uses choice-only play, so every visible option must earn its place in the current fiction.
+  const desired=['대면','위기','결단'].includes(phase)?5:4;
   const defs=[]; const families=new Set();
   for(const candidate of candidates){
     const family=familyOf(candidate.type);
@@ -888,10 +980,11 @@ ${guide.stakes}`;
       '마지막 별이 떨어지기 전날, 숲의 모든 짐승이 한곳으로 모였다. 포식자와 먹잇감이 서로를 무시한 채 같은 방향을 바라봤다. 그 중심에는 아무것도 없었지만 땅이 일정한 박자로 뛰고 있었다. 파티가 가까이 가자 박동이 각자의 심장 박자와 하나씩 맞춰지기 시작했다.'
     ]
   };
-  const goal = String(guide.goal || '').replace(/[.!?]+$/g, '');
-  const stakes = String(guide.stakes || '').replace(/[.!?]+$/g, '');
+  const stakes = String(guide.stakes || '').trim();
   const scene = scenes[c.id]?.[act] || scenes.ember[act] || '';
-  return `${scene}\n\n이 장면에서 파티가 놓치면 안 되는 것은 “${goal}”라는 목표다. 하지만 그 목표에 곧장 달려들수록 “${stakes}”라는 대가가 더 가까워진다. 지금은 속도보다 무엇이 원인이고 무엇이 누군가가 만든 미끼인지 구분해야 한다.`;
+  // v10.0: do not explain the design goal to the player.  The concrete scene already
+  // establishes what can be investigated; the stakes are allowed to exist as fiction.
+  return [scene, stakes].filter(Boolean).join('\n\n');
 }
 function buildExplorationScene(c, guide, act) {
   if (c.id==='aurora' || c.id==='masque') {
@@ -2129,6 +2222,193 @@ const JOB_SKILL_DEFS = {
 
 
 
+
+// v10.0.0 - NARRATIVE EDITION / bespoke 0-platform director
+// The station sandbox is one of Chronicle Gate's strongest "can I really do this?" systems.
+// Keep its routes, item gates and rare endings, but present every stop as an authored scene
+// instead of a navigation node with a one-line description.
+const ECHO_BESPOKE_EXTRA={
+  eng_start:[
+    '차단기 번호를 다시 세어 보니 더 이상한 점이 드러났다. 도면에는 24개뿐인 분전반에 25번째 표시등이 들어와 있다. 누군가 급히 붙인 라벨도, 임시 배선도 아니다. 처음부터 그 자리에 있었던 것처럼 먼지 자국까지 자연스럽다.',
+    '그때 천장 스피커에서 운행 종료 멜로디가 한 음만 재생되고 끊긴다. 동시에 0번 회로의 전류가 잠깐 치솟는다. 소리와 전력이 같은 순간에 움직였다. 우연이라고 넘기기에는 정확하다.'
+  ],
+  staff_start:[
+    '역무원은 방금 전 직접 셔터를 내리며 대합실을 확인했다. 남은 승객은 없었다. 그런데 단말에 찍힌 마지막 출입 로그는 00시 47분, 방향은 바깥에서 안쪽이다. 그 시각에는 이미 정문이 잠겨 있었다.',
+    '창구 아래 비상벨이 한 번 짧게 울린다. 수화기를 들자 아무 말도 들리지 않는다. 대신 멀리 1번 승강장에서 열차가 들어올 때 나는 바람소리가 한 차례 밀려온다. 오늘 운행은 끝났다.'
+  ],
+  guard_start:[
+    '손전등을 비추자 청소 카트의 바퀴가 젖어 있다. 물자국은 승강장 쪽에서 시작해 대합실 한가운데에서 갑자기 끊긴다. 카트 손잡이에는 아직 따뜻한 체온이 남아 있다.',
+    '1번 출구 셔터를 두드리던 소리가 멎자 이번에는 역무실 안쪽에서 의자가 끌리는 소리가 난다. 한쪽을 확인하면 다른 쪽을 놓칠 수 있다. 역사 전체가 사람의 시선을 나눠 가지려는 듯하다.'
+  ],
+  courier_start:[
+    '배달 앱은 이미 “전달 완료”로 바뀌었는데 받는 사람 이름이 사라져 있다. 대신 배송 사진에는 방금 지나온 직원 통로 끝, 실제로는 없던 회색 문이 찍혀 있다. 촬영한 기억은 없다.',
+    '아래로 이어지는 계단에서 휴대폰 진동음이 들린다. 자신의 휴대폰은 손에 있다. 한 층 아래 어둠 속에서 같은 알림음이 다시 울리고, 이번에는 배달 완료음까지 따라온다.'
+  ],
+  counselor_start:[
+    '남겨진 승차권은 새것인데 종이는 오래된 표처럼 거칠다. 발권 시각은 00시 52분, 출발지는 청명역, 목적지는 공란이다. 뒷면에는 볼펜으로 “말을 걸어 주면 돌아갈 수 있다”라고 적혀 있다.',
+    '사라진 승객의 휴대전화가 의자 밑에서 울린다. 화면에는 발신자 대신 “역무실”이라고 뜬다. 전화를 받기 직전, 꺼져 있던 안내방송 스피커가 작게 숨을 들이쉬는 소리를 낸다.'
+  ],
+  medic_start:[
+    '쓰러진 사람의 옷은 비에 젖어 있지만 오늘 밤에는 비가 오지 않았다. 손바닥에는 검은 철가루가 묻어 있고, 신발 밑창에는 승강장 바닥에서 볼 수 없는 회색 페인트가 끼어 있다.',
+    '환자가 잠깐 눈을 뜬다. “그 열차 타지 마세요.” 겨우 한마디를 남긴 뒤 다시 의식을 잃는다. 바로 그 순간 전광판의 04:58이 00:52로 바뀌고, 터널 안쪽에서 두 번의 짧은 경적이 울린다.'
+  ],
+  maintenance:[
+    '케이블을 따라 손전등을 비추면 벽을 뚫은 자리가 새 공사처럼 깨끗하다. 하지만 주변 콘크리트에는 수십 년 묵은 먼지가 그대로 붙어 있다. 오늘 생긴 길도, 오래된 길도 아니다.',
+    '보조 전원의 부하가 커질 때마다 대합실 쪽 비상등이 반 박자 늦게 깜박인다. 이 회로는 단순히 어딘가에 전기를 보내는 것이 아니라 역의 다른 구역과 서로 상태를 주고받고 있다.',
+    '패널 아래에는 연필로 쓴 오래된 메모가 하나 있다. “0번이 켜졌을 때 전체 차단 금지.” 작성자 이름은 지워져 있지만 날짜는 1998년이다.'
+  ],
+  office:[
+    '단말의 미처리 업무를 열자 승객 수는 1명으로 표시됐다가 곧 0명으로 돌아온다. 카메라 위치도, 출입구도 표시되지 않는다. 마치 시스템이 누군가를 발견하고도 어느 구역에 넣어야 할지 결정하지 못하는 것 같다.',
+    '책상 위 종이컵의 커피는 아직 미지근하다. 오늘 근무표에는 없는 이름이 컵 옆 메모지에 적혀 있다. 이름 아래에는 “0번 확인 후 퇴근”이라는 짧은 문장만 남아 있다.',
+    '역무실 유리 너머로 대합실이 보인다. 방금 전까지 없던 사람이 개찰구 앞에 서 있다. 고개를 돌려 직접 보면 아무도 없고, 유리에 비친 모습만 한 박자 늦게 남는다.'
+  ],
+  concourse:[
+    '자판기와 광고판은 전부 꺼져 있는데 안내 표지의 화살표 하나만 불이 들어와 있다. 화살표는 1번 승강장도, 출구도 아닌 벽 쪽을 가리킨다. 가까이 가면 불이 꺼지고 다른 표지가 켜진다.',
+    '발자국 소리는 한 사람 분량이 아니다. 구두, 운동화, 작업화가 서로 다른 방향에서 들리지만 어느 소리도 시야 안으로 들어오지 않는다. 때때로 자신의 발걸음보다 반 걸음 먼저 같은 소리가 난다.',
+    '개찰구 위 잔류 인원 숫자가 0에서 1로, 다시 0으로 바뀐다. 누군가가 이 대합실에 있는 것은 확실하다. 문제는 센서와 눈 중 어느 쪽이 거짓말을 하는지 아직 알 수 없다는 점이다.'
+  ],
+  service:[
+    '회색 화살표는 페인트가 아니다. 손으로 문질러도 묻어나지 않고, 손전등을 끄면 오히려 더 선명해진다. 벽면의 기존 피난 유도선과 교차하는 지점마다 숫자 0이 작게 새겨져 있다.',
+    '통로 중간의 방화문은 한쪽 면에서는 “대합실”, 반대쪽 면에서는 “승강장”이라고 표시돼 있다. 어느 쪽이 맞는지 확인하려고 문을 몇 번 오가자 표지판 글자가 조금씩 바뀐다.',
+    '무전기 잡음 사이로 사람 목소리가 스친다. “거기서 내려오지 마세요.” 곧이어 같은 목소리가 더 멀리서 “여기로 내려와요.”라고 말한다. 둘 중 하나는 녹음일 수 있다.'
+  ],
+  platform1:[
+    '안전문 유리에 비친 선로는 실제 선로와 미묘하게 어긋나 있다. 반사 속에는 맞은편에 승강장 하나가 더 있고, 그곳 전광판에는 흰 글씨로 0이 떠 있다. 고개를 돌리면 콘크리트 벽뿐이다.',
+    '열차 접근음은 정확히 네 마디만 울리고 멈춘다. 18초 뒤 같은 네 마디가 다시 반복된다. 바람은 매번 두 번째 마디보다 조금 먼저 불어온다. 소리만 반복되는 것이 아니라 어떤 진입 절차가 재생되고 있다.',
+    '승강장 끝 비상문 아래로 회색 먼지가 길게 이어진다. 누군가 최근 문을 사용한 흔적이다. 동시에 전광판의 00:52가 한 칸씩 가까워진다.'
+  ],
+  platform0gate:[
+    '방화문 손잡이는 차갑지만 안쪽 공기는 따뜻하다. 문틈으로는 정상 운행 시간대처럼 사람 냄새와 브레이크 먼지 냄새가 섞여 나온다. 폐쇄된 공간에서 날 수 있는 냄새가 아니다.',
+    '문 옆 비상 전화기의 표시등이 켜진다. 수화기를 들지 않았는데도 스피커에서 “이번 열차는 0번 승강장에 들어옵니다”라는 안내가 흘러나온다. 청명역에는 그런 방송 음원이 없다.',
+    '위층에서 누군가 내려오는 발소리가 들린다. 그러나 계단 모서리에 그림자가 나타나기 직전 발소리가 반대로 멀어진다. 문을 열지 말아야 할 이유와 열어야 할 이유가 동시에 생긴다.'
+  ],
+  platform0:[
+    '플랫폼 바닥은 깨끗하지만 기둥의 노선 스티커는 여러 시대의 디자인이 겹쳐 붙어 있다. 지금은 폐선된 역 이름과 아직 개통하지 않은 역 이름이 같은 노선 위에 이어져 있다.',
+    '터널 안쪽에 불이 하나 켜진다. 전조등처럼 보이지만 가까워지지 않는다. 대신 안전문 유리마다 같은 빛이 서로 다른 거리로 비친다. 이곳에서는 선로의 길이조차 하나로 정해져 있지 않은 듯하다.',
+    '반대편 끝에서 제복 차림의 사람이 손을 든다. 얼굴은 그림자에 가려져 있다. 스피커에서는 “탑승하실 분은 지금 결정해 주십시오”라는 안내가 나온다.'
+  ],
+  cctv:[
+    '4번 모니터 속 미래의 자신이 책상 위 펜을 떨어뜨린다. 실제 방에서는 아직 펜이 그대로 놓여 있다. 손을 뻗어 펜을 잡자 화면 속 장면이 깨지고, 미래의 자신은 이번에는 펜을 건드리지 않는다.',
+    '다른 화면에는 대합실과 0번 승강장이 동시에 잡힌다. 두 장소의 시계는 같은 초에 3분 17초 차이로 움직인다. 어느 쪽이 빠른 것이 아니라 서로 다른 현재를 보여 주는 것처럼 보인다.',
+    '녹화 저장 목록에는 아직 오지 않은 시간대의 파일이 이미 생성돼 있다. 재생하면 영상 대신 짧은 소리만 나온다. 누군가 무전기로 “이번에는 반대로 가”라고 말한다.'
+  ],
+  lostfound:[
+    '327번 칸 옆 신고서는 필체까지 실제와 같다. 신고자는 파티 중 한 사람의 이름이고, 접수자는 오늘 근무하지 않는 역무원이다. 신고 사유에는 “첫차에서 놓고 내림”이라고 적혀 있다.',
+    '선반 뒤쪽에는 같은 형식의 신고표가 수십 장 꽂혀 있다. 날짜는 제각각인데 모두 청명역 0번 승강장을 언급한다. 일부 날짜는 아직 오지 않았고, 일부는 역이 개통되기 전이다.',
+    '방 안쪽에서 물건 하나가 진동한다. 누군가의 휴대전화와 같은 벨소리다. 지금 그 휴대전화가 다른 사람 손에 있다면, 이 방에는 같은 물건이 두 개 존재하는 셈이다.'
+  ],
+  signal:[
+    '두 운행표를 겹쳐 보면 충돌 지점은 하나가 아니다. 승강장 전력, 방화문, 안내방송, 선로 진입 신호가 서로 조금씩 공유돼 있다. 한쪽을 무턱대고 끄면 다른 쪽의 출구까지 함께 사라질 수 있다.',
+    '정상 첫차는 예정대로 04시 58분에 접근 중이다. 0번 운행표는 도착 시각을 계속 00시 52분으로 표시한다. 시간이 흐르는데도 늦어지지 않는 열차와, 아직 오지 않았는데 이미 도착한 열차가 같은 신호를 요구한다.',
+    '콘솔 아래 비상 스피커에서 낮은 목소리가 들린다. “둘 다 살리려고 하면 겹칩니다.” 누구의 목소리인지 확인하기도 전에 통신이 끊긴다.'
+  ],
+  track:[
+    '선로 옆 안전 표식은 정상 번호 위에 회색 숫자 0이 겹쳐 보인다. 손전등 각도를 바꾸면 회색 숫자가 사라지고, 점검열차의 작업등이 지나가면 다시 나타난다.',
+    '점검열차는 사람이 운전하지 않는데도 파티가 선로 어느 쪽에 서 있는지 알고 속도를 조절한다. 도망치면 빨라지고, 멈추면 천천히 접근한다. 단순한 자동 운행 패턴과는 다르다.',
+    '멀리 1번 승강장 안전문 너머로 첫차의 전조등이 아주 작게 보인다. 이제 조사에 쓸 수 있는 시간은 무한하지 않다. 하지만 성급히 신호를 끊으면 안쪽에 남은 길도 함께 끊길 수 있다.'
+  ],
+  exit:[
+    '셔터 아래 틈으로 들어오는 공기는 분명 지상의 냄새다. 새벽 버스가 지나가는 소리, 멀리 신호등의 보행음까지 들린다. 지금까지 몇 번이나 가짜 출구를 봤지만 이번에는 바깥 풍경이 시간에 맞게 움직인다.',
+    '휴대전화 신호도 한 칸 돌아온다. 긴급 전화는 걸 수 있다. 다만 역 안쪽 무전에서는 아직 이름을 부르는 목소리와 문이 닫히는 소리가 계속 들린다.',
+    '밖으로 한 발 내딛는 것은 가능해 보인다. 문제는 나간 뒤 다시 들어올 수 있느냐가 아니다. 지금 나가면 안쪽에서 아직 선택하지 못한 사람들의 길이 어떻게 바뀔지 알 수 없다는 것이다.'
+  ],
+  train:[
+    '정상 첫차가 가까워질수록 모든 시계가 04시 58분으로 맞춰진다. 단 하나, 0번 승강장 시계만 00시 52분에 멈춰 있다. 두 전광판이 동시에 “도착”을 띄운다.',
+    '대합실 쪽에서는 셔터가 완전히 올라가는 금속음이 들린다. 0번 쪽에서는 오래된 열차 문이 열리는 공압음이 들린다. 어느 쪽을 선택하든 몇 분 뒤에는 둘 중 하나가 사라질 것이다.',
+    '지금까지 확보한 기록, 열어 둔 통로, 함께 남은 사람에 따라 할 수 있는 일이 달라졌다. 첫차에 오르는 것만이 탈출은 아니고, 끝까지 남는 것만이 용기도 아니다. 청명역에 어떤 아침을 남길지 결정할 순간이다.'
+  ],
+  sealedroom:[
+    '폐기 노선도 한 장에는 현재 1번 승강장 아래로 가느다란 회색 선이 그어져 있다. 선 끝에는 역 이름 대신 “운행 종료 보정선”이라는 문구가 적혀 있다. 공식 노선도에서 본 적 없는 용어다.',
+    '금속함 가까이에서 신호 릴레이 특유의 딸깍거림이 들린다. 현재 신호실과 동기화되어 있다면 이 방은 단순한 창고가 아니라 오래된 예비 제어실의 일부였을 가능성이 있다.'
+  ],
+  oldcontrol:[
+    '낡은 스위치마다 손때가 남아 있다. 0번 계통은 사고로 생긴 임시 장치가 아니라 누군가 실제로 여러 번 사용했다. 폐기 스티커 아래에는 “첫차 투입 전 수동 분리”라는 작업 순서가 희미하게 보인다.',
+    '두 운행표를 동시에 올리자 지금까지 따로 보였던 현상이 하나의 도식으로 겹친다. 0번은 다른 세계의 노선이 아니라 운행 종료 뒤 남겨진 사람과 공간을 임시로 분류하기 위한 오래된 보정 경로였다. 문제는 그 경로가 너무 오래 닫혀 있다가 다시 살아난 것이다.'
+  ]
+};
+
+const ECHO_BESPOKE_DIALOGUE={
+  eng_start:{speaker:'시설 무전',text:'“전기실, 들리면 대답해요. 방금 0번 회로가 또 올라왔어요. 그런데… 거기 오늘 사람 없지 않았어요?”'},
+  staff_start:{speaker:'안내 스피커',text:'“운행이 종료되었습니다. 역사 안에 남아 계신 한 분은… 잠시만 기다려 주십시오.”'},
+  guard_start:{speaker:'역무실 쪽 목소리',text:'“거기 누구세요? 셔터 쪽은 건드리지 마세요.”'},
+  courier_start:{speaker:'휴대폰 음성',text:'“배송지를 찾았습니다. 아래층에서 오른쪽입니다.”'},
+  counselor_start:{speaker:'사라진 승객의 전화',text:'“저 아직 역 안인데요. 지금 선생님 앞에 있는 표, 버리지 마세요.”'},
+  medic_start:{speaker:'쓰러진 승객',text:'“04시 58분 거 말고… 00시 52분 열차는 타면 안 돼요.”'},
+  maintenance:{speaker:'낡은 점검 메모',text:'“0번 점등 시 전체 차단 금지. 승객 위치 확인 후 수동 분리.”'},
+  office:{speaker:'끊긴 내선전화',text:'“잔류 인원 확인됐습니까? 한 명이면 문을 열지 마세요. 두 명이면…”'},
+  concourse:{speaker:'안내방송',text:'“역사 내 잔류 인원은 0명입니다.”'},
+  service:{speaker:'무전기 속 목소리',text:'“그 화살표 믿지 마요. 아니, 잠깐… 지금은 따라가야 해요.”'},
+  platform1:{speaker:'승강장 스피커',text:'“열차가 들어오고 있습니다.”'},
+  platform0gate:{speaker:'비상전화',text:'“0번 승강장 승객은 문이 열릴 때까지 선 안쪽에서 기다려 주십시오.”'},
+  platform0:{speaker:'제복 차림의 사람',text:'“돌아갈 노선이 있으면 지금 말해 주세요. 여기서는 목적지가 없는 사람이 제일 오래 남습니다.”'},
+  cctv:{speaker:'3분 17초 뒤의 무전',text:'“지금 그 문 열지 마. 우리가 방금 열었고, 그래서…”'},
+  lostfound:{speaker:'보관실 녹음',text:'“습득 장소, 청명역 0번 승강장. 습득 시각… 04시 59분.”'},
+  signal:{speaker:'비상 스피커',text:'“둘 다 살리려고 하면 겹칩니다. 하나가 길이 되면 다른 하나는 기록으로만 남겨야 해요.”'},
+  track:{speaker:'점검 무전',text:'“첫차 진입까지 얼마 안 남았어요. 선로 위에 있으면 지금 위치부터 알려 주세요.”'},
+  exit:{speaker:'바깥 긴급전화',text:'“청명역 맞습니까? 문 앞인데 셔터는 열려 있습니다. 안에서 누구랑 통화 중이신 거죠?”'},
+  train:{speaker:'정상 첫차 안내',text:'“04시 58분 첫차가 들어오고 있습니다. 승객 여러분께서는 안전선 안쪽으로…”'},
+  sealedroom:{speaker:'오래된 작업 녹음',text:'“보정선은 승객을 실어 나르는 선로가 아니다. 첫차 전에 반드시 원복할 것.”'},
+  oldcontrol:{speaker:'구형 제어기 녹음',text:'“0번은 없애는 게 아니라 비우는 겁니다. 안에 사람이 남아 있으면 절대 끊지 마십시오.”'}
+};
+
+const ECHO_CHOICE_REWRITES={
+  eng_start:{'0번 회로를 추적한다':'도면과 실제 배선을 대조하며 0번 회로가 향하는 곳을 추적한다','전원을 잠깐 끊는다':'다른 설비를 살린 채 0번 회로만 잠깐 차단해 반응을 본다','문밖 소리를 확인한다':'공구가 끌린 자국을 따라 직원 통로를 확인한다','대합실로 나간다':'전기실을 나와 대합실의 실제 상태를 직접 확인한다'},
+  staff_start:{'잔류 인원을 다시 센다':'단말 기록을 무시하고 직접 대합실을 돌며 남은 사람을 확인한다','CCTV를 확인한다':'CCTV에서 00시 52분 도착 정보가 어디서 시작됐는지 찾는다','대합실에 방송한다':'대합실 전체에 방송해 남아 있는 사람의 반응을 확인한다','운행 종료 로그를 뽑는다':'00시 47분 이후의 운행 종료 로그를 전부 출력해 비교한다'},
+  guard_start:{'셔터 쪽을 확인한다':'1번 출구 셔터를 두드리던 소리의 정체부터 확인한다','청소 카트를 따라간다':'젖은 바퀴 자국을 따라 청소 카트가 온 곳을 추적한다','남은 사람을 찾는다':'대합실을 한 바퀴 돌며 실제로 남은 사람이 있는지 확인한다','승강장으로 내려간다':'열차 접근음이 들린 1번 승강장으로 내려간다'},
+  courier_start:{'원래 길로 돌아간다':'방금 지나온 동선을 거꾸로 밟아 정상 대합실로 돌아간다','0 표시를 따라간다':'벽의 회색 0 표시를 따라 아래층으로 내려간다','배달 물건을 확인한다':'받는 사람이 사라진 배달 물건과 배송 사진을 다시 확인한다','빠른 통로를 찾는다':'배달 동선 감각으로 직원용 지름길을 찾아 승강장 쪽으로 빠진다'},
+  counselor_start:{'남은 승객을 부른다':'사라진 승객의 이름을 불러 대합실에서 대답을 기다린다','승차권을 살핀다':'00시 52분이 찍힌 무목적지 승차권을 자세히 살핀다','안내방송에 답한다':'“아직 한 분이 남아 있습니다”라는 방송에 직접 응답한다','출구를 확인한다':'셔터가 내려온 1번 출구가 실제 바깥으로 이어지는지 확인한다'},
+  medic_start:{'환자를 먼저 살핀다':'쓰러진 승객의 상태와 손에 쥔 승차권을 함께 확인한다','승차권 시간을 본다':'첫차 승차권의 발권 시각과 전광판 시간을 대조한다','터널 소리를 듣는다':'환자가 경고한 열차가 실제로 접근하는지 터널 소리를 확인한다','비상통로로 이동한다':'환자를 옮길 수 있는 가장 가까운 비상통로를 확보한다'},
+  maintenance:{'보조 전원을 추적한다':'설계도에 없는 보조 전원 케이블이 벽 너머 어디로 이어지는지 추적한다','정상 전원을 복구한다':'대합실 비상등부터 살리며 보조 회로의 반응을 확인한다','전원을 모두 끊는다':'위험을 감수하고 두 전원을 동시에 내려 역 전체의 반응을 본다','회로 사진을 남긴다':'25번째 회로와 오래된 경고 메모를 사진으로 남긴다'},
+  office:{'근무일지를 확인한다':'퇴근 처리 뒤에도 남아 있는 “0번 잔류 승객 확인” 업무를 추적한다','CCTV실로 간다':'유리에만 비치는 사람을 확인하기 위해 CCTV실로 간다','방송을 다시 켠다':'운행 종료 방송을 다시 송출해 역사 안의 반응을 확인한다','분실물실로 간다':'근무일지에 반복되는 327번 보관함 기록을 따라 분실물실로 간다'},
+  concourse:{'전광판을 조사한다':'혼자 켜지는 전광판과 잔류 인원 숫자가 바뀌는 순서를 기록한다','사람을 불러본다':'서로 다른 방향에서 들리는 발자국을 향해 사람을 불러본다','잠시 기다려본다':'움직이지 않고 서서 역이 먼저 어떤 변화를 만드는지 지켜본다','1번 승강장으로 간다':'열차 접근음이 반복되는 1번 승강장으로 내려간다'},
+  service:{'회색 화살표를 따라간다':'빛을 끄면 더 선명해지는 회색 화살표를 따라 아래층으로 내려간다','무전기 소리를 쫓는다':'서로 반대 말을 하는 무전 목소리의 발신 위치를 찾아간다','통로 표식을 남긴다':'길이 바뀌는지 확인하도록 방화문과 갈림길마다 직접 표식을 남긴다','발소리를 따라간다':'승강장 쪽으로 멀어지는 실제 발소리를 따라간다'},
+  platform1:{'선로 진동을 확인한다':'18초마다 반복되는 접근음과 실제 선로 진동의 타이밍을 맞춰 본다','비상문을 조사한다':'회색 먼지가 이어진 승강장 끝 비상문의 최근 사용 흔적을 조사한다','0번 입구를 찾는다':'안전문 반사 속 0번 승강장이 현실과 겹치는 지점을 찾는다','전광판을 촬영한다':'04:58과 00:52가 바뀌는 전광판을 연속 촬영해 변화를 남긴다','열차를 기다린다':'아무것도 건드리지 않고 00시 52분 표시가 끝까지 무엇을 부르는지 기다린다'},
+  platform0gate:{'0번으로 들어간다':'비상전화의 안내가 끝나기 전에 0번 방화문을 열고 안으로 들어간다','문 구조를 조사한다':'0번 방화문이 실제 어느 설비와 연결돼 있는지 잠금 구조를 조사한다','전원을 끊어본다':'직원 통로 쪽 전원을 내려 0번 방화문과 안내음의 반응을 본다','문을 고정한다':'다른 사람이 오갈 수 있도록 0번 방화문이 닫히지 않게 고정한다'},
+  platform0:{'빈 열차 안을 본다':'안전문 너머 멈춰 있는 열차 내부에 승객이 있는지 먼저 확인한다','열차에 탄다':'돌아갈 길이 바뀔 위험을 감수하고 0번 열차 안으로 들어간다','차장에게 말을 건다':'플랫폼 끝 제복 차림의 사람에게 목적지와 운행표를 직접 묻는다','승강장 끝을 조사한다':'기존 선로와 방향이 어긋나는 승강장 끝까지 가서 신호 연결을 찾는다','노선도를 기록한다':'서로 다른 시대가 겹친 0번 노선도를 빠짐없이 기록한다'},
+  cctv:{'영상대로 움직인다':'3분 17초 뒤 영상이 보여 준 문과 동선을 그대로 따라가 본다','영상과 반대로 간다':'미래 영상이 바뀌는지 확인하려고 화면 속 자신과 정반대로 움직인다','카메라 시간을 분석한다':'각 CCTV의 시간 차이를 비교해 3분 17초가 어디서 생겼는지 계산한다','영상을 저장한다':'아직 오지 않은 시간대의 CCTV 파일을 별도로 저장한다'},
+  lostfound:{'327번을 연다':'아직 잃지 않은 물건이 들어 있다는 327번 보관함을 연다','물건을 가져간다':'현재 손에 있는 것과 같은 물건을 꺼내 두 물건의 차이를 확인한다','신고 시각을 따라간다':'미래 시각으로 적힌 신고표의 접수 장소와 동선을 따라간다','신고표를 증거로 남긴다':'개통 전·미래 날짜까지 섞인 0번 신고표를 증거로 보존한다'},
+  signal:{'정상 신호를 우선한다':'04시 58분 정상 첫차 신호에 우선권을 주고 지상 경로를 안정시킨다','0번 신호를 차단한다':'00시 52분에 멈춘 0번 운행표의 진입 신호부터 끊는다','두 신호를 분리한다':'공유 중인 방화문·전력·선로 신호를 하나씩 떼어 두 운행표를 분리한다','신호 기록을 저장한다':'두 운행표가 같은 설비를 요구한 충돌 기록을 외부 저장장치에 남긴다'},
+  track:{'선로표지를 바로잡는다':'회색 0번 표식이 겹친 구간을 따라가 정상 첫차 선로표지를 복구한다','점검열차를 멈춘다':'파티 움직임에 반응하는 무인 점검열차의 자동 신호를 강제로 끊는다','점검열차를 피한다':'점검열차의 반응 패턴을 이용해 작업등이 지나가는 틈으로 빠져나간다','구조 통로를 연다':'선로 옆 구조 통로를 열어 승강장과 신호실 사이의 새 탈출로를 만든다'},
+  exit:{'밖으로 나간다':'실제 새벽 공기가 들어오는 1번 출구를 넘어 먼저 지상으로 나간다','다른 사람을 기다린다':'셔터를 열어 둔 채 안쪽에 남은 사람들이 올 때까지 출구를 지킨다','역 안으로 돌아간다':'지상으로 나갈 기회를 미루고 아직 움직임이 남은 역 안으로 돌아간다','바깥에 도움을 요청한다':'잠깐 돌아온 휴대전화 신호로 바깥에 구조 요청을 보낸다','0번을 봉쇄하러 간다':'출구를 확보한 뒤 다시 신호실로 돌아가 0번 경로를 봉쇄한다'},
+  train:{'첫차를 타고 떠난다':'04시 58분 정상 첫차에 올라 청명역을 떠난다','지상으로 나간다':'첫차 대신 열린 지상 출구로 빠져나간다','남은 사람을 찾는다':'마지막 몇 분을 써서 아직 역 안에 남은 사람부터 찾는다','0번 기록을 남긴다':'0번 승강장의 존재를 지워지기 전에 기록과 CCTV로 남긴다','0번을 끝까지 막는다':'다른 경로를 포기하더라도 0번 계통을 완전히 차단하고 끝까지 확인한다','0번 열차를 지켜본다':'탈출보다 진실을 택하고 0번 열차가 어디로 사라지는지 마지막까지 지켜본다'},
+  sealedroom:{'금속함을 조사한다':'녹색 불빛이 새는 금속함과 현재 신호실의 연결을 확인한다','구형 제어실로 간다':'루트 코어키를 사용해 배선 통로 너머 구형 신호 제어실로 들어간다'},
+  oldcontrol:{'정상선만 살린다':'구형 스위치에서 정상 첫차 계통만 살려 지상 귀환로를 고정한다','0번 계통만 끊는다':'0번에 사람이 남지 않았는지 확인한 뒤 보정 계통을 물리적으로 분리한다','두 계통을 관찰한다':'두 운행표를 동시에 올려 충돌이 시작되는 정확한 조건을 기록한다','다른 사람을 먼저 내보낸다':'자신은 제어실에 남아 두 계통을 붙잡고 다른 사람들의 탈출부터 보장한다'}
+};
+
+function polishBespokeParallelStory(c,ps){
+  if(!ps?.enabled || c?.id!=='echo') return ps;
+  const phaseMap={
+    '개인 시작':'도입','탐색':'탐색','공용 공간':'탐색','경계':'대면','이상 구역':'진실',
+    '정보 장면':'진실','결정 장면':'위기','위험 장면':'위기','최종 경로':'결단','엔딩':'결단',
+    '아이템 전용 구역':'진실','숨겨진 결정 장면':'결단'
+  };
+  const nodes={};
+  for(const [id,node] of Object.entries(ps.nodes||{})){
+    const extras=ECHO_BESPOKE_EXTRA[id]||[];
+    const paragraphs=[...(Array.isArray(node.text)?node.text:[node.text]),...extras]
+      .map(x=>String(x||'').trim()).filter(Boolean).slice(0,5);
+    const rewrites=ECHO_CHOICE_REWRITES[id]||{};
+    const choices=(node.choices||[]).map(choice=>({
+      ...choice,
+      label:rewrites[choice.label]||choice.label,
+      // These are real authored station actions. Never replace them with generic dynamic choices.
+      authoredStationChoice:true
+    }));
+    const phase=phaseMap[node.phase]||node.phase||'탐색';
+    const dialogue=ECHO_BESPOKE_DIALOGUE[id]?[ECHO_BESPOKE_DIALOGUE[id]]:[];
+    nodes[id]={
+      ...node,
+      phase,
+      text:paragraphs,
+      dialogue,
+      freeActionAllowed:false,
+      narrativeEdition:true,
+      releaseTone:'현실적인 심야 지하철 공간이 아주 조금씩 규칙을 어기는 방식으로 공포와 호기심을 쌓는다.'
+    };
+  }
+  return {...ps,nodes,narrativeEdition:true};
+}
+
 // v7.0.0 - campaign identity metadata used by UI/server diagnostics and future scene generation.
 const DISTINCT_CAMPAIGN_IDENTITY={
   ember:{play:'왕위 계승 정치극 · 맹세/증거/욕망',loss:'멸망보다 정통성 붕괴와 내전',verbs:['증언한다','서약한다','고발한다','봉인한다']},
@@ -2144,8 +2424,81 @@ for(const c of campaigns){ c.identity=DISTINCT_CAMPAIGN_IDENTITY[c.id] || null; 
 // v6.7.0 - SHARED WORLD SANDBOX
 // Every chronicle now supports independent player starts, organic meetings, temporary cooperation,
 // splitting up again, and independent turns. Existing authored story beats remain the source of truth.
+const UNIVERSAL_ROLE_COLD_OPEN = {
+  ember:{
+    '근력':'관은 비어 있는데 운반대 한쪽이 깊게 휘어 있다. 시신이 빠져나간 뒤에도 남을 무게가 아니다. 누군가 장례 전에 다른 것을 이곳으로 옮겼다.',
+    '민첩':'검은 눈 위의 발자국은 모두 장례 행렬을 향하는데, 처마 밑에 한 줄만 반대로 난 흔적이 있다. 누군가 군중이 고개 숙인 순간 왕묘 쪽에서 빠져나왔다.',
+    '지능':'왕가 문장의 밀랍은 아직 미세하게 따뜻한데 봉인 기록에는 사흘 전 찍힌 것으로 적혀 있다. 문서와 현실 중 하나가 거짓말하고 있다.',
+    '지혜':'장례 사제는 관을 볼 때보다 종탑을 볼 때 숨을 더 짧게 쉰다. 두려워하는 것은 죽은 왕이 아니라 다음 종소리 이후에 일어날 일이다.',
+    '매력':'조문객들은 같은 애도문을 외우지만 한 노파만 마지막 구절을 말하지 않는다. 그녀는 당신과 눈이 마주치자 입술로 “왕은 안에 없어”라고만 움직인다.',
+    '체력':'밤새 성문을 지킨 경비병의 갑옷에는 싸운 흔적이 없는데 손목만 심하게 부어 있다. 그는 문을 막은 것이 아니라 안쪽에서 무언가를 붙잡고 버틴 사람처럼 보인다.'
+  },
+  neon:{
+    '근력':'검문 드론 한 대가 벽에 처박혀 있는데 충돌 자국보다 먼저 전원이 꺼진 흔적이 있다. 누군가 힘으로 부순 게 아니라 가까이에서 시스템을 죽였다.',
+    '민첩':'비에 젖은 골목의 카메라들이 같은 방향을 보지만 세 번째 렌즈만 2초마다 미세하게 흔들린다. 사각지대가 아니라 누군가 만들어 둔 통로다.',
+    '지능':'삭제 로그의 타임스탬프는 48시간이 비어 있는데 체크섬은 끊기지 않았다. 데이터가 지워진 게 아니라 다른 기억으로 통째로 교체됐다.',
+    '지혜':'브로커는 당신의 얼굴보다 손목 단말을 먼저 확인한다. 그가 두려워하는 건 수배자가 아니라 당신 안에 남아 있을지도 모르는 기록이다.',
+    '매력':'암시장 사람들은 당신을 처음 본다고 말하면서도 주문할 음료와 앉을 자리를 비워 둔다. 누군가는 당신을 기억하고, 기억하지 않는 척하라고 돈을 받았다.',
+    '체력':'이틀을 거의 자지 못했는데 몸은 이상하리만큼 멀쩡하다. 대신 오른쪽 갈비뼈 아래에 당신이 기억하지 못하는 새 수술 자국이 당긴다.'
+  },
+  abyss:{
+    '근력':'압력문 수동 레버에는 다섯 명이 동시에 잡아당긴 듯한 손자국이 겹쳐 있다. 문 반대편에서 더 강한 힘으로 닫으려 한 흔적도 함께 남아 있다.',
+    '민첩':'복도 물결이 기지의 기울기와 반대로 한 번씩 흔들린다. 누군가 혹은 무언가가 물에 잠긴 환기 통로 안에서 일정한 간격으로 움직이고 있다.',
+    '지능':'마지막 로그의 산소 수치와 전력 소비량이 맞지 않는다. 생명유지 장치는 멈췄는데, 17일 동안 누군가가 의료용 산소를 따로 사용했다.',
+    '지혜':'구조 신호의 숨소리는 공포에 질린 사람의 호흡이 아니다. 매번 같은 곳에서 끊기고 다시 시작된다. 녹음 같지만 그 사이에 당신의 이름이 새로 들어간다.',
+    '매력':'격리실 인터폰 너머의 목소리는 “문을 열어 달라”고 하지 않는다. 대신 구조팀이 몇 명인지, 누가 먼저 들어올지를 세 번이나 확인한다.',
+    '체력':'잠수정에서 내린 순간 귀가 먹먹해진다. 계기판 압력은 정상인데 몸이 먼저 더 깊은 수심을 느끼고 있다. 기지 내부 어딘가의 압력이 지도와 다르다.'
+  },
+  clock:{
+    '근력':'광장 철문은 잠겨 있지 않은데 밀어도 움직이지 않는다. 힘을 더 주는 순간 문 너머에서 정확히 같은 힘이 되밀려 온다. 반대편에도 ‘지금의 당신’이 있는 것 같다.',
+    '민첩':'시계탑 그림자가 한 번 깜빡일 때마다 행인 한 명의 위치가 조금씩 달라진다. 모두가 같은 하루를 반복하는 게 아니라 각자 다른 순간에서 밀려나고 있다.',
+    '지능':'열세 번째 종 기록은 존재하지 않아야 한다. 그런데 장부의 잉크 번짐이 오늘 당신이 흘린 커피 자국과 정확히 겹친다.',
+    '지혜':'꽃가게 주인은 당신을 처음 본 표정으로 맞이하면서도 “이번에는 늦지 않았네요”라고 말한다. 스스로도 방금 한 말을 이해하지 못한 얼굴이다.',
+    '매력':'광장 사람들은 자정이 오기 전에 모두 같은 사람에게 작별 인사를 한다. 문제는 그 사람이 누구인지 물으면 매번 다른 이름을 댄다는 것이다.',
+    '체력':'밤새 뛰어다닌 기억은 없는데 종아리가 이미 지쳐 있다. 주머니에는 당신 글씨로 “세 번째에는 계단을 쓰지 마”라고 적힌 쪽지가 들어 있다.'
+  },
+  wild:{
+    '근력':'쓰러진 고목의 단면이 안쪽에서 바깥쪽으로 갈라져 있다. 폭발도 낙뢰도 아니다. 나무가 스스로 무엇인가를 밀어내려 한 흔적이다.',
+    '민첩':'별가루를 밟은 작은 짐승의 발자국이 절벽 앞에서 끊겼다가 당신 등 뒤에서 다시 시작된다. 숲길 자체가 움직이고 있다.',
+    '지능':'별가루는 식물 표면에 붙은 것이 아니라 잎맥 안에서 흐른다. 외부 물질이 아니라 숲의 생장 신호처럼 퍼지고 있다.',
+    '지혜':'숲 사냥꾼은 하늘을 보지 않는다. 대신 새들이 갑자기 울음을 멈추는 방향만 확인한다. 별이 떨어질 때마다 숲 안쪽의 무언가가 먼저 반응한다.',
+    '매력':'상처 입은 사슴이 사람을 피하지 않고 오히려 당신의 옷자락을 문다. 그리고 길이 없는 쪽으로 몇 걸음 가다 계속 뒤돌아본다.',
+    '체력':'숲에 들어선 뒤 심장박동이 나뭇잎 흔들리는 박자와 맞기 시작한다. 숨을 멈추자 바람도 잠깐 멎는다. 이곳은 방문자를 그냥 지나가게 두지 않는다.'
+  },
+  guardian:{
+    '근력':'무너진 마차를 들어 올리자 바퀴 아래에 왕실 기사단의 방패가 숨겨져 있다. 방패 앞면이 아니라 안쪽에서 찌른 자국이 선명하다.',
+    '민첩':'피난민 발자국 사이로 작은 맨발 흔적 하나가 계속 왕도 반대편으로 향한다. 추격당하는 사람이 아니라 누군가를 찾아가는 발걸음이다.',
+    '지능':'나무에 새겨진 왕실 표식은 구조 신호처럼 보이지만 획 하나가 반대다. 오래된 군사 암호대로라면 “길을 믿지 마라”는 뜻이다.',
+    '지혜':'작은 공주는 울고 있으면서도 고블린 쪽을 무서워하지 않는다. 숲 밖 하늘에 번지는 보랏빛 균열을 볼 때만 말을 멈춘다.',
+    '매력':'피난민들은 서로 다른 마을에서 왔는데 모두 같은 낯선 기사의 도움을 받았다고 말한다. 묘사만 다르고 그가 남긴 한마디는 정확히 같다.',
+    '체력':'기절한 수호기사를 일으키려는 순간 갑옷 안쪽에서 두 개의 심장박동이 느껴진다. 하나는 사람의 것이고, 하나는 훨씬 느리다.'
+  },
+  aurora:{
+    '근력':'눈에 파묻힌 지상문 가장자리에 안쪽에서 세 번 밀어낸 자국이 얼어붙어 있다. 누군가 구조를 기다린 게 아니라 밖으로 나오려다 포기했다.',
+    '민첩':'관측돔 주변 눈은 사람 키만큼 쌓였는데 회전축 아래만 이상할 정도로 깨끗하다. 최근까지 누군가 수동으로 돔을 돌려 특정 하늘을 계속 추적했다.',
+    '지능':'19일째 기상로그의 시간과 관측 장비 오차가 같은 방향으로 틀어져 있다. 붉은 극광은 빛이 아니라 관측소의 ‘측정’ 자체에 반응하는 듯하다.',
+    '지혜':'부상 기상관의 장갑과 43년 전 창설대 표식이 같은 끈으로 묶여 있다. 그는 그 사실을 볼 때마다 처음 보는 물건처럼 놀란다.',
+    '매력':'기상관은 구조 요청보다 “내가 무슨 말을 했는지 기록해 달라”고 먼저 부탁한다. 자신이 몇 분 뒤 기억을 잃을 거라고 이미 알고 있다.',
+    '체력':'영하의 공기보다 먼저 손끝을 저리게 만드는 진동이 뼈를 타고 올라온다. 바람이 멎어도 진동은 계속된다. 얼음 아래에서 규칙적인 신호가 올라온다.'
+  },
+  masque:{
+    '근력':'성문을 받치는 기둥 하나가 일부러 금이 가 있다. 무너뜨리면 들어갈 수 있지만 그 순간 무대 전체의 퇴로도 함께 사라지는 구조다.',
+    '민첩':'성문 경비의 시선은 사람을 따라가지 않고 가면을 따라 움직인다. 빈 가면 하나만 잘 옮겨도 누구도 보지 않는 통로가 몇 초씩 열린다.',
+    '지능':'입장 배역표의 이름들은 오래된 순서대로 덧칠돼 있다. 가장 아래층에서 방금 당신이 말한 본명이 희미하게 드러난다.',
+    '지혜':'가면 없는 아이는 당신에게 말을 걸면서도 계속 다른 사람의 대사를 입 모양으로 따라 한다. 누군가 아이를 통해 다음 장면을 미리 연습시키고 있다.',
+    '매력':'성문지기는 처음 보는 당신에게 “오늘은 어느 역할로 돌아왔습니까?”라고 묻는다. 실수한 표정이 아니라 대답을 시험하는 표정이다.',
+    '체력':'도시에 들어서자 목이 마른 게 아니라 자신의 이름을 오래 말하지 않은 것처럼 혀가 무거워진다. 주변 사람들은 이를 너무 자연스럽게 받아들인다.'
+  }
+};
+function universalRoleColdOpen(c,prime,hook=''){
+  return UNIVERSAL_ROLE_COLD_OPEN[c.id]?.[prime] || hook || '남들이 지나친 작은 어긋남 하나가 눈에 걸린다. 그 차이가 이 사건의 시작일지도 모른다.';
+}
+
+// v10.0 - SHARED TABLE OPENING
+// All players enter the same physical first scene. Their jobs change what they notice and which
+// opening action only they can attempt, not where the campaign arbitrarily places them.
 function buildUniversalParallelStory(c, storyBeats){
-  if (c.parallelStory?.enabled) return c.parallelStory;
+  if (c.parallelStory?.enabled) return polishBespokeParallelStory(c,c.parallelStory);
   const beats=storyBeats || [];
   const nodes={};
   const locations={};
@@ -2205,40 +2558,69 @@ function buildUniversalParallelStory(c, storyBeats){
   }
 
   const entry=beats[0];
-  const firstAct=beats.filter(b=>Number(b.act||1)===1);
-  const routeTargets=[firstAct[0],firstAct[1]||firstAct[0],firstAct[2]||firstAct[0],firstAct[3]||firstAct[0]];
   const startByJob={};
   (c.jobs||[]).forEach((job,index)=>{
     const name=job[0];
     const key=`start_${index+1}`;
-    const route=routeTargets[index%routeTargets.length] || entry;
     const prime=job[1];
-    const hook=entry?.roleHooks?.[prime] || `당신의 ${prime} 감각은 다른 사람과 다른 시작점을 보여 준다.`;
-    const baseChoices=(route?.choices||entry?.choices||[]).filter(ch=>ch?.label).slice(0,6).map((choice,i)=>({
+    const hook=entry?.roleHooks?.[prime] || '';
+    const coldOpen=universalRoleColdOpen(c,prime,hook);
+    const entryChoices=(entry?.choices||[]).filter(ch=>ch?.label);
+    const roleAff=entry?.affordances||{};
+    const rolePath=prime==='매력'?'bond':(['근력','체력','민첩'].includes(prime)?'survival':'truth');
+    const roleLabel={
+      '근력':`${releaseKo(roleAff.obstacle||roleAff.hostile||'막힌 길','을','를')} 직접 건드리기 전에 구조와 위험을 몸으로 확인한다`,
+      '민첩':`${releaseKo(roleAff.clue||'남은 흔적','이','가')} 이어지는 좁은 동선을 먼저 훑는다`,
+      '지능':`${releaseKo(roleAff.clue||'핵심 단서','을','를')} 기록과 수치로 교차검증한다`,
+      '지혜':`${roleAff.person||'눈앞의 사람'}의 말보다 숨기려는 반응과 주변 변화를 읽는다`,
+      '매력':`${releaseKo(roleAff.person||'눈앞의 사람','을','를')} 몰아붙이지 않고, 기억나는 순서대로 말하게 만든다`,
+      '체력':`${releaseKo(roleAff.rescue||roleAff.person||'동료','이','가')} 움직일 수 있도록 가장 위험한 자리를 먼저 맡는다`,
+    }[prime]||`${releaseKo(roleAff.clue||'현장','을','를')} 자신의 방식으로 확인한다`;
+    const anchor=entryChoices.find(ch=>ch.path===rolePath)||entryChoices.find(ch=>ch.stat===prime)||entryChoices[0]||{};
+    const roleChoice={
+      ...anchor,id:`${key}-ROLE`,label:roleLabel,stat:prime,dc:8,path:rolePath,requiredJob:name,choiceBadge:`${name} 전용`,
+      success:`${name}으로 살아온 경험이 이번에는 먼저 답했다. 남들이 같은 장면을 보고도 지나친 어긋남이 확실한 단서로 바뀐다.`,
+      failure:`익숙한 방식이 정확한 답을 주지는 못했다. 대신 무엇이 평소와 다른지 선명해져, 다음 판단에서 같은 실수를 반복하지 않을 기준이 남는다.`,
+      nextSuccess:anchor.next?.success||entry?.id,nextFailure:anchor.next?.failure||anchor.next?.success||entry?.id,next:undefined,
+      branchValue:rolePath==='bond'?'empathetic':rolePath==='survival'?'bold':'careful',actionType:`role-${prime}`,opportunity:'직업 전문성',risk:'보통'
+    };
+    const baseChoices=entryChoices.slice(0,4).map((choice,i)=>({
       ...choice,
       id:`${key}-C-${i+1}`,
-      nextSuccess:choice.next?.success || route?.id || entry?.id,
-      nextFailure:choice.next?.failure || choice.next?.success || route?.id || entry?.id,
+      nextSuccess:choice.next?.success || entry?.id,
+      nextFailure:choice.next?.failure || choice.next?.success || entry?.id,
       next:undefined,
       path:choice.path || (choice.branchValue==='bold'?'survival':choice.branchValue==='empathetic'?'bond':'truth'),
     }));
-    locations[key]=`${route?.visual || route?.title || c.acts?.[0] || '첫 장면'} · ${name}`;
+    // Keep four visible options in the cold open: one role-exclusive action plus three actions
+    // anybody at the table can understand from the prose they just read.
+    const seen=new Set([roleChoice.label]);
+    const curated=[roleChoice];
+    for(const choice of baseChoices){ if(!choice?.label||seen.has(choice.label)) continue; seen.add(choice.label); curated.push(choice); if(curated.length>=4) break; }
+    const entryText=String(entry?.text || c.intro || '').split(/\n\n+/).map(x=>x.trim()).filter(Boolean);
+    const opening=[coldOpen,...entryText].filter((x,i,a)=>x&&a.indexOf(x)===i).slice(0,5);
+    while(opening.length<4 && c.intro){ opening.push(String(c.intro).trim()); }
     nodes[key]={
-      location:key,
+      // Same physical scene for everyone: players can immediately see and help one another.
+      location:entry?.id||key,
       act:1,
-      title:`${name} · 각자의 시작`,
-      phase:'개인 시작',
-      objective:`${c.acts?.[0]||'첫 사건'} 안에서 자신이 놓인 상황을 파악하고 다음 행동을 정한다.`,
-      text:[
-        `${hook}`,
-        ...String(route?.text || c.intro || '').split(/\n\n+/).filter(Boolean).slice(0,2)
-      ],
-      choices:baseChoices,
-      roleHooks:route?.roleHooks || entry?.roleHooks || {},
-      affordances:route?.affordances || entry?.affordances || {},
-      reveal:route?.reveal,
-      stakes:route?.stakes,
+      title:entry?.title || `${name} · 첫 장면`,
+      phase:entry?.phase || '도입',
+      objective:entry?.objective || `${c.acts?.[0]||'첫 사건'}에서 무엇이 잘못되었는지 확인한다.`,
+      text:opening,
+      choices:curated,
+      roleHooks:entry?.roleHooks || {},
+      affordances:entry?.affordances || {},
+      reveal:entry?.reveal,
+      stakes:entry?.stakes,
+      dialogue:entry?.dialogue || [],
+      playerVoices:entry?.playerVoices || {},
+      sceneQuestion:entry?.sceneQuestion || '',
+      playerSpeech:entry?.playerSpeech || '',
+      immediatePressure:entry?.immediatePressure || '',
+      releaseTone:entry?.releaseTone || '',
       campaignBeat:false,
+      sharedPrologue:true,
     };
     startByJob[name]=key;
   });
@@ -2246,6 +2628,7 @@ function buildUniversalParallelStory(c, storyBeats){
   return {
     enabled:true,
     universal:true,
+    sharedPrologue:true,
     startByJob,
     startFallback:Object.values(startByJob)[0] || entry?.id,
     clockStart:null,
@@ -2518,20 +2901,80 @@ function releaseKo(word, batchim, vowel){
   return t+vowel;
 }
 function releaseChoiceLabel(c, beat, choice, index){
-  const act=Math.max(0,Number(beat.act||1)-1); const kit=(SCENE_KITS[c.id]||[])[act]||{}; const t=String(choice.label||'').trim();
-  if(/^주변을 살핀다$/.test(t)) return `${kit.clue||'핵심 단서'} 주변에서 현재 설명과 어긋난 흔적을 찾는다`;
-  if(/의 흔적을 따라$/.test(t)) return `${kit.clue||'단서'}의 흔적이 이어지는 방향을 따라간다`;
-  if(/^몰래 접근한다$/.test(t)) return `${kit.hostile||'감시자'}의 시야를 피해 ${kit.obstacle||'막힌 구역'} 가까이 접근한다`;
-  if(/^사람을 지킨다$/.test(t)) return `${kit.rescue||'위험에 놓인 사람'}을 먼저 안전한 위치로 옮긴다`;
-  if(kit.person && t===`${kit.person}를 따라간다`) return `${kit.person}가 향하는 길을 들키지 않게 따라간다`;
-  if(kit.person && t===`${kit.person}을 따라간다`) return `${kit.person}이 향하는 길을 들키지 않게 따라간다`;
-  if(kit.person && (t===`${kit.person}에게 묻는다`)) return `${kit.person}에게 ${kit.clue||'방금 일어난 일'}에 대해 직접 묻는다`;
-  if(kit.clue && (t===`${kit.clue}을 본다` || t===`${kit.clue}를 본다`)) return `${kit.clue}의 손상 시점과 남은 흔적을 확인한다`;
-  if(kit.hostile && t.includes(`${kit.hostile}와 싸운다`)) return `${kit.hostile}의 움직임을 끊어 ${kit.rescue||'동료'}가 움직일 시간을 번다`;
-  if(kit.hostile && t.includes(`${kit.hostile}과 싸운다`)) return `${kit.hostile}의 움직임을 끊어 ${kit.rescue||'동료'}가 움직일 시간을 번다`;
-  if(kit.obstacle && t===`${kit.obstacle}을 우회한다`) return `${kit.obstacle}을 건드리지 않고 지나갈 다른 통로를 찾는다`;
-  if(kit.obstacle && t===`${kit.obstacle}를 우회한다`) return `${kit.obstacle}를 건드리지 않고 지나갈 다른 통로를 찾는다`;
-  return t;
+  const act=Math.max(0,Number(beat.act||1)-1);
+  const kit=(SCENE_KITS[c.id]||[])[act]||{};
+  const aff=beat.affordances||kit;
+  const t=String(choice.label||'').trim();
+  const type=String(choice.actionType||'');
+  const phase=String(beat.phase||'도입');
+  const clue=aff.clue||kit.clue||'핵심 단서';
+  const person=aff.person||kit.person||'현장의 사람';
+  const hostile=aff.hostile||kit.hostile||'눈앞의 위협';
+  const obstacle=aff.obstacle||kit.obstacle||'막힌 길';
+  const rescue=aff.rescue||kit.rescue||'위험에 놓인 사람';
+
+  // Final choices are deliberately authored sentence-by-sentence. Never flatten them back
+  // into generic verbs; the wording is part of the ending itself.
+  if(type.startsWith('decision-')) return publicParticleFix(t,aff);
+
+  if(type==='investigate'){
+    if(phase==='도입') return `${releaseKo(clue,'이','가')} 처음 나타난 지점부터 차근히 확인한다`;
+    if(phase==='탐색') return `${releaseKo(clue,'과','와')} ${obstacle} 사이의 연결을 대조한다`;
+    if(phase==='진실') return `${releaseKo(clue,'을','를')} 앞서 모은 증거와 다시 맞춰 본다`;
+    if(phase==='위기') return `${releaseKo(clue,'에서','에서')} 지금 당장 이용할 수 있는 약점을 찾아낸다`;
+    return `${releaseKo(clue,'을','를')} 가까이 확인해 사건의 순서를 복원한다`;
+  }
+  if(type==='question'){
+    if(phase==='도입') return `${person}에게 마지막으로 모든 것이 정상이었던 순간을 묻는다`;
+    if(phase==='탐색') return `${person}에게 ${releaseKo(obstacle,'이','가')} 달라진 순간을 확인한다`;
+    if(phase==='대면') return `${person}에게 ${releaseKo(hostile,'이','가')} 노리는 것이 무엇인지 빠르게 묻는다`;
+    if(phase==='진실') return `${releaseKo(clue,'을','를')} 보여 주며 ${person}에게 숨긴 사실을 묻는다`;
+    if(phase==='위기') return `${person}에게 지금 놓치면 안 되는 사람과 길을 확인한다`;
+    return `${person}에게 ${clue}에 대해 직접 묻는다`;
+  }
+  if(type==='observe'){
+    if(phase==='도입') return `${clue} 주변을 훑어 이상이 시작된 순서를 맞춘다`;
+    if(phase==='진실') return `${clue} 주변에서 지금까지의 설명과 어긋나는 흔적을 찾는다`;
+    return `${releaseKo(clue,'과','와')} 주변 변화가 반복되는 패턴을 지켜본다`;
+  }
+  if(type==='travel-a') return `${releaseKo(clue,'이','가')} 시작된 방향을 따라 다음 현장으로 들어간다`;
+  if(type==='bypass'){
+    if(phase==='탐색') return `${obstacle} 주변을 돌아 소리 내지 않고 통과할 길을 찾는다`;
+    if(phase==='대면') return `${releaseKo(hostile,'과','와')} 정면으로 부딪히지 않고 ${obstacle} 너머로 빠져나간다`;
+    if(phase==='위기') return `${obstacle}을 포기하지 않으면서 피해를 줄일 우회로를 만든다`;
+    return `${releaseKo(obstacle,'을','를')} 건드리지 않고 지나갈 다른 통로를 찾는다`;
+  }
+  if(type==='tail'){
+    if(phase==='탐색') return `${releaseKo(person,'이','가')} 남긴 동선을 거리를 두고 따라가 숨은 통로를 찾는다`;
+    if(phase==='진실') return `${person}이 증거를 확인한 뒤 어디로 향하는지 몰래 뒤따른다`;
+    return `${releaseKo(person,'이','가')} 향하는 길을 들키지 않게 따라간다`;
+  }
+  if(type==='protect'||type==='help'){
+    if(phase==='대면') return `${releaseKo(rescue,'을','를')} 엄폐시킨 뒤 함께 빠져나갈 길을 만든다`;
+    if(phase==='위기') return `${releaseKo(rescue,'을','를')} 먼저 확보하고 나머지 문제를 그다음에 처리한다`;
+    return `${releaseKo(rescue,'을','를')} 먼저 안전한 위치로 옮긴다`;
+  }
+  if(type==='fight'){
+    if(phase==='대면') return `${hostile}의 진입을 막아 ${releaseKo(rescue,'이','가')} 움직일 시간을 번다`;
+    if(phase==='위기') return `${hostile}의 가장 위험한 움직임부터 끊고 길을 되찾는다`;
+    return `${hostile}의 움직임을 끊어 동료가 움직일 시간을 번다`;
+  }
+  if(type==='sneak'||type==='hide') return `${hostile}의 시야가 끊기는 순간 ${obstacle} 가까이 숨어 들어간다`;
+  if(type==='trap') return `${hostile}이 움직일 수밖에 없는 길을 읽고 먼저 함정을 준비한다`;
+  if(type==='wait') return '서두르지 않고 누가 먼저 움직이는지 지켜본다';
+  if(type==='break') return `${releaseKo(obstacle,'을','를')} 직접 열되 뒤쪽 위험까지 대비한다`;
+  if(type==='persuade') return `${person}이 두려워하는 것을 짚어 협조를 끌어낸다`;
+  if(type==='trade') return `${person}에게 서로 필요한 것을 분명히 밝히고 거래를 제안한다`;
+  if(type==='threaten') return `${person}이 숨기는 핵심을 짚어 더는 피하지 못하게 압박한다`;
+  if(type==='inspect-item') return `${releaseKo(aff.item||'현장의 물건','을','를')} 바로 쓰지 않고 상태와 출처부터 확인한다`;
+  if(type==='take-item') return `${releaseKo(aff.item||'현장의 물건','을','를')} 챙기되 누가 두고 갔는지 흔적도 함께 본다`;
+
+  // Compatibility for old authored labels that did not yet carry actionType.
+  if(/^주변을 살핀다$/.test(t)) return `${clue} 주변에서 설명과 맞지 않는 흔적을 찾는다`;
+  if(/의 흔적을 따라/.test(t)) return `${releaseKo(clue,'이','가')} 이어지는 방향을 직접 확인하러 간다`;
+  if(/^몰래 접근한다$/.test(t)) return `${hostile}의 시야를 피해 ${obstacle} 가까이 접근한다`;
+  if(/^사람을 지킨다$/.test(t)) return `${releaseKo(rescue,'을','를')} 먼저 안전한 위치로 옮긴다`;
+  return publicParticleFix(t,aff);
 }
 function releaseSceneDialogue(c, beat, index){
   const d=releaseDirectorFor(c); const act=Math.max(0,Number(beat.act||1)-1); const phase=String(beat.phase||'도입');
@@ -2584,63 +3027,63 @@ const PUBLIC_SCENE_VOICE = {
     대면:k=>`${k.hostile||'왕국의 위협'}이 길목을 차지하면서 사람들의 침묵이 깨진다. ${k.rescue||'위험에 놓인 사람'}을 두고 병사와 주민이 서로 다른 선택을 요구한다.`,
     진실:k=>`${k.clue||'증거'}를 맞춰 보자 왕가가 숨긴 사실과 사람들이 믿어 온 이야기가 같은 모양이 아니다. 누군가 거짓말을 한 것이 아니라, 서로 다른 진실을 지키고 있었던 흔적이 드러난다.`,
     위기:k=>`${k.obstacle||'봉인'}이 무너지기 시작하고 ${k.hostile||'망령'}의 기척이 가까워진다. 지금 머뭇거리면 한쪽을 살리는 동안 다른 쪽을 잃게 된다.`,
-    결단:k=>`왕관을 둘러싼 사람들의 요구가 한자리에 모인다. 누구도 완전히 옳지 않고, 여기서 내린 결정은 왕국이 무엇을 기억할지 정하게 된다.`},
+    결단:k=>`왕좌 앞에는 서로 다른 세 무리가 서 있지만 누구도 먼저 검을 뽑지 않는다. 대신 왕관을 바라보는 눈빛만으로 각자가 원하는 왕국의 모습이 갈린다. 이제 침묵을 깨는 첫 행동이 곧 새로운 질서의 시작이 된다.`},
   neon:{
     도입:k=>`전광판의 수배 사진이 갱신될 때마다 얼굴의 표정이 조금씩 달라진다. ${k.person||'브로커'}는 ${k.clue||'데이터'}를 보면서도 카메라가 있는 쪽으로는 고개를 돌리지 않는다.`,
     탐색:k=>`${k.clue||'로그'}의 삭제 시간과 도시 감시망의 공백이 정확히 겹친다. ${k.obstacle||'검문선'} 쪽 드론들은 아직 이 위치를 모르는 듯하지만 오래 걸리지는 않을 것이다.`,
     대면:k=>`${k.hostile||'추적자'}가 접근하면서 주변 시민들이 시선을 피한다. ${k.rescue||'쫓기는 사람'}은 도움을 원하지만, 그 사람을 숨기는 순간 파티의 신원도 함께 노출될 수 있다.`,
     진실:k=>`복원된 데이터는 기억의 내용보다 누가 편집 권한을 가졌는지를 보여 준다. 지금까지의 추적이 누군가에게는 수사였고 다른 누군가에게는 기억을 되찾기 위한 도주였다는 사실이 겹쳐 보인다.`,
     위기:k=>`보안망이 구역을 닫기 시작한다. 탈출 경로, 증거, 사람을 모두 챙길 시간은 없고 어떤 것을 먼저 가져가느냐가 다음 구역의 관계를 바꾼다.`,
-    결단:k=>`마지막 백업을 공개하면 수많은 기억이 돌아오지만 그 기억에 기대 살아온 사람들의 현재도 무너진다. 지울 수도, 돌려줄 수도, 다른 소유자를 정할 수도 있다.`},
+    결단:k=>`중앙 코어 위로 수백만 개의 기억 파일이 한꺼번에 떠오른다. 복원 버튼과 초기화 키, 시민별 반환 채널이 동시에 열리고 MOTHER-9는 더 이상 개입하지 않은 채 파티의 입력만 기다린다.`},
   abyss:{
     도입:k=>`기지 내부의 물방울 소리 사이로 일정한 진동이 벽을 타고 올라온다. ${k.person||'생존자'}은 ${k.clue||'로그'} 이야기를 꺼낼 때마다 산소계부터 확인한다.`,
     탐색:k=>`${k.clue||'기록'}과 젖은 흔적이 같은 방향으로 이어지지만 중간에서 발자국 수가 하나 늘어난다. ${k.obstacle||'압력문'} 반대편 수압은 아직 안전 범위 안이지만 서서히 오르고 있다.`,
     대면:k=>`${k.hostile||'움직이는 것'}이 시야 끝에서 모습을 드러내고 ${k.rescue||'생존자'}의 구조 신호가 겹쳐 들어온다. 싸움보다 먼저 누가 어디에 있는지 판단해야 한다.`,
     진실:k=>`분석 결과 생체 신호와 장비 이상이 같은 주기로 반복된다. 괴물이 기지를 공격한 것인지, 기지가 먼저 무언가를 건드린 것인지 순서가 뒤집힌다.`,
     위기:k=>`산소와 전력이 동시에 떨어진다. 한 구역을 살리면 다른 구역은 자동으로 격리되고, 그 안에 아직 사람이 있을 가능성이 남아 있다.`,
-    결단:k=>`지상으로 가져갈 진실과 심해에 남겨 둘 것을 정해야 한다. 구조, 연구, 접촉 중 무엇을 우선했는지가 마지막 선택의 무게를 바꾼다.`},
+    결단:k=>`상승 잠수정의 적재 경고등이 켜지고 마지막 도킹 클램프가 흔들린다. 생존자, 연구 기록, 탈라스의 신호를 모두 같은 방식으로 싣기에는 시간이 모자라며 관측창 너머의 푸른 빛이 천천히 잠수정을 따라온다.`},
   clock:{
     도입:k=>`광장의 사람들은 어제와 같은 동작을 반복하지만 작은 차이가 하나씩 생긴다. ${k.person||'주민'}은 ${k.clue||'기록'}을 처음 본 표정인데 손에는 이미 그 종이를 접은 자국이 남아 있다.`,
     탐색:k=>`${k.clue||'시간의 흔적'}을 대조할수록 같은 하루 안에 서로 다른 순서가 겹쳐 있음을 알 수 있다. ${k.obstacle||'멈춘 길'} 근처에서는 시계 소리가 한 박자 늦게 따라온다.`,
     대면:k=>`${k.hostile||'시간의 위협'}이 나타나는 순간 주변 사람 몇 명의 이름이 간판과 명부에서 동시에 사라진다. ${k.rescue||'사라질 사람'}을 붙잡는 일과 원인을 추적하는 일이 같은 방향이 아니다.`,
     진실:k=>`반복은 하루 전체를 되감는 것이 아니라 사람과 사건의 일부만 덮어쓰고 있었다. 누가 무엇을 기억하느냐가 곧 그 사람이 존재했다는 증거가 된다.`,
     위기:k=>`다음 종이 울리기 전에 결정하지 않으면 한 사람의 존재가 완전히 지워진다. 기록을 보존할지, 시간을 움직일지, 다른 대가를 낼지 선택해야 한다.`,
-    결단:k=>`루프를 끝내는 방법은 하나가 아니다. 누군가의 시간을 돌려주면 다른 누군가의 시간이 줄어들 수 있고, 반복을 남겨 두는 선택에도 이유가 생긴다.`},
+    결단:k=>`열세 번째 종이 울리기 직전 도시의 모든 시계가 처음으로 서로 다른 시간을 가리킨다. 종지기의 장치에는 루프를 끊는 레버, 기억을 분산하는 태엽, 재앙을 한 번만 늦추는 보조축이 동시에 살아 있다.`},
   wild:{
     도입:k=>`별빛을 머금은 잎이 바람 없이 흔들리고 ${k.person||'숲의 사람'}은 소리를 낮춘다. ${k.clue||'별의 흔적'} 주변에서는 짐승들이 가까이 오지 않지만 도망치지도 않는다.`,
     탐색:k=>`${k.clue||'흔적'}은 하늘에서 떨어진 방향이 아니라 숲 안쪽에서 밖으로 퍼져 있다. ${k.obstacle||'뒤바뀐 길'} 옆 나무껍질에는 서로 다른 부족의 표식이 겹쳐 새겨져 있다.`,
     대면:k=>`${k.hostile||'신수'}가 나타나자 사람들은 무기를 들지만, ${k.rescue||'다친 생명'}은 그 존재를 보고 오히려 진정한다. 공격과 경고를 구분할 시간이 짧다.`,
     진실:k=>`별을 삼키는 현상은 숲을 죽이는 일만은 아니었다. 숲은 오래전 약속을 지키기 위해 무언가를 받아들이고 있었고 인간의 개입이 그 균형을 깨뜨렸다.`,
     위기:k=>`별빛이 한 구역을 통째로 덮기 시작한다. 사람을 먼저 빼낼지, 숲의 핵을 지킬지, 신수와 마지막으로 교감할지 선택해야 한다.`,
-    결단:k=>`숲을 원래대로 돌리는 것과 지금 살아가는 사람들을 지키는 일이 같은 답이 아니다. 누구의 미래를 우선할지 정해야 한다.`},
+    결단:k=>`숲의 심장이 마지막 별을 품은 채 느리게 뛴다. 하늘은 별 하나가 비어 있고 두 부족과 오르바는 서로 다른 거리에서 같은 빛을 바라본다. 누구도 먼저 손을 뻗지 않아 마지막 별은 파티 앞에 그대로 떠 있다.`},
   guardian:{
     도입:k=>`무너진 성벽 뒤로 연기가 올라오고 멀리서 침략자의 비행체가 지나간다. ${k.person||'작은 공주'}은 울음을 삼키면서도 ${k.clue||'왕실 표식'}이 가리키는 방향을 놓치지 않는다.`,
     탐색:k=>`${k.clue||'왕국의 흔적'}은 숲길과 침략자의 이동 경로가 교차하는 곳에서 끊긴다. ${k.obstacle||'무너진 길'} 너머에는 도움을 청하는 소리와 적의 신호가 동시에 들린다.`,
     대면:k=>`${k.hostile||'추격대'}가 길을 좁히고 ${k.rescue||'남겨진 사람'}이 움직이지 못한다. 공주를 지키는 일, 사람을 돕는 일, 적의 목적을 알아내는 일이 한 장면에 겹친다.`,
     진실:k=>`침략은 단순한 점령이 아니라 여러 세계의 장치와 연결되어 있었다. 지금 만난 사람과 남긴 약속이 다음 세계에서도 실제 길과 도움으로 돌아올 수 있다.`,
     위기:k=>`후퇴하면 사람을 잃고, 버티면 다음 지역으로 가는 길이 닫힐 수 있다. 누가 함께 갈지와 무엇을 남길지를 동시에 결정해야 한다.`,
-    결단:k=>`수호자가 된다는 것은 모든 사람을 구한다는 뜻이 아니다. 끝까지 지킬 약속과 포기할 수 없는 사람을 정하는 순간이 온다.`},
+    결단:k=>`차원 균열 양쪽에 작은 공주와 미래의 공주가 서로를 마주 본다. 챔피언 소드는 두 시간대 사이에서 떨리고, 뒤에서는 현재의 동료와 미래 저항군이 각자의 귀환 신호를 보내 온다.`},
   echo:{
     도입:k=>`막차가 떠난 뒤에도 선로 아래에서 열차가 지나가는 듯한 바람이 올라온다. ${k.person||'야간 근무자'}은 ${k.clue||'운행 기록'}을 보며 자신이 적은 글씨가 아니라고 말한다.`,
     탐색:k=>`${k.clue||'기록'}의 시각과 CCTV 시각이 몇 분씩 어긋나 있고 ${k.obstacle||'닫힌 셔터'} 너머 안내방송은 존재하지 않는 승강장을 반복한다.`,
     대면:k=>`${k.hostile||'역 안의 무언가'}가 움직이는 동안 ${k.rescue||'갇힌 사람'}의 휴대전화가 다시 울린다. 출구를 찾는 것과 사람을 따라가는 것 중 어느 쪽이 더 현실적인지 확신하기 어렵다.`,
     진실:k=>`0번선은 숨겨진 승강장이 아니라 특정 조건에서만 현실과 겹치는 이동 경로였다. 누가 그 길을 열었는지보다 왜 아직 닫히지 않았는지가 더 중요해진다.`,
     위기:k=>`첫차 시간이 가까워질수록 역의 두 모습이 겹친다. 지금 빠져나가면 살 수 있지만 남은 사람과 증거는 0번선 쪽에 남는다.`,
-    결단:k=>`0번선을 봉쇄할지, 이용할지, 누군가를 위해 한 번 더 열어 둘지 정해야 한다. 내일 아침 이 역이 어떤 장소로 남을지가 결정된다.`},
+    결단:k=>`04시 58분. 정상 첫차의 전조등이 터널 끝에 나타나는 동시에 0번 승강장에서도 존재하지 않는 열차 접근음이 울린다. 신호실에는 두 경로를 동시에 유지할 수 없다는 경고가 뜨고, 아직 역사 안에는 마지막 위치 확인이 끝나지 않은 사람이 남아 있다.`},
   aurora:{
     도입:k=>`붉은 극광 아래 눈 표면이 아주 약하게 빛난다. ${k.person||'대원'}은 ${k.clue||'관측 기록'}을 펼쳐 놓고도 자기 필체가 적힌 마지막 문장을 기억하지 못한다.`,
     탐색:k=>`${k.clue||'기록'}의 시간과 관측 장비의 오차가 같은 방향으로 틀어져 있다. ${k.obstacle||'동결된 구역'} 안쪽에서 현재 구조대의 호출부호가 수십 년 전 녹음으로 들려온다.`,
     대면:k=>`${k.hostile||'자기폭풍'}이 커지며 통신이 끊기고 ${k.rescue||'고립된 대원'}의 신호가 약해진다. 연구를 계속할 시간과 구조할 시간이 서로 경쟁한다.`,
     진실:k=>`빙하층은 신호만 저장한 것이 아니라 사람의 기억과 반응까지 반복하고 있었다. 기록이 현재 질문에 대답한 이유가 설명되지만 그 사실을 세상에 공개하는 위험도 함께 생긴다.`,
     위기:k=>`관측소 전력과 난방이 동시에 흔들린다. 기억층을 봉인하려면 연구 자료 일부를 포기해야 하고 구조를 우선하면 현상을 놓칠 수 있다.`,
-    결단:k=>`발견을 공개할지, 봉인할지, 생존자의 증언만 남길지 선택해야 한다. 과학적 진실과 사람의 삶이 같은 답을 요구하지 않는다.`},
+    결단:k=>`붉은 극광이 약해지자 기억층의 반응도 처음으로 안정된다. 최종 송신실에는 원본 연구필름이, 지하에는 아직 살아 있는 코어가, 구조실에는 현상을 직접 겪은 생존자들이 남아 있다. 셋을 같은 방식으로 세상에 내보낼 수는 없다.`},
   masque:{
     도입:k=>`월식이 깊어질수록 성문 안 사람들의 가면 표정이 조금씩 달라진다. ${k.person||'도시의 사람'}은 ${k.clue||'배역표'}를 보며 자신의 본명 대신 배역명을 먼저 말한다.`,
     탐색:k=>`${k.clue||'원고 조각'}의 문장 일부가 공연이 시작될 때마다 바뀐다. ${k.obstacle||'닫힌 무대'} 뒤에서는 배우들이 대본에 없는 이름을 아주 작게 연습한다.`,
     대면:k=>`${k.hostile||'집행자'}가 배역을 강요하고 ${k.rescue||'이름을 잃는 사람'}은 가면을 벗으려 한다. 공연을 망치지 않고 사람을 구할지, 무대를 멈출지 선택해야 한다.`,
     진실:k=>`마지막 장은 사라진 것이 아니라 누군가 일부러 공연에서 제외했다. 연극이 끝나는 순간 도시도 끝날 수 있다는 두려움 때문에 반복을 유지한 사람이 있었다.`,
     위기:k=>`월식이 끝나기 전에 마지막 장면이 시작된다. 본명을 되찾게 하면 공연이 무너지고, 공연을 지키면 누군가는 다시 배역 속에 갇힌다.`,
-    결단:k=>`원고를 완성할지 찢을지, 새로운 결말을 즉흥으로 만들지 결정해야 한다. 도시의 사람들은 처음으로 관객이 아니라 자기 역할을 고를 수 있게 된다.`}
+    결단:k=>`월식의 마지막 그림자가 무대 중앙을 지나자 배우들이 처음으로 대본을 내려놓는다. 원본 마지막 장, 빈 원고지, 배역을 거부한 주민들의 가면이 같은 탁자 위에 놓이고 객석에서는 아무도 다음 대사를 재촉하지 않는다.`}
 };
 
 const PUBLIC_NPC_LINES={
@@ -2660,6 +3103,7 @@ function publicParticleFix(text,kit={}){
   const values=[kit.person,kit.clue,kit.hostile,kit.obstacle,kit.rescue,kit.item].filter(Boolean);
   for(const v of values){
     out=out.replaceAll(`${v}이 `,`${releaseKo(v,'이','가')} `)
+      .replaceAll(`${v}가 `,`${releaseKo(v,'이','가')} `)
       .replaceAll(`${v}은 `,`${releaseKo(v,'은','는')} `)
       .replaceAll(`${v}을 `,`${releaseKo(v,'을','를')} `)
       .replaceAll(`${v}를 `,`${releaseKo(v,'을','를')} `)
@@ -2683,10 +3127,57 @@ function publicSceneText(c,beat){
   const live=publicParticleFix(PUBLIC_SCENE_VOICE[c.id]?.[beat.phase]?.(kit)||'',kit);
   // v9.0: the release decorator used to throw away almost all of enrichStoryProse().
   // Keep the concrete opening, a live scene beat, one human/sensory paragraph and the hook.
-  const middle=original.slice(1,3).map(x=>publicParticleFix(x,kit));
-  const hook=original.length>3?publicParticleFix(original[original.length-1],kit):'';
+  const stakes=String(beat.stakes||'').trim();
+  const objective=String(beat.objective||'').trim();
+  const natural=original.slice(1).filter(x=>{
+    const t=String(x||'').trim();
+    if(!t) return false;
+    if(stakes && t===stakes) return false;
+    if(objective && t===objective) return false;
+    if(/에 필요한 실제 단서를 확보한다|누구를 믿고 무엇을 포기할지 결정해/.test(t)) return false;
+    if(/에서 확인한 단서들은 지금 장면|앞 장면에서 얻은 정보|에서 확인한 것들은 하나의 괴물이나|에 다가가려면/.test(t)) return false;
+    if(/^발견을 공개할지, 봉인할지, 생존자의 증언만 남길지 선택해야 한다/.test(t)) return false;
+    return true;
+  }).map(x=>publicParticleFix(x,kit));
+  const middle=natural.slice(0,2);
+  const hook=natural.length>2?natural[natural.length-1]:'';
   return [publicParticleFix(opening,kit),live,...middle,hook].filter((x,i,a)=>Boolean(x)&&a.indexOf(x)===i).slice(0,5).join('\n\n');
 }
+function releaseChoiceOutcome(c,beat,choice,passed){
+  const k=beat.affordances||{};
+  const type=String(choice?.actionType||'');
+  const clue=k.clue||'현장의 단서', person=k.person||'눈앞의 사람', hostile=k.hostile||'위협', obstacle=k.obstacle||'막힌 길', rescue=k.rescue||'도움을 기다리는 사람', item=k.item||'현장의 물건';
+  const phase=String(beat.phase||'');
+  if(passed){
+    if(type==='investigate') return phase==='진실'
+      ? `${releaseKo(clue,'을','를')} 끝까지 대조하자 서로 맞지 않던 기록이 한 줄로 이어졌다. 지금까지 숨겨져 있던 사실의 윤곽이 드러난다.`
+      : `${releaseKo(clue,'을','를')} 가까이 확인하자 처음에는 보이지 않던 차이가 잡혔다. 우연한 흔적이 아니라 누군가의 행동이 남긴 결과라는 확신이 생긴다.`;
+    if(type==='observe'||type==='wait') return `${hostile!=='위협'?hostile:obstacle}의 움직임을 서두르지 않고 지켜본 끝에 반복되는 틈을 찾았다. 먼저 움직일 수 있는 짧은 순간이 생겼다.`;
+    if(type==='question') return `${person}에게 같은 사실을 다른 순서로 묻자 대답 한 군데가 흔들렸다. 직접 본 것과 전해 들은 이야기가 갈라지며 다음에 확인할 단서가 생긴다.`;
+    if(type==='persuade'||type==='trade') return `${person}이 원하는 것과 두려워하는 것을 짚어 내자 태도가 누그러졌다. 막혀 있던 정보나 통로 하나를 스스로 내어준다.`;
+    if(type==='threaten') return `${person}이 버티던 선을 넘기 직전 멈춰 세웠다. 필요한 대답은 얻었지만 이 압박을 기억할 사람도 남는다.`;
+    if(type==='tail'||type==='sneak'||type==='hide') return `시선을 피한 채 움직여 ${person!=='눈앞의 사람'?person:clue}의 뒤를 놓치지 않았다. 공개된 길과 다른 동선 하나가 드러난다.`;
+    if(type==='bypass') return `${obstacle}을 정면으로 건드리지 않고 구조와 사각을 이용해 넘어섰다. 소란 없이 다음 위치를 선점했다.`;
+    if(type==='break') return `${obstacle}이 버티는 지점을 찾아 힘을 집중했다. 길이 열리는 순간 안쪽에 숨겨져 있던 흔적까지 함께 드러난다.`;
+    if(type==='fight') return `${hostile}의 첫 움직임을 받아낸 뒤 빈틈을 놓치지 않았다. 상대의 주도권을 꺾고 다음 행동을 고를 공간을 만들었다.`;
+    if(type==='protect'||type==='help') return `${rescue}을 먼저 안전한 위치로 옮겼다. 그 선택을 본 사람들이 경계를 풀면서 혼자서는 얻기 어려운 도움까지 따라온다.`;
+    if(type==='trap'||type==='distract') return `${hostile}이 반응할 수밖에 없는 지점을 골라 흐름을 바꿨다. 정면 승부 없이도 움직임을 원하는 방향으로 끌어냈다.`;
+    if(type==='inspect-item'||type==='take-item') return `${item}을 손에 넣기 전에 상태부터 확인했다. 단순한 소지품이 아니라 이 사건과 연결된 쓰임이 있다는 흔적이 남아 있다.`;
+    if(type==='travel-a'||choice?.isTravel) return `${clue}가 이어지는 방향을 따라 움직이자 지금까지 보이지 않던 다음 구간이 열렸다. 뒤로 돌아갈 수는 있지만 같은 조건은 다시 오지 않을 듯하다.`;
+    if(type==='endure') return `몸에 오는 부담을 그대로 받아내며 자리를 지켰다. 다른 사람들이 움직일 시간을 벌었고, 가장 위험한 순간을 넘겼다.`;
+  } else {
+    if(type==='investigate') return `${clue}만으로는 결론을 내릴 수 없었다. 다만 해석이 틀렸다는 사실 때문에 오히려 맞지 않는 부분 하나가 선명해졌다.`;
+    if(type==='question'||type==='persuade'||type==='trade'||type==='threaten') return `${person}은 핵심을 말하지 않았다. 대신 어떤 질문에서 시선을 피했는지가 남아, 숨기려는 방향만큼은 분명해졌다.`;
+    if(type==='tail'||type==='sneak'||type==='hide') return `완전히 들키지 않고 지나가지는 못했다. 경계가 높아졌지만 그 과정에서 안쪽 배치와 빠져나올 길을 눈으로 확인했다.`;
+    if(type==='bypass'||type==='break') return `${obstacle}은 예상보다 단단했다. 길은 바로 열리지 않았지만 어디가 실제 잠금이고 어디가 미끼인지 구분할 수 있게 됐다.`;
+    if(type==='fight') return `${hostile}에게 주도권을 내줬다. 충돌의 대가는 남았지만 상대가 공격 전에 보이는 습관과 약점 하나를 알아냈다.`;
+    if(type==='protect'||type==='help') return `${rescue}을 완전히 안전하게 만들지는 못했다. 그래도 피해가 더 커지는 것은 막았고, 다음 장면에서 다시 손을 뻗을 이유가 남았다.`;
+    if(type==='travel-a'||choice?.isTravel) return `예상한 길은 막혔다. 돌아서는 사이 다른 통로나 사람의 흔적이 드러나면서 이야기는 다른 방향으로 이어진다.`;
+    return `시도는 원하는 모양으로 끝나지 않았다. 하지만 실패한 방식이 무엇에 반응했는지 남아 다음 선택의 근거가 된다.`;
+  }
+  return passed ? String(choice?.success||'행동이 통했다.') : String(choice?.failure||'대가가 남았다.');
+}
+
 function publicSuggestedActions(c,beat){
   const k=beat.affordances||{};
   const reasonFor=(choice)=>{
@@ -2703,14 +3194,18 @@ function publicSuggestedActions(c,beat){
   // Preserve each authored choice's own roll, success/failure text and next-node edges.
   // The old release pass cloned choice[0] into every visible action, which made three
   // apparently different buttons secretly resolve as the same branch.
-  return (beat.choices||[]).slice(0,6).map((choice,i)=>({
-    ...choice,
-    id:choice.id||`${beat.id}-CHOICE-${i+1}`,
-    label:String(choice.label||'행동한다'),
-    reason:choice.reason||reasonFor(choice),
-    opportunity:choice.opportunity||actionOpportunity(choice.actionType),
-    risk:choice.risk||actionRisk(choice.actionType),
-  }));
+  return (beat.choices||[]).slice(0,5).map((choice,i)=>{
+    const labeled={...choice,label:publicParticleFix(releaseChoiceLabel(c,beat,choice,i),k)};
+    return {
+      ...labeled,
+      id:choice.id||`${beat.id}-CHOICE-${i+1}`,
+      reason:choice.reason||releaseChoiceReason(c,beat,labeled)||reasonFor(labeled),
+      opportunity:choice.opportunity||actionOpportunity(choice.actionType),
+      risk:choice.risk||actionRisk(choice.actionType),
+      success:publicParticleFix(releaseChoiceOutcome(c,beat,labeled,true),k),
+      failure:publicParticleFix(releaseChoiceOutcome(c,beat,labeled,false),k),
+    };
+  });
 }
 function publicDialogue(c,beat){
   const k=beat.affordances||{}; const act=Math.max(1,Number(beat.act||1));

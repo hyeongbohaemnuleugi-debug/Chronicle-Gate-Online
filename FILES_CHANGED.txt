@@ -1,11 +1,17 @@
-Chronicle Gate v9.1.0 changed files
+Chronicle Gate v10.0.0 — Narrative Edition 누적 패치 파일
 
-server.js
+.env.example
+.gitignore
 campaign-data.js
 package.json
+server.js
 public/app.js
+public/index.html
 public/styles.css
 scripts/qa.mjs
+supabase/migrations/202609010002_accounts_and_progress.sql
+tests-release/narrative-v10.test.mjs
 tests-release/release-v9.test.mjs
 PATCH_GUIDE.txt
 FILES_CHANGED.txt
+RELEASE_NOTES_v10.md

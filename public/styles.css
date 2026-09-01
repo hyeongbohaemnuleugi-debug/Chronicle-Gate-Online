@@ -1172,3 +1172,17 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
 .action-suggestions button:hover:not(:disabled){border-color:rgba(117,184,226,.48);color:#d8efff}.action-suggestions button:disabled{opacity:.45;cursor:default}
 .choice-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.choice-tags em{font-style:normal;font-size:9.5px;padding:3px 6px;border-radius:999px;background:rgba(110,190,146,.08);border:1px solid rgba(110,190,146,.2);color:#a9dec0}.choice-tags em.risk-low{background:rgba(108,183,225,.07);border-color:rgba(108,183,225,.2);color:#acd9f2}.choice-tags em.risk-mid{background:rgba(231,186,91,.07);border-color:rgba(231,186,91,.22);color:#e8c77d}.choice-tags em.risk-high{background:rgba(232,99,91,.08);border-color:rgba(232,99,91,.24);color:#f0aaa5}
 @media(max-width:640px){.auth-password-row{grid-template-columns:minmax(0,1fr) 56px}.story-action-box .agency-title{display:block}.story-action-box .agency-title small{display:block;margin-top:4px}}
+
+
+/* v9.1.0 CHOICE ONLY — direct-action panel removed, location strip compact */
+#storyView #storyActionBox,
+#storyView .story-action-box,
+#storyView .story-action-box.player-agency-enabled{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+#storyView .turn-scene-brief{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important}
+#storyView .turn-scene-brief>.scene-brief-location{grid-column:1 / -1!important;grid-row:auto!important;display:inline-flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important;width:max-content!important;max-width:100%!important;padding:5px 9px!important;border-radius:8px!important;background:rgba(255,255,255,.025)!important;border-color:rgba(255,255,255,.07)!important}
+#storyView .scene-brief-location span{display:inline!important;margin:0!important;font-size:8.5px!important;line-height:1.2!important;letter-spacing:.06em!important;white-space:nowrap!important}
+#storyView .scene-brief-location b{font-size:11px!important;line-height:1.25!important;font-weight:700!important;color:rgba(255,255,255,.72)!important;white-space:normal!important}
+#storyView .scene-brief-main,#storyView .scene-brief-goal{grid-column:auto!important}
+#storyView .scene-brief-danger{grid-column:1 / -1!important}
+#storyView #choiceArea .main-choice-head small{max-width:52ch!important;text-align:right!important}
+@media(max-width:760px){#storyView .turn-scene-brief{grid-template-columns:1fr!important}#storyView .scene-brief-main,#storyView .scene-brief-goal,#storyView .scene-brief-danger{grid-column:1!important}#storyView #choiceArea .main-choice-head small{text-align:left!important}}

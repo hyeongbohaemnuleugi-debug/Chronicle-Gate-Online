@@ -1662,7 +1662,7 @@ function renderParallelStory() {
 
   const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 6) : [];
   choiceBox.innerHTML = choices.length
-    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>추천 행동 ${choices.length}가지 + 직접 행동</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}${isMyTurn?'추천에 없는 방법은 아래 자유행동에 직접 적을 수 있습니다.':`${esc(actor?.name||'플레이어')}에게 보이는 선택지입니다.`}</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}${choiceTagsHTML(choice)}</span><span class="choice-check">${choiceCheckHTML(choice,scene)}</span></button>`).join('')
+    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>현재 장면과 연결된 선택지 ${choices.length}가지</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}${isMyTurn?'위의 상황·목표·눈앞의 단서를 기준으로 고른 행동만 표시됩니다.':`${esc(actor?.name||'플레이어')}에게 보이는 선택지입니다.`}</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}${choiceTagsHTML(choice)}</span><span class="choice-check">${choiceCheckHTML(choice,scene)}</span></button>`).join('')
     : '<div class="choice-empty">현재 장면에서 가능한 행동을 정리하는 중입니다.</div>';
   forceChoiceLayout(choiceBox);
   choiceBox.querySelectorAll('[data-parallel-index]').forEach(btn=>{
@@ -1819,25 +1819,17 @@ function choiceTagsHTML(choice){
   if(!opportunity&&!risk)return '';
   return `<span class="choice-tags">${opportunity?`<em>기회 · ${esc(opportunity)}</em>`:''}${risk?`<em class="${riskClass}">위험 · ${esc(risk)}</em>`:''}</span>`;
 }
-function configureStoryActionBox(scene,isMyTurn,actor=null){
+function configureStoryActionBox(){
+  // v9.1 choice-only: free-form declarations are intentionally disabled.
+  // Keep the legacy DOM nodes hidden so older cached markup cannot re-enable the panel.
   const box=$('#storyActionBox'), input=$('#storyActionInput'), submit=$('#storyActionSubmitBtn');
-  if(!box||!input||!submit)return;
-  const allowed=Boolean(scene?.freeActionAllowed);
-  const enabled=allowed && isMyTurn && state?.phase==='story' && !state?.resumeBarrier;
-  if(!allowed){ box.style.setProperty('display','none','important'); box.classList.add('disabled'); input.disabled=true; submit.disabled=true; return; }
-  box.style.setProperty('display','block','important');
-  box.classList.add('player-agency-enabled');
-  box.classList.toggle('disabled',!enabled);
-  input.disabled=!enabled; submit.disabled=!enabled; input.maxLength=220;
-  input.placeholder=enabled?'예: 역무원에게 방금 방송이 실제 운행 기록과 맞는지 묻는다. / 잠긴 셔터 옆 점검구를 살펴본다.':'현재 턴 플레이어의 행동을 기다리는 중입니다.';
-  const role=me()?.job;
-  const roleHook=scene?.roleHooks?.[role?.prime] || scene?.objective || '';
-  $('#storyRoleContext').innerHTML=`<div class="agency-title"><b>${enabled?'직접 행동 선언':'자유행동'}</b><small>${enabled?'버튼에 없는 방법도 시도할 수 있습니다.':'현재 턴 플레이어만 입력할 수 있습니다.'}</small></div>${role?`<span>${esc(role.name)} · ${esc(role.prime)}</span>${roleHook?`<b>${esc(roleHook)}</b>`:''}`:''}`;
-  const quick=(scene?.choices||[]).filter(x=>x?.label).slice(0,3);
-  $('#actionSuggestions').innerHTML=quick.map((choice,index)=>`<button type="button" data-action-suggestion="${index}" ${enabled?'':'disabled'}>${esc(choice.label)}</button>`).join('');
-  $('#actionSuggestions').querySelectorAll('[data-action-suggestion]').forEach(btn=>btn.onclick=()=>{ if(!enabled)return; const ch=quick[Number(btn.dataset.actionSuggestion)]; if(!ch)return; input.value=ch.label; input.dispatchEvent(new Event('input')); input.focus(); });
-  $('#storyActionCount').textContent=`${input.value.length}/${input.maxLength}`;
+  if(box){ box.style.setProperty('display','none','important'); box.classList.remove('player-agency-enabled'); box.classList.add('disabled'); }
+  if(input){ input.disabled=true; input.value=''; }
+  if(submit) submit.disabled=true;
+  if($('#actionSuggestions')) $('#actionSuggestions').innerHTML='';
+  if($('#lastActionResult')) $('#lastActionResult').innerHTML='';
 }
+
 
 function renderStory() {
   if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
@@ -2025,7 +2017,7 @@ $('#jobSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, pla
 $('#combatSkillBtn').onclick = () => socket.emit('player:skillUse', { roomCode, playerToken }, r => !r?.ok && toast(r.error));
 
 $('#storyActionInput').addEventListener('input', () => { const max = Number($('#storyActionInput').maxLength || 220); $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${max}`; });
-function showActionFeedback(message,isError=false){ const box=$('#lastActionResult'); if(!box)return; box.className=`last-action-result ${isError?'action-error':'action-info'}`; box.innerHTML=`<b>${isError?'이 행동은 그대로 진행하기 어렵습니다':'장면 반응'}</b><p>${esc(message||'')}</p>${isError?'<small>게임은 멈추지 않았습니다. 위의 상황 선택지를 고르거나 표현을 조금 바꿔 다시 시도할 수 있습니다.</small>':''}`; }
+function showActionFeedback(message,isError=false){ const box=$('#lastActionResult'); if(!box)return; box.className=`last-action-result ${isError?'action-error':'action-info'}`; box.innerHTML=`<b>${isError?'이 행동은 그대로 진행하기 어렵습니다':'장면 반응'}</b><p>${esc(message||'')}</p>${isError?'<small>게임은 멈추지 않았습니다. 현재 장면에 표시된 선택지 중 하나를 골라 주세요.</small>':''}`; }
 const submitStoryDeclaration=()=>{
   const input=$('#storyActionInput'); const declaration=input.value.trim();
   if(state?.phase!=='story') return;

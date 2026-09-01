@@ -1,0 +1,23 @@
+CHRONICLE GATE v9.0.0 PATCH FILES
+
+MODIFIED
+- .env.example
+- .gitignore
+- campaign-data.js
+- package.json
+- public/app.js
+- public/index.html
+- public/styles.css
+- server.js
+
+ADDED
+- scripts/qa.mjs
+- tests-release/release-v9.test.mjs
+- supabase/migrations/202609010002_accounts_and_progress.sql
+- PATCH_GUIDE.txt
+- FILES_CHANGED.txt
+
+NOTE
+The original archive contains a directory named "scripts " with a trailing space.
+It is no longer used. package.json now references the normal scripts/ directory.
+You may delete the old trailing-space directory after applying this patch.

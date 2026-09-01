@@ -677,6 +677,7 @@ function hasBatchim(word='') {
   return ((code-0xAC00)%28)!==0;
 }
 function objJosa(word){ return hasBatchim(word)?'을':'를'; }
+function subjJosa(word){ return hasBatchim(word)?'이':'가'; }
 function withJosa(word){ return hasBatchim(word)?'과':'와'; }
 function contextualActionLabel(type, target, c, act, step) {
   const shortTargets = new Set(['공주','로레인','고블린','경비병','상인','생존자','추적자','침략자','왕관','봉인','기록','유적','문','신호','장치','짐승']);
@@ -728,18 +729,18 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
       success:'현장의 움직임과 위험 순서를 읽어 먼저 움직일 틈을 찾았다.',failure:'결정적 순간은 놓쳤지만 가장 부자연스러운 움직임을 기억했다.'},
     {type:'listen',stat:'지혜',route:'careful',path:'truth',when:hasPerson||hasHostile||hasObstacle,label:'소리를 듣는다',risk:'낮음',
       success:'눈에 보이지 않는 움직임과 대화 방향을 소리로 구분해 안쪽 상황을 미리 파악했다.',failure:'정확한 위치는 잡지 못했지만 반복되는 소리를 다음 위험의 경고로 기억했다.'},
-    {type:'question',stat:'지혜',route:'careful',path:'truth',when:hasPerson,label:`${aff.person}에게 묻는다`,risk:'낮음',
-      success:`${aff.person}에게 필요한 사실을 직접 확인해 추측 하나를 확실한 정보로 바꿨다.`,failure:`대답은 흐렸지만 ${aff.person}이 피한 질문이 무엇인지 드러났다.`},
+    {type:'question',stat:'지혜',route:'empathetic',path:'truth',when:hasPerson,label:`${aff.person}에게 묻는다`,risk:'낮음',
+      success:`${aff.person}에게 필요한 사실을 직접 확인해 추측 하나를 확실한 정보로 바꿨다.`,failure:`대답은 흐렸지만 ${aff.person}${subjJosa(aff.person)} 피한 질문이 무엇인지 드러났다.`},
     {type:'persuade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson,label:sceneActionLabel('persuade', aff),risk:'보통',
-      success:`${aff.person}의 협조를 얻어 정보와 관계를 함께 확보했다.`,failure:`설득은 통하지 않았지만 ${aff.person}이 숨기는 이해관계가 드러났다.`},
+      success:`${aff.person}의 협조를 얻어 정보와 관계를 함께 확보했다.`,failure:`설득은 통하지 않았지만 ${aff.person}${subjJosa(aff.person)} 숨기는 이해관계가 드러났다.`},
     {type:'help',stat:'체력',route:'empathetic',path:'bond',when:hasRescue,label:sceneActionLabel('help', aff),risk:'낮음',
-      success:`${aff.rescue}을 먼저 도왔다. 구조받은 쪽이 길이나 정보를 돌려주었다.`,failure:`시간은 들었지만 ${aff.rescue}을 남겨 두었고, 뒤늦은 증언이 새 길을 만들었다.`},
+      success:`${aff.rescue}${objJosa(aff.rescue)} 먼저 도왔다. 구조받은 쪽이 길이나 정보를 돌려주었다.`,failure:`시간은 들었지만 ${aff.rescue}${objJosa(aff.rescue)} 남겨 두었고, 뒤늦은 증언이 새 길을 만들었다.`},
     {type:'protect',stat:'체력',route:'empathetic',path:'bond',when:(hasPerson||hasRescue)&&dangerPhase,label:hasRescue?`${aff.rescue}${objJosa(aff.rescue)} 지킨다`:'사람을 지킨다',risk:'보통',
       success:'위험을 대신 받아내 사람을 지켰고, 보호받은 쪽의 신뢰가 다음 장면에 남았다.',failure:'완전히 막지는 못했지만 피해가 퍼지는 것은 막았다. 대신 파티에 부담이 남았다.'},
     {type:'trade',stat:'매력',route:'empathetic',path:'bond',when:hasPerson&&hasItem,label:`${aff.person}${withJosa(aff.person)} 거래한다`,risk:'낮음',
-      success:`조건을 맞춰 ${aff.item} 또는 필요한 통로에 접근했다.`,failure:`거래는 깨졌지만 ${aff.person}이 무엇을 원하는지 알아냈다.`},
-    {type:'tail',stat:'지혜',route:'careful',path:'truth',when:hasPerson&&(hasClue||hasStealth),label:`${aff.person}${objJosa(aff.person)} 따라간다`,risk:'보통',
-      success:`${aff.person}을 따라가 공개되지 않은 이동 경로와 다음 장소를 찾았다.`,failure:`미행은 들켰지만 ${aff.person}이 피한 방향과 연락 대상을 확인했다.`},
+      success:`조건을 맞춰 ${aff.item} 또는 필요한 통로에 접근했다.`,failure:`거래는 깨졌지만 ${aff.person}${subjJosa(aff.person)} 무엇을 원하는지 알아냈다.`},
+    {type:'tail',stat:'지혜',route:'bold',path:'truth',when:hasPerson&&(hasClue||hasStealth),label:`${aff.person}${objJosa(aff.person)} 따라간다`,risk:'보통',
+      success:`${aff.person}${objJosa(aff.person)} 따라가 공개되지 않은 이동 경로와 다음 장소를 찾았다.`,failure:`미행은 들켰지만 ${aff.person}이 피한 방향과 연락 대상을 확인했다.`},
     {type:'threaten',stat:'매력',route:'bold',path:'survival',when:hasPerson&&hasHostile,label:`${aff.person}${objJosa(aff.person)} 압박한다`,risk:'높음',fatalRisk:true,
       success:'강하게 압박해 즉시 필요한 정보를 얻었다. 빠른 대신 적대가 남았다.',failure:'압박이 역효과를 내 적대가 커졌지만 상대의 배후가 드러났다.'},
     {type:'fight',stat:'근력',route:'bold',path:'survival',when:hasHostile,label:sceneActionLabel('fight', aff),risk:'높음',startsCombat:true,fatalRisk:true,
@@ -753,18 +754,18 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
     {type:'trap',stat:'지능',route:'careful',path:'survival',when:hasHostile||hasStealth,label:'함정을 만든다',risk:'보통',
       success:'예상 이동 경로에 함정을 준비해 다음 충돌에서 선제 우위를 만들었다.',failure:'함정은 불완전했지만 상대가 피하려는 지점을 알아냈다.'},
     {type:'bypass',stat:'민첩',route:'careful',path:'survival',when:hasObstacle,label:sceneActionLabel('bypass', aff),risk:'보통',
-      success:`${aff.obstacle}을 건드리지 않고 지나갈 길을 찾았다.`,failure:`우회로는 막혔지만 ${aff.obstacle}이 어디에서 통제되는지 확인했다.`},
+      success:`${aff.obstacle}${objJosa(aff.obstacle)} 건드리지 않고 지나갈 길을 찾았다.`,failure:`우회로는 막혔지만 ${aff.obstacle}${subjJosa(aff.obstacle)} 어디에서 통제되는지 확인했다.`},
     {type:'break',stat:'근력',route:'bold',path:'survival',when:hasObstacle,label:sceneActionLabel('break', aff),risk:'높음',fatalRisk:true,
-      success:`${aff.obstacle}을 강제로 열어 새 길을 만들었다.`,failure:`예상보다 크게 흔들렸지만 ${aff.obstacle}의 약한 부분이 드러났다.`},
+      success:`${aff.obstacle}${objJosa(aff.obstacle)} 강제로 열어 새 길을 만들었다.`,failure:`예상보다 크게 흔들렸지만 ${aff.obstacle}의 약한 부분이 드러났다.`},
     {type:'inspect-item',stat:'지능',route:'careful',path:'truth',when:hasItem,label:`${aff.item}${objJosa(aff.item)} 살핀다`,risk:'낮음',
-      success:`${aff.item}의 쓰임과 출처를 확인해 다음 사건과 연결되는 단서를 얻었다.`,failure:`정확한 용도는 모르지만 ${aff.item}이 반응하는 조건 하나를 확인했다.`},
+      success:`${aff.item}의 쓰임과 출처를 확인해 다음 사건과 연결되는 단서를 얻었다.`,failure:`정확한 용도는 모르지만 ${aff.item}${subjJosa(aff.item)} 반응하는 조건 하나를 확인했다.`},
     {type:'take-item',stat:'민첩',route:'bold',path:'truth',when:hasItem&&(hasHostile||hasPerson),label:`${aff.item}${objJosa(aff.item)} 챙긴다`,risk:'보통',
-      success:`${aff.item}을 확보해 이후 장면에서 사용할 수 있는 자원을 얻었다.`,failure:`확보에는 실패했지만 누가 ${aff.item}을 지키는지 분명해졌다.`},
+      success:`${aff.item}${objJosa(aff.item)} 확보해 이후 장면에서 사용할 수 있는 자원을 얻었다.`,failure:`확보에는 실패했지만 누가 ${aff.item}${objJosa(aff.item)} 지키는지 분명해졌다.`},
     {type:'wait',stat:'지혜',route:'careful',path:'truth',when:hasPerson||hasHostile||hasStealth,label:'잠시 기다린다',risk:'낮음',
       success:'서두르지 않자 먼저 움직이는 쪽이 나타나 숨은 행동 순서를 확인했다.',failure:'작은 기회는 지나갔지만 반복되는 패턴을 읽었다.'},
     {type:'retreat',stat:'지혜',route:'careful',path:'survival',when:dangerPhase&&(hasHostile||hasObstacle),label:'잠시 물러난다',risk:'낮음',
       success:'안전한 거리로 빠져 상황을 다시 정리하고 다른 접근을 택할 여유를 얻었다.',failure:'후퇴가 늦어 압박이 따라붙었지만 추격 범위를 확실히 알게 됐다.'},
-    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:phase!=='결단',label:hasClue?`${aff.clue}의 흔적을 따라간다`:hasPerson?`${aff.person}이 가리킨 곳으로 간다`:`${guide.place} 안쪽으로 이동한다`,risk:'낮음',isTravel:true,
+    {type:'travel-a',stat:'지혜',route:'careful',path:'truth',when:phase!=='결단',label:hasClue?`${aff.clue}의 흔적을 따라간다`:hasPerson?`${aff.person}${subjJosa(aff.person)} 가리킨 곳으로 간다`:`${guide.place} 안쪽으로 이동한다`,risk:'낮음',isTravel:true,
       success:'확보한 정보에 따라 다음 현장으로 이동했다.',failure:'이동 중 방해를 만났지만 그 방해가 다음 사건의 원인을 드러냈다.'}
   ].filter(item=>item.when);
 
@@ -785,7 +786,10 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
   // v7.4.0: one strong option per intent family first. This prevents near-duplicates such as
   // '묻는다 / 설득한다 / 소리를 듣는다' from crowding out genuinely different approaches.
   const familyOf=(type)=>({investigate:'inspect','inspect-item':'inspect',observe:'observe',listen:'observe',wait:'observe',question:'social',persuade:'social',trade:'social',threaten:'social',help:'help',protect:'help',fight:'force',break:'force',sneak:'stealth',hide:'stealth',tail:'stealth',distract:'stealth',bypass:'move',retreat:'move','travel-a':'move','take-item':'item',steal:'item',trap:'plan'}[type]||type);
-  const desired=4;
+  // v9.0: keep a tabletop-sized menu. Calm scenes expose five distinct approaches,
+  // while confrontation/crisis/decision scenes expose six. The player can still ignore
+  // these and declare a free-form action.
+  const desired=['대면','위기','결단'].includes(phase)?6:5;
   const defs=[]; const families=new Set();
   for(const candidate of candidates){
     const family=familyOf(candidate.type);
@@ -801,7 +805,7 @@ function buildStoryChoices(c, guide, beat, act, step, index) {
     const dc=Math.max(7,Math.min(14,base+(risk==='높음'?2:risk==='낮음'?-1:0)+(i%4===3?1:0)));
     return {
       id:`${beat.id}-${String(d.type).toUpperCase()}-${i+1}`,
-      label:[...d.label].length<=18?d.label:[...d.label].slice(0,18).join(''),
+      label:String(d.label||'행동한다').slice(0,72),
       detail:'',
       stat:d.stat,dc,path:d.path,branchKey:`act${actNo}`,branchValue:d.route,actionType:d.type,
       startsCombat:Boolean(d.startsCombat),fatalRisk:Boolean(d.fatalRisk),isTravel:Boolean(d.isTravel),opportunity:actionOpportunity(d.type),risk,
@@ -2677,19 +2681,36 @@ function publicSceneText(c,beat){
   let opening=original[0]||String(c.intro||'').trim();
   if(c.id==='guardian' && /폐예배당|검은 재|광장의 관|왕의 장례|성채의 복도|향로의 재/.test(opening)) opening=guardianOpening(beat,kit)||opening;
   const live=publicParticleFix(PUBLIC_SCENE_VOICE[c.id]?.[beat.phase]?.(kit)||'',kit);
-  return [publicParticleFix(opening,kit),live].filter(Boolean).join('\n\n');
+  // v9.0: the release decorator used to throw away almost all of enrichStoryProse().
+  // Keep the concrete opening, a live scene beat, one human/sensory paragraph and the hook.
+  const middle=original.slice(1,3).map(x=>publicParticleFix(x,kit));
+  const hook=original.length>3?publicParticleFix(original[original.length-1],kit):'';
+  return [publicParticleFix(opening,kit),live,...middle,hook].filter((x,i,a)=>Boolean(x)&&a.indexOf(x)===i).slice(0,5).join('\n\n');
 }
 function publicSuggestedActions(c,beat){
-  const k=beat.affordances||{}; const out=[];
-  const add=(label,stat,actionType,route)=>{ if(label && !out.some(x=>x.label===label)) out.push({label,stat,actionType,branchValue:route,path:route==='careful'?'truth':route==='bold'?'survival':'bond'}); };
-  if(k.clue) add(`${k.clue}에서 가장 이상한 부분을 직접 확인한다`,'지능','investigate','careful');
-  if(k.person) add(`${k.person}에게 지금 가장 숨기고 싶은 것이 무엇인지 묻는다`,'매력','persuade','empathetic');
-  if(k.rescue && beat.phase!=='도입') add(`${k.rescue}을 먼저 안전하게 만든다`,'체력','help','empathetic');
-  if(k.obstacle && ['탐색','대면','위기'].includes(beat.phase)) add(`${k.obstacle}을 정면으로 건드리지 않고 다른 길을 찾는다`,'민첩','bypass','bold');
-  if(k.hostile && ['대면','위기','결단'].includes(beat.phase)) add(`${k.hostile}의 행동을 막아 다른 사람이 움직일 시간을 번다`,'근력','fight','bold');
-  add(`잠깐 움직이지 않고 이 장면에서 달라진 것을 찾는다`,'지혜','observe','careful');
-  const old=(beat.choices||[])[0]||{};
-  return out.slice(0,3).map((x,i)=>({...old,...x,id:`${beat.id}-SUGGEST-${i+1}`,dc:Number(old.dc||9),label:x.label,reason:'행동 예시'}));
+  const k=beat.affordances||{};
+  const reasonFor=(choice)=>{
+    const type=String(choice.actionType||'');
+    if(type==='investigate' && k.clue) return `${k.clue}가 지금 장면의 원인을 확인할 수 있는 직접 단서다.`;
+    if(['question','persuade','trade','threaten'].includes(type) && k.person) return `${k.person}의 태도나 정보가 다음 길을 바꿀 수 있다.`;
+    if(['help','protect'].includes(type) && (k.rescue||k.person)) return `${k.rescue||k.person}을 어떻게 대하느냐가 관계와 이후 지원에 남는다.`;
+    if(['fight','distract','trap'].includes(type) && k.hostile) return `${k.hostile}이 현재 행동을 막는 직접적인 위협이다.`;
+    if(['bypass','break'].includes(type) && k.obstacle) return `${k.obstacle}을 어떻게 넘느냐에 따라 시간과 위험이 달라진다.`;
+    if(['inspect-item','take-item'].includes(type) && k.item) return `${k.item}은 이후 장면에서 단서나 도구가 될 수 있다.`;
+    if(['sneak','hide','tail'].includes(type)) return `정면 충돌을 피하고 위치나 정보를 먼저 확보하는 접근이다.`;
+    return choice.opportunity ? `${choice.opportunity}을 노리는 접근이다.` : '현재 장면에서 실제로 가능한 접근이다.';
+  };
+  // Preserve each authored choice's own roll, success/failure text and next-node edges.
+  // The old release pass cloned choice[0] into every visible action, which made three
+  // apparently different buttons secretly resolve as the same branch.
+  return (beat.choices||[]).slice(0,6).map((choice,i)=>({
+    ...choice,
+    id:choice.id||`${beat.id}-CHOICE-${i+1}`,
+    label:String(choice.label||'행동한다'),
+    reason:choice.reason||reasonFor(choice),
+    opportunity:choice.opportunity||actionOpportunity(choice.actionType),
+    risk:choice.risk||actionRisk(choice.actionType),
+  }));
 }
 function publicDialogue(c,beat){
   const k=beat.affordances||{}; const act=Math.max(1,Number(beat.act||1));

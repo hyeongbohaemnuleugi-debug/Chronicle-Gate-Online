@@ -1,15 +1,16 @@
 {
   "name": "chronicle-gate-online",
-  "version": "6.6.3",
+  "version": "9.0.0",
   "private": true,
   "type": "module",
-  "description": "1-4 player server-authoritative TRPG with a parallel-character after-last-train subway sandbox with item-gated routes, contextual branching choices, and emergent endings",
+  "description": "1-4 player server-authoritative online TRPG with free-form scene actions, fail-forward checks, shared-world split-party play, persistent accounts, and nine chronicles",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "check": "node scripts/qa.mjs",
-    "test": "node --test tests/*.test.mjs",
-    "verify": "npm run check && npm test"
+    "test": "node --test tests-release/*.test.mjs",
+    "verify": "npm run check && npm test",
+    "test:legacy": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "express": "5.2.1",

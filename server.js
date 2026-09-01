@@ -23,9 +23,13 @@ const rawUrl = process.env.SUPABASE_URL?.trim();
 const secretKey = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_API_KEY)?.trim();
 const accountPersistenceEnabled = Boolean(rawUrl && secretKey);
 const restBase = rawUrl ? `${rawUrl.replace(/\/$/, '')}/rest/v1` : null;
-const explicitLocalAccountDir = (process.env.CHRONICLE_DATA_DIR || process.env.RENDER_DISK_PATH || '').trim() || (fs.existsSync('/var/data') ? '/var/data' : '');
+const productionMode = process.env.NODE_ENV === 'production';
+const configuredAccountDir = (process.env.CHRONICLE_DATA_DIR || process.env.RENDER_DISK_PATH || '').trim() || (fs.existsSync('/var/data') ? '/var/data' : '');
+// Local development gets a durable project-local store automatically. Production never
+// silently falls back to ephemeral memory: it must use Supabase or a persistent disk.
+const explicitLocalAccountDir = configuredAccountDir || (!productionMode ? path.join(process.cwd(), '.chronicle-data') : '');
 const localAccountDurable = Boolean(explicitLocalAccountDir);
-const accountStoreMode = accountPersistenceEnabled ? 'supabase' : (localAccountDurable ? 'persistent-disk' : 'unconfigured');
+const accountStoreMode = accountPersistenceEnabled ? 'supabase' : (localAccountDurable ? (configuredAccountDir ? 'persistent-disk' : 'local-dev') : 'unconfigured');
 
 const memoryAccounts = new Map();
 const memoryEmailIndex = new Map();
@@ -81,8 +85,10 @@ function saveLocalStore() {
 const hashToken = token => crypto.createHash('sha256').update(String(token || '')).digest('hex');
 const normalizeEmail = email => String(email || '').trim().toLowerCase().slice(0, 160);
 const normalizeName = name => String(name || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18);
+const ACCOUNT_PASSWORD_MIN = 4;
+const ACCOUNT_PASSWORD_MAX = 72;
 
-const DEVELOPER_EMAILS = new Set(['wezxcw1457@gmail.com']);
+const DEVELOPER_EMAILS = new Set(String(process.env.CHRONICLE_DEVELOPER_EMAILS || '').split(',').map(normalizeEmail).filter(Boolean));
 const ALL_DICE_IDS = [
   'classic','nebula_glass','abyss_pearl','twilight_gilt','clockwork',
   'aurora_crystal','eclipse_obsidian','starseed','neon_prism','celestial_choir','crown_steel','void_monarch','rift_shard','mythic_aeon',
@@ -118,7 +124,7 @@ async function request(path, options = {}) {
   const text = await response.text().catch(() => '');
   if (!response.ok) {
     if (response.status === 404 || /PGRST205|does not exist|schema cache/i.test(text)) {
-      throw new Error('Supabase 계정 테이블이 아직 준비되지 않았습니다. 패치의 supabase/2026-08-18_accounts_progress.sql을 SQL Editor에서 실행하세요.');
+      throw new Error('Supabase 계정 테이블이 아직 준비되지 않았습니다. 패치의 supabase/migrations/202609010002_accounts_and_progress.sql을 SQL Editor에서 실행하세요.');
     }
     if (response.status === 401 || response.status === 403 || /permission denied|row-level security|JWT/i.test(text)) {
       throw new Error('Supabase 계정 저장 권한이 없습니다. Render 환경변수에 SUPABASE_SERVICE_ROLE_KEY(또는 SUPABASE_SECRET_KEY)를 설정하세요. anon 키만으로는 계정 저장이 되지 않습니다.');
@@ -196,7 +202,7 @@ async function registerAccount({ email, password, displayName }) {
   const name = normalizeName(displayName);
   if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error('올바른 이메일 주소를 입력하세요.');
   const newPassword = String(password || '');
-  if (newPassword.length < 4 || newPassword.length > 72) throw new Error('비밀번호는 4자 이상 72자 이하로 입력하세요.');
+  if (newPassword.length < ACCOUNT_PASSWORD_MIN || newPassword.length > ACCOUNT_PASSWORD_MAX) throw new Error(`비밀번호는 ${ACCOUNT_PASSWORD_MIN}자 이상 ${ACCOUNT_PASSWORD_MAX}자 이하로 입력하세요.`);
   if (name.length < 2) throw new Error('닉네임은 2자 이상 입력하세요.');
   if (await findAccountByEmail(normalizedEmail)) throw new Error('이미 가입된 이메일입니다.');
   const id = crypto.randomUUID();
@@ -332,7 +338,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '8.3.0-dice-theme-pass-8385';
+const APP_VERSION = '9.0.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -560,9 +566,9 @@ function rollReward(room, player, { margin = 0, natural = 0, lootItemId = null, 
 // v6.1.0 LIVING STORY
 const AGENCY_VERSION = 2;
 const SCENE_IMPORTANCE = {
-  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:4, freeAction:false, consequence:'현재 장면에서 실제로 가능한 여러 접근 중 하나를 고릅니다. 작은 실패도 다음 상황으로 이어집니다.' },
-  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:5, freeAction:false, consequence:'위험이 분명한 장면입니다. 조사·대화·우회·돌파·보호 등 가능한 접근을 상황에 맞게 제시합니다.' },
-  pivotal: { label:'결정적 장면', dcMin:10, dcMax:13, choiceTarget:6, freeAction:false, consequence:'큰 분기나 엔딩이 걸린 장면입니다. 서로 다른 위험과 대가를 가진 선택지를 충분히 제시합니다.' },
+  ordinary: { label:'일반 장면', dcMin:7, dcMax:9, choiceTarget:5, freeAction:true, consequence:'현재 장면에서 실제로 가능한 여러 접근 중 하나를 고르거나, 장면 속 사람·물건·통로에 연결된 행동을 직접 선언할 수 있습니다.' },
+  important: { label:'중요 장면', dcMin:8, dcMax:11, choiceTarget:6, freeAction:true, consequence:'위험이 분명한 장면입니다. 조사·대화·우회·돌파·보호 외에도 플레이어가 직접 만든 현실적인 접근을 판정합니다.' },
+  pivotal: { label:'결정적 장면', dcMin:10, dcMax:13, choiceTarget:6, freeAction:true, consequence:'큰 분기나 엔딩이 걸린 장면입니다. 실패도 이야기를 끊지 않고 새로운 대가와 방향으로 이어집니다.' },
 };
 
 function approachPressure(room, player, choice) {
@@ -803,49 +809,66 @@ function shortActionLabel(actionType, stat, ctx={}) {
 
 function freeActionIntent(text='') {
   const t=String(text).toLowerCase();
-  if (/싸우|공격|때리|베어|쏘|죽이|제압/.test(t)) return 'fight';
-  if (/설득|대화|말하|협상|질문|물어|거래|흥정|위로/.test(t)) return 'talk';
-  if (/훔치|가져가|빼앗|소매치기/.test(t)) return 'steal';
-  if (/미행|뒤를 밟|따라가/.test(t)) return 'tail';
-  if (/숨|몰래|잠입|들키지/.test(t)) return 'sneak';
-  if (/부수|파괴|밀어|열어|뚫|치워/.test(t)) return 'break';
-  if (/돕|구조|구해|보호|치료/.test(t)) return 'help';
-  if (/조사|살펴|관찰|확인|읽|분석|찾/.test(t)) return 'investigate';
+  if (/싸우|공격|때리|베어|쏘|죽이|제압|결투|무기로/.test(t)) return 'fight';
+  if (/위협|협박|압박|겁을 주|으름장/.test(t)) return 'threaten';
+  if (/거래|흥정|교환|값을|대가를 주/.test(t)) return 'trade';
+  if (/설득|타협|회유|달래|위로|진정시키|마음을 돌/.test(t)) return 'persuade';
+  if (/질문|물어|묻|대답|이야기해|말을 걸|대화해|정보를 캐/.test(t)) return 'question';
+  if (/훔치|가져가|빼앗|소매치기|슬쩍 챙/.test(t)) return 'steal';
+  if (/미행|뒤를 밟|따라가|추적해/.test(t)) return 'tail';
+  if (/함정|덫|매복|유인 장치|미끼를 놓/.test(t)) return 'trap';
+  if (/숨|은신|몸을 감추|엎드려|숨어/.test(t)) return 'hide';
+  if (/몰래|잠입|들키지|살금|조용히 들어/.test(t)) return 'sneak';
+  if (/우회|돌아가|옆길|샛길|다른 길/.test(t)) return 'bypass';
+  if (/부수|파괴|밀어|열어|뚫|치워|걷어차/.test(t)) return 'break';
+  if (/도망|후퇴|물러나|빠져나|탈출/.test(t)) return 'retreat';
+  if (/돕|구조|구해|보호|치료|응급처치|감싸/.test(t)) return 'help';
+  if (/버티|견디|참아|지탱|몸으로 막/.test(t)) return 'endure';
+  if (/기다|지켜보며 기다|가만히 있/.test(t)) return 'wait';
+  if (/사용|써서|꺼내|장착|도구로|아이템|물약|열쇠로/.test(t)) return 'use-item';
+  if (/관찰|둘러보|주변을 보|기척|소리를 듣|귀를 기울/.test(t)) return 'observe';
+  if (/조사|살펴|확인|읽|분석|해독|검색|찾|대조|검사/.test(t)) return 'investigate';
+  if (/이동|간다|가자|들어간|올라가|내려가|건너가/.test(t)) return 'travel-a';
   return 'other';
 }
 function validateFreeAction(declaration, beat) {
   const ctx=inferSceneAffordances(beat);
   const intent=freeActionIntent(declaration);
   if (intent==='fight' && !(ctx.hasHostile || ctx.hasPerson)) return {ok:false,error:'지금 장면에는 싸울 대상이 없습니다. 다른 행동을 말해 주세요.'};
-  if (intent==='talk' && !ctx.hasPerson) return {ok:false,error:'지금 장면에는 대화할 사람이 없습니다. 주변을 조사하거나 다른 행동을 말해 주세요.'};
+  if (['question','persuade','trade','threaten'].includes(intent) && !ctx.hasPerson) return {ok:false,error:'지금 장면에는 대화하거나 협상할 사람이 없습니다. 주변을 조사하거나 다른 행동을 말해 주세요.'};
   if (intent==='steal' && !(ctx.hasItem || ctx.hasPerson)) return {ok:false,error:'지금 장면에는 훔치거나 가져갈 대상이 보이지 않습니다.'};
   if (intent==='tail' && !ctx.hasPerson) return {ok:false,error:'지금 장면에는 뒤를 밟을 대상이 없습니다.'};
-  if (intent==='break' && !(ctx.hasObstacle || ctx.hasHostile)) return {ok:false,error:'지금 장면에는 부수거나 억지로 열 대상이 없습니다.'};
+  if (['break','bypass'].includes(intent) && !(ctx.hasObstacle || ctx.hasRoute || ctx.hasHostile)) return {ok:false,error:'지금 장면에는 억지로 열거나 우회할 장애물이 보이지 않습니다.'};
+  if (intent==='trap' && !(ctx.hasHostile || ctx.hasStealthPressure)) return {ok:false,error:'지금 장면에는 함정을 설치해 노릴 대상이나 경로가 뚜렷하지 않습니다.'};
   if (intent==='help' && !(ctx.hasRescue || ctx.hasPerson)) return {ok:false,error:'지금 장면에는 당장 도울 대상이 보이지 않습니다.'};
+  if (intent==='use-item' && !(ctx.hasItem || ctx.hasObstacle || ctx.hasClue || ctx.hasHostile || ctx.hasPerson)) return {ok:false,error:'지금 장면에서는 그 물건을 사용할 만한 대상이나 상황이 보이지 않습니다.'};
   return {ok:true,ctx,intent};
 }
 function freeActionIsInquiry(declaration, validity, beat){
   const t=String(declaration||'').toLowerCase();
   if(!validity?.ok) return false;
-  if(['fight','break','steal','tail','sneak','help'].includes(validity.intent)) return false;
-  if(/들어가|이동|따라가|챙기|가져가|훔치|부수|열어|공격|제압|구조|끌고|도망|탈출/.test(t)) return false;
-  return ['talk','investigate','other'].includes(validity.intent);
+  if(validity.intent==='question') return true;
+  if(!['investigate','observe'].includes(validity.intent)) return false;
+  // Looking, reading and asking may reveal information without consuming the turn (twice per scene).
+  // If the declaration also changes position, takes an object or alters the scene, it becomes a real check.
+  if(/들어가|이동|따라가|챙기|가져가|훔치|부수|열어|공격|제압|구조|끌고|도망|탈출|설치|조작|해킹|끄|켜|바꾸/.test(t)) return false;
+  return true;
 }
 function sceneInquiryNarrative(campaign, beat, validity, declaration, count=1){
   const ctx=validity?.ctx||inferSceneAffordances(beat); const intent=validity?.intent||'other';
   const clue=ctx.clue||'눈앞의 흔적'; const person=ctx.person||'상대';
-  if(intent==='talk'){
+  if(intent==='question'){
     const quoted=beat?.dialogue?.[0]?.text || '';
     if(count===1 && quoted) return `${person}은 잠시 주변을 살핀 뒤 대답했다. ${quoted}`;
     const reveal=String(beat?.reveal||'').trim();
     return reveal?`${person}의 대답에서 한 가지가 분명해진다. ${reveal}`:`${person}은 아는 것과 추측하는 것을 나눠 말한다. 적어도 ${clue}가 우연히 생긴 것은 아니라는 점은 확실하다.`;
   }
-  if(intent==='investigate'){
+  if(intent==='investigate' || intent==='observe'){
     if(count===1) return `${clue}를 가까이 확인하자 멀리서 볼 때는 보이지 않던 차이가 드러난다. 흔적의 순서와 주변 상태가 서로 맞지 않는다.`;
     const reveal=String(beat?.reveal||'').trim();
     return reveal?`${clue}의 세부를 다시 맞춰 보자 중요한 사실 하나가 이어진다. ${reveal}`:`${clue}를 다른 흔적과 대조하자 적어도 지금 보이는 설명만으로는 사건이 성립하지 않는다는 점이 확실해진다.`;
   }
-  return `그 행동으로 당장 장면을 뒤집지는 않지만, 주변의 반응을 확인할 수 있었다. 지금 보이는 사람과 흔적은 그대로 있고 다음 행동은 아직 당신이 정할 수 있다.`;
+  return `그 행동은 정보를 확인하는 데서 끝나지 않고 상황을 바꾸려는 시도다. 판정 결과에 따라 장면과 다음 선택이 달라진다.`;
 }
 
 function contextualGeneratedAction(stat, beat, ctx, variant=0) {
@@ -943,7 +966,7 @@ function prepareAgencyBeat(room, beat) {
   const importanceKey = sceneImportanceKey(beat);
   const rule = SCENE_IMPORTANCE[importanceKey];
   beat.importance = { key:importanceKey, label:rule.label, consequence:rule.consequence };
-  beat.freeActionAllowed = false;
+  beat.freeActionAllowed = beat.freeActionAllowed !== false && Boolean(rule.freeAction);
   const sceneCtx = inferSceneAffordances(beat);
   beat.choices = Array.isArray(beat.choices) ? beat.choices.filter(choice => choiceFitsScene(choice, sceneCtx)).map(choice => {
     const normalized = { ...choice };
@@ -1046,6 +1069,17 @@ function applyAgencyMemory(room, player, choice, success, margin, declaration=''
   } else room.agencyMemory.scars += margin <= -5 ? 2 : 1;
   room.agencyMemory.actions.push({ beatId:room.storyNodeId, playerId:player.id, stat:choice?.stat, route, success, declaration:String(declaration || choice?.label || '').slice(0,120) });
   if (room.agencyMemory.actions.length > 24) room.agencyMemory.actions.splice(0, room.agencyMemory.actions.length - 24);
+}
+function agencyCarryoverLine(room, beat) {
+  const memory=room?.agencyMemory;
+  const last=memory?.actions?.[memory.actions.length-1];
+  if(!last || last.beatId===beat?.id) return '';
+  const a=beat?.affordances||{};
+  if(!last.success) return `앞 장면의 실패 여파가 아직 남아 있다. ${a.hostile?`${a.hostile}의 경계가 더 날카로워졌고`:a.obstacle?`${a.obstacle}을 다루는 데 시간이 더 걸리고`:'상황이 한층 불안정해졌고'}, 이번 선택은 그 대가를 수습하는 일과 함께 진행된다.`;
+  if(last.route==='careful' && Number(memory.clues||0)>0) return `${a.clue||'눈앞의 단서'}를 보는 방식이 달라졌다. 앞서 모은 정보가 서로 연결되면서 처음에는 보이지 않던 모순이 드러난다.`;
+  if(last.route==='bold' && Number(memory.position||0)>0) return `${a.obstacle||'현재 길'} 앞에서 먼저 움직일 여지가 생겼다. 앞선 장면에서 확보한 위치와 주도권이 이번 행동의 선택 폭을 넓힌다.`;
+  if(last.route==='empathetic' && Number(memory.rapport||0)>0) return `${a.person||a.rescue||'현장의 사람들'}의 반응이 이전과 달라졌다. 앞서 쌓은 신뢰 때문에 말하지 않던 정보나 부탁이 자연스럽게 나오기 시작한다.`;
+  return '';
 }
 
 
@@ -2203,7 +2237,7 @@ function parallelRenderedScene(room,campaign,player){
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
     sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:parallelNodeAffordances(node), text:(node.text||[]).join(' '),
-    paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices, freeActionAllowed:false,
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices, freeActionAllowed:true,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
@@ -2397,9 +2431,51 @@ function parallelAdvance(room,campaign,player,payload,ack){
   }
   const scene=parallelRenderedScene(room,campaign,player); if(!scene) return ack?.({ok:false,error:'개인 장면을 찾을 수 없습니다.'});
   const choiceIndex=Number(payload?.choiceIndex);
-  const choice=Number.isInteger(choiceIndex)?scene.choices?.[choiceIndex]:null;
-  const freeActionInterpretation=null;
-  if(!choice) return ack?.({ok:false,error:'현재 장면에서 제시된 행동 중 하나를 선택해 주세요.'});
+  const declaration=sanitize(payload?.declaration,220);
+  let choice=Number.isInteger(choiceIndex)?scene.choices?.[choiceIndex]:null;
+  let freeActionInterpretation=null;
+  if(!choice && declaration && scene.freeActionAllowed){
+    const validity=validateFreeAction(declaration,scene);
+    if(!validity.ok){
+      const ctx=inferSceneAffordances(scene);
+      const anchors=[ctx.person,ctx.clue,ctx.obstacle,ctx.rescue,ctx.item,ctx.hostile].filter(Boolean).slice(0,3);
+      return ack?.({ok:false,recoverable:true,error:`${validity.error}${anchors.length?` 지금 장면에서는 ${anchors.join(', ')}에 연결된 행동을 시도할 수 있습니다.`:''}`});
+    }
+    freeActionInterpretation=interpretFreeAction(declaration,player,scene,room);
+    const route=freeActionInterpretation.route;
+    const template=scene.choices?.find(c=>c.actionType===validity.intent) || scene.choices?.find(c=>c.branchValue===route) || scene.choices?.[0] || {};
+    choice={
+      ...template, id:`${scene.id}-FREE-${Date.now()}`, label:declaration, freeAction:true,
+      stat:freeActionInterpretation.stat, dc:freeActionInterpretation.dc, branchValue:route,
+      path:choicePathFromRoute(route), actionType:validity.intent, automatic:false,
+      fatalRisk:['fight','break','sneak','threaten'].includes(validity.intent),
+      opportunity:'플레이어가 직접 만든 해결법', risk:sceneImportanceKey(scene)==='pivotal'?'높음':'보통',
+      nextSuccess:template.nextSuccess || template.next?.success,
+      nextFailure:template.nextFailure || template.next?.failure || template.nextSuccess || template.next?.success,
+    };
+    if(validity.intent==='fight'){
+      const fightTemplate=scene.choices?.find(c=>c.actionType==='fight' && c.combat);
+      if(fightTemplate?.combat) choice.combat=fightTemplate.combat;
+    }
+  }
+  if(!choice) return ack?.({ok:false,error:'제시된 행동을 고르거나, 아래 입력창에 현재 장면과 연결된 행동을 직접 적어 주세요.'});
+
+  if(choice.freeAction && freeActionInterpretation){
+    const validity={ok:true,intent:freeActionInterpretation.intent||freeActionIntent(choice.label),ctx:inferSceneAffordances(scene)};
+    if(freeActionIsInquiry(choice.label,validity,scene)){
+      ps.sceneInquiries ||= {};
+      const inquiryCount=Number(ps.sceneInquiries[scene.id]||0);
+      if(inquiryCount<2){
+        ps.sceneInquiries[scene.id]=inquiryCount+1;
+        const narrative=sceneInquiryNarrative(campaign,scene,validity,choice.label,inquiryCount+1);
+        ps.lastPersonalResult={choiceLabel:choice.label,text:narrative,consequence:'추가 정보 확인 · 턴 유지',success:true,grade:'inquiry'};
+        room.lastResolution={source:'parallel-story',ok:true,inquiry:true,playerId:player.id,playerName:player.name,choiceLabel:choice.label,text:narrative,consequence:'추가 정보 확인 · 현재 장면 유지'};
+        pushChat(room,{type:'action',author:player.name,text:choice.label});
+        sync(room);
+        return ack?.({ok:true,inquiry:true,result:ps.lastPersonalResult});
+      }
+    }
+  }
   const automatic=Boolean(choice.automatic);
   const ability=player.abilities?.[choice.stat]; if(!automatic && !ability) return ack?.({ok:false,error:'능력치가 없습니다.'});
   const roll=automatic?null:rand(20); const base=automatic?0:mod(effectiveAbilityTotal(room,player,choice.stat)); const gear=automatic?0:equipmentStatBonus(room,player,choice.stat); const support=Math.min(2,Number(ps.support||0)); const encounter=room.parallel.encounters?.[ps.location]; const encounterAssist=choice.kind==='parallel-combat'?Math.min(2,Number(encounter?.assist||0)):0; const status=automatic?0:statusPenaltyForCheck(room,player,choice.stat); const total=automatic?null:roll+base+gear+support+encounterAssist+status; const dc=Math.max(7,Number(choice.dc||8)); const success=automatic?true:(roll===20 || (roll!==1 && total>=dc)); const grade=automatic?'success':storyOutcomeGrade(roll,total,dc);
@@ -3388,6 +3464,8 @@ function renderedStoryBeat(room, campaign) {
     if (carry) paragraphs.push(carry);
   }
   paragraphs.push(beat.situation || beat.text || '');
+  const agencyCarry=agencyCarryoverLine(room,beat);
+  if(agencyCarry) paragraphs.push(agencyCarry);
   const routeVariant = routeSceneVariant(campaign, beat, room, prev);
   if (routeVariant && paragraphs.length < 3) paragraphs.push(routeVariant);
 
@@ -3772,12 +3850,12 @@ function applyChoiceEffect(room, player, effect = {}) {
 }
 
 const ACTION_PATTERNS = [
-  { stat:'근력', label:'돌파/제압', words:['부수','밀어','들어','공격','제압','파괴','붙잡','걷어','당겨','힘으로'] },
-  { stat:'민첩', label:'잠입/회피', words:['몰래','숨','피해','피하','잠입','재빨리','빠르게','기어','뛰어','훔쳐'] },
-  { stat:'지능', label:'분석/해독', words:['분석','해킹','해독','연구','계산','조사','기록','코드','구조','원리'] },
-  { stat:'지혜', label:'관찰/추적', words:['관찰','추적','살펴','감지','듣','흔적','냄새','기척','직감','찾아'] },
-  { stat:'매력', label:'대화/설득', words:['설득','대화','협상','속여','위로','질문','말을','거래','명령','연기'] },
-  { stat:'체력', label:'버티기/보호', words:['버티','견디','막아','보호','참아','지탱','몸으로','견뎌','감싸','유지'] },
+  { stat:'근력', label:'돌파/제압', words:['부수','밀어','공격','제압','파괴','붙잡','걷어','당겨','힘으로','박살','강제로','위협'] },
+  { stat:'민첩', label:'잠입/회피', words:['몰래','숨','피해','피하','잠입','재빨리','빠르게','기어','뛰어','훔쳐','미행','우회','도망','후퇴','샛길'] },
+  { stat:'지능', label:'분석/해독', words:['분석','해킹','해독','연구','계산','조사','기록','코드','구조','원리','함정','장치','아이템','도구','대조'] },
+  { stat:'지혜', label:'관찰/추적', words:['관찰','추적','살펴','감지','듣','흔적','냄새','기척','직감','찾아','기다','둘러보','확인'] },
+  { stat:'매력', label:'대화/설득', words:['설득','대화','협상','속여','위로','질문','말을','거래','명령','연기','흥정','회유','협박','압박','달래'] },
+  { stat:'체력', label:'버티기/보호', words:['버티','견디','막아','보호','참아','지탱','몸으로','견뎌','감싸','유지','치료','구조','응급처치'] },
 ];
 
 function interpretFreeAction(declaration, player, beat, room) {
@@ -3807,15 +3885,15 @@ function actionNarrative({ success, declaration, player, beat, interpretation, m
   const ctx=inferSceneAffordances(beat);
   const anchor=ctx.clue||ctx.person||ctx.obstacle||ctx.rescue||ctx.hostile||'현재 상황';
   if(success){
-    const opening=route==='careful' ? `${actor}는 ${action}고 시도했다. ${anchor}에서 처음에는 보이지 않던 반응이 드러났다.`
-      : route==='bold' ? `${actor}는 망설이지 않고 ${action}고 밀어붙였다. 그 행동 때문에 정체돼 있던 상황이 실제로 움직였다.`
-      : `${actor}는 ${action}고 시도했다. 상대와 주변의 반응이 달라지면서 새로운 틈이 생겼다.`;
+    const opening=route==='careful' ? `${actor}는 「${action}」라고 선언하고 움직였다. ${anchor}에서 처음에는 보이지 않던 반응이 드러났다.`
+      : route==='bold' ? `${actor}는 망설이지 않고 「${action}」를 실행했다. 그 행동 때문에 정체돼 있던 상황이 실제로 움직였다.`
+      : `${actor}는 「${action}」라는 방법을 택했다. 상대와 주변의 반응이 달라지면서 새로운 틈이 생겼다.`;
     const reveal=margin>=5 && beat?.reveal ? ` 그 과정에서 ${beat.reveal}` : '';
     return `${opening} 이제 ${objective}에 한 걸음 더 가까워졌다.${reveal}`.trim();
   }
-  const cost=route==='careful' ? `${actor}는 ${action}고 시도했지만, 확인하려던 사이 ${anchor}의 상태가 먼저 변했다.`
-    : route==='bold' ? `${actor}는 ${action}고 시도했지만, 밀어붙인 만큼 소리와 위험이 커졌다.`
-    : `${actor}는 ${action}고 시도했지만, 의도와 다르게 받아들여져 경계가 높아졌다.`;
+  const cost=route==='careful' ? `${actor}는 「${action}」를 시도했지만, 확인하려던 사이 ${anchor}의 상태가 먼저 변했다.`
+    : route==='bold' ? `${actor}는 「${action}」를 시도했지만, 밀어붙인 만큼 소리와 위험이 커졌다.`
+    : `${actor}는 「${action}」를 시도했지만, 의도와 다르게 받아들여져 경계가 높아졌다.`;
   return `${cost} 원하는 결과는 얻지 못했지만 실패 때문에 다음에 피해야 할 것과 이용할 수 있는 흔적 하나는 남았다.`;
 }
 
@@ -4953,7 +5031,7 @@ io.on('connection', async socket => {
     }
 
     const choiceIndex = Number(payload?.choiceIndex);
-    const declaration = sanitize(payload?.declaration, 120);
+    const declaration = sanitize(payload?.declaration, 220);
     let choice = Number.isInteger(choiceIndex) ? beat.choices?.[choiceIndex] : null;
     let freeActionInterpretation = null;
     if (!choice && declaration && beat.freeActionAllowed) {

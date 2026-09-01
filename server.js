@@ -966,7 +966,7 @@ function prepareAgencyBeat(room, beat) {
   const importanceKey = sceneImportanceKey(beat);
   const rule = SCENE_IMPORTANCE[importanceKey];
   beat.importance = { key:importanceKey, label:rule.label, consequence:rule.consequence };
-  beat.freeActionAllowed = beat.freeActionAllowed !== false && Boolean(rule.freeAction);
+  beat.freeActionAllowed = false; // v9.1 choice-only: story progression uses authored scene choices only
   const sceneCtx = inferSceneAffordances(beat);
   beat.choices = Array.isArray(beat.choices) ? beat.choices.filter(choice => choiceFitsScene(choice, sceneCtx)).map(choice => {
     const normalized = { ...choice };
@@ -1974,7 +1974,7 @@ function parallelDynamicChoices(room,campaign,player,node){
     dynamic.unshift({id:`travel:follow:${ps.pendingTravel.from}`,kind:'parallel-social',automatic:true,action:'follow',targetId:ps.pendingTravel.from,label:`${leader?.name||'동료'}를 따라 ${parallelLocationLabel(campaign,ps.pendingTravel.location)}로 간다`,stat:'민첩',dc:7,path:'bond'});
     dynamic.unshift({id:'travel:stay',kind:'parallel-social',automatic:true,action:'stay',label:'여기 남아 따로 움직인다',stat:'지혜',dc:7,path:'survival'});
   }
-  dynamic.push(...parallelOutcomeFollowupChoices(room,campaign,player,node));
+  // v9.1: prior outcomes remain in narration/state, but do not inject unrelated generic choices into a new scene.
   dynamic.push(...parallelUniversalItemChoices(room,campaign,player,node));
   dynamic.push(...parallelAddAcquisitionChoices(room,campaign,player,node));
   dynamic.push(...parallelEchoCapabilityChoices(room,campaign,player,node));
@@ -2080,20 +2080,41 @@ function parallelSceneBrief(room,campaign,player,node){
 }
 function parallelChoiceScore(choice,node){
   const label=String(choice?.label||'');
-  const context=`${node?.title||''} ${node?.objective||''} ${(node?.text||[]).join(' ')}`;
+  const outcome=`${choice?.success||''} ${choice?.failure||''}`;
+  const objective=String(node?.objective||'');
+  const fiction=`${node?.title||''} ${objective} ${(node?.text||[]).join(' ')}`;
   let score=0;
-  if(choice?.kind==='parallel-social') score+=90;
-  if(choice?.kind==='parallel-item-transfer') score+=65;
-  if(choice?.choiceBadge==='특수 루트'||choice?.choiceBadge==='아이템 전용 루트'||choice?.choiceBadge==='핵심 아이템'||choice?.choiceBadge==='진엔딩 조건'||choice?.choiceBadge==='비밀 엔딩') score+=100;
-  else if(choice?.choiceBadge) score+=35;
-  if(/확인|조사|살핀|듣|분석|기록|대조/.test(label)) score+=18;
-  if(/간다|돌아|들어간|나간|향한다|따라/.test(label)) score+=8;
-  if(/싸|막|피한다|치료|구조|부른다/.test(label)) score+=12;
-  const words=label.replace(/[0-9·]/g,' ').split(/\s+/).map(w=>w.replace(/[을를이가와과에로만은는]/g,'')).filter(w=>w.length>=2);
-  for(const word of words) if(context.includes(word)) score+=12;
-  if(choice?.automatic) score+=3;
+  if(choice?._sceneBase) score+=34;
+  if(choice?.kind==='parallel-social') score+=8;
+  if(choice?.kind==='parallel-item-transfer') score+=5;
+  if(choice?.choiceBadge==='특수 루트'||choice?.choiceBadge==='아이템 전용 루트'||choice?.choiceBadge==='핵심 아이템'||choice?.choiceBadge==='진엔딩 조건'||choice?.choiceBadge==='비밀 엔딩') score+=70;
+  else if(choice?.choiceBadge && choice?.choiceBadge!=='이전 선택의 여파') score+=14;
+  if(choice?.choiceBadge==='이전 선택의 여파') score-=90;
+
+  const normalize=w=>w.replace(/["'“”‘’(),.·:!?]/g,'').replace(/(으로|에서|에게|부터|까지|처럼|보다|하고|하며|한다|한다면|을|를|이|가|은|는|와|과|에|로)$/,'').trim();
+  const words=label.split(/\s+/).map(normalize).filter(w=>w.length>=2);
+  const objectiveWords=objective.split(/\s+/).map(normalize).filter(w=>w.length>=2);
+  const directHits=words.filter(w=>fiction.includes(w)).length;
+  const objectiveHits=words.filter(w=>objective.includes(w)).length;
+  score+=Math.min(60,directHits*14)+Math.min(42,objectiveHits*18);
+  // Success/failure prose can reveal whether an authored action truly investigates the current problem.
+  const outcomeHits=objectiveWords.filter(w=>w.length>=2 && outcome.includes(w)).length;
+  score+=Math.min(24,outcomeHits*6);
+
+  const intent=parallelChoiceIntent(choice,node).split('|')[0];
+  if(/찾|확인|밝히|출처|원인|추적/.test(objective)){
+    if(intent==='inspect') score+=28;
+    if(/확인|조사|찾|추적|촬영|기록|듣|진동|소리|열차|신호/.test(label)) score+=18;
+    if(intent==='move' && !words.some(w=>fiction.includes(w))) score-=36;
+  }
+  if(/구조|구한다|보호|살린/.test(objective) && intent==='help') score+=30;
+  if(/대화|설득|정보|묻/.test(objective) && intent==='talk') score+=30;
+  if(/막|제압|싸|위협/.test(objective) && intent==='combat') score+=28;
+  if(/돌아|떠난다|올라간다|나간다/.test(label) && !/돌아|탈출|나간|이동/.test(objective)) score-=48;
+  if(choice?.automatic) score+=2;
   return score;
 }
+
 function parallelChoiceIntent(choice,node){
   const label=String(choice?.label||'').replace(/\s+/g,' ').trim();
   const aff=parallelNodeAffordances(node);
@@ -2145,6 +2166,10 @@ function parallelChoiceFitsCurrentScene(room,campaign,player,choice,node){
     const next=choice.nextSuccess||choice.nextFailure||choice.next;
     if(!next || next===node.id) return /돌아|남아/.test(label);
     if(!(/길|통로|문|입구|출구|복도|계단|승강장|골목|터널|경로|방향|향|이동|들어/.test(context+' '+label))) return false;
+    const target=parallelChoiceIntent(choice,node).split('|')[1]||'';
+    const urgent=String(choice.id||'').startsWith('urgent:');
+    // A destination that was never mentioned in the current fiction should not appear as a random escape option.
+    if(!urgent && target && !context.includes(target) && /돌아|올라|나간다|향한다|간다/.test(label)) return false;
   }
   return true;
 }
@@ -2220,9 +2245,9 @@ function parallelRenderedScene(room,campaign,player){
   const node=parallelNode(room,campaign,player);
   if(!node) return null;
   const base=(node.choices||[])
-    .map((choice,index)=>({id:`base:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}))
+    .map((choice,index)=>({id:`base:${index}`,...choice,_sceneBase:true,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}))
     .filter(choice=>parallelChoiceVisible(room,campaign,player,choice,node));
-  const dynamic=parallelDynamicChoices(room,campaign,player,node);
+  const dynamic=parallelDynamicChoices(room,campaign,player,node).map(choice=>({...choice,_sceneBase:false}));
   // v6.6.4: valid contextual choices must never collapse to an empty scene.
   // Keep role/item-gated choices when available, but always preserve ordinary scene actions as a safe baseline.
   const choices=parallelCurateChoices(room,campaign,player,node,dynamic,base);
@@ -2237,7 +2262,7 @@ function parallelRenderedScene(room,campaign,player){
     id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
     sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:parallelNodeAffordances(node), text:(node.text||[]).join(' '),
-    paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices, freeActionAllowed:true,
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices, freeActionAllowed:false,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
@@ -2434,6 +2459,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
   const declaration=sanitize(payload?.declaration,220);
   let choice=Number.isInteger(choiceIndex)?scene.choices?.[choiceIndex]:null;
   let freeActionInterpretation=null;
+  if(!choice && declaration) return ack?.({ok:false,error:'이 버전은 선택지 전용입니다. 현재 장면에 표시된 행동 중 하나를 골라 주세요.'});
   if(!choice && declaration && scene.freeActionAllowed){
     const validity=validateFreeAction(declaration,scene);
     if(!validity.ok){
@@ -5034,6 +5060,7 @@ io.on('connection', async socket => {
     const declaration = sanitize(payload?.declaration, 220);
     let choice = Number.isInteger(choiceIndex) ? beat.choices?.[choiceIndex] : null;
     let freeActionInterpretation = null;
+    if (!choice && declaration) return ack?.({ ok:false, error:'이 버전은 선택지 전용입니다. 현재 장면에 표시된 행동 중 하나를 골라 주세요.' });
     if (!choice && declaration && beat.freeActionAllowed) {
       const validity = validateFreeAction(declaration, beat);
       if (!validity.ok) {

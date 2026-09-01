@@ -1,9 +1,9 @@
 {
   "name": "chronicle-gate-online",
-  "version": "9.0.0",
+  "version": "9.1.0",
   "private": true,
   "type": "module",
-  "description": "1-4 player server-authoritative online TRPG with free-form scene actions, fail-forward checks, shared-world split-party play, persistent accounts, and nine chronicles",
+  "description": "1-4 player server-authoritative online TRPG with scene-linked choice-only storytelling, fail-forward checks, shared-world split-party play, persistent accounts, and nine chronicles",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",

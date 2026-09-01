@@ -1066,7 +1066,7 @@ function buildStoryBeats(c){
         title:`${c.acts[act]} · ${phase}`,
         affordances:sceneAffordances(c.id, act, step),
         text:prose[step], situation:prose[step], objective, why,
-        prompt: `지금 무엇을 할까요? 빠른 행동을 고르거나 직접 방법을 말해도 됩니다.`,
+        prompt: `지금 무엇을 할까요? 현재 장면과 직접 연결된 행동 중 하나를 고르세요.`,
         reveal:guide.reveal, stakes:guide.stakes,
         visual:`${eventStyles[c.id].visuals[(act*2+step)%eventStyles[c.id].visuals.length]} · ${c.acts[act]}`,
         continuityHook: (()=>{ const t=STORY_TEXTURE[c.id]||STORY_TEXTURE.ember; return t.omen[(act*3+step)%t.omen.length] || guide.stakes; })(),
@@ -2735,7 +2735,7 @@ function decorateReleaseStory(c, beats){
     dialogue:publicDialogue(c,beat),
     playerVoices:{}, playerSpeech:'', sceneQuestion:'',
     immediatePressure:['대면','위기','결단'].includes(beat.phase)?beat.stakes:'',
-    freeActionAllowed:true,
+    freeActionAllowed:false,
     choices:publicSuggestedActions(c,beat)
   }));
 }

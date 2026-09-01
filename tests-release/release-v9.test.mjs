@@ -19,7 +19,7 @@ test('story scenes are readable, context-rich and expose tabletop-sized choice s
       assert.ok(String(beat.text||'').split(/\n\n+/).filter(Boolean).length>=4,`${c.id}/${beat.id} prose`);
       assert.ok(beat.choices.length>=5&&beat.choices.length<=6,`${c.id}/${beat.id} choice count`);
       assert.ok(new Set(beat.choices.map(x=>x.actionType)).size>=3,`${c.id}/${beat.id} action diversity`);
-      assert.equal(beat.freeActionAllowed,true,`${c.id}/${beat.id} free action`);
+      assert.equal(beat.freeActionAllowed,false,`${c.id}/${beat.id} choice-only`);
     }
   }
 });
@@ -37,12 +37,11 @@ test('account persistence migration contains every backend dependency',()=>{
   assert.match(migration,/grant execute[\s\S]*service_role/i);
 });
 
-test('free-form actions are wired in both client and normal/parallel server paths',()=>{
-  assert.match(client,/storyActionSubmitBtn'\)\.onclick=submitStoryDeclaration/);
-  assert.match(client,/configureStoryActionBox\(scene,isMyTurn,actor\)/);
-  assert.match(server,/validateFreeAction\(declaration,scene\)/);
-  assert.match(server,/validateFreeAction\(declaration, beat\)/);
-  assert.match(server,/choices:explainedChoices, freeActionAllowed:true/);
+test('story progression is choice-only in client and server',()=>{
+  assert.match(client,/v9\.1 choice-only/);
+  assert.match(server,/beat\.freeActionAllowed = false/);
+  assert.match(server,/choices:explainedChoices, freeActionAllowed:false/);
+  assert.match(server,/이 버전은 선택지 전용입니다/);
 });
 
 test('choices retain their own consequences and branches after release decoration',()=>{

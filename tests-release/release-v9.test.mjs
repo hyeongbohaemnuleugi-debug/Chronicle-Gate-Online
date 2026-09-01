@@ -17,7 +17,7 @@ test('story scenes are readable, context-rich and expose tabletop-sized choice s
   for(const c of CAMPAIGNS){
     for(const beat of c.storyBeats||[]){
       assert.ok(String(beat.text||'').split(/\n\n+/).filter(Boolean).length>=4,`${c.id}/${beat.id} prose`);
-      assert.ok(beat.choices.length>=5&&beat.choices.length<=6,`${c.id}/${beat.id} choice count`);
+      assert.ok(beat.choices.length>=3&&beat.choices.length<=5,`${c.id}/${beat.id} choice count`);
       assert.ok(new Set(beat.choices.map(x=>x.actionType)).size>=3,`${c.id}/${beat.id} action diversity`);
       assert.equal(beat.freeActionAllowed,false,`${c.id}/${beat.id} choice-only`);
     }
@@ -53,7 +53,7 @@ test('choices retain their own consequences and branches after release decoratio
   }
 });
 
-test('client presents risk/opportunity without always exposing exact DC',()=>{
+test('client keeps roll difficulty available without turning choices into a dashboard',()=>{
   assert.match(client,/choiceTagsHTML/);
   assert.match(client,/const revealDc=Boolean\(scene\?\.statInsight\?\.insight\)/);
   assert.match(client,/choiceDifficultyLabel/);

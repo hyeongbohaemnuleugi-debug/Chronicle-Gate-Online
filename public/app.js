@@ -974,6 +974,50 @@ function parallelNarrationHTML(lines=[]){
 }
 
 
+function parallelNovelSceneHTML(scene, actor, encounter, nearby = [], lastResolution = null) {
+  const paragraphs=(scene?.paragraphs||[]).map(x=>String(x||'').trim()).filter(Boolean).slice(0,5);
+  const dialogue=Array.isArray(scene?.dialogue) ? scene.dialogue.filter(x=>x?.text).slice(0,2) : [];
+  const blocks=[];
+  blocks.push(`<div class="novel-location-line"><span>${esc(scene?.actName||`ACT ${scene?.act||1}`)}</span><i>·</i><b>${esc(scene?.locationLabel||'현재 장소')}</b></div>`);
+
+  // The player's own previous choice becomes the opening beat of the next scene. This makes
+  // progression read like one continuous session instead of a sequence of disconnected cards.
+  if(scene?.carryover?.text){
+    blocks.push(`<p class="novel-transition ${scene.carryover.success?'success':'cost'}">${esc(conciseSceneText(scene.carryover.text,260))}</p>`);
+  }
+
+  // Only echo another player's immediately previous action when that player is physically
+  // in this scene.  Split-party sessions should never splice a remote scene into this prose.
+  const lastNearby=lastResolution && nearby.some(x=>x?.name && x.name===lastResolution.playerName);
+  if(lastNearby && lastResolution?.text){
+    blocks.push(`<p class="novel-carryover">${esc(conciseSceneText(lastResolution.text,190))}</p>`);
+  }
+
+  paragraphs.forEach((text,index)=>{
+    blocks.push(`<p class="novel-paragraph ${index===0?'opening':''}">${storyParagraphHTML(text,index)}</p>`);
+    if(index===0 && dialogue[0]) blocks.push(`<div class="novel-dialogue"><span>${esc(dialogue[0].speaker||'등장인물')}</span><p>${esc(dialogue[0].text)}</p></div>`);
+    if(index===2 && dialogue[1]) blocks.push(`<div class="novel-dialogue"><span>${esc(dialogue[1].speaker||'등장인물')}</span><p>${esc(dialogue[1].text)}</p></div>`);
+  });
+  if(!paragraphs.length) blocks.push(`<p class="novel-paragraph opening">${esc(scene?.text||scene?.sceneContext||scene?.title||'장면이 이어진다.')}</p>`);
+
+  if(encounter){
+    blocks.push(`<div class="novel-danger-beat"><span>${esc(encounter.name)}</span><p>${esc(encounter.name)}이(가) 길을 막고 있다. 숨을 고를 틈이 길지 않다.</p></div>`);
+  } else if(scene?.immediatePressure){
+    blocks.push(`<p class="novel-pressure-line">${esc(scene.immediatePressure)}</p>`);
+  }
+  if(nearby.length){
+    blocks.push(`<p class="novel-companions">${nearby.map(x=>`<b>${esc(x.name)}</b>`).join(', ')}도 같은 장소에 있다.</p>`);
+  }
+  return `<article class="novel-scene">${blocks.join('')}</article>`;
+}
+
+function parallelChoiceBadgeHTML(choice){
+  const badge=String(choice?.choiceBadge||'').trim();
+  if(!badge || badge==='이전 선택의 여파') return '';
+  return `<em class="narrative-choice-badge">${esc(badge)}</em>`;
+}
+
+
 function conciseSceneText(text = '', max = 180) {
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if (!clean) return '';
@@ -1572,6 +1616,7 @@ function renderCharacterHud(player, storyItems = []) {
 }
 
 function renderParallelStory() {
+  document.getElementById('storyView')?.classList.add('narrative-session');
   const c = currentCampaign();
   const p = me();
   const actorId = state?.turnPlayerId && state?.parallel?.playerStates?.[state.turnPlayerId] ? state.turnPlayerId : playerToken;
@@ -1602,7 +1647,7 @@ function renderParallelStory() {
     $('#turnBanner').textContent = '당신의 개인 이야기는 한 결말에 도달했습니다. 다른 플레이어들의 이야기는 아직 계속될 수 있습니다.';
     setSceneImage($('#storySceneImg'), c, { act: 5, actName: '결말', title: '각자의 아침', visual: scene.locationLabel || '마지막 장면' });
     $('#storySceneCaption').textContent = `${c?.title || '연대기'} · ${p?.job?.name || ''}의 결말`;
-    $('#actLabel').textContent = 'PERSONAL ENDING';
+    $('#actLabel').textContent = '개인 결말';
     $('#eventTitle').textContent = '당신이 만든 결말';
     const endingClarity = $('#storyClarity');
     if (endingClarity) {
@@ -1625,45 +1670,29 @@ function renderParallelStory() {
   const nearby = Array.isArray(scene.nearby) ? scene.nearby : [];
   const linked = Array.isArray(scene.linked) ? scene.linked : [];
 
-  $('#turnBanner').textContent = isMyTurn
-    ? `당신의 차례 · ${scene.locationLabel || '현재 장소'} · 이 장면은 모두에게 공유됩니다`
-    : `${actor?.name || state.turnPlayerName || '다른 플레이어'}의 차례 · 같은 장면을 함께 보고 있습니다.`;
+  $('#turnBanner').textContent = isMyTurn ? '당신의 차례' : `${actor?.name || state.turnPlayerName || '다른 플레이어'}의 차례`;
   setSceneImage($('#storySceneImg'), c, { act: scene.act, actName: scene.actName, title: scene.title, visual: scene.locationLabel, id: scene.id });
-  $('#storySceneCaption').textContent = `${actor?.name || '플레이어'}의 장면 · ${scene.locationLabel || '개인 진행'}${nearby.length ? ` · 같은 장소: ${nearby.map(x => x.name).join(', ')}` : ''}`;
-  $('#actLabel').textContent = encounter ? `LOCAL ENCOUNTER · ACT ${scene.act}` : `PARALLEL STORY · ACT ${scene.act}`;
-  $('#eventTitle').textContent = encounter ? `${scene.title} · ${encounter.name}` : scene.title;
+  $('#storySceneCaption').textContent = `${scene.locationLabel || '현재 장소'}${nearby.length ? ` · ${nearby.map(x => x.name).join(', ')}와 함께` : ''}`;
+  const cleanSceneTitle=String(scene.title||scene.actName||'장면').replace(/\s*·\s*(도입|탐색|대면|진실|위기|결단)$/,'').trim();
+  $('#actLabel').textContent = encounter ? `제 ${scene.act}막 · 조우` : `제 ${scene.act}막 · ${scene.phase || '이야기'}`;
+  $('#eventTitle').textContent = encounter ? `${cleanSceneTitle} · ${encounter.name}` : cleanSceneTitle;
 
   const clarity = $('#storyClarity');
   if (clarity) { clarity.innerHTML = ''; clarity.style.display = 'none'; }
 
-  $('#storyPrompt').innerHTML = `<strong>${isMyTurn ? '당신은 어떻게 하나요?' : `${esc(actor?.name || state.turnPlayerName || '다른 플레이어')}은 어떻게 할까?`}</strong><span>${isMyTurn ? '현재 상황에서 실제로 가능한 행동을 고르세요.' : '현재 턴의 장면과 선택지를 모든 플레이어가 같이 보고 있습니다.'}</span>`;
-  const brief = scene.brief || {};
-  const extraParagraphs = parallelNarrationHTML((scene.paragraphs || []).slice(2, 4));
-  const sceneDialogue = Array.isArray(scene.dialogue) ? scene.dialogue.filter(x => x?.text).slice(0, 2) : [];
-  const dialogueHtml = sceneDialogue.map(line => `<div class="story-dialogue table-npc-line"><span>${esc(line.speaker || '등장인물')}</span><p>${esc(line.text)}</p></div>`).join('');
-  const visibleHtml = Array.isArray(brief.visible) && brief.visible.length
-    ? `<div class="scene-visible"><span>눈앞에 보이는 것</span><div>${brief.visible.map(x=>`<i>${esc(x)}</i>`).join('')}</div></div>` : '';
-  const dangerText = encounter ? `${encounter.name}이 길을 막고 있다. HP ${encounter.hp}/${encounter.maxHp}${encounter.weak ? ` · 약점 ${encounter.weak}` : ''}` : (brief.danger || '');
+  $('#storyPrompt').innerHTML = `<strong>${isMyTurn ? '당신의 선택' : `${esc(actor?.name || state.turnPlayerName || '다른 플레이어')}의 선택`}</strong><span>${isMyTurn ? '무엇을 하느냐에 따라 다음 장면과 남는 대가가 달라집니다.' : '같은 장면을 보며 선택을 기다리고 있습니다.'}</span>`;
   const last = state?.lastResolution?.source === 'parallel-story' && state.lastResolution.playerId !== actorId ? state.lastResolution : null;
-  const lastHtml = last ? `<div class="shared-last-action"><span>방금 전 · ${esc(last.playerName || '플레이어')}</span><p><b>${esc(last.choiceLabel || '')}</b>${last.consequence ? ` · ${esc(last.consequence)}` : ''}</p></div>` : '';
-  $('#eventText').innerHTML = `<article class="tabletop-first-story shared-turn-story">
-    ${lastHtml}
-    <div class="turn-scene-brief">
-      <div class="scene-brief-location"><span>현재 위치</span><b>${esc(brief.location || scene.locationLabel || '')}</b></div>
-      <div class="scene-brief-main"><span>지금 무슨 상황인가</span><p>${esc(brief.situation || scene.sceneContext || scene.title)}</p></div>
-      ${brief.objective ? `<div class="scene-brief-goal"><span>지금 해야 할 일</span><p>${esc(brief.objective)}</p></div>` : ''}
-      ${dangerText ? `<div class="scene-brief-danger"><span>당장 걸린 문제</span><p>${esc(dangerText)}</p></div>` : ''}
-    </div>
-    ${visibleHtml}${dialogueHtml}${extraParagraphs}
-    ${nearby.length ? `<div class="story-inline-help"><b>같은 장소</b> · ${nearby.map(x => `${esc(x.name)}${x.job ? `(${esc(x.job)})` : ''}`).join(' · ')}</div>` : ''}
-  </article>`;
+  $('#eventText').innerHTML = parallelNovelSceneHTML(scene,actor,encounter,nearby,last);
 
   configureStoryActionBox(scene,isMyTurn,actor);
 
-  const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 6) : [];
+  const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 5) : [];
+  const choiceHint=isMyTurn
+    ? '정답은 없습니다. 지금 이 인물이 택할 행동을 고르세요.'
+    : `${esc(actor?.name||'플레이어')}의 결정을 기다리는 중입니다.`;
   choiceBox.innerHTML = choices.length
-    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>현재 장면과 연결된 선택지 ${choices.length}가지</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}${isMyTurn?'위의 상황·목표·눈앞의 단서를 기준으로 고른 행동만 표시됩니다.':`${esc(actor?.name||'플레이어')}에게 보이는 선택지입니다.`}</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}${choiceTagsHTML(choice)}</span><span class="choice-check">${choiceCheckHTML(choice,scene)}</span></button>`).join('')
-    : '<div class="choice-empty">현재 장면에서 가능한 행동을 정리하는 중입니다.</div>';
+    ? `<div class="narrative-choice-head"><span>선택</span><b>${isMyTurn?'당신은 어떻게 하나요?':'다음 행동'}</b><small>${choiceHint}</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice narrative-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${parallelChoiceBadgeHTML(choice)}</span><span class="choice-check">${choiceCheckHTML(choice,scene)}</span></button>`).join('')
+    : '<div class="choice-empty">장면을 이어갈 선택지를 준비하고 있습니다.</div>';
   forceChoiceLayout(choiceBox);
   choiceBox.querySelectorAll('[data-parallel-index]').forEach(btn=>{
     btn.onclick=()=>{
@@ -1691,14 +1720,14 @@ function forceChoiceLayout(root = document) {
   set(area, 'display', 'flex');
   set(area, 'flex-direction', 'column');
   set(area, 'align-items', 'stretch');
-  set(area, 'gap', '7px');
+  set(area, 'gap', '8px');
   // v8.2.8: choiceArea is no longer its own scroll container.
   // The whole story-stage scrolls, so narration, dialogue and choices move together.
   set(area, 'overflow-x', 'visible');
   set(area, 'overflow-y', 'visible');
   set(area, 'height', 'auto');
   set(area, 'max-height', 'none');
-  set(area, 'padding', '4px 4px 34px 4px');
+  set(area, 'padding', '4px 2px 34px 2px');
   set(area, 'scroll-snap-type', 'none');
   set(area, 'scroll-padding-top', '0');
   set(area, 'overscroll-behavior', 'auto');
@@ -1707,7 +1736,7 @@ function forceChoiceLayout(root = document) {
     set(card, 'position', 'relative');
     set(card, 'display', rowStyle ? 'grid' : 'flex');
     if (rowStyle) {
-      set(card, 'grid-template-columns', '26px minmax(0,1fr) 64px');
+      set(card, 'grid-template-columns', '30px minmax(0,1fr) 76px');
       set(card, 'align-items', 'center');
       set(card, 'gap', '10px');
     } else {
@@ -1717,9 +1746,9 @@ function forceChoiceLayout(root = document) {
     set(card, 'justify-content', 'flex-start');
     set(card, 'width', '100%');
     set(card, 'height', 'auto');
-    set(card, 'min-height', rowStyle ? '56px' : '84px');
+    set(card, 'min-height', rowStyle ? '68px' : '84px');
     set(card, 'max-height', 'none');
-    set(card, 'padding', rowStyle ? '8px 10px' : '10px');
+    set(card, 'padding', rowStyle ? '11px 12px' : '10px');
     set(card, 'overflow', 'visible');
     set(card, 'scroll-snap-align', 'none');
     set(card, 'scroll-snap-stop', 'normal');
@@ -1738,11 +1767,11 @@ function forceChoiceLayout(root = document) {
       const num = card.querySelector('.choice-number');
       const copy = card.querySelector('.choice-copy');
       const check = card.querySelector('.choice-check');
-      if (num) { set(num, 'width', '22px'); set(num, 'height', '22px'); set(num, 'font-size', '10px'); }
+      if (num) { set(num, 'width', '24px'); set(num, 'height', '24px'); set(num, 'font-size', '10.5px'); }
       if (copy) { set(copy, 'display', 'grid'); set(copy, 'gap', '3px'); set(copy, 'min-width', '0'); }
       if (check) { set(check, 'display', 'flex'); set(check, 'flex-direction', 'column'); set(check, 'align-items', 'flex-end'); set(check, 'white-space', 'nowrap'); }
       const copyTitle = copy?.querySelector('b');
-      if (copyTitle) { set(copyTitle, 'font-size', '13px'); set(copyTitle, 'line-height', '1.35'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
+      if (copyTitle) { set(copyTitle, 'font-size', '14.5px'); set(copyTitle, 'line-height', '1.45'); set(copyTitle, 'white-space', 'normal'); set(copyTitle, 'word-break', 'keep-all'); }
       const copyReason = copy?.querySelector('small');
       if (copyReason) { set(copyReason, 'font-size', '11px'); set(copyReason, 'line-height', '1.45'); set(copyReason, 'white-space', 'normal'); set(copyReason, 'word-break', 'keep-all'); }
     }
@@ -1807,7 +1836,7 @@ function choiceDifficultyLabel(choice){
   return '매우 어려움';
 }
 function choiceCheckHTML(choice,scene){
-  if(choice?.automatic)return `${esc(choice.stat||'행동')}<small>판정 없음</small>`;
+  if(choice?.automatic)return `결정<small>주사위 없음</small>`;
   const dc=Math.max(1,Number(choice?.dc||8)+(Number(state?.dcPenalty||0)));
   const revealDc=Boolean(scene?.statInsight?.insight);
   return `${esc(choice.stat||'지혜')}<small>${esc(choiceDifficultyLabel(choice))}${revealDc?` · DC ${dc}`:''}</small>`;
@@ -2050,11 +2079,15 @@ setInterval(updateVoteCountdown, 250);
 
 function showResolution(r) {
   if (!r) return;
-  $('#resolutionEyebrow').textContent = r.ok ? 'SCENE RESULT' : 'SCENE CONSEQUENCE';
-  $('#resolutionTitle').textContent = r.detourCreated ? '길이 예상과 다르게 꺾였다' : (r.isDetour ? '예정에 없던 위기의 결과' : (r.ok ? '선택의 결과' : '실패가 남긴 흔적'));
+  const grade=String(r.outcomeGrade||'');
+  const gradeLabel=grade==='critical'?'대성공':grade==='mixed'?'부분 성공':grade==='disaster'?'큰 실패':(r.ok?'성공':'실패');
+  $('#resolutionEyebrow').textContent = r.inquiry ? 'DISCOVERY' : 'D20 · SCENE RESULT';
+  $('#resolutionTitle').textContent = r.choiceLabel ? `“${r.choiceLabel}”` : (r.detourCreated ? '예상하지 못한 길이 열렸다' : gradeLabel);
   const mechanics = [r.consequence, r.status ? `${r.status.label}: ${r.status.desc || ''}` : ''].filter(Boolean).join(' · ');
-  const branchAfter = r.detourCreated ? '<small class="resolution-next">방금 실패 때문에 원래 다음 장면 앞에 새로운 위기가 생겼습니다.</small>' : '';
-  $('#resolutionText').innerHTML = `<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<small class="resolution-mechanics">${esc(mechanics)}</small>` : ''}`;
+  const rollLine=(Number.isFinite(Number(r.result))&&Number.isFinite(Number(r.total))&&Number.isFinite(Number(r.dc)))
+    ? `<div class="resolution-rollline"><b>${esc(gradeLabel)}</b><span>D20 ${Number(r.result)} · 합계 ${Number(r.total)} / DC ${Number(r.dc)}</span></div>`:'';
+  const branchAfter = r.detourCreated ? '<small class="resolution-next">실패가 막다른 길이 아니라 새로운 장면을 만들었습니다.</small>' : '';
+  $('#resolutionText').innerHTML = `${rollLine}<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<details class="resolution-mechanics"><summary>판정과 상태 보기</summary><small>${esc(mechanics)}</small></details>` : ''}`;
   $('#resolutionModal').classList.add('show');
 }
 $('#resolutionClose').onclick = () => $('#resolutionModal').classList.remove('show');

@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=8393';
 
-const CLIENT_BUILD = '8.3.0-dice-visual-8393';
+const CLIENT_BUILD = '9.0.0';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -18,7 +18,7 @@ const REQUIRED_IDS = [
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
   'toast', 'resolutionModal', 'resolutionEyebrow', 'resolutionTitle', 'resolutionText', 'resolutionClose',
   'diceOverlay', 'diceCanvas', 'diceRoller', 'dicePurpose', 'diceFinal', 'diceBreakdown', 'diceSub',
-  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioTestBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel', 'resumeGate', 'openResume', 'homeAccountBar', 'accountStatus', 'accountPointLabel', 'loginOpenBtn', 'collectionOpenBtn', 'diceStoreOpenBtn', 'logoutBtn', 'authModal', 'authCloseBtn', 'authLoginTab', 'authRegisterTab', 'authEmail', 'authPassword', 'authPasswordHint', 'authNameField', 'authDisplayName', 'authSubmitBtn', 'authError', 'collectionModal', 'collectionCloseBtn', 'collectionGrid', 'diceStoreModal', 'diceStoreCloseBtn', 'diceWallet', 'diceStoreGrid', 'achievementToast', 'achievementTitle', 'achievementReward', 'endingReward'
+  'helpBtn', 'helpModal', 'helpClose', 'helpTitle', 'helpBody', 'helpTabGuide', 'helpTabSettings', 'helpTabSession', 'helpPanelGuide', 'helpPanelSettings', 'helpPanelSession', 'themeDarkBtn', 'themeLightBtn', 'chatSizeRange', 'chatSizeValue', 'audioMuteBtn', 'audioTestBtn', 'audioVolumeRange', 'audioVolumeValue', 'uiResetBtn', 'abandonVoteBox', 'abandonRequestBtn', 'abandonYes', 'abandonNo', 'helpConnectionHint', 'versionLabel', 'resumeGate', 'openResume', 'homeAccountBar', 'accountStatus', 'accountPointLabel', 'loginOpenBtn', 'collectionOpenBtn', 'diceStoreOpenBtn', 'logoutBtn', 'authModal', 'authCloseBtn', 'authLoginTab', 'authRegisterTab', 'authEmail', 'authPassword', 'authPasswordHint', 'authPasswordCount', 'authPasswordToggle', 'authStorageHint', 'authNameField', 'authDisplayName', 'authSubmitBtn', 'authError', 'collectionModal', 'collectionCloseBtn', 'collectionGrid', 'diceStoreModal', 'diceStoreCloseBtn', 'diceWallet', 'diceStoreGrid', 'achievementToast', 'achievementTitle', 'achievementReward', 'endingReward'
 ];
 const missingIds = REQUIRED_IDS.filter(id => !document.getElementById(id));
 if (missingIds.length) {
@@ -46,6 +46,8 @@ let state = null;
 let account = null;
 let diceCatalog = [];
 let authMode = 'login';
+const ACCOUNT_PASSWORD_MIN = 4;
+const ACCOUNT_PASSWORD_MAX = 72;
 let pendingEntryMode = null;
 let lastEndingReward = null;
 
@@ -1104,6 +1106,21 @@ function renderAccountBar(){
   if(logged && !$('#nameInput').value) $('#nameInput').value=account.displayName||'';
 }
 function setModal(id,show){ const el=$(id); if(!el)return; el.hidden=!show; el.classList.toggle('show',show); el.setAttribute('aria-hidden',show?'false':'true'); }
+function updateAuthPasswordUi(){
+  const password=$('#authPassword');
+  if(!password)return;
+  const count=$('#authPasswordCount');
+  if(count) count.textContent=`${password.value.length}/${ACCOUNT_PASSWORD_MAX}`;
+}
+async function refreshAuthStorageStatus(){
+  const box=$('#authStorageHint'); if(!box)return;
+  try{
+    const status=await apiJson('/api/account/storage-status');
+    box.hidden=Boolean(status.ready);
+    box.classList.toggle('ready',Boolean(status.ready));
+    box.textContent=status.ready?'': '현재 서버의 계정 저장소가 연결되지 않았습니다. 패치의 Supabase migration과 Render 환경변수를 적용해야 회원가입·로그인이 정상 저장됩니다.';
+  }catch{ box.hidden=true; }
+}
 function setAuthMode(mode){
   authMode=mode==='register'?'register':'login';
   const reg=authMode==='register';
@@ -1113,18 +1130,16 @@ function setAuthMode(mode){
   $('#authSubmitBtn').textContent=reg?'계정 만들기':'로그인';
   const password=$('#authPassword');
   password.autocomplete=reg?'new-password':'current-password';
-  password.maxLength=72;
-  password.minLength=reg?4:0;
-  password.inputMode='text';
-  password.pattern=reg?'.{4,72}':'';
-  password.placeholder=reg?'4자 이상 입력':'비밀번호';
-  const passwordLabel=password.closest('.field')?.querySelector('span');
-  if(passwordLabel) passwordLabel.textContent='비밀번호';
+  password.maxLength=ACCOUNT_PASSWORD_MAX;
+  password.minLength=ACCOUNT_PASSWORD_MIN;
+  password.removeAttribute('pattern');
+  password.placeholder=reg?`${ACCOUNT_PASSWORD_MIN}~${ACCOUNT_PASSWORD_MAX}자 입력`:'비밀번호';
   const passwordHint=$('#authPasswordHint');
   if(passwordHint) passwordHint.classList.toggle('hidden',!reg);
   $('#authError').textContent='';
+  updateAuthPasswordUi();
 }
-function openAuth(mode='login',after=null){ pendingEntryMode=after; setAuthMode(mode); setModal('#authModal',true); setTimeout(()=>$('#authEmail').focus(),30); }
+function openAuth(mode='login',after=null){ pendingEntryMode=after; setAuthMode(mode); setModal('#authModal',true); refreshAuthStorageStatus(); setTimeout(()=>$('#authEmail').focus(),30); }
 async function refreshAccount(){ try{ const data=await apiJson('/api/account/me'); account=data.account||null; diceCatalog=data.diceCatalog||diceCatalog||[]; renderAccountBar(); return account; }catch{account=null;renderAccountBar();return null;} }
 async function reconnectForAccount(){
   await new Promise(resolve=>{
@@ -1158,7 +1173,10 @@ $('#loginOpenBtn').onclick=()=>openAuth('login');
 $('#authCloseBtn').onclick=()=>{pendingEntryMode=null;setModal('#authModal',false);};
 $('#authLoginTab').onclick=()=>setAuthMode('login');
 $('#authRegisterTab').onclick=()=>setAuthMode('register');
-$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(authMode==='register'){ if(body.password.length<4||body.password.length>72) throw new Error('비밀번호는 4자 이상 72자 이하로 입력하세요.'); body.displayName=$('#authDisplayName').value.trim(); } const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); if(data.accountStore==='local-fallback') setTimeout(()=>toast('계정은 로컬 안전 저장소에 저장되었습니다. 상용 배포 전에는 Supabase 영속 저장을 연결해 주세요.'),350); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
+$('#authSubmitBtn').onclick=async()=>{ try{ $('#authError').textContent=''; const body={email:$('#authEmail').value.trim(),password:$('#authPassword').value}; if(!body.password) throw new Error('비밀번호를 입력하세요.'); if(body.password.length>ACCOUNT_PASSWORD_MAX) throw new Error(`비밀번호는 ${ACCOUNT_PASSWORD_MAX}자 이하로 입력하세요.`); if(authMode==='register'){ if(body.password.length<ACCOUNT_PASSWORD_MIN) throw new Error(`비밀번호는 최소 ${ACCOUNT_PASSWORD_MIN}자 이상 입력하세요.`); body.displayName=$('#authDisplayName').value.trim(); } const data=await apiJson(`/api/account/${authMode==='register'?'register':'login'}`,{method:'POST',body:JSON.stringify(body)}); account=data.account; diceCatalog=data.diceCatalog||diceCatalog; renderAccountBar(); setModal('#authModal',false); await reconnectForAccount(); toast(authMode==='register'?'계정을 만들었습니다.':'로그인했습니다.'); if(data.accountStore==='persistent-disk') setTimeout(()=>toast('계정은 서버 영속 디스크에 저장되고 있습니다.'),350); const next=pendingEntryMode; pendingEntryMode=null; if(next==='create')openEntry('create'); else if(next==='join')openEntry('join'); else if(next==='resume')openResumeFlow(); }catch(error){ $('#authError').textContent=error.message; } };
+$('#authPassword').addEventListener('input',updateAuthPasswordUi);
+$('#authPasswordToggle').onclick=()=>{ const input=$('#authPassword'); const showing=input.type==='text'; input.type=showing?'password':'text'; $('#authPasswordToggle').textContent=showing?'보기':'숨김'; input.focus(); };
+[$('#authEmail'),$('#authPassword'),$('#authDisplayName')].forEach(el=>el?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#authSubmitBtn').click(); } }));
 $('#logoutBtn').onclick=async()=>{ try{await apiJson('/api/account/logout',{method:'POST',body:'{}'});}catch{} account=null;renderAccountBar(); if(socket.connected)socket.disconnect();socket.connect();toast('로그아웃했습니다.'); };
 $('#collectionOpenBtn').onclick=loadCollection;
 $('#collectionCloseBtn').onclick=()=>setModal('#collectionModal',false);
@@ -1640,16 +1658,11 @@ function renderParallelStory() {
     ${nearby.length ? `<div class="story-inline-help"><b>같은 장소</b> · ${nearby.map(x => `${esc(x.name)}${x.job ? `(${esc(x.job)})` : ''}`).join(' · ')}</div>` : ''}
   </article>`;
 
-  $('#storyActionBox').style.setProperty('display', 'none', 'important');
-  $('#storyActionBox').classList.add('disabled');
-  $('#storyActionInput').disabled = true;
-  $('#storyActionSubmitBtn').disabled = true;
-  $('#storyRoleContext').innerHTML = '';
-  $('#actionSuggestions').innerHTML = '';
+  configureStoryActionBox(scene,isMyTurn,actor);
 
   const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 6) : [];
   choiceBox.innerHTML = choices.length
-    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>이 장면에서 가능한 행동 ${choices.length}가지</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}${isMyTurn?'지금 장면에 실제로 연결된 행동만 표시됩니다.':`${esc(actor?.name||'플레이어')}에게 보이는 선택지입니다.`}</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}</span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)}`}</small></span></button>`).join('')
+    ? `<div class="main-choice-head"><div><span>어떻게 할까?</span><b>추천 행동 ${choices.length}가지 + 직접 행동</b></div><small>${linked.length ? `${esc(linked.map(x => x.name).join(', '))}와 동행 중 · ` : ''}${isMyTurn?'추천에 없는 방법은 아래 자유행동에 직접 적을 수 있습니다.':`${esc(actor?.name||'플레이어')}에게 보이는 선택지입니다.`}</small></div>` + choices.map((choice,index)=>`<button type="button" class="choice-card choice-row main-story-choice parallel-direct-choice" data-parallel-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${index+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small>${esc(choice.reason)}</small>`:''}${choiceTagsHTML(choice)}</span><span class="choice-check">${choiceCheckHTML(choice,scene)}</span></button>`).join('')
     : '<div class="choice-empty">현재 장면에서 가능한 행동을 정리하는 중입니다.</div>';
   forceChoiceLayout(choiceBox);
   choiceBox.querySelectorAll('[data-parallel-index]').forEach(btn=>{
@@ -1785,6 +1798,47 @@ function forceChoiceLayout(root = document) {
   });
 }
 
+function choiceDifficultyLabel(choice){
+  if(choice?.automatic)return '판정 없음';
+  const dc=Math.max(1,Number(choice?.dc||8)+(Number(state?.dcPenalty||0)));
+  if(dc<=8)return '쉬움';
+  if(dc<=10)return '보통';
+  if(dc<=12)return '어려움';
+  return '매우 어려움';
+}
+function choiceCheckHTML(choice,scene){
+  if(choice?.automatic)return `${esc(choice.stat||'행동')}<small>판정 없음</small>`;
+  const dc=Math.max(1,Number(choice?.dc||8)+(Number(state?.dcPenalty||0)));
+  const revealDc=Boolean(scene?.statInsight?.insight);
+  return `${esc(choice.stat||'지혜')}<small>${esc(choiceDifficultyLabel(choice))}${revealDc?` · DC ${dc}`:''}</small>`;
+}
+function choiceTagsHTML(choice){
+  const opportunity=String(choice?.opportunity||'').trim();
+  const risk=String(choice?.risk||'보통').trim();
+  const riskClass=risk==='높음'?'risk-high':risk==='낮음'?'risk-low':'risk-mid';
+  if(!opportunity&&!risk)return '';
+  return `<span class="choice-tags">${opportunity?`<em>기회 · ${esc(opportunity)}</em>`:''}${risk?`<em class="${riskClass}">위험 · ${esc(risk)}</em>`:''}</span>`;
+}
+function configureStoryActionBox(scene,isMyTurn,actor=null){
+  const box=$('#storyActionBox'), input=$('#storyActionInput'), submit=$('#storyActionSubmitBtn');
+  if(!box||!input||!submit)return;
+  const allowed=Boolean(scene?.freeActionAllowed);
+  const enabled=allowed && isMyTurn && state?.phase==='story' && !state?.resumeBarrier;
+  if(!allowed){ box.style.setProperty('display','none','important'); box.classList.add('disabled'); input.disabled=true; submit.disabled=true; return; }
+  box.style.setProperty('display','block','important');
+  box.classList.add('player-agency-enabled');
+  box.classList.toggle('disabled',!enabled);
+  input.disabled=!enabled; submit.disabled=!enabled; input.maxLength=220;
+  input.placeholder=enabled?'예: 역무원에게 방금 방송이 실제 운행 기록과 맞는지 묻는다. / 잠긴 셔터 옆 점검구를 살펴본다.':'현재 턴 플레이어의 행동을 기다리는 중입니다.';
+  const role=me()?.job;
+  const roleHook=scene?.roleHooks?.[role?.prime] || scene?.objective || '';
+  $('#storyRoleContext').innerHTML=`<div class="agency-title"><b>${enabled?'직접 행동 선언':'자유행동'}</b><small>${enabled?'버튼에 없는 방법도 시도할 수 있습니다.':'현재 턴 플레이어만 입력할 수 있습니다.'}</small></div>${role?`<span>${esc(role.name)} · ${esc(role.prime)}</span>${roleHook?`<b>${esc(roleHook)}</b>`:''}`:''}`;
+  const quick=(scene?.choices||[]).filter(x=>x?.label).slice(0,3);
+  $('#actionSuggestions').innerHTML=quick.map((choice,index)=>`<button type="button" data-action-suggestion="${index}" ${enabled?'':'disabled'}>${esc(choice.label)}</button>`).join('');
+  $('#actionSuggestions').querySelectorAll('[data-action-suggestion]').forEach(btn=>btn.onclick=()=>{ if(!enabled)return; const ch=quick[Number(btn.dataset.actionSuggestion)]; if(!ch)return; input.value=ch.label; input.dispatchEvent(new Event('input')); input.focus(); });
+  $('#storyActionCount').textContent=`${input.value.length}/${input.maxLength}`;
+}
+
 function renderStory() {
   if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
   const c = currentCampaign();
@@ -1809,8 +1863,8 @@ function renderStory() {
   $('#storyRoleContext').innerHTML = p?.job ? `<span>${esc(p.job.name)}${beat?.route ? ` · ${esc(beat.route.name)}` : ''}</span><b>${esc(roleHook || beat?.objective || '현재 목표')}</b>` : '';
   $('#actionSuggestions').innerHTML = '';
   $('#storyActionInput').placeholder = '';
-  $('#storyActionInput').maxLength = 180;
-  $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${$('#storyActionInput').maxLength || 180}`;
+  $('#storyActionInput').maxLength = 220;
+  $('#storyActionCount').textContent = `${$('#storyActionInput').value.length}/${$('#storyActionInput').maxLength || 220}`;
 
   const lastResolution = state.lastResolution?.source === 'story' ? state.lastResolution : null;
   const last = lastResolution || state.lastStoryAction;
@@ -1898,12 +1952,7 @@ function renderStory() {
     }
 
     const myTurn = state.phase === 'story' && state.turnPlayerId === playerToken;
-    $('#storyActionBox').style.setProperty('display', 'none', 'important');
-    $('#storyActionInput').disabled = true;
-    $('#storyActionSubmitBtn').disabled = true;
-    $('#storyActionBox').classList.add('disabled');
-    $('#storyRoleContext').innerHTML = '';
-    $('#actionSuggestions').innerHTML = '';
+    configureStoryActionBox(beat,myTurn,p);
     renderMainStoryChoices(beat);
   }
 
@@ -1928,7 +1977,7 @@ function renderMainStoryChoices(beat) {
   const indexed=(beat?.choices||[]).map((choice,index)=>({choice,index})).filter(({choice})=>!choice.requiredJob||choice.requiredJob===myJob).slice(0,7);
   if(!indexed.length){ box.innerHTML='<div class="choice-empty">지금 선택할 수 있는 행동을 준비하는 중입니다.</div>'; return; }
   box.innerHTML=`<div class="main-choice-head"><div><span>어떻게 할까?</span><b>현재 상황에서 가능한 행동 ${indexed.length}가지</b></div><small>조사·대화·우회·돌파·보호 등 실제로 가능한 방법만 표시됩니다.</small></div>`+
-    indexed.map(({choice,index},i)=>`<button type="button" class="choice-card choice-row main-story-choice" data-main-choice-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${i+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small class="choice-reason">${esc(choice.reason)}</small>`:''}</span><span class="choice-check">${esc(choice.stat||'지혜')}<small>${choice.automatic?'판정 없음':`DC ${Number(choice.dc||8)+(Number(state.dcPenalty||0))}`}</small></span></button>`).join('');
+    indexed.map(({choice,index},i)=>`<button type="button" class="choice-card choice-row main-story-choice" data-main-choice-index="${index}" ${isMyTurn?'':'disabled'}><span class="choice-number">${i+1}</span><span class="choice-copy"><b>${esc(choice.label)}</b>${choice.reason?`<small class="choice-reason">${esc(choice.reason)}</small>`:''}${choiceTagsHTML(choice)}</span><span class="choice-check">${choiceCheckHTML(choice,beat)}</span></button>`).join('');
   forceChoiceLayout(box);
   if($('#storyActionBox') && box.nextElementSibling !== $('#storyActionBox')) box.after($('#storyActionBox'));
   box.querySelectorAll('[data-main-choice-index]').forEach(btn=>btn.onclick=()=>{
@@ -1987,8 +2036,8 @@ const submitStoryDeclaration=()=>{
     input.value=''; const max=Number(input.maxLength||220); $('#storyActionCount').textContent=`0/${max}`;
   });
 };
-if($('#storyActionSubmitBtn')) $('#storyActionSubmitBtn').onclick=()=>toast('현재 버전에서는 장면에 맞는 선택지로 진행합니다.');
-$('#storyActionInput').addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();toast('현재 버전에서는 장면에 맞는 선택지로 진행합니다.');} });
+if($('#storyActionSubmitBtn')) $('#storyActionSubmitBtn').onclick=submitStoryDeclaration;
+$('#storyActionInput').addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();submitStoryDeclaration();} });
 
 $('#advanceStoryBtn').onclick = () => {
   if (state?.phase === 'prologue') {

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;800&family=Noto+Serif+KR:wght@400;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=10000">
+  <link rel="stylesheet" href="/styles.css?v=11000">
 </head>
 <body>
 <div id="app">
@@ -35,7 +35,7 @@
         <p>
           1~4명이 즐기는 스토리 중심 온라인 TRPG입니다. 혼자 테스트하거나 친구들과 함께 플레이할 수 있습니다.<br>
           방을 만들고, 연대기를 고르고, 각 세계에 맞는 직업과 능력치를 굴린 뒤<br>
-          상황에 맞는 여러 해결법을 선택하고, 전투와 관계·단서의 결과를 쌓아 서로 다른 결말을 완성하세요.
+          정해진 선택지 외에도 직접 행동을 선언하고, 동료와 협력하며 주사위 판정으로 서로 다른 결말을 만들어 보세요.
         </p>
         <div class="home-account" id="homeAccountBar">
           <div class="account-copy"><span id="accountStatus">로그인하면 이어하기·도감·보상을 사용할 수 있습니다.</span><b id="accountPointLabel">CHRONICLE POINT 0</b></div>
@@ -48,7 +48,7 @@
         </div>
       </div>
       <div class="home-vignette"></div>
-      <div class="version" id="versionLabel">ONLINE EDITION · LIVING STORY · 9 CHRONICLES · v9.0.0</div>
+      <div class="version" id="versionLabel">ONLINE EDITION · DRAMATIC TABLETOP · 9 CHRONICLES · v12.0.0</div>
     </section>
 
     <section class="view" id="entryView">
@@ -121,6 +121,8 @@
             <img id="storySceneImg" alt="스토리 장면 이미지">
             <figcaption id="storySceneCaption">장면 분위기에 맞는 이미지가 이곳에 표시됩니다.</figcaption>
           </figure>
+          <section id="spotlightPanel" class="director-spotlight" hidden aria-live="polite"></section>
+          <section id="psychePanel" class="director-psyche" hidden aria-label="캐릭터 긴장과 동료 유대"></section>
           <div class="story-clarity" id="storyClarity">
             <div class="clarity-card"><span>상황</span><p id="storySituation">현재 장면을 준비하고 있습니다.</p></div>
             <div class="clarity-card objective"><span>지금 할 일</span><p id="storyObjective">현재 목표를 확인 중입니다.</p></div>
@@ -128,12 +130,24 @@
           </div>
           <div class="narration" id="eventText">장면을 불러오는 중입니다…</div>
           <div class="player-prompt" id="storyPrompt"></div>
-          <div class="story-action-box" id="storyActionBox" hidden>
+          <div class="table-tools hidden" id="tableTools" hidden>
+            <div class="table-roll-modes" id="rollModeChoices" aria-label="주사위 판정 방식">
+              <span class="table-mode-label">THIS ROLL</span>
+              <button type="button" data-roll-mode="normal" aria-pressed="true">🎲 기본 D20</button>
+              <button type="button" data-roll-mode="inspiration" aria-pressed="false">✦ 영감 · 유리한 주사위</button>
+              <button type="button" data-roll-mode="push" aria-pressed="false">⚡ 위험 감수 +2</button>
+              <button type="button" data-roll-mode="desperate" aria-pressed="false">◆ 극적 돌파 · 2D20</button>
+            </div>
+            <p class="roll-mode-hint" id="rollModeHint">D20 한 번 + 능력치·장비·협력 보정</p>
+            <div class="table-assist-line"><span id="rollAssistLabel">동료의 지원을 받을 수 있습니다.</span><button class="ghost mini" id="assistTurnBtn" type="button">🛡 동료 돕기</button></div>
+            <div class="scene-notebook" id="sceneNotebook"></div>
+          </div>
+          <div class="story-action-box disabled" id="storyActionBox" hidden>
             <div class="role-context" id="storyRoleContext"></div>
             <div class="action-suggestions" id="actionSuggestions"></div>
-            <label for="storyActionInput">선택지 밖 행동 시도하기 · 선택사항</label>
+            <label for="storyActionInput">플레이어 자유 선언 · 상황에 맞는 행동을 직접 적어 보세요</label>
             <div class="story-action-row"><textarea id="storyActionInput" maxlength="220" rows="3" placeholder="예: 꽃가게 주인에게 오늘 아침에도 나를 본 적이 있는지 묻는다."></textarea><span id="storyActionCount">0/220</span></div>
-            <div class="story-action-help">현재 장면에 실제로 있는 사람·물건·통로와 연결된 행동만 처리합니다. 이해되지 않거나 애매하면 위의 상황 선택지를 사용하면 됩니다.</div>
+            <div class="story-action-help">인물에게 질문하거나 단서를 살펴보는 행동은 최대 2회 무료 조사할 수 있습니다. 위험한 시도는 판정되며, 불가능한 행동은 이유를 알려줍니다.</div>
             <button class="primary story-declare-btn" id="storyActionSubmitBtn" type="button">이 행동을 시도한다</button>
             <div class="last-action-result" id="lastActionResult"></div>
           </div>
@@ -276,6 +290,6 @@
   </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
-<script type="module" src="/app.js?v=10000"></script>
+<script type="module" src="/app.js?v=11000"></script>
 </body>
 </html>

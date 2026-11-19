@@ -1,6 +1,6 @@
 import { DiceTheater } from './dice3d.js?v=8393';
 
-const CLIENT_BUILD = '9.0.0';
+const CLIENT_BUILD = '12.0.0';
 console.info(`[Chronicle Gate] client ${CLIENT_BUILD}`);
 
 const socket = window.io({ timeout: 10_000, reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500, reconnectionDelayMax: 5_000 });
@@ -12,7 +12,7 @@ const REQUIRED_IDS = [
   'openCreate', 'openJoin', 'entryBack', 'entryEyebrow', 'entryTitle', 'nameInput', 'codeField', 'codeInput', 'createRoomFields', 'roomNameInput', 'passwordCreateField', 'roomPasswordCreate', 'joinPasswordField', 'joinPasswordInput', 'roomBrowser', 'roomList', 'refreshRooms', 'entrySubmit', 'resumeCandidates', 'entryError',
   'roomCodeLobby', 'roomNameLobby', 'copyCode', 'playerSlots', 'campaignCarousel', 'campaignDetail', 'characterSummary', 'rollClassBtn', 'rollStatsBtn', 'startGameBtn', 'lobbyStatus', 'lobbyHomeBtn',
   'lobbyChatLog', 'lobbyChatForm', 'lobbyChatInput', 'lobbyGuideBtn',
-  'partyRail', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'storyActionSubmitBtn', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
+  'partyRail', 'spotlightPanel', 'psychePanel', 'actLabel', 'eventTitle', 'turnBanner', 'deckCount', 'eventCadence', 'storySceneImg', 'storySceneCaption', 'storySituation', 'storyObjective', 'storyWhy', 'storyPrompt', 'tableTools', 'rollModeChoices', 'rollModeHint', 'assistTurnBtn', 'sceneNotebook', 'storyActionBox', 'storyRoleContext', 'actionSuggestions', 'storyActionInput', 'storyActionCount', 'storyActionSubmitBtn', 'lastActionResult', 'eventText', 'voteTimer', 'facilityPanel', 'choiceArea', 'gmBar', 'advanceStoryBtn', 'continueBtn',
   'myJobMini', 'myStatsMini', 'economyPanel', 'jobSkillPanel', 'jobSkillName', 'jobSkillDesc', 'jobSkillBtn', 'jobSkillCooldown', 'threatValue', 'threatTrack', 'storyFill', 'storyValue', 'chatLog', 'chatForm', 'chatInput',
   'monsterName', 'combatTurnPanel', 'combatTurnPhase', 'combatRoundLabel', 'combatTimeline', 'bossTurnWarning', 'combatSceneImg', 'monsterAC', 'monsterHpFill', 'monsterHpText', 'combatParty', 'combatSkillBtn', 'defendBtn', 'attackBtn', 'combatLog',
   'endingEyebrow', 'endingIcon', 'endingTitle', 'endingText', 'endingStats', 'endingHomeBtn',
@@ -58,6 +58,7 @@ let diceQueue = Promise.resolve();
 let resumeInFlight = false;
 let sessionEpoch = 0;
 let shownEncounterId = '';
+let selectedHeroMode = 'normal';
 let encounterIntroTimer = null;
 let lastChatRenderKey = '';
 const app = $('#app');
@@ -67,7 +68,8 @@ function loadUiPrefs() {
   const theme = localStorage.getItem('cg_theme') === 'light' ? 'light' : 'dark';
   const rawSize = Number(localStorage.getItem('cg_chat_size') || UI_DEFAULTS.chatSize);
   const chatSize = Math.max(300, Math.min(520, Number.isFinite(rawSize) ? rawSize : UI_DEFAULTS.chatSize));
-  const rawVolume = Number(localStorage.getItem('cg_audio_volume'));
+  const savedVolume = localStorage.getItem('cg_audio_volume');
+  const rawVolume = savedVolume === null ? UI_DEFAULTS.audioVolume : Number(savedVolume);
   const audioVolume = Number.isFinite(rawVolume) ? Math.max(0, Math.min(1, rawVolume)) : UI_DEFAULTS.audioVolume;
   const audioMuted = localStorage.getItem('cg_audio_muted') === '1';
   return { theme, chatSize, audioVolume, audioMuted };
@@ -100,15 +102,14 @@ function saveUiPrefs() {
 }
 // QA compatibility marker only: ./audio/bgm_ember.wav
 const AUDIO_FILES = {
-  music: {
-    ember: '/audio/bgm_ember.wav?v=4121d', neon: '/audio/bgm_neon.wav?v=4121d', abyss: '/audio/bgm_abyss.wav?v=4121d',
-    clock: '/audio/bgm_clock.wav?v=4121d', wild: '/audio/bgm_wild.wav?v=4121d', guardian: '/audio/bgm_guardian.wav?v=4150', guardian1: '/audio/bgm_guardian.wav?v=4160', guardian2: '/audio/bgm_guardian.wav?v=4160', guardian3: '/audio/bgm_guardian.wav?v=4160', combat: '/audio/bgm_combat.wav?v=4121d',
-  },
+  music: Object.fromEntries(['ember','neon','abyss','clock','wild','guardian','echo','aurora','masque','combat','dread'].map(id=>[id,`/audio/bgm_${id}.wav?v=12000`])),
   fx: {
-    dice:'/audio/dice_roll.wav?v=4121d', success:'/audio/success.wav?v=4121d', failure:'/audio/failure.wav?v=4121d',
-    next:'/audio/scene_next.wav?v=4121d', hp:'/audio/hp_loss.wav?v=4121d', attack:'/audio/attack.wav?v=4121d',
-    hit:'/audio/hit.wav?v=4121d', boss:'/audio/boss_warning.wav?v=4121d', vote:'/audio/vote_lock.wav?v=4121d',
-    click:'/audio/scene_next.wav?v=4121d', select:'/audio/dice_roll.wav?v=4121d', skill:'/audio/success.wav?v=4121d', combatStart:'/audio/boss_warning.wav?v=4121d', heal:'/audio/success.wav?v=4121d',
+    dice:'/audio/dice_roll.wav?v=11000', success:'/audio/success.wav?v=11000', failure:'/audio/failure.wav?v=11000',
+    next:'/audio/scene_next.wav?v=11000', hp:'/audio/hp_loss.wav?v=11000', attack:'/audio/attack.wav?v=11000',
+    hit:'/audio/hit.wav?v=11000', boss:'/audio/boss_warning.wav?v=11000', vote:'/audio/vote_lock.wav?v=11000',
+    click:'/audio/scene_next.wav?v=11000', select:'/audio/dice_roll.wav?v=11000',
+    skill:'/audio/success.wav?v=11000', combatStart:'/audio/boss_warning.wav?v=11000', heal:'/audio/success.wav?v=11000',
+    clue:'/audio/clue.wav?v=11000', tension:'/audio/tension.wav?v=11000', heartbeat:'/audio/heartbeat.wav?v=12000', resolve:'/audio/resolve.wav?v=12000',
   },
 };
 
@@ -251,6 +252,8 @@ class AudioManager {
     else if(name==='skill'){ this.makeTone(520,.10,.16*v,'sine'); this.makeTone(780,.14,.16*v,'sine',.08); this.makeTone(1040,.18,.13*v,'sine',.16); }
     else if(name==='heal'){ this.makeTone(440,.14,.13*v,'sine'); this.makeTone(660,.18,.14*v,'sine',.10); this.makeTone(880,.22,.12*v,'sine',.20); }
     else if(name==='combatStart'){ this.makeTone(92,.32,.16*v,'sawtooth'); this.makeTone(138,.28,.14*v,'square',.16); this.makeNoise(.20,.12*v,.10); }
+    else if(name==='clue'){ this.makeTone(470,.16,.13*v,'sine');this.makeTone(590,.19,.12*v,'sine',.1);this.makeTone(780,.24,.11*v,'triangle',.2);}
+    else if(name==='tension'){this.makeTone(130,.20,.16*v,'sawtooth');this.makeTone(120,.23,.11*v,'sine',.11);this.makeNoise(.12,.065*v,.1);}
     else this.makeTone(440,.12,.15*v,'sine');
   }
   fx(name,mult=1){
@@ -274,11 +277,14 @@ class AudioManager {
   wantedMusic(s){
     if(!s?.campaignId) return '';
     if(s.phase==='combat') return 'combat';
+    const loc=s?.parallel?.playerStates?.[s.turnPlayerId]?.location;
+    if(s.phase==='story' && loc && Number(s?.parallel?.encounters?.[loc]?.hp)>0) return 'combat';
+    if(s.phase==='story' && Number((s.players||[]).find(p=>p.id===s.turnPlayerId)?.stress||0)>=5) return 'dread';
     if(['lobby','prologue','story','resolution','ending'].includes(s.phase)) return s.campaignId;
     return '';
   }
   stopSynthMusic(){
-    for(const item of this.synthMusic){ try{ item.osc.stop(); }catch{} try{ item.osc.disconnect(); item.gain.disconnect(); }catch{} }
+    for(const item of this.synthMusic){try{item.osc.stop();item.lfo?.stop();}catch{}try{item.osc.disconnect();item.gain.disconnect();item.lfo?.disconnect();item.lfoGain?.disconnect();}catch{}}
     this.synthMusic=[];
   }
   startSynthMusic(key){
@@ -287,7 +293,8 @@ class AudioManager {
     this.stopSynthMusic();
     const presets={
       ember:[55,82.4,110], neon:[73.4,110,146.8], abyss:[41.2,61.7,82.4],
-      clock:[65.4,98,130.8], wild:[49,73.4,98], combat:[55,73.4,110,146.8]
+      clock:[65.4,98,130.8], wild:[49,73.4,98], guardian:[82.4,123.5,164.8],
+      echo:[36.7,55,73.4],aurora:[65.4,98,130.8],masque:[73.4,110,146.8],combat:[55,73.4,110,146.8],dread:[38.9,58.3,77.8]
     };
     const freqs=presets[key]||presets.ember;
     freqs.forEach((freq,i)=>{
@@ -309,7 +316,10 @@ class AudioManager {
   syncMusic(s){
     if(!this.unlocked) return;
     const key=this.wantedMusic(s);
-    if(key===this.musicKey){ this.applyPrefs(); return; }
+    if(key===this.musicKey){
+      if(key && !uiPrefs.audioMuted && !this.music && !this.synthMusic.length){ this.musicKey=''; this.syncMusic(s); return; }
+      this.applyPrefs();return;
+    }
     if(this.music){ try{this.music.pause();this.music.currentTime=0;}catch{} }
     this.music=null; this.stopSynthMusic(); this.musicKey=key;
     if(!key || uiPrefs.audioMuted) return;
@@ -344,12 +354,20 @@ class AudioManager {
   onState(prev,next){
     this.syncMusic(next);
     if(!prev||!next) return;
+    const previousScene=prev?.parallel?.playerStates?.[prev.turnPlayerId]?.scene;
+    const newScene=next?.parallel?.playerStates?.[next.turnPlayerId]?.scene;
+    if(previousScene?.id && newScene?.id && previousScene.id!==newScene.id && ['진실','탐색'].includes(newScene.phase)) this.fx('clue',.62);
+    if(previousScene?.id && newScene?.id && previousScene.id!==newScene.id && ['위기','대면'].includes(newScene.phase)) this.fx('tension',.72);
     if(prev.phase==='resolution'&&next.phase==='story') this.fx('next',1.05);
     if(prev.phase==='prologue'&&next.phase==='story') this.fx('next',1.05);
     if(prev.phase!=='combat'&&next.phase==='combat') this.fx('combatStart',1.15);
     if(prev.phase==='combat'&&next.phase!=='combat') this.fx('success',1.05);
     if(prev.phase!=='ending'&&next.phase==='ending') this.fx('success',1.2);
     const prevPlayers=new Map((prev.players||[]).map(p=>[p.id,p]));
+    const crossing=next.players?.find(p=>Number(p.stress||0)>=5 && Number(prevPlayers.get(p.id)?.stress||0)<5);
+    if(crossing)this.fx('heartbeat',.9);
+    const recovering=next.players?.find(p=>Number(p.stress||0)<=2 && Number(prevPlayers.get(p.id)?.stress||0)>=3);
+    if(recovering)this.fx('resolve',.65);
     const lostHp=(next.players||[]).some(p=>prevPlayers.has(p.id)&&Number(p.hp)<Number(prevPlayers.get(p.id).hp));
     if(lostHp){ this.fx('hit',.9); setTimeout(()=>this.fx('hp',1),100); }
     const prevMonster=prev.monster; const nextMonster=next.monster;
@@ -768,9 +786,19 @@ function artSvg(c, title, subtitle, kicker, visual = '', monster = '') {
   </svg>`);
 }
 
+// Illustrated world-specific pixel scenes are bundled locally; no external image service is required.
+function pixelWorldArt(c){
+  const id=String(c?.id||'');
+  return ['ember','neon','abyss','clock','wild','guardian','echo','aurora','masque'].includes(id)?`/art/pixel/${id}.webp?v=11000`:'';
+}
+function shouldFeaturePixelScene(scene){
+  const id=String(scene?.id||'');
+  const phase=String(scene?.phase||'');
+  return id.startsWith('start_')||['위기','결단'].includes(phase)||Number(scene?.artChapter||scene?.chapter)===1;
+}
 function coverArt(c) {
   const artSet = STORY_ART_FILES[c?.id];
-  return artSet?.profile || artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
+  return pixelWorldArt(c) || artSet?.profile || artSet?.early || artSvg(c, c?.title || 'Chronicle Gate', c?.subtitle || '연대기를 선택하세요.', WORLD_META[c?.id]?.motif || 'CHRONICLE', sceneWord(c?.id, 0));
 }
 function chapterArtCandidates(c, scene) {
   if (!c?.id) return [];
@@ -831,6 +859,8 @@ function preloadSwapImage(img,candidates){
 }
 function setSceneImage(img, c, scene) {
   if (!img) return;
+  const pixel=pixelWorldArt(c);
+  if(pixel && shouldFeaturePixelScene(scene)){img.src=pixel;img.style.display='';img.dataset.artLoaded='pixel';return;}
   const exact=chapterArtCandidates(c, scene).map(src=>`${src}${src.includes('?')?'&':'?'}v=4121d`);
   const reps=representativeStoryArtCandidates(c,scene);
   const custom=[...exact,...reps];
@@ -842,8 +872,8 @@ function setSceneImage(img, c, scene) {
     preloadSwapImage(img,custom);
     return;
   }
-  if(!custom.length){ img.style.display='none'; img.removeAttribute('src'); return; }
-  img.style.display='none';
+  if(!custom.length){ if(pixel){img.src=pixel;img.style.display='';img.dataset.artLoaded='pixel-fallback';}else{img.style.display='none';img.removeAttribute('src');}return; }
+  if(pixel){ img.src=pixel;img.style.display='';img.dataset.artLoaded='pixel-fallback'; }else img.style.display='none';
   preloadSwapImage(img,custom);
 }
 
@@ -1000,6 +1030,9 @@ function parallelNovelSceneHTML(scene, actor, encounter, nearby = [], lastResolu
   });
   if(!paragraphs.length) blocks.push(`<p class="novel-paragraph opening">${esc(scene?.text||scene?.sceneContext||scene?.title||'장면이 이어진다.')}</p>`);
 
+  if(scene?.worldEvent){
+    blocks.push(`<div class="novel-danger-beat world-event"><span>🌒 ${esc(scene.worldEvent.title)} · 세 번째 행동의 여파</span><p>${esc(scene.worldEvent.text)}</p><small>이 장면의 판정 난이도 +1</small></div>`);
+  }
   if(encounter){
     blocks.push(`<div class="novel-danger-beat"><span>${esc(encounter.name)}</span><p>${esc(encounter.name)}이(가) 길을 막고 있다. 숨을 고를 틈이 길지 않다.</p></div>`);
   } else if(scene?.immediatePressure){
@@ -1381,7 +1414,15 @@ function enqueueDice(payload) {
     $('#diceSub').textContent = '주사위가 테이블 위를 구릅니다…';
     if (theater) {
       try {
-        await theater.roll({ sides: payload.sides, result: payload.result, color: c?.accent || '#bf4a38', skin: payload.diceSkin || null, duration: payload.sides === 20 ? 1540 : 1320 });
+        const diceColor=c?.accent||'#bf4a38';
+        if(['inspiration','desperate'].includes(payload.heroMode) && Array.isArray(payload.rolls) && payload.rolls.length===2){
+          for(let i=0;i<2;i++){
+            $('#diceSub').textContent=`${payload.heroMode==='desperate'?'극적 돌파':'영감 판정'} · ${i+1}번째 D20을 굴립니다…`;
+            await theater.roll({sides:20,result:Number(payload.rolls[i]),color:diceColor,skin:payload.diceSkin||null,duration:980});
+          }
+        }else{
+          await theater.roll({ sides: payload.sides, result: payload.result, color: diceColor, skin: payload.diceSkin || null, duration: payload.sides === 20 ? 1540 : 1320 });
+        }
       } catch (error) {
         console.error('[dice3d] roll failed', error);
         $('#diceSub').textContent = '3D 연출 오류가 발생해 숫자 결과로 이어갑니다.';
@@ -1394,16 +1435,22 @@ function enqueueDice(payload) {
 
     const narrativeRoll = ['story-choice','check','parallel-story'].includes(payload.kind);
     if (narrativeRoll) {
-      const natural = payload.sides === 20 && payload.result === 20 ? 'NATURAL 20' : payload.sides === 20 && payload.result === 1 ? 'NATURAL 1' : `D${payload.sides} ${payload.result}`;
-      $('#diceFinal').textContent = natural;
+      const raw=Array.isArray(payload.rolls)&&payload.rolls.length?payload.rolls:[payload.result];
+      const natural=payload.sides===20&&payload.result===20?'NATURAL 20':payload.sides===20&&payload.result===1?'NATURAL 1':`D${payload.sides} ${payload.result}`;
+      const modeLabel=payload.heroMode==='inspiration'?'영감 · 이점 D20 두 번':payload.heroMode==='push'?'위험 감수 · 판정 +2':payload.heroMode==='desperate'?'극적 돌파 · 대가를 치르는 2D20':'일반 D20 판정';
+      $('#diceFinal').textContent=payload.total!=null?`${natural}  →  ${payload.total}`:natural;
       $('#diceFinal').classList.add('is-result');
-      $('#diceSub').textContent = '판정이 확정되었습니다.';
-      await new Promise(r => setTimeout(r, 650));
-      view('storyView');
-      renderStory();
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const mods=(Array.isArray(payload.modifiers)?payload.modifiers:[]).filter(x=>Number(x?.value||0)!==0);
+      $('#diceBreakdown').innerHTML=`<span class="roll-raw">${esc(modeLabel)} <b>${raw.join(' / ')}</b></span>`+
+        mods.map(m=>`<span class="roll-mod"><small>${esc(m.label||'보정')}</small><b>${Number(m.value)>0?'+':''}${Number(m.value)}</b></span>`).join('')+
+        (payload.total!=null?`<span class="roll-total"><small>최종 판정</small><b>${Number(payload.total)} / DC ${Number(payload.dc||0)}</b></span>`:'');
+      const outcome=payload.outcomeGrade==='critical'?'대성공':payload.outcomeGrade==='mixed'?'부분 성공':payload.outcomeGrade==='disaster'?'큰 실패':payload.success?'성공':'실패';
+      $('#diceSub').textContent=`${modeLabel} · ${outcome} · 결과는 이야기와 세계에 반영됩니다.`;
+      audioManager.fx(payload.success?'success':'failure',.95);
+      await new Promise(r=>setTimeout(r,1180));
+      view('storyView'); renderStory();
       $('#diceOverlay').classList.remove('show');
-      await new Promise(r => setTimeout(r, 140));
+      await new Promise(r=>setTimeout(r,140));
       return;
     }
 
@@ -1589,7 +1636,8 @@ function renderCharacterHud(player, storyItems = []) {
     const passiveBadges = (member.derived?.passives || []).map(t => `<span class="status-pill passive ${esc(t.key || '')}" title="${esc(t.effect || '')}">${esc(t.label)}</span>`).join('');
     const statuses = `<div class="status-strip">${injuryCount ? `<span class="status-pill injury" title="누적 실패로 인한 부상">부상 ${injuryCount}</span>` : `<span class="status-pill ok">정상</span>`}${passiveBadges}</div>`;
     const defense = Number(member.derived?.defense || 10) + equipmentBonusFor(member,'민첩');
-    return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '역할 미지정')}</small><small class="party-defense">방어 ${defense}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small>${statuses}</div>`;
+    const stress=Number(member.stress||0); const mood=stress>=5?'fractured':stress>=3?'uneasy':'steady';
+    return `<div class="party-card ${member.id === playerToken ? 'active' : ''}"><div class="top"><b>${esc(member.name)}</b><small>${member.inspiration} ✦</small></div><small>${esc(member.job?.name || '역할 미지정')}</small><small class="party-defense">방어 ${defense}</small><div class="hp-line"><i style="width:${member.maxHp ? Math.max(0, member.hp / member.maxHp * 100) : 0}%"></i></div><small>HP ${member.hp}/${member.maxHp}</small><div class="party-stress ${mood}"><small>긴장 ${stress}/6</small><div><i style="width:${stress/6*100}%"></i></div></div>${statuses}</div>`;
   }).join('');
   $('#myJobMini').textContent = p?.job?.name || 'UNASSIGNED';
   $('#myStatsMini').innerHTML = p?.abilities ? Object.entries(p.abilities).map(([k, v]) => {
@@ -1615,6 +1663,23 @@ function renderCharacterHud(player, storyItems = []) {
   renderEconomyPanel(p, storyItems);
 }
 
+function renderDirectorScene(scene,actor,isMyTurn,ps){
+  const director=scene?.director||{};
+  const spotlight=$('#spotlightPanel'),psyche=$('#psychePanel');
+  if(!spotlight||!psyche)return;
+  const stress=Number(actor?.stress||0),mood=director.mood||'steady';
+  const art=director.art&&/^\/art\/director\/[a-z]+\.webp$/.test(director.art)?`<img src="${director.art}" alt="이 장면의 심리적 분위기를 표현한 픽셀아트" loading="lazy">`:'';
+  spotlight.hidden=false;spotlight.className=`director-spotlight mood-${mood}`;
+  spotlight.innerHTML=`${art}<div class="director-spotlight-body"><span class="director-kicker">THE DRAMATIC DIRECTOR · ${esc(director.world||'장면')}</span><p>${esc(director.atmosphericLine||'눈앞의 단서에 집중해 보세요.')}</p><small>${esc(director.spotlight||'')}</small>${scene?.phase==='결단'?'':'<em>장면 속 느낌은 확정된 사실이 아닙니다. 행동으로 확인할 수 있습니다.</em>'}</div>`;
+  const bonds=state?.partyBonds||{};
+  const allies=(state?.players||[]).filter(p=>p.id!==actor?.id&&p.connected&&p.hp>0&&state?.parallel?.playerStates?.[p.id]?.location===ps.location);
+  const bondsHtml=allies.map(p=>{const key=[actor.id,p.id].sort().join('~');return `<span>${esc(p.name)} · 유대 ${Number(bonds[key]||0)}/3</span>`;}).join('');
+  const active=isMyTurn&&stress>=2&&!ps.ended&&!state?.resumeBarrier&&(Number(state?.parallel?.clockTick||0)-Number(ps.lastRegroupTick??-100)>=3);
+  psyche.hidden=false;
+  psyche.innerHTML=`<div class="director-psyche-head"><div><span class="director-kicker">CHARACTER RESOLVE</span><b>긴장 ${stress}/6 · ${esc(director.moodLabel||'평정')}</b></div><span>${stress>=5?'지혜·매력 -2':stress>=3?'지혜·매력 -1':'판정 불이익 없음'}</span></div><div class="director-stress-track">${Array.from({length:6},(_,i)=>`<i class="${i<stress?'is-on':''}"></i>`).join('')}</div><p>${esc(director.partyPrompt||'')} ${esc(director.danger||'')}</p><div class="director-bond-row">${bondsHtml||'<span>같은 장소에 동료가 없습니다.</span>'}</div><button class="ghost director-breathe-btn" type="button" id="regroupBtn" ${active?'':'disabled'}>숨 고르기 · 긴장 -2 / 내 차례 사용</button><small class="director-regroup-note">솔로는 위협 +1, 함께 있으면 위협 증가 없이 진행 · 같은 플레이어는 최소 3세계 행동 간격</small>`;
+  const button=$('#regroupBtn');if(button)button.onclick=()=>{button.disabled=true;socket.emit('story:regroup',{roomCode,playerToken},r=>{if(!r?.ok){button.disabled=false;toast(r?.error||'숨 고르기에 실패했습니다.');}else toast(`긴장 ${r.stress}/6 · 차례 종료`);});};
+}
+
 function renderParallelStory() {
   document.getElementById('storyView')?.classList.add('narrative-session');
   const c = currentCampaign();
@@ -1634,10 +1699,14 @@ function renderParallelStory() {
   const scene = ps?.scene;
   const isMyTurn = actorId === playerToken && state?.phase === 'story' && !state?.resumeBarrier;
   if (!scene || !ps) return;
+  const activeStress=Number(actor?.stress||0);
+  $('#storyView').classList.toggle('psyche-uneasy',activeStress>=3);
+  $('#storyView').classList.toggle('psyche-fractured',activeStress>=5);
+  renderDirectorScene(scene,actor,isMyTurn,ps);
 
   renderCharacterHud(p, myPs?.scene?.storyItems || scene.storyItems || []);
   $('#deckCount').textContent = '—';
-  $('#eventCadence').textContent = '개인 진행 · 종료 시점은 선택에 따라 달라짐';
+  $('#eventCadence').textContent = '3행동마다 세계 사건 · 자유 행동 · 각자의 결말';
   $('#threatValue').textContent = state.threat;
   $('#threatTrack').innerHTML = Array.from({ length: 8 }, (_, i) => `<i class="${i < state.threat ? 'on' : ''}"></i>`).join('');
   $('#storyValue').textContent = `${ps.progress || 0}장면`;
@@ -1671,7 +1740,7 @@ function renderParallelStory() {
   const linked = Array.isArray(scene.linked) ? scene.linked : [];
 
   $('#turnBanner').textContent = isMyTurn ? '당신의 차례' : `${actor?.name || state.turnPlayerName || '다른 플레이어'}의 차례`;
-  setSceneImage($('#storySceneImg'), c, { act: scene.act, actName: scene.actName, title: scene.title, visual: scene.locationLabel, id: scene.id });
+  setSceneImage($('#storySceneImg'), c, { act: scene.act, artChapter:scene.artChapter, phase:scene.phase, actName: scene.actName, title: scene.title, visual: scene.locationLabel, id: scene.id });
   $('#storySceneCaption').textContent = `${scene.locationLabel || '현재 장소'}${nearby.length ? ` · ${nearby.map(x => x.name).join(', ')}와 함께` : ''}`;
   const cleanSceneTitle=String(scene.title||scene.actName||'장면').replace(/\s*·\s*(도입|탐색|대면|진실|위기|결단)$/,'').trim();
   $('#actLabel').textContent = encounter ? `제 ${scene.act}막 · 조우` : `제 ${scene.act}막 · ${scene.phase || '이야기'}`;
@@ -1684,6 +1753,7 @@ function renderParallelStory() {
   const last = state?.lastResolution?.source === 'parallel-story' && state.lastResolution.playerId !== actorId ? state.lastResolution : null;
   $('#eventText').innerHTML = parallelNovelSceneHTML(scene,actor,encounter,nearby,last);
 
+  renderTableTools(scene,actorId,isMyTurn);
   configureStoryActionBox(scene,isMyTurn,actor);
 
   const choices = Array.isArray(scene.choices) ? scene.choices.filter(x => x && x.label).slice(0, 5) : [];
@@ -1698,7 +1768,7 @@ function renderParallelStory() {
     btn.onclick=()=>{
       if(btn.disabled)return;
       btn.disabled=true;
-      socket.emit('story:advance',{roomCode,playerToken,choiceIndex:Number(btn.dataset.parallelIndex)},r=>{
+      socket.emit('story:advance',{roomCode,playerToken,choiceIndex:Number(btn.dataset.parallelIndex),heroMode:currentRollMode()},r=>{
         if(!r?.ok){btn.disabled=false;showActionFeedback(r?.error||'행동을 처리하지 못했습니다.',true);}
       });
     };
@@ -1829,7 +1899,7 @@ function forceChoiceLayout(root = document) {
 
 function choiceDifficultyLabel(choice){
   if(choice?.automatic)return '판정 없음';
-  const dc=Math.max(1,Number(choice?.dc||8)+(Number(state?.dcPenalty||0)));
+  const dc=Math.max(1,Number(choice?.dc||8)+(state?.parallel?.enabled?0:Number(state?.dcPenalty||0)));
   if(dc<=8)return '쉬움';
   if(dc<=10)return '보통';
   if(dc<=12)return '어려움';
@@ -1837,7 +1907,7 @@ function choiceDifficultyLabel(choice){
 }
 function choiceCheckHTML(choice,scene){
   if(choice?.automatic)return `결정<small>주사위 없음</small>`;
-  const dc=Math.max(1,Number(choice?.dc||8)+(Number(state?.dcPenalty||0)));
+  const dc=Math.max(1,Number(choice?.dc||8)+(state?.parallel?.enabled?0:Number(state?.dcPenalty||0)));
   const revealDc=Boolean(scene?.statInsight?.insight);
   return `${esc(choice.stat||'지혜')}<small>${esc(choiceDifficultyLabel(choice))}${revealDc?` · DC ${dc}`:''}</small>`;
 }
@@ -1848,19 +1918,83 @@ function choiceTagsHTML(choice){
   if(!opportunity&&!risk)return '';
   return `<span class="choice-tags">${opportunity?`<em>기회 · ${esc(opportunity)}</em>`:''}${risk?`<em class="${riskClass}">위험 · ${esc(risk)}</em>`:''}</span>`;
 }
-function configureStoryActionBox(){
-  // v9.1 choice-only: free-form declarations are intentionally disabled.
-  // Keep the legacy DOM nodes hidden so older cached markup cannot re-enable the panel.
-  const box=$('#storyActionBox'), input=$('#storyActionInput'), submit=$('#storyActionSubmitBtn');
-  if(box){ box.style.setProperty('display','none','important'); box.classList.remove('player-agency-enabled'); box.classList.add('disabled'); }
-  if(input){ input.disabled=true; input.value=''; }
-  if(submit) submit.disabled=true;
-  if($('#actionSuggestions')) $('#actionSuggestions').innerHTML='';
-  if($('#lastActionResult')) $('#lastActionResult').innerHTML='';
+function currentRollMode(){
+  if(selectedHeroMode==='inspiration' && Number(me()?.inspiration||0)<1) return 'normal';
+  if(selectedHeroMode==='desperate' && Number(me()?.stress||0)<3) return 'normal';
+  return ['normal','inspiration','push','desperate'].includes(selectedHeroMode)?selectedHeroMode:'normal';
+}
+function setRollMode(next){selectedHeroMode=next; renderRollModeButtons();}
+function renderRollModeButtons(){
+  const p=me();const selected=currentRollMode();
+  if(selected!==selectedHeroMode)selectedHeroMode=selected;
+  const wrap=$('#rollModeChoices'); if(!wrap)return;
+  wrap.querySelectorAll('[data-roll-mode]').forEach(b=>{
+    const key=b.dataset.rollMode;
+    b.classList.toggle('is-selected',key===selected);
+    b.setAttribute('aria-pressed',key===selected?'true':'false');
+    b.disabled=(key==='inspiration' && Number(p?.inspiration||0)<1)||(key==='desperate'&&Number(p?.stress||0)<3);
+  });
+  const hints={normal:'D20 한 번 + 능력치·장비·협력 보정',inspiration:'영감 1 소모 · D20 두 번을 굴려 높은 값 사용',push:'위험 감수 · 판정 +2 / 실패 시 위협 추가 +1',desperate:'긴장 3 이상: 2D20 중 높은 값 · 긴장 +1 / 실패 시 위협 추가 +2'};
+  $('#rollModeHint').textContent=hints[selected];
+}
+$('#rollModeChoices')?.querySelectorAll('[data-roll-mode]').forEach(b=>b.addEventListener('click',()=>setRollMode(b.dataset.rollMode)));
+$('#assistTurnBtn').onclick=()=>socket.emit('story:assist',{roomCode,playerToken},r=>r?.ok?toast(`협동 +${r.bonus} · 동료 유대 ${r.bond}/3${r.relieved?' · 긴장 -1':''}`):toast(r?.error||'도움을 줄 수 없습니다.'));
+function renderTableTools(scene,actorId,isMyTurn){
+  const panel=$('#tableTools');if(!panel)return;
+  const available=state?.phase==='story'&&!state?.currentEvent&&!state?.activeChoice&&!state?.resumeBarrier;
+  panel.hidden=!available;panel.classList.toggle('hidden',!available);
+  if(!available)return;
+  const p=me(),actor=state?.players?.find(x=>x.id===actorId);
+  const needsDice=Array.isArray(scene?.choices)?scene.choices.some(x=>!x.automatic):true;
+  $('#rollModeChoices').style.display=isMyTurn&&needsDice?'flex':'none';
+  $('#rollModeHint').style.display=isMyTurn?'block':'none';
+  if(isMyTurn&&!needsDice)$('#rollModeHint').textContent='마지막 결단은 주사위가 아닌 이야기의 선택으로 결정됩니다.';
+  if(needsDice)renderRollModeButtons();
+  const assist=state?.tableAssist||{bonus:0,helpers:[]};
+  const actorState=state?.parallel?.playerStates?.[actorId];
+  const myState=state?.parallel?.playerStates?.[playerToken];
+  const nearby=!state?.parallel?.enabled||(actorState?.location&&actorState.location===myState?.location);
+  const canAssist=needsDice&&!isMyTurn&&actorId&&p?.hp>0&&nearby&&Number(assist.bonus||0)<3&&!(assist.helpers||[]).includes(playerToken);
+  const btn=$('#assistTurnBtn');
+  btn.style.display=!isMyTurn&&actorId?'inline-flex':'none';
+  btn.disabled=!canAssist;
+  btn.textContent=canAssist?`🛡 ${actor?.name||'동료'}에게 도움 +1`:(nearby?'이번 판정 도움 완료':'같은 장소의 동료만 지원');
+  const desc=$('#rollAssistLabel');
+  if(desc)desc.textContent=assist.bonus>0?`동료 지원 +${assist.bonus} 적용 (${(assist.helpers||[]).length}명)`:'동료가 같은 장소에 있다면 판정을 도울 수 있습니다.';
+  const notes=Array.isArray(scene?.notes)?scene.notes:(Array.isArray(state.sceneNotes)?state.sceneNotes:[]);
+  const notebook=$('#sceneNotebook');
+  if(notebook){
+    notebook.innerHTML=notes.length?`<details><summary>📜 현장 노트 · 확인된 사실 ${notes.length}건</summary>${notes.map(x=>`<p>${esc(x)}</p>`).join('')}</details>`:'';
+  }
+}
+function configureStoryActionBox(scene,isMyTurn,actor){
+  const box=$('#storyActionBox'),input=$('#storyActionInput'),submit=$('#storyActionSubmitBtn');
+  if(!box||!input||!submit)return;
+  const available=Boolean(scene?.freeActionAllowed) && state?.phase==='story' && !state?.currentEvent && !state?.activeChoice;
+  box.hidden=!available||!isMyTurn;
+  box.classList.toggle('player-agency-enabled',available&&isMyTurn);
+  box.classList.toggle('disabled',!available||!isMyTurn);
+  box.style.display=available&&isMyTurn?'block':'none';
+  input.disabled=!available||!isMyTurn;
+  submit.disabled=!available||!isMyTurn;
+  const ctx=scene?.affordances||{};
+  $('#storyRoleContext').innerHTML=`<b>자유 선언</b><span>현재 장면의 대상에게 실제로 시도할 행동을 적으세요. (${esc(actor?.job?.name||'당신')})</span>`;
+  const examples=[];
+  if(ctx.clue) examples.push(`${ctx.clue}의 흔적을 자세히 조사한다`);
+  if(ctx.person) examples.push(`${ctx.person}에게 직접 물어본다`);
+  if(ctx.obstacle) examples.push(`${ctx.obstacle}을 우회할 통로를 찾는다`);
+  if(ctx.rescue) examples.push(`${ctx.rescue}을 돕는다`);
+  if(ctx.item) examples.push(`${ctx.item}을 조심스럽게 확인한다`);
+  if(ctx.hostile) examples.push(`${ctx.hostile}의 시야를 피해 이동한다`);
+  const suggestions=$('#actionSuggestions');
+  suggestions.innerHTML=examples.slice(0,4).map(x=>`<button type="button" class="action-example" title="선언 입력창에 넣기">${esc(x)}</button>`).join('');
+  suggestions.querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{input.value=examples[i];input.dispatchEvent(new Event('input'));input.focus();});
 }
 
 
 function renderStory() {
+  $('#spotlightPanel').hidden=true; $('#psychePanel').hidden=true;
+  $('#storyView').classList.remove('psyche-uneasy','psyche-fractured');
   if (!state || state.phase === 'lobby' || state.phase === 'combat' || state.phase === 'ending') return;
   const c = currentCampaign();
   const ev = state.currentEvent;
@@ -1973,12 +2107,14 @@ function renderStory() {
     }
 
     const myTurn = state.phase === 'story' && state.turnPlayerId === playerToken;
+    renderTableTools(beat,state.turnPlayerId,myTurn);
     configureStoryActionBox(beat,myTurn,p);
     renderMainStoryChoices(beat);
   }
 
   $('#gmBar').style.display = 'flex';
   const freeActionSubmit = false;
+  if(state.phase!=='story'){$('#tableTools').hidden=true;$('#tableTools').classList.add('hidden');$('#storyActionBox').style.display='none';}
   $('#advanceStoryBtn').style.display = state.phase === 'prologue' ? 'inline-flex' : 'none';
   if (state.phase !== 'prologue') {
     $('#advanceStoryBtn').disabled = !(freeActionSubmit && state.turnPlayerId === playerToken);
@@ -2004,7 +2140,7 @@ function renderMainStoryChoices(beat) {
   box.querySelectorAll('[data-main-choice-index]').forEach(btn=>btn.onclick=()=>{
     if(btn.disabled)return;
     btn.disabled=true;
-    socket.emit('story:advance',{roomCode,playerToken,choiceIndex:Number(btn.dataset.mainChoiceIndex)},r=>{
+    socket.emit('story:advance',{roomCode,playerToken,choiceIndex:Number(btn.dataset.mainChoiceIndex),heroMode:currentRollMode()},r=>{
       if(!r?.ok){btn.disabled=false; showActionFeedback(r?.error||'행동을 처리하지 못했습니다.',true);}
     });
   });
@@ -2051,7 +2187,7 @@ const submitStoryDeclaration=()=>{
   const input=$('#storyActionInput'); const declaration=input.value.trim();
   if(state?.phase!=='story') return;
   if(!declaration) return toast('무엇을 하려는지 한 문장으로 적어주세요.');
-  socket.emit('story:advance',{roomCode,playerToken,declaration},r=>{
+  socket.emit('story:advance',{roomCode,playerToken,declaration,heroMode:currentRollMode()},r=>{
     if(!r?.ok){ showActionFeedback(r?.error||'지금 장면에서는 그 행동을 바로 처리하기 어렵습니다.',true); return; }
     showActionFeedback(r?.inquiry ? (r?.result?.narrative||'조사 결과가 장면에 반영되었습니다.') : '행동이 처리되었습니다.',false);
     input.value=''; const max=Number(input.maxLength||220); $('#storyActionCount').textContent=`0/${max}`;
@@ -2067,7 +2203,7 @@ $('#advanceStoryBtn').onclick = () => {
   }
   const declaration = $('#storyActionInput').value.trim();
   if (state?.phase === 'story' && !declaration) return toast('직접 행동을 한 문장으로 적어주세요.');
-  socket.emit('story:advance', { roomCode, playerToken, declaration }, r => {
+  socket.emit('story:advance', { roomCode, playerToken, declaration, heroMode:currentRollMode() }, r => {
     if (!r?.ok) return toast(r.error);
     $('#storyActionInput').value = '';
     const max = Number($('#storyActionInput').maxLength || 220);
@@ -2084,7 +2220,7 @@ function showResolution(r) {
   $('#resolutionEyebrow').textContent = r.inquiry ? 'DISCOVERY' : 'D20 · SCENE RESULT';
   $('#resolutionTitle').textContent = r.choiceLabel ? `“${r.choiceLabel}”` : (r.detourCreated ? '예상하지 못한 길이 열렸다' : gradeLabel);
   const mechanics = [r.consequence, r.status ? `${r.status.label}: ${r.status.desc || ''}` : ''].filter(Boolean).join(' · ');
-  const rollLine=(Number.isFinite(Number(r.result))&&Number.isFinite(Number(r.total))&&Number.isFinite(Number(r.dc)))
+  const rollLine=(r.result!=null&&r.total!=null&&r.dc!=null&&Number.isFinite(Number(r.result))&&Number.isFinite(Number(r.total))&&Number.isFinite(Number(r.dc)))
     ? `<div class="resolution-rollline"><b>${esc(gradeLabel)}</b><span>D20 ${Number(r.result)} · 합계 ${Number(r.total)} / DC ${Number(r.dc)}</span></div>`:'';
   const branchAfter = r.detourCreated ? '<small class="resolution-next">실패가 막다른 길이 아니라 새로운 장면을 만들었습니다.</small>' : '';
   $('#resolutionText').innerHTML = `${rollLine}<span class="resolution-prose">${esc(r.text || '')}</span>${branchAfter}${mechanics ? `<details class="resolution-mechanics"><summary>판정과 상태 보기</summary><small>${esc(mechanics)}</small></details>` : ''}`;
@@ -2233,9 +2369,9 @@ function renderHelp() {
       title: '기본 진행 순서',
       items: [
         '로비에서 스토리를 고른 뒤 각 플레이어는 D6 직업 배정과 4D6 능력치 생성을 각 스토리마다 1번씩만 진행합니다.',
-        '장면에 실제로 존재하는 인물·적·단서·장애물·구조 대상에 따라 5~7개의 해결법이 나옵니다. 조사·질문·설득·잠입·전투·우회·구조·함정 등 가능한 행동만 표시됩니다.',
+        '장면에 존재하는 인물·단서·장애물과 상호작용할 수 있습니다. 기본 선택지 외에 자유 행동을 직접 입력하면 GM 규칙 엔진이 상황을 확인하고 D20으로 판정합니다.',
         `가장 많은 표를 받은 선택지가 확정되며, 현재 차례 플레이어(${esc(state?.turnPlayerName || '미정')})가 실제 판정을 굴립니다.`,
-        '메인 소설 장면 3개를 진행할 때마다 짧은 이벤트 카드가 끼어듭니다. 일반 사건의 DC는 낮고, 위험한 사건일수록 난이도와 중요도가 화면에 표시됩니다.',
+        '주사위: 일반 D20 / 영감 1을 써서 2D20 중 높은 값 / 위험 감수로 +2 보정을 받을 수 있습니다. 위험 감수 실패는 위협을 추가로 올립니다. 같은 장소의 동료는 판정에 +1씩 도움을 줄 수 있습니다.',
       ],
     },
     {

@@ -1318,3 +1318,96 @@ html[data-theme="light"] .turn-step{background:rgba(255,255,255,.52)}html[data-t
   #storyView.narrative-session .game-shell{grid-template-columns:1fr!important}
   #storyView.narrative-session .party-rail,#storyView.narrative-session .right-rail{opacity:1!important}
 }
+
+
+/* ==============================================================
+   v11 — TRUE TABLETOP: free action, collaborative rolls, notebook
+   Positioned after legacy choice-only declarations intentionally.
+   ============================================================== */
+#storyView .table-tools{max-width:880px;width:100%;margin:7px auto 14px!important;padding:14px 16px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:12px!important;background:rgba(140,169,197,.05)!important;box-sizing:border-box!important}
+#storyView .table-tools[hidden],#storyView .table-tools.hidden{display:none!important}
+#storyView .table-roll-modes{display:flex;align-items:center;flex-wrap:wrap;gap:6px!important}
+#storyView .table-mode-label{font:800 9px Orbitron,sans-serif;letter-spacing:.08em;color:rgba(255,255,255,.54);margin-right:4px}
+#storyView .table-roll-modes button{font:700 11px var(--font-body),sans-serif;white-space:normal;padding:9px 11px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.035);border-radius:9px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .15s ease}
+#storyView .table-roll-modes button:hover:not(:disabled){border-color:var(--accent);color:#fff}
+#storyView .table-roll-modes button.is-selected{border-color:color-mix(in srgb,var(--accent) 65%,white)!important;background:color-mix(in srgb,var(--accent) 11%,transparent)!important;color:#fff!important}
+#storyView .table-roll-modes button:disabled{opacity:.31;cursor:default}
+#storyView .roll-mode-hint{margin:7px 0 0!important;font-size:11px!important;color:rgba(255,255,255,.65)!important;line-height:1.55!important}
+#storyView .table-assist-line{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:10px;color:rgba(255,255,255,.55);font-size:10.5px}
+#storyView .table-assist-line button{padding:8px 11px;border-radius:8px;color:#d4ebff}
+#storyView .table-assist-line button:disabled{opacity:.45;cursor:default}
+#storyView .scene-notebook{margin-top:5px}
+#storyView .scene-notebook details{border-top:1px solid rgba(255,255,255,.07);padding:8px 0 2px;font-size:11.5px;color:rgba(255,255,255,.65)}
+#storyView .scene-notebook summary{cursor:pointer;color:#b4d9f6;font-weight:750}
+#storyView .scene-notebook p{margin:9px 2px 3px;line-height:1.75;color:rgba(255,255,255,.66)}
+/* Override the former forced choice-only block; display controlled by JS actor state. */
+#storyView #storyActionBox.story-action-box.player-agency-enabled:not(.disabled){display:block!important;visibility:visible!important;height:auto!important;min-height:0!important;max-width:880px!important;width:100%!important;margin:13px auto 19px!important;padding:16px!important;border:1px solid rgba(117,184,226,.24)!important;border-radius:13px!important;overflow:visible!important;box-sizing:border-box!important;background:rgba(24,40,56,.3)!important}
+#storyView #storyActionBox.story-action-box.disabled,#storyView #storyActionBox.story-action-box[hidden]{display:none!important;visibility:hidden!important;height:0!important}
+#storyView #storyActionBox.player-agency-enabled .action-suggestions{display:flex!important;gap:6px;flex-wrap:wrap;margin:0 0 12px!important}
+#storyView #storyActionBox .action-suggestions button{max-width:100%;text-align:left;white-space:normal;font-size:11px;line-height:1.45;color:#d6e9f6}
+#storyView #storyActionBox .role-context{gap:7px!important;flex-wrap:wrap}
+#storyView #storyActionBox textarea{color:#fff!important;background:rgba(4,10,16,.65)!important;resize:vertical!important}
+#storyView .scene-art img[data-art-loaded="pixel"],#storyView .scene-art img[data-art-loaded="pixel-fallback"]{image-rendering:auto;object-fit:cover}
+@media(max-width:760px){
+ #storyView .table-tools{padding:12px!important;margin-top:9px!important}
+ #storyView .table-mode-label{width:100%;margin-bottom:3px}
+ #storyView .table-roll-modes button{flex:1 1 calc(50% - 8px);min-width:112px}
+ #storyView #storyActionBox.story-action-box.player-agency-enabled:not(.disabled){padding:12px!important}
+ #storyView .table-assist-line{align-items:flex-start}
+}
+
+#storyView .novel-danger-beat.world-event{border-color:rgba(204,159,97,.34)!important;border-left-color:#d7ae63!important;background:linear-gradient(100deg,rgba(93,57,27,.22),rgba(13,17,24,.12))!important}
+#storyView .novel-danger-beat.world-event span{color:#f0c98d!important}
+#storyView .novel-danger-beat.world-event small{display:block;margin-top:7px;font-size:10px;color:rgba(255,208,150,.65)}
+
+/* ---------------------------------------------------------------
+   v12.0 TABLETOP DIRECTOR / RESOLVE / FOUR PLAYER BONDS
+   Original, GitHub-editable UI with subtle accessible atmosphere.
+   --------------------------------------------------------------- */
+#storyView #spotlightPanel[hidden],#storyView #psychePanel[hidden]{display:none!important}
+#storyView .director-kicker{font-family:Orbitron,ui-monospace,monospace;font-size:9px;letter-spacing:.15em;color:#ddc58c;font-weight:700}
+#storyView .director-spotlight{display:flex;align-items:stretch;gap:0;margin:0 0 14px;border:1px solid rgba(201,167,118,.24);border-radius:12px;max-width:100%;overflow:hidden;background:linear-gradient(110deg,rgba(46,38,42,.82),rgba(17,21,29,.96));box-shadow:0 8px 32px rgba(0,0,0,.15)}
+#storyView .director-spotlight img{display:block;width:142px;max-width:28%;object-fit:cover;object-position:center;image-rendering:auto;filter:saturate(.92) contrast(1.07)}
+#storyView .director-spotlight-body{padding:14px 16px;min-width:0;flex:1}
+#storyView .director-spotlight p{font-size:14px;line-height:1.7;color:#efebdf;margin:7px 0}
+#storyView .director-spotlight small{display:block;color:#d5bd9f;font-size:11px;line-height:1.55}
+#storyView .director-spotlight em{display:block;font-style:normal;font-size:10px;color:#958d91;line-height:1.5;margin-top:7px}
+#storyView .director-spotlight.mood-uneasy{border-color:rgba(200,150,74,.42);background:linear-gradient(115deg,rgba(70,38,41,.85),rgba(19,22,32,.95))}
+#storyView .director-spotlight.mood-fractured{border-color:rgba(218,91,89,.62);background:linear-gradient(110deg,rgba(90,28,40,.84),rgba(19,18,32,.97));box-shadow:0 0 0 1px rgba(239,108,92,.09),0 10px 36px rgba(0,0,0,.26)}
+#storyView .director-psyche{padding:12px 16px;border:1px solid rgba(126,145,155,.23);border-radius:12px;margin:0 0 20px;background:rgba(15,20,27,.88);color:#e2e3e8}
+#storyView .director-psyche-head{display:flex;gap:12px;justify-content:space-between;align-items:center}
+#storyView .director-psyche-head>div{display:flex;gap:6px;flex-direction:column}
+#storyView .director-psyche-head b{font-size:13px;font-weight:750;color:#f5e5ca}
+#storyView .director-psyche-head>span{font-size:11px;color:#b7b3b2}
+#storyView .director-stress-track{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:9px 0}
+#storyView .director-stress-track i{height:7px;border-radius:6px;background:rgba(186,192,213,.12);border:1px solid rgba(220,224,231,.08)}
+#storyView .director-stress-track i.is-on{background:linear-gradient(90deg,#bb7358,#d79d67);border-color:#ae775d}
+#storyView.psyche-fractured .director-stress-track i.is-on{background:linear-gradient(90deg,#bf4869,#d96b58);border-color:#ca6270}
+#storyView .director-psyche>p{font-size:11px;color:#b9b1b2;margin:6px 0 9px;line-height:1.5}
+#storyView .director-bond-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 11px}
+#storyView .director-bond-row span{padding:4px 8px;border-radius:7px;border:1px solid rgba(145,187,212,.2);background:rgba(110,156,183,.08);color:#b9d8e7;font-size:10px}
+#storyView .director-breathe-btn{min-height:35px;padding:6px 12px;border-radius:8px;font-size:11px;background:linear-gradient(120deg,rgba(110,124,149,.19),rgba(39,58,72,.26));color:#e0e5ec;border:1px solid rgba(159,186,198,.34);cursor:pointer}
+#storyView .director-breathe-btn:disabled{opacity:.48;cursor:default}
+#storyView .director-regroup-note{display:block;font-size:9.5px;color:#9fa5ad;margin-top:7px;line-height:1.45}
+#storyView .party-stress{margin-top:6px}
+#storyView .party-stress small{display:block;font-size:10px;color:#e6bf93}
+#storyView .party-stress>div{height:5px;border-radius:8px;background:rgba(198,193,193,.13);margin-top:4px;overflow:hidden}
+#storyView .party-stress i{display:block;height:100%;background:linear-gradient(90deg,#d0a86f,#d37a5e);border-radius:8px;transition:width .3s ease}
+#storyView .party-stress.fractured i{background:linear-gradient(90deg,#d47062,#b72f5c)}
+#storyView.psyche-fractured .scene-art{box-shadow:inset 0 0 25px rgba(182,62,70,.18),0 0 26px rgba(109,20,41,.24)!important}
+#storyView.psyche-fractured .scene-art img{filter:saturate(.82) contrast(1.10) hue-rotate(-3deg)!important}
+#storyView .table-roll-modes button[data-roll-mode="desperate"]{border-color:rgba(222,91,117,.44);color:#f0b4c0}
+#storyView .table-roll-modes button[data-roll-mode="desperate"].is-selected{border-color:#e06c89;background:rgba(194,54,90,.17);color:#fff}
+#storyView .table-roll-modes button[data-roll-mode="desperate"]:disabled{opacity:.43}
+@media(max-width:760px){
+ #storyView .director-spotlight{margin-bottom:10px}
+ #storyView .director-spotlight img{width:92px;max-width:25%}
+ #storyView .director-spotlight-body{padding:11px 12px}
+ #storyView .director-spotlight p{font-size:12.2px;line-height:1.55}
+ #storyView .director-spotlight small{font-size:10px}
+ #storyView .director-psyche{padding:10px 12px;margin-bottom:14px}
+ #storyView .director-psyche-head{flex-wrap:wrap}
+ #storyView .director-breathe-btn{width:100%}
+}
+@media(max-width:420px){#storyView .director-spotlight img{width:74px;max-width:24%}#storyView .director-spotlight-body{padding:10px}#storyView .director-spotlight p{font-size:11.5px}}
+@media(prefers-reduced-motion:reduce){#storyView .party-stress i{transition:none}}

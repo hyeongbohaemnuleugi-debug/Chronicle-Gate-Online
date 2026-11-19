@@ -1,9 +1,9 @@
 {
   "name": "chronicle-gate-online",
-  "version": "10.0.0",
+  "version": "12.0.0",
   "private": true,
   "type": "module",
-  "description": "Narrative-first 1-4 player online TRPG with scene-linked choice-only storytelling, job-specific openings, fail-forward checks, contextual item routes, authored ending dilemmas, persistent accounts, and nine chronicles",
+  "description": "Editable GitHub source for a 1-4 player narrative TRPG with server-rolled D20, dramatic pressure, bonds, contextual free actions, persistent chronicles, 9 worlds, pixel artwork, and original adaptive audio.",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",

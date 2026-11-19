@@ -1,0 +1,85 @@
+{
+  "version": "12.0.0",
+  "files": {
+    "GITHUB_PATCH_v12_설치안내.md": {
+      "bytes": 6692,
+      "sha256": "4a5532ea6021b9d2b19b49ced9de053d617f500ee5e20ebe0a3f9bcc94c98a08"
+    },
+    "package.json": {
+      "bytes": 737,
+      "sha256": "2fd23bed11861cadc1026761b56550e4e047e699aa9900f17be4f9d56c0f6009"
+    },
+    "server.js": {
+      "bytes": 457117,
+      "sha256": "a833fd7fdb4f44e1b3077a0b363d261f4fb0585e19f817d71e29598587a31937"
+    },
+    "dramatic-director.js": {
+      "bytes": 10053,
+      "sha256": "04d0fbcd77f839bccac2fb1eed8c3d7d99e38e796bbd83a319f7e41681847428"
+    },
+    "tabletop-rules.js": {
+      "bytes": 1936,
+      "sha256": "51bc917a43c761513ccc7b46e31bcb2d797a2ad0df4d930e5b064c9dc4347f9c"
+    },
+    "public/index.html": {
+      "bytes": 23585,
+      "sha256": "7bfa72d048a51f1cfd4dec524ac07c93138959c62e7cb2de282d86ad3a2f2c30"
+    },
+    "public/app.js": {
+      "bytes": 185257,
+      "sha256": "76e6564e4cd262cd67522ff04f21536dff0b52b40e48bfcb5c9a72d9a60d6855"
+    },
+    "public/styles.css": {
+      "bytes": 170430,
+      "sha256": "803c03ad3615c46f5c799d85a31b120ebbb135dab92005eed592b84e4429e7d2"
+    },
+    "public/audio/bgm_dread.wav": {
+      "bytes": 705644,
+      "sha256": "998e84ca0787bd612a452b2b2a0c786637a4e151c57e357bc7f65efc3a33e0a3"
+    },
+    "public/audio/heartbeat.wav": {
+      "bytes": 63988,
+      "sha256": "2cbc96581e6bc3b23b05f7f2ba7a1d343176d39777ba06162041d4093da11814"
+    },
+    "public/audio/resolve.wav": {
+      "bytes": 66194,
+      "sha256": "33ecb4927172b00f62c43fd9e15d0a4d35e348f448181ca690ca5f9a9cbc1c39"
+    },
+    "public/art/director/echo.webp": {
+      "bytes": 78412,
+      "sha256": "a489b3abebf4bcf68d9efbe1cb3a853bc2ead9a6bd259478cc9df61f2b59a341"
+    },
+    "public/art/director/ember.webp": {
+      "bytes": 83182,
+      "sha256": "a2178cd5bd050ce65e98f0adfb61e29c1690602a838981eaa3b0967357525e08"
+    },
+    "public/art/director/neon.webp": {
+      "bytes": 87244,
+      "sha256": "acf8fd0b9802d7d1f31a320d889a3f0df7d563c74be3db2864674092f1b4984c"
+    },
+    "public/art/director/abyss.webp": {
+      "bytes": 70108,
+      "sha256": "61b10e95574bd2f249f0bf61ba5640d9e1cf83d9304075eae614c88856a2e705"
+    },
+    "public/art/director/wild.webp": {
+      "bytes": 101322,
+      "sha256": "7dcd3295acd32467b1b57e1db900af80bd2a244e2b7ab1c8f771c737f20bf5d8"
+    },
+    "public/art/director/clock.webp": {
+      "bytes": 90230,
+      "sha256": "60c07c3cffff8bbdc0cbe8d582b20690a124d9e84a26c77616d16524ac74d19a"
+    },
+    "tests-release/v12-director.test.mjs": {
+      "bytes": 4325,
+      "sha256": "c0c4c5a631b8b0772af794d8ba9b3a5eb4a069666423e8e59db16db2026a8192"
+    },
+    "tests-v12/four-player.integration.mjs": {
+      "bytes": 6698,
+      "sha256": "48942055cca99837ead8d90d2ee095b9640d048a2bdf983dd6b58128f9f805eb"
+    },
+    "tests-v12/mock-loader.mjs": {
+      "bytes": 1258,
+      "sha256": "bc55f947a1b38b165b2867c539a0b02b4a174b3472394f1f72326616d361dad7"
+    }
+  }
+}

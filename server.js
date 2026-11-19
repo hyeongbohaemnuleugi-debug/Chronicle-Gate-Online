@@ -5,6 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import { Server } from 'socket.io';
 import { CAMPAIGNS, STAT_NAMES, ITEMS_BY_CAMPAIGN, ECONOMY_FACILITY_TEMPLATES, ECONOMY_FACILITY_THEMES } from './campaign-data.js';
+import { rollTabletopCheck, checkOutcomeGrade, assistSessionKey } from './tabletop-rules.js';
+import { stressBand, stressCheckPenalty, resolveStress, stressStoryBeat, sceneDirection, growBond, bondKey } from './dramatic-director.js';
 import {
   appendSessionEvent,
   loadRoomSnapshot,
@@ -338,7 +340,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '9.0.0';
+const APP_VERSION = '12.0.0';
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -493,6 +495,7 @@ function blankPlayerRuntime(player) {
   player.hp = 0;
   player.maxHp = 0;
   player.inspiration = 0;
+  player.stress = 0;
   player.statuses = [];
   player.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
   player.coins = 1;
@@ -854,19 +857,27 @@ function freeActionIsInquiry(declaration, validity, beat){
   if(/들어가|이동|따라가|챙기|가져가|훔치|부수|열어|공격|제압|구조|끌고|도망|탈출|설치|조작|해킹|끄|켜|바꾸/.test(t)) return false;
   return true;
 }
+function hasHangulFinal(value){
+  const last=String(value||'').trim().slice(-1);
+  const n=last.charCodeAt(0)-0xAC00;
+  return n>=0 && n<=11171 ? n%28!==0 : false;
+}
+function objectParticle(value){return hasHangulFinal(value)?'을':'를';}
+function topicParticle(value){return hasHangulFinal(value)?'은':'는';}
+function subjectParticle(value){return hasHangulFinal(value)?'이':'가';}
 function sceneInquiryNarrative(campaign, beat, validity, declaration, count=1){
   const ctx=validity?.ctx||inferSceneAffordances(beat); const intent=validity?.intent||'other';
   const clue=ctx.clue||'눈앞의 흔적'; const person=ctx.person||'상대';
   if(intent==='question'){
     const quoted=beat?.dialogue?.[0]?.text || '';
-    if(count===1 && quoted) return `${person}은 잠시 주변을 살핀 뒤 대답했다. ${quoted}`;
+    if(count===1 && quoted) return `${person}${topicParticle(person)} 잠시 주변을 살핀 뒤 대답했다. ${quoted}`;
     const reveal=String(beat?.reveal||'').trim();
-    return reveal?`${person}의 대답에서 한 가지가 분명해진다. ${reveal}`:`${person}은 아는 것과 추측하는 것을 나눠 말한다. 적어도 ${clue}가 우연히 생긴 것은 아니라는 점은 확실하다.`;
+    return reveal?`${person}의 대답에서 한 가지가 분명해진다. ${reveal}`:`${person}${topicParticle(person)} 아는 것과 추측하는 것을 나눠 말한다. 적어도 ${clue}${subjectParticle(clue)} 우연히 생긴 것은 아니라는 점은 확실하다.`;
   }
   if(intent==='investigate' || intent==='observe'){
-    if(count===1) return `${clue}를 가까이 확인하자 멀리서 볼 때는 보이지 않던 차이가 드러난다. 흔적의 순서와 주변 상태가 서로 맞지 않는다.`;
+    if(count===1) return `${clue}${objectParticle(clue)} 가까이 확인하자 멀리서 볼 때는 보이지 않던 차이가 드러난다. 흔적의 순서와 주변 상태가 서로 맞지 않는다.`;
     const reveal=String(beat?.reveal||'').trim();
-    return reveal?`${clue}의 세부를 다시 맞춰 보자 중요한 사실 하나가 이어진다. ${reveal}`:`${clue}를 다른 흔적과 대조하자 적어도 지금 보이는 설명만으로는 사건이 성립하지 않는다는 점이 확실해진다.`;
+    return reveal?`${clue}의 세부를 다시 맞춰 보자 중요한 사실 하나가 이어진다. ${reveal}`:`${clue}${objectParticle(clue)} 다른 흔적과 대조하자 적어도 지금 보이는 설명만으로는 사건이 성립하지 않는다는 점이 확실해진다.`;
   }
   return `그 행동은 정보를 확인하는 데서 끝나지 않고 상황을 바꾸려는 시도다. 판정 결과에 따라 장면과 다음 선택이 달라진다.`;
 }
@@ -966,7 +977,7 @@ function prepareAgencyBeat(room, beat) {
   const importanceKey = sceneImportanceKey(beat);
   const rule = SCENE_IMPORTANCE[importanceKey];
   beat.importance = { key:importanceKey, label:rule.label, consequence:rule.consequence };
-  beat.freeActionAllowed = false; // v9.1 choice-only: story progression uses authored scene choices only
+  beat.freeActionAllowed = !(beat.phase==='결단' && beat.choices?.length>=2 && beat.choices.every(c=>c.automatic)); // preserve authored ending contracts
   const sceneCtx = inferSceneAffordances(beat);
   beat.choices = Array.isArray(beat.choices) ? beat.choices.filter(choice => choiceFitsScene(choice, sceneCtx)).map(choice => {
     const normalized = { ...choice };
@@ -1092,6 +1103,7 @@ function normalizeLoadedRoom(room) {
   for (const player of room.players || []) {
     player.skillState ||= { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
     player.statuses ||= [];
+    player.stress = stressBand(player.stress).stress;
     normalizeEconomyPlayer(player);
     player.accountId ||= null; player.diceSkinId ||= 'classic';
     if (player.job && player.abilities && Number(player.derivedVitalsVersion || 0) < AGENCY_VERSION) recomputeDerivedVitals(player, { preserveRatio:true });
@@ -1100,6 +1112,7 @@ function normalizeLoadedRoom(room) {
   room.voteEndsAt ||= null;
   room.voteAllVotedCountdown = Boolean(room.voteAllVotedCountdown);
   room.choiceVotes ||= {};
+  room.tableAssists ||= {}; room.sceneNotes ||= {}; room.partyBonds ||= {}; room.pressureComfort ||= {};
   room.agencyMemory ||= { actions:[], clues:0, position:0, rapport:0, scars:0 };
   room.storyHistory ||= [];
   room.lastStoryAction ||= null;
@@ -1130,7 +1143,8 @@ function normalizeLoadedRoom(room) {
         room.parallel.playerStates[player.id]={nodeId,location:node?.location||'concourse',previousLocation:null,progress:0,history:[],flags:{},items:parallelStartItemsFor(player),outcomeThreads:[],pathTotals:{truth:0,survival:0,bond:0},ended:false,ending:null,endingText:null,pendingTravel:null,support:0,lastPersonalResult:null,sharedRevision:0};
       }
       const ps=room.parallel.playerStates[player.id];
-      ps.flags ||= {}; ps.items = Array.isArray(ps.items) ? [...new Set(ps.items.filter(id=>PARALLEL_STORY_ITEM_DEFS[id]))] : parallelStartItemsFor(player);
+      ps.flags ||= {}; ps.sceneInquiries ||= {}; ps.sceneNotes ||= {};
+      ps.lastRegroupTick = Number.isFinite(Number(ps.lastRegroupTick)) ? Number(ps.lastRegroupTick) : -100; ps.items = Array.isArray(ps.items) ? [...new Set(ps.items.filter(id=>PARALLEL_STORY_ITEM_DEFS[id]))] : parallelStartItemsFor(player);
       ps.outcomeThreads = Array.isArray(ps.outcomeThreads) ? ps.outcomeThreads : []; ps.pathTotals ||= {truth:0,survival:0,bond:0};
       // v6.5.1 migration: remove accidental story-item objects from the generic equipment inventory.
       if(Array.isArray(player.inventory)) player.inventory = player.inventory.filter(item=>typeof item==='string');
@@ -1199,7 +1213,7 @@ async function createRoom(hostName, socketId, options = {}) {
   const player = {
     id: token(), socketId, name: hostName, host: true, connected: true,
     accountId: account?.id || null, diceSkinId: account?.equippedDice || 'classic',
-    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
+    ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, stress: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
   };
   const roomName = sanitize(options.roomName || `${hostName}의 연대기`, 28) || `${hostName}의 연대기`;
   const accessMode = options.accessMode === 'locked' ? 'locked' : 'public';
@@ -1796,7 +1810,7 @@ function initializeParallelStory(room,campaign){
     const node=cfg.nodes?.[nodeId] || cfg.nodes?.[cfg.startFallback];
     playerStates[player.id]={
       nodeId, location:node?.location || 'concourse', previousLocation:null, progress:0, history:[], flags:{}, items:parallelStartItemsFor(player), outcomeThreads:[], pathTotals:{truth:0,survival:0,bond:0},
-      ended:false, ending:null, endingText:null, pendingTravel:null, support:0, lastPersonalResult:null,
+      ended:false, ending:null, endingText:null, pendingTravel:null, support:0, lastPersonalResult:null, lastRegroupTick:-100,
     };
   }
   room.parallel={
@@ -1850,7 +1864,7 @@ function parallelWorldSummary(room){
   if(f.rescue_route) out.push('점검선과 대합실 사이 비상 구조 통로가 열렸다.');
   if(f.exit_open) out.push('1번 출구 셔터가 다른 사람도 통과할 수 있게 고정돼 있다.');
   if(f.evidence) out.push('0번 운행을 증명할 기록이 확보됐다.');
-  if(Number(room.parallel?.clockTick||0)>=24) out.push('첫차 운행 준비 방송이 역 곳곳에서 시작됐다.');
+  if(room.campaignId==='echo' && Number(room.parallel?.clockTick||0)>=24) out.push('첫차 운행 준비 방송이 역 곳곳에서 시작됐다.');
   return out.slice(-5);
 }
 const PARALLEL_OUTCOME_VOICE={
@@ -1984,7 +1998,7 @@ function parallelDynamicChoices(room,campaign,player,node){
       break;
     }
   }
-  if(Number(room.parallel?.clockTick||0)>=18 && node?.location!=='train'){
+  if(campaign?.id==='echo' && Number(room.parallel?.clockTick||0)>=18 && node?.location!=='train'){
     dynamic.push({id:'urgent:firsttrain',kind:'parallel-move',label:'첫차 안내를 따라간다',stat:'지혜',dc:9,next:'train',path:'survival'});
     if(node?.location!=='signal') dynamic.push({id:'urgent:signal',kind:'parallel-move',label:'신호실로 향한다',stat:'민첩',dc:9,next:'signal',path:'truth'});
   }
@@ -2271,6 +2285,67 @@ function parallelCurateChoices(room,campaign,player,node,dynamic,base){
   }
   return selected.slice(0,targetCount);
 }
+// Story Director: a campaign-specific complication every third action.
+// It changes the immediate check DC, not the authored plot destination. The fiction
+// comes from each world's own stakes rather than a generic monster/event card.
+const TABLETOP_WORLD_COMPLICATIONS = {
+  ember:[
+    '장송 종이 세 번 울리자 궁정 경비병이 모두 검을 내려놓는다. 장례대 뒤에서 살아 있는 사람의 신음이 들린다.',
+    '왕비의 인장이 찍힌 명령서가 도착했다. 서로 다른 두 봉인장이 똑같이 진품이며, 누군가 하나를 숨기려 한다.',
+    '성문 밖 피난민들이 잘못된 왕실 선포문을 외친다. 지금 말한 사실이 내전의 첫 증언이 될 수도 있다.'
+  ],
+  neon:[
+    '네온 전광판 전체가 3초 동안 같은 낯선 얼굴을 띄운다. 그 얼굴은 몇 분 전 파티의 대화 내용을 알고 있다.',
+    '도시 기록망이 한 사람의 이름을 모든 공공 단말에서 지운다. 바로 옆 사람만 그를 기억한다.',
+    '암시장 거래 알림이 도착한다. 값을 치르지 않은 기억이 이미 누군가에게 팔려 있다.'
+  ],
+  abyss:[
+    '심해 기지의 산소 표시가 동시에 세 번 깜빡인다. 한 구획에서만 숨소리가 두 사람 몫으로 잡힌다.',
+    '관측창 바깥의 거대한 그림자가 멈추더니 점등 신호에 같은 간격으로 답한다. 적인지 구조 대상인지 아직 모른다.',
+    '압력문이 외부 수압과 반대로 휘어진다. 이곳에는 지도에 없는 또 하나의 압력 구역이 있다.'
+  ],
+  clock:[
+    '시계탑이 열세 번 울렸지만 주민들은 열두 번만 기억한다. 당신의 손바닥에는 아직 일어나지 않은 상처가 생겼다.',
+    '광장의 어린아이가 방금 당신이 하지 않은 말을 먼저 따라 한다. 다음 루프의 선택 하나가 현재에 새어 나왔다.',
+    '누군가의 이름이 현판에서 사라지고 그를 알던 사람들의 눈빛도 바뀐다. 종소리가 한 번 더 가까워졌다.'
+  ],
+  wild:[
+    '하늘의 별 하나가 숲의 호수에 떨어진다. 짐승들은 도망가지 않고 물가에서 무언가의 이름을 기다린다.',
+    '오래된 나무의 뿌리가 갈림길을 한 번 막고 다른 길을 연다. 숲은 파티가 누구를 먼저 보호하는지 시험한다.',
+    '숲의 두 부족이 서로 다른 노래로 같은 신수의 귀환을 부른다. 둘 다 참일 수 없는 약속이 남았다.'
+  ],
+  guardian:[
+    '캔터베리 숲의 낡은 경고 종이 혼자 울린다. 숲 반대편에서도 똑같은 울림이 돌아온다.',
+    '길을 잃은 여행자가 방금 파티가 구조한 사람의 이름을 부른다. 다른 세계로 이어지는 흔적이 가까워졌다.',
+    '오래된 차원석이 주머니 속에서 떨린다. 어디를 구할지보다 누구를 두고 떠날지가 문제가 된다.'
+  ],
+  echo:[
+    '종착역의 안내 방송이 한 박자 늦게 당신의 발소리를 따라 한다. 다음 역명은 실제 노선도에 없다.',
+    'CCTV 모니터가 3분 17초 뒤의 장면을 먼저 비춘다. 화면 속 동료는 아직 열지 않은 문 앞에 서 있다.',
+    '셔터가 다시 내려오기 전에 한 사람만 지나갈 수 있는 틈이 열린다. 누가 남을지 선택해야 한다.'
+  ],
+  aurora:[
+    '붉은 극광이 급격히 강해지자 무전에서 과거 원정대의 구조 호출이 다시 들린다. 현재의 체온 신호와 방향이 다르다.',
+    '빙하 벽이 조금 전 대원의 목소리를 43년 전 호출부호로 되돌린다. 더 이상 음성만으로 위치를 알 수 없다.',
+    '관측돔의 나침반들이 모두 지하를 가리킨다. 눈 위 새 발자국은 아직 찍히기 전의 동선을 보여 준다.'
+  ],
+  masque:[
+    '월식 극장의 종이 울리자 거리 사람들이 동시에 같은 대사를 시작한다. 가면 없는 아이만 입을 다문다.',
+    '가면 야시장에서 사라진 대본의 한 장이 모습을 드러낸다. 거기에는 아직 하지 않은 당신의 대사가 적혀 있다.',
+    '무대 장치가 도시의 골목을 다시 접는다. 시민 한 명이 처음으로 자신의 이름을 떠올리지만 출구는 닫힌다.'
+  ]
+};
+function parallelWorldComplication(room,campaign){
+  const tick=Number(room.parallel?.clockTick||0);
+  const events=TABLETOP_WORLD_COMPLICATIONS[campaign?.id]||[];
+  if(tick<3 || tick%3!==0 || !events.length)return null;
+  const nth=Math.floor(tick/3)-1;
+  return {id:`${campaign.id}-pressure-${tick}`,title:'세계가 반응한다',text:events[nth%events.length],dcBonus:1,tick};
+}
+function parallelCheckPressure(room,campaign){
+  return Math.min(1,Math.floor(Number(room.threat||0)/5)) + (parallelWorldComplication(room,campaign)?.dcBonus||0);
+}
+
 function parallelRenderedScene(room,campaign,player){
   const ps=parallelPlayerState(room,player);
   if(!ps) return null;
@@ -2289,18 +2364,22 @@ function parallelRenderedScene(room,campaign,player){
       .map((choice,index)=>({id:`fallback:${index}`,...choice,kind:choice.kind||'parallel-base',path:choice.path||statPath(choice.stat)}));
     choices.push(...fallback.filter(choice=>parallelChoiceFitsCurrentScene(room,campaign,player,choice,node)).slice(0,5));
   }
-  const explainedChoices=choices.slice(0,5).map(choice=>{ const contextual={...choice,label:parallelContextualLabel(choice,node)}; return {...contextual,reason:parallelChoiceReason(contextual,node)}; });
+  const pressure=parallelCheckPressure(room,campaign);
+  const director=sceneDirection({campaignId:campaign.id,sceneId:ps.nodeId,phase:node.phase,stress:player.stress,threat:room.threat,actorName:player.name,jobName:player.job?.name,nearby:parallelNearby(room,player).length,objective:node.objective});
+  const explainedChoices=choices.slice(0,5).map(choice=>{ const contextual={...choice,label:parallelContextualLabel(choice,node)}; return {...contextual,dc:choice.automatic?choice.dc:Math.max(7,Number(choice.dc||8)+pressure),reason:parallelChoiceReason(contextual,node)}; });
   return {
-    id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
+    id:ps.nodeId, title:node.title, phase:node.phase, act:node.act, artChapter:node.artChapter||null, actName:campaign.acts?.[Math.max(0,Number(node.act||1)-1)] || node.phase,
     location:ps.location, locationLabel:parallelLocationLabel(campaign,ps.location), objective:node.objective,
     sceneContext:parallelSceneContext(node,campaign), affordanceSummary:parallelAffordanceSummary(node), affordances:parallelNodeAffordances(node), text:(node.text||[]).join(' '),
-    paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices, freeActionAllowed:false,
+    paragraphs:parallelSceneNarrative(room,campaign,player,node), brief:parallelSceneBrief(room,campaign,player,node), actor:{id:player.id,name:player.name,job:player.job?.name||''}, choices:explainedChoices,
+    freeActionAllowed:!(node.phase==='결단' && explainedChoices.length>=2 && explainedChoices.every(c=>c.automatic)), worldEvent:parallelWorldComplication(room,campaign), pressureDc:pressure, director,
     dialogue:node.dialogue || [], playerVoices:node.playerVoices || {}, playerSpeech:node.playerSpeech || '', sceneQuestion:node.sceneQuestion || '',
     immediatePressure:node.immediatePressure || '', releaseTone:node.releaseTone || '',
     carryover:ps.lastPersonalResult ? {choiceLabel:ps.lastPersonalResult.choiceLabel||'',text:ps.lastPersonalResult.text||'',grade:ps.lastPersonalResult.grade||'',success:Boolean(ps.lastPersonalResult.success)} : null,
     nearby:parallelNearby(room,player).map(p=>({id:p.id,name:p.name,job:p.job?.name,linked:parallelLinked(room,player.id,p.id)})),
     linked:parallelLinkedPlayers(room,player).map(p=>({id:p.id,name:p.name,location:room.parallel.playerStates?.[p.id]?.location,locationLabel:parallelLocationLabel(campaign,room.parallel.playerStates?.[p.id]?.location)})),
     worldSummary:parallelWorldSummary(room), clockTick:Number(room.parallel.clockTick||0), ended:Boolean(ps.ended), ending:ps.ending,
+    notes:(ps.sceneNotes?.[ps.nodeId]||[]).slice(-3), inquiryRemaining:Math.max(0,2-Number(ps.sceneInquiries?.[ps.nodeId]||0)),
     storyItems:parallelStoryItems(room,player).map(id=>{ const item=parallelStoryItem(id); return {id,name:item?.name||id,tags:[...(item?.tags||[])],description:parallelStoryItemDescription(item),usableWhen:parallelStoryItemUsableWhen(item),value:Number(item?.value||0)}; }),
   };
 }
@@ -2439,7 +2518,9 @@ const PARALLEL_CAMPAIGN_ENDINGS={
   abyss:{truth:['심연과의 첫 문장','탈라스의 신호를 위협이 아닌 언어로 읽어 첫 접촉의 기록을 수면 위로 가져갔다.'],survival:['산소가 남은 상승','모든 연구를 포기하더라도 사람과 잠수정을 우선해 살아 돌아오는 길을 만들었다.'],bond:['구조 대상은 둘이었다','인간 생존자와 심해 생명 어느 한쪽도 버리지 않는 구조 결정을 남겼다.'],fracture:['불완전한 부상','기지는 잃었지만 생존자와 경고 기록을 지켜 다음 잠수를 가능하게 했다.']},
   clock:{truth:['기억하는 내일','반복을 완벽히 지우지 않고 루프의 규칙을 기억한 채 내일로 넘어갔다.'],survival:['한 번뿐인 하루','미래의 완벽함보다 다시 반복되지 않는 불완전한 하루를 선택했다.'],bond:['이름을 나눈 도시','사라지는 사람들의 기억을 여러 사람에게 나누어 누구도 완전히 지워지지 않게 했다.'],fracture:['금 간 초침','루프는 끝났지만 일부 시간이 돌아오지 않았다. 도시는 그 빈틈까지 역사로 받아들였다.']},
   wild:{truth:['별의 순환을 읽은 자','별이 숲을 먹는 것이 아니라 숲과 하늘 사이를 순환하고 있음을 밝혀냈다.'],survival:['새 길을 낸 숲','모든 갈등을 풀기보다 부족과 짐승이 함께 살아남을 새로운 이동 경로를 남겼다.'],bond:['숲과 맺은 약속','부족·정령·신수의 요구를 연결해 어느 한쪽의 승리보다 오래 갈 약속을 만들었다.'],fracture:['반쪽짜리 별자리','숲은 완전히 회복되지 않았지만 별 하나와 부족 하나를 잃는 최악의 미래는 피했다.']},
-  guardian:{truth:['세계들의 지도','각 지역에서 얻은 증거와 관계를 이어 침략의 경로와 세계 사이의 연결을 밝혀냈다.'],survival:['돌아가는 길을 지킨 수호자','모든 전장을 이기기보다 사람들이 왕국으로 돌아올 길과 지역의 자립을 남겼다.'],bond:['경계 너머의 동료들','서로 다른 세계에서 만든 인연이 마지막에 하나의 연합이 되어 귀환 이후의 질서를 바꿨다.'],fracture:['흩어진 세계의 약속','모든 세계를 구하지는 못했지만 끊어질 뻔한 몇 개의 연결과 사람들을 지켜냈다.']}
+  guardian:{truth:['세계들의 지도','각 지역에서 얻은 증거와 관계를 이어 침략의 경로와 세계 사이의 연결을 밝혀냈다.'],survival:['돌아가는 길을 지킨 수호자','모든 전장을 이기기보다 사람들이 왕국으로 돌아올 길과 지역의 자립을 남겼다.'],bond:['경계 너머의 동료들','서로 다른 세계에서 만든 인연이 마지막에 하나의 연합이 되어 귀환 이후의 질서를 바꿨다.'],fracture:['흩어진 세계의 약속','모든 세계를 구하지는 못했지만 끊어질 뻔한 몇 개의 연결과 사람들을 지켜냈다.']},
+  aurora:{truth:['붉은 하늘의 기록자','43년 전 원정대의 마지막 신호를 복원하고 기억광물의 원리를 세상에 공개했다.'],survival:['귀환 열차의 마지막 자리','연구 장비 대신 살아 있는 대원들을 구조 차량에 태워 눈보라를 빠져나왔다.'],bond:['두 시대의 증언','과거 실종자와 현재 구조팀의 목소리를 교차 검증해 서로의 존재를 지켰다.'],fracture:['녹아내린 데이터','증거의 일부는 잃었지만 관측소 코어를 무력화하고 살아 있는 이들의 귀환을 도왔다.']},
+  masque:{truth:['마지막 장의 저자','가면 아래 진짜 이름을 찾아 공개하고 천 년의 공연이 끝날 방법을 써냈다.'],survival:['극장 밖의 첫걸음','지켜야 할 대사보다 살아 있는 사람들의 출구를 먼저 열었다.'],bond:['가면을 벗은 합창','악역에게 한 명의 죄를 몰지 않고 주민 각자가 자유롭게 배역을 선택하게 했다.'],fracture:['반쯤 열린 막','나실라트의 모든 이름을 돌려주지는 못했지만 누구도 강제로 배역을 맡지 않는 새 장을 열었다.']}
 };
 function parallelCampaignPersonalEnding(campaign,player,ps){
   const totals=ps?.pathTotals||{}; const history=ps?.history||[];
@@ -2454,12 +2535,54 @@ function parallelEvaluateEnding(room,campaign){
   if(active.length) return false;
   const lines=room.players.map(p=>parallelPlayerState(room,p)?.endingText || `${p.name}의 행방은 기록에 남지 않았다.`);
   const survivors=room.players.filter(p=>p.hp>0).length;
+  const bondEpilogue=Object.entries(room.partyBonds||{}).filter(([,level])=>Number(level)>=2).map(([key,level])=>{const [a,b]=key.split('~');const one=room.players.find(p=>p.id===a),two=room.players.find(p=>p.id===b);return one&&two?`${one.name}와 ${two.name}의 유대 ${level}/3은 마지막까지 남았다.`:'';}).filter(Boolean).slice(0,5);
   room.storyComplete=true; room.phase='ending';
   const endingTitle=campaign?.id==='echo' ? '종착역 0번선 · 각자의 아침' : `${campaign?.title || '연대기'} · 서로 다른 결말`;
   const endingLead=campaign?.id==='echo' ? '같은 역 안에 있었지만 모두가 같은 길을 걷지는 않았다.' : '같은 세계에서 시작했지만 각자의 선택과 동선은 달랐고, 만남과 이별 역시 플레이어들의 결정으로 남았다.';
-  room.ending={victory:survivors>0,title:endingTitle,text:`${endingLead}\n\n${lines.join('\n')}\n\n${parallelWorldSummary(room).join(' ')}`};
+  room.ending={victory:survivors>0,title:endingTitle,text:`${endingLead}\n\n${lines.join('\n')}\n\n${parallelWorldSummary(room).join(' ')}${bondEpilogue.length?`\n\n${bondEpilogue.join(' ')}`:''}`};
   return true;
 }
+// A teammate at the same physical location can prepare the active player's next check.
+// Once-per-turn per teammate; assistance is visible to everyone and cannot be stacked infinitely.
+function tableSceneId(room,campaign,actor){
+  if(parallelEnabled(room,campaign)) return parallelPlayerState(room,actor)?.nodeId || 'unknown';
+  return room.storyDetour?.id || room.storyNodeId || 'unknown';
+}
+function currentTableAssistance(room,campaign,actor){
+  if(!actor) return { key:'', bonus:0, helpers:[] };
+  const key=assistSessionKey(actor.id,tableSceneId(room,campaign,actor),room.turnSerial);
+  const helperIds=Array.isArray(room.tableAssists?.[key]) ? room.tableAssists[key] : [];
+  return {key,bonus:Math.min(3,helperIds.length),helpers:helperIds};
+}
+function freeActionAftermath(room,campaign,player,scene,choice,grade,ps=null){
+  if(!choice?.freeAction) return '';
+  const success=['critical','success','mixed'].includes(grade);
+  const ctx=inferSceneAffordances(scene);
+  const intent=freeActionIntent(choice.label);
+  const notes={
+    help: success ? `${ctx.rescue||ctx.person||'사람'}이 당신의 선택을 기억한다. 이후 협력할 명분이 생겼다.` : '구조는 완벽하지 않았지만 도움을 필요로 하는 사람을 확인했다.',
+    steal: success ? `몰래 챙긴 흔적이 남는다. ${ctx.item||'획득한 단서'}은 다음 조사에 사용할 수 있다.` : '손을 뻗는 순간 누군가의 시선이 따라붙었다.',
+    break: success ? `${ctx.obstacle||'막힌 통로'}가 바뀌어 다른 이동선이 생겼다.` : '장애물은 남았고 소란만 커졌다.',
+    investigate: success ? `${ctx.clue||'단서'}의 연결이 풀리며 다음 판단의 근거가 생겼다.` : '단서는 불완전하지만 잘못된 가설 하나를 지웠다.',
+    persuade: success ? `${ctx.person||'상대'}의 태도가 달라졌다. 협상의 여지가 남는다.` : '상대는 아직 마음을 열지 않았지만 무엇을 두려워하는지 알게 됐다.',
+    sneak: success ? '보이지 않던 진입 경로가 생겼다. 다음 행동에서 위치를 이용할 수 있다.' : '발각은 피했지만 경계가 높아졌다.',
+    'use-item': success ? '도구가 상황을 바꿨다. 무엇을 사용했는지 동료들도 기억한다.' : '도구만으로 해결되지 않는 조건이 드러났다.'
+  };
+  const narration=notes[intent] || (success ? '예상과 다른 방법이었지만, 그 시도가 세계에 흔적을 남겼다.' : '예상하지 못한 결과가 남았다. 다른 접근로는 아직 열려 있다.');
+  if(ps){
+    ps.flags ||= {};
+    if(success && ['help','persuade'].includes(intent)) ps.flags.npcTrust=true;
+    if(success && ['investigate','observe','use-item','steal'].includes(intent)) ps.support=Math.min(2,Number(ps.support||0)+1);
+    ps.sceneNotes ||= {};
+    const list=ps.sceneNotes[scene.id] ||= [];
+    list.push(narration); if(list.length>3) list.shift();
+  } else {
+    room.sceneNotes ||= {}; const list=room.sceneNotes[scene.id] ||= [];
+    list.push(narration); if(list.length>3) list.shift();
+  }
+  return narration;
+}
+
 function parallelAdvance(room,campaign,player,payload,ack){
   const ps=parallelPlayerState(room,player); if(!ps||ps.ended) return ack?.({ok:false,error:'이 플레이어의 이야기는 이미 끝났습니다.'});
   // Repair stale linked-party state from the newest scene revision, not from whichever
@@ -2492,7 +2615,6 @@ function parallelAdvance(room,campaign,player,payload,ack){
   const declaration=sanitize(payload?.declaration,220);
   let choice=Number.isInteger(choiceIndex)?scene.choices?.[choiceIndex]:null;
   let freeActionInterpretation=null;
-  if(!choice && declaration) return ack?.({ok:false,error:'이 버전은 선택지 전용입니다. 현재 장면에 표시된 행동 중 하나를 골라 주세요.'});
   if(!choice && declaration && scene.freeActionAllowed){
     const validity=validateFreeAction(declaration,scene);
     if(!validity.ok){
@@ -2504,8 +2626,10 @@ function parallelAdvance(room,campaign,player,payload,ack){
     const route=freeActionInterpretation.route;
     const template=scene.choices?.find(c=>c.actionType===validity.intent) || scene.choices?.find(c=>c.branchValue===route) || scene.choices?.[0] || {};
     choice={
-      ...template, id:`${scene.id}-FREE-${Date.now()}`, label:declaration, freeAction:true,
-      stat:freeActionInterpretation.stat, dc:freeActionInterpretation.dc, branchValue:route,
+      ...template, id:`${scene.id}-FREE-${Date.now()}`, label:declaration, freeAction:true, kind:'parallel-base',
+      // A declaration must never inherit unrelated scripted loot, endings, magic keys, or flags.
+      grantItem:null, combat:null, ending:null, flag:null, worldFlag:null, resolveThreadId:null, buff:null,
+      stat:freeActionInterpretation.stat, dc:Math.max(7,freeActionInterpretation.dc+parallelCheckPressure(room,campaign)), branchValue:route,
       path:choicePathFromRoute(route), actionType:validity.intent, automatic:false,
       fatalRisk:['fight','break','sneak','threaten'].includes(validity.intent),
       opportunity:'플레이어가 직접 만든 해결법', risk:sceneImportanceKey(scene)==='pivotal'?'높음':'보통',
@@ -2517,7 +2641,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
       if(fightTemplate?.combat) choice.combat=fightTemplate.combat;
     }
   }
-  if(!choice) return ack?.({ok:false,error:'현재 장면에 표시된 선택지 중 하나를 골라 주세요.'});
+  if(!choice) return ack?.({ok:false,error:scene.freeActionAllowed?'현재 장면에 보이는 대상과 연결된 행동을 선언해 주세요.':'이 장면은 결말 선택입니다. 제시된 결단 중 하나를 선택해 주세요.'});
 
   if(choice.freeAction && freeActionInterpretation){
     const validity={ok:true,intent:freeActionInterpretation.intent||freeActionIntent(choice.label),ctx:inferSceneAffordances(scene)};
@@ -2527,6 +2651,7 @@ function parallelAdvance(room,campaign,player,payload,ack){
       if(inquiryCount<2){
         ps.sceneInquiries[scene.id]=inquiryCount+1;
         const narrative=sceneInquiryNarrative(campaign,scene,validity,choice.label,inquiryCount+1);
+        ps.sceneNotes ||= {}; (ps.sceneNotes[scene.id] ||= []).push(narrative);
         ps.lastPersonalResult={choiceLabel:choice.label,text:narrative,consequence:'추가 정보 확인 · 턴 유지',success:true,grade:'inquiry'};
         room.lastResolution={source:'parallel-story',ok:true,inquiry:true,playerId:player.id,playerName:player.name,choiceLabel:choice.label,text:narrative,consequence:'추가 정보 확인 · 현재 장면 유지'};
         pushChat(room,{type:'action',author:player.name,text:choice.label});
@@ -2537,9 +2662,17 @@ function parallelAdvance(room,campaign,player,payload,ack){
   }
   const automatic=Boolean(choice.automatic);
   const ability=player.abilities?.[choice.stat]; if(!automatic && !ability) return ack?.({ok:false,error:'능력치가 없습니다.'});
-  const roll=automatic?null:rand(20); const base=automatic?0:mod(effectiveAbilityTotal(room,player,choice.stat)); const gear=automatic?0:equipmentStatBonus(room,player,choice.stat); const support=Math.min(2,Number(ps.support||0)); const encounter=room.parallel.encounters?.[ps.location]; const encounterAssist=choice.kind==='parallel-combat'?Math.min(2,Number(encounter?.assist||0)):0; const status=automatic?0:statusPenaltyForCheck(room,player,choice.stat); const total=automatic?null:roll+base+gear+support+encounterAssist+status; const dc=Math.max(7,Number(choice.dc||8)); const success=automatic?true:(roll===20 || (roll!==1 && total>=dc)); const grade=automatic?'success':storyOutcomeGrade(roll,total,dc);
+  const heroic=automatic?{ok:true,result:null,rolls:[],mode:'normal',checkBonus:0,spentInspiration:0,extraDangerOnFailure:0}:rollTabletopCheck(()=>rand(20),payload?.heroMode,player.inspiration,player.stress);
+  if(!heroic.ok)return ack?.({ok:false,error:heroic.error});
+  player.inspiration=Math.max(0,Number(player.inspiration||0)-heroic.spentInspiration);
+  const roll=heroic.result; const base=automatic?0:mod(effectiveAbilityTotal(room,player,choice.stat)); const gear=automatic?0:equipmentStatBonus(room,player,choice.stat);
+  const support=Math.min(2,Number(ps.support||0)); const assistance=currentTableAssistance(room,campaign,player).bonus;
+  const encounter=room.parallel.encounters?.[ps.location]; const encounterAssist=choice.kind==='parallel-combat'?Math.min(2,Number(encounter?.assist||0)):0;
+  const status=automatic?0:statusPenaltyForCheck(room,player,choice.stat); const psychePenalty=automatic?0:stressCheckPenalty(player.stress,choice.stat); const total=automatic?null:roll+base+gear+support+assistance+encounterAssist+status+psychePenalty+heroic.checkBonus;
+  const dc=Math.max(7,Number(choice.dc||8)); const success=automatic?true:(roll===20 || (roll!==1 && total>=dc)); const grade=automatic?'success':storyOutcomeGrade(roll,total,dc);
+  if(roll===20)player.inspiration=Math.min(3,Number(player.inspiration||0)+1);
   ps.support=0;
-  if(!automatic) emitRoll(room,player,{sides:20,result:roll,purpose:`${scene.title} · ${choice.stat} 판정 · DC ${dc}`,kind:'parallel-story',stat:choice.stat,total,dc,success,modifiers:[{label:`${choice.stat} 보정`,value:base},{label:'장비',value:gear},{label:'협력',value:support+encounterAssist},{label:'상태',value:status}].filter(m=>m.value)});
+  if(!automatic) emitRoll(room,player,{sides:20,result:roll,rolls:heroic.rolls,heroMode:heroic.mode,purpose:`${scene.title} · ${choice.stat} 판정 · DC ${dc}`,kind:'parallel-story',stat:choice.stat,total,dc,success:success||grade==='mixed',outcomeGrade:grade,modifiers:[{label:`${choice.stat} 보정`,value:base},{label:'장비',value:gear},{label:'동료 지원',value:assistance},{label:'협력',value:support+encounterAssist},{label:'위험 감수',value:heroic.checkBonus},{label:'상태',value:status},{label:'긴장',value:psychePenalty}].filter(m=>m.value)});
   let narrative=''; let consequence='';
   if(choice.kind==='parallel-social'){
     narrative=parallelApplySocial(room,campaign,player,choice); consequence='관계와 동선이 갱신됨';
@@ -2559,11 +2692,13 @@ function parallelAdvance(room,campaign,player,payload,ack){
     if(storyPass && choice.flag) ps.flags[choice.flag]=true;
     if(storyPass && choice.worldFlag) room.parallel.worldFlags[choice.worldFlag]=true;
     if(storyPass && choice.buff) ps.support=Math.min(2,Number(ps.support||0)+1);
-    if(storyPass && campaign.id!=='echo' && ['take-item','steal'].includes(String(choice.actionType||''))){
+    if(storyPass && campaign.id!=='echo' && (['take-item','steal'].includes(String(choice.actionType||'')) || (choice.freeAction && freeActionIntent(choice.label)==='steal'))){
       const sceneItem=parallelCampaignSceneItem(campaign,parallelNode(room,campaign,player));
       if(sceneItem) choice.grantItem ||= sceneItem.id;
     }
     const rewardNotes=storyPass?parallelApplyChoiceRewards(room,campaign,player,choice):[];
+    const personalAftermath=freeActionAftermath(room,campaign,player,scene,choice,grade,ps);
+    if(personalAftermath)narrative=`${narrative} ${personalAftermath}`;
     if(choice.resolveThreadId){ const t=(ps.outcomeThreads||[]).find(x=>x.id===choice.resolveThreadId); if(t) t.resolved=true; }
     const createdThread=parallelOutcomeThread(room,campaign,player,parallelNode(room,campaign,player),choice,grade,success);
     if(Number(choice.threatDelta||0)) room.threat=Math.max(0,Math.min(MAX_THREAT,room.threat+Number(choice.threatDelta||0)));
@@ -2584,14 +2719,18 @@ function parallelAdvance(room,campaign,player,payload,ack){
     const priorConsequence=consequence;
     if(success){ room.threat=Math.max(0,room.threat-(roll===20?1:0)); consequence=[roll===20?'대성공 · 위협 -1':'성공',priorConsequence].filter(Boolean).join(' · '); }
     else { room.threat=Math.min(MAX_THREAT,room.threat+1); consequence=[grade==='mixed'?'부분 성공 · 위협 +1':'실패 · 위협 +1',priorConsequence].filter(Boolean).join(' · '); if(roll===1){ player.hp=Math.max(0,player.hp-1); consequence+=' · HP -1'; } }
+    if(heroic.extraDangerOnFailure && !storyPass){room.threat=Math.min(MAX_THREAT,room.threat+heroic.extraDangerOnFailure); consequence+=' · 위험 감수의 대가: 위협 +1';}
     if(rewardNotes.length) consequence=[consequence,...rewardNotes].filter(Boolean).join(' · ');
   }
+  const bondedAid=currentTableAssistance(room,campaign,player).helpers.some(id=>Number(room.partyBonds?.[bondKey(id,player.id)]||0)>=2);
+  const psyche=automatic?null:resolveStress(player.stress,grade,heroic.mode,bondedAid);
+  if(psyche){ player.stress=psyche.after; const line=stressStoryBeat(campaign.id,psyche); if(line) narrative=`${narrative} ${line}`; if(psyche.delta || bondedAid && !success) consequence=[consequence,`긴장 ${psyche.delta>0?'+':''}${psyche.delta} (${psyche.after}/6)${bondedAid?' · 동료 유대 완화':''}`].filter(Boolean).join(' · '); }
   ps.progress=Number(ps.progress||0)+1; ps.history.push({nodeId:scene.id,choice:choice.label,success,grade,path:choice.path||statPath(choice.stat||'지혜'),roll,total,dc,ts:Date.now()}); if(ps.history.length>20)ps.history.splice(0,ps.history.length-20);
-  ps.lastPersonalResult={choiceLabel:choice.label,text:narrative,consequence,success:success||grade==='mixed',grade};
+  ps.lastPersonalResult={choiceLabel:choice.label,text:narrative,consequence,success:success||grade==='mixed',grade,stress:player.stress};
   room.parallel.clockTick=Number(room.parallel.clockTick||0)+1;
   room.parallel.incidentLog.push({playerId:player.id,playerName:player.name,location:ps.location,nodeId:ps.nodeId,choice:choice.label,text:narrative,ts:Date.now()}); if(room.parallel.incidentLog.length>40)room.parallel.incidentLog.splice(0,room.parallel.incidentLog.length-40);
   room.story=Object.values(room.parallel.playerStates).reduce((sum,s)=>sum+Number(s.progress||0),0);
-  room.lastResolution={source:'parallel-story',ok:success||grade==='mixed',outcomeGrade:grade,result:roll,total,dc,playerId:player.id,playerName:player.name,choiceLabel:choice.label,text:narrative,consequence};
+  room.lastResolution={source:'parallel-story',ok:success||grade==='mixed',outcomeGrade:grade,result:roll,total,dc,stress:player.stress,stressDelta:psyche?.delta||0,playerId:player.id,playerName:player.name,choiceLabel:choice.label,text:narrative,consequence};
   room.phase='story'; room.pendingContinue=null;
   pushChat(room,{type:'action',author:player.name,text:`${parallelLocationLabel(campaign,scene.location)} · ${choice.label}`});
   pushChat(room,{type:success?'success':'failure',author:'GM',text:automatic?'플레이어의 관계·이동 선택이 그대로 반영되었습니다.':`${choice.stat} 판정 ${total} / DC ${dc} → ${grade==='critical'?'대성공':grade==='success'?'성공':grade==='mixed'?'부분 성공':grade==='disaster'?'큰 실패':'실패'}`});
@@ -2938,14 +3077,7 @@ function branchCliffhanger(campaign, beat, prev) {
   return hooks[world] || hooks.ember;
 }
 
-function storyOutcomeGrade(roll,total,dc){
-  const margin=Number(total||0)-Number(dc||0);
-  if(roll===20 || margin>=5) return 'critical';
-  if(roll!==1 && margin>=0) return 'success';
-  if(roll!==1 && margin>=-2) return 'mixed';
-  if(roll===1 || margin<=-5) return 'disaster';
-  return 'setback';
-}
+function storyOutcomeGrade(roll,total,dc){ return checkOutcomeGrade(roll,total,dc); }
 const MIXED_COST_TEXT={
   ember:'원하는 것은 얻었지만 성채의 경계가 한 단계 더 조여 왔다.',
   neon:'목표에는 닿았지만 감시망에 행동 패턴 일부가 남았다.',
@@ -2953,7 +3085,7 @@ const MIXED_COST_TEXT={
   clock:'문제는 풀렸지만 루프가 이 행동을 기억하기 시작했다.',
   wild:'길은 열렸지만 숲도 파티의 선택을 기억했다.',
   guardian:'길은 열렸지만 뒤따르는 적에게 흔적 하나를 남겼다.',
-  echo:'항로는 이어졌지만 배와 선원에게 부담이 남았다.'
+  echo:'탈출로는 열렸지만 역의 비정상 신호가 한동안 더 강해졌다.'
 };
 const STORY_RESULT_COLOR={
   ember:['검은 재 위에 새 발자국이 생겼다. 성채는 방금 선택을 아무 일도 아니었던 것처럼 넘기지 않았다.','멀리서 장례 종이 한 번 울렸다. 살아 있는 사람과 죽은 사람 모두가 이 결과를 다른 의미로 받아들일 것이다.'],
@@ -3716,7 +3848,7 @@ function publicRoom(room) {
     players: room.players.map(p => ({
       id: p.id, name: p.name, host: p.host, connected: p.connected, diceSkinId: p.diceSkinId || 'classic',
       ready: p.ready, job: p.job, abilities: p.abilities,
-      hp: p.hp, maxHp: p.maxHp, inspiration: p.inspiration,
+      hp: p.hp, maxHp: p.maxHp, inspiration: p.inspiration, stress:stressBand(p.stress).stress, stressState:stressBand(p.stress),
       coins: Number(p.coins || 0), inventory: [...(p.inventory || [])], equipment: { ...(p.equipment || {}) },
       equipmentBonuses: Object.fromEntries(STAT_NAMES.map(stat => [stat, equipmentStatBonus(room, p, stat)])),
       derived: derivedAbilityImpact(p),
@@ -3755,6 +3887,8 @@ function publicRoom(room) {
     lastStoryAction: room.lastStoryAction || null,
     storyHistory: (room.storyHistory || []).slice(-8),
     storyMemory: room.storyMemory || {},
+    sceneNotes: (room.sceneNotes?.[room.storyNodeId] || []).slice(-3),
+    tableAssist:currentTableAssistance(room,campaign,turnPlayer), partyBonds:{...(room.partyBonds||{})},
     jobStory: room.jobStory || {},
     abandonVote: room.abandonVote || null,
     targetStory: TARGET_STORY,
@@ -4836,7 +4970,7 @@ io.on('connection', async socket => {
     const name = sanitize(payload.name || `플레이어 ${room.players.length + 1}`, 18) || `플레이어 ${room.players.length + 1}`;
     const player = {
       id: token(), socketId: socket.id, name, host: room.players.length === 0, connected: true, accountId:socket.data.account.id, diceSkinId:socket.data.account.equippedDice||'classic',
-      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
+      ready: false, job: null, abilities: null, hp: 0, maxHp: 0, inspiration: 0, stress: 0, statuses: [], skillState: { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 }, coins: 1, inventory: [], equipment: { weapon:null, armor:null, charm:null, tool:null },
     };
     room.players.push(player);
     socket.join(room.code);
@@ -4968,6 +5102,7 @@ io.on('connection', async socket => {
     room.storyHistory = [];
     room.storyFlags = {};
     room.storyMemory = {};
+    room.tableAssists = {}; room.sceneNotes = {}; room.partyBonds = {}; room.pressureComfort = {};
     room.pathTotals = { truth: 0, survival: 0, bond: 0 };
     room.storyDetour = null;
     room.narrativeState = { boon: null, lastRoute: null, routeStreak: 0, detours: 0 };
@@ -4984,6 +5119,7 @@ io.on('connection', async socket => {
     for (const member of room.players) {
       member.skillState = { readyAtTurn: 0, guard: 0, checkBonus: 0, attackBonus: 0, damageBonus: 0 };
       member.statuses = [];
+      member.stress = 0;
     }
     room.activeChoice = null;
     room.currentEvent = null;
@@ -5027,6 +5163,79 @@ io.on('connection', async socket => {
     }
     sync(room);
     ack?.({ ok:true, allReady });
+  });
+
+  socket.on('story:assist', (payload, ack) => {
+    const { room, player }=requireMember(socket,payload,ack);
+    if(!room || resumeBlocked(room,ack))return;
+    if(!requirePhase(room,'story',ack,'현재는 이야기 판정을 도울 수 없습니다.'))return;
+    if(room.currentEvent || room.activeChoice)return ack?.({ok:false,error:'이벤트가 진행 중입니다.'});
+    const actorScene=parallelEnabled(room,CAMPAIGNS.find(c=>c.id===room.campaignId))?parallelRenderedScene(room,CAMPAIGNS.find(c=>c.id===room.campaignId),currentTurnPlayer(room)):null;
+    if(actorScene?.choices?.length && actorScene.choices.every(c=>c.automatic))return ack?.({ok:false,error:'주사위를 굴리지 않는 결단에는 협동 보정을 사용할 수 없습니다.'});
+    const campaign=CAMPAIGNS.find(c=>c.id===room.campaignId);
+    const actor=currentTurnPlayer(room);
+    if(!actor || actor.id===player.id)return ack?.({ok:false,error:'자기 판정은 동료가 도와야 합니다.'});
+    if(player.hp<=0 || !player.connected)return ack?.({ok:false,error:'행동할 수 없는 상태입니다.'});
+    if(parallelEnabled(room,campaign)){
+      const actorState=parallelPlayerState(room,actor), helperState=parallelPlayerState(room,player);
+      if(!actorState || !helperState || actorState.ended || helperState.ended || actorState.location!==helperState.location)
+        return ack?.({ok:false,error:'같은 장소에 있어야 동료 판정을 도울 수 있습니다.'});
+    }
+    const {key,helpers}=currentTableAssistance(room,campaign,actor);
+    if(helpers.includes(player.id))return ack?.({ok:false,error:'이번 판정에는 이미 도움을 주었습니다.'});
+    if(helpers.length>=3)return ack?.({ok:false,error:'협동 보정은 최대 +3입니다.'});
+    room.tableAssists ||= {}; room.tableAssists[key]=[...helpers,player.id];
+    room.partyBonds ||= {}; room.pressureComfort ||= {};
+    const bond=growBond(room.partyBonds,actor.id,player.id);
+    const relieved=!room.pressureComfort[key] && Number(actor.stress||0)>0;
+    if(relieved){actor.stress=Math.max(0,Number(actor.stress||0)-1);room.pressureComfort[key]=true;}
+    if(Object.keys(room.pressureComfort).length>200)for(const stale of Object.keys(room.pressureComfort).slice(0,80))delete room.pressureComfort[stale];
+    if(Object.keys(room.tableAssists).length>150){
+      for(const oldKey of Object.keys(room.tableAssists).slice(0,50))delete room.tableAssists[oldKey];
+    }
+    pushChat(room,{type:'success',author:player.name,text:`${actor.name}의 다음 판정을 지원했습니다. 협동 보정 +${room.tableAssists[key].length} · 유대 ${bond.level}/3${relieved?' · 동료 긴장 -1':''}`});
+    sync(room);
+    ack?.({ok:true,bonus:room.tableAssists[key].length,bond:bond.level,relieved});
+  });
+
+  socket.on('story:regroup', (payload, ack) => {
+    const {room,player}=requireMember(socket,payload,ack);
+    if(!room || resumeBlocked(room,ack))return;
+    if(!requirePhase(room,'story',ack,'지금은 숨을 고를 수 없습니다.'))return;
+    if(room.currentEvent || room.activeChoice)return ack?.({ok:false,error:'진행 중인 사건을 먼저 해결하세요.'});
+    const campaign=CAMPAIGNS.find(c=>c.id===room.campaignId);
+    if(!parallelEnabled(room,campaign))return ack?.({ok:false,error:'현재 모험에서는 사용할 수 없는 행동입니다.'});
+    const actor=currentTurnPlayer(room);
+    if(actor?.id!==player.id)return ack?.({ok:false,error:'자기 차례에만 숨을 고를 수 있습니다.'});
+    if(player.hp<=0)return ack?.({ok:false,error:'행동할 수 없는 상태입니다.'});
+    const ps=parallelPlayerState(room,player);
+    if(!ps || ps.ended)return ack?.({ok:false,error:'이미 끝난 이야기입니다.'});
+    const tick=Number(room.parallel.clockTick||0);
+    if(Number(player.stress||0)<2)return ack?.({ok:false,error:'긴장도가 2 이상일 때 사용할 수 있습니다.'});
+    if(tick-Number(ps.lastRegroupTick??-100)<3)return ack?.({ok:false,error:'숨을 고른 뒤에는 다른 행동을 해야 합니다.'});
+    if(!rateLimit(socket,'regroup',700))return ack?.({ok:false,error:'잠시 뒤에 다시 시도하세요.'});
+    const from=Number(player.stress||0);
+    player.stress=Math.max(0,from-2);
+    ps.lastRegroupTick=tick;
+    const nearby=parallelNearby(room,player);
+    const solo=nearby.length===0;
+    if(solo)room.threat=Math.min(MAX_THREAT,room.threat+1);
+    room.parallel.clockTick=tick+1;
+    const narrative=nearby.length
+      ? `${player.name}는(은) ${nearby.map(x=>x.name).join(', ')}와 서로 확인한 사실을 천천히 복기했다. 불안했던 징후와 실제로 본 것을 구분하며 다시 숨을 골랐다.`
+      : `${player.name}는(은) 잠깐 멈춰 서서 호흡과 기억을 가다듬었다. 평정은 돌아왔지만, 주변 세계의 시간도 함께 흘러갔다.`;
+    const consequence=`긴장 ${player.stress-from} (${player.stress}/6) · 세계 시계 +1${solo?' · 위협 +1':''}`;
+    ps.lastPersonalResult={choiceLabel:'숨을 고르며 현실을 확인한다',text:narrative,consequence,success:true,grade:'recovered',stress:player.stress};
+    ps.history.push({nodeId:ps.nodeId,choice:'숨을 고른다',success:true,grade:'recovered',ts:Date.now()});
+    if(ps.history.length>20)ps.history.splice(0,ps.history.length-20);
+    room.parallel.incidentLog.push({playerId:player.id,playerName:player.name,location:ps.location,nodeId:ps.nodeId,choice:'숨을 고른다',text:narrative,ts:Date.now()});
+    if(room.parallel.incidentLog.length>40)room.parallel.incidentLog.splice(0,room.parallel.incidentLog.length-40);
+    room.lastResolution={source:'parallel-story',ok:true,outcomeGrade:'recovered',result:null,total:null,dc:null,playerId:player.id,playerName:player.name,choiceLabel:'숨을 고르며 현실을 확인한다',text:narrative,consequence,stress:player.stress,stressDelta:player.stress-from};
+    pushChat(room,{type:'action',author:player.name,text:`숨 고르기 · ${consequence}`});
+    advanceSkillClock(room,1);
+    advanceTurn(room);
+    sync(room);
+    ack?.({ok:true,stress:player.stress});
   });
 
   socket.on('story:advance', (payload, ack) => {
@@ -5093,7 +5302,6 @@ io.on('connection', async socket => {
     const declaration = sanitize(payload?.declaration, 220);
     let choice = Number.isInteger(choiceIndex) ? beat.choices?.[choiceIndex] : null;
     let freeActionInterpretation = null;
-    if (!choice && declaration) return ack?.({ ok:false, error:'이 버전은 선택지 전용입니다. 현재 장면에 표시된 행동 중 하나를 골라 주세요.' });
     if (!choice && declaration && beat.freeActionAllowed) {
       const validity = validateFreeAction(declaration, beat);
       if (!validity.ok) {
@@ -5120,13 +5328,14 @@ io.on('connection', async socket => {
     const ability = player.abilities?.[choice.stat];
     if (!ability) return ack?.({ ok:false, error:'캐릭터 능력치를 찾을 수 없습니다.' });
 
-    if (choice.freeAction && freeActionInterpretation && freeActionIsInquiry(choice.label, {ok:true,intent:freeActionInterpretation?.intent || freeActionIntent(choice.label),ctx:inferSceneAffordances(beat)}, beat)) {
+    if (choice.freeAction && freeActionInterpretation && Number(room.sceneInquiries?.[`${beat.id}:${player.id}`]||0)<2 && freeActionIsInquiry(choice.label, {ok:true,intent:freeActionInterpretation?.intent || freeActionIntent(choice.label),ctx:inferSceneAffordances(beat)}, beat)) {
       room.sceneInquiries ||= {};
       const key=`${beat.id}:${player.id}`;
-      const count=Math.min(3,Number(room.sceneInquiries[key]||0)+1);
-      room.sceneInquiries[key]=count;
+      const count=Number(room.sceneInquiries[key]||0)+1;
+      if(count<=2) room.sceneInquiries[key]=count;
       const validity={ok:true,intent:freeActionIntent(choice.label),ctx:inferSceneAffordances(beat)};
       const narrative=sceneInquiryNarrative(campaign,beat,validity,choice.label,count);
+      room.sceneNotes ||= {}; (room.sceneNotes[beat.id] ||= []).push(narrative);
       room.lastStoryAction={playerId:player.id,playerName:player.name,declaration:choice.label,stat:null,mode:'inquiry',roll:null,total:null,dc:null,success:true,narrative,beatId:beat.id};
       room.lastResolution={source:'story',ok:true,inquiry:true,text:narrative,consequence:'',playerId:player.id,playerName:player.name,choiceLabel:choice.label,continueLabel:'장면으로 돌아가기'};
       room.phase='resolution';
@@ -5137,17 +5346,21 @@ io.on('connection', async socket => {
       return ack?.({ok:true,inquiry:true,result:room.lastStoryAction});
     }
 
-    const roll = rand(20);
+    const heroic=rollTabletopCheck(()=>rand(20),payload?.heroMode,player.inspiration,player.stress);
+    if(!heroic.ok)return ack?.({ok:false,error:heroic.error});
+    player.inspiration=Math.max(0,Number(player.inspiration||0)-heroic.spentInspiration);
+    const roll=heroic.result;
     const baseAbilityMod = mod(effectiveAbilityTotal(room, player, choice.stat));
     const gearBonus = equipmentStatBonus(room, player, choice.stat);
     const abilityMod = baseAbilityMod + gearBonus;
     const skillBonus = Number(player.skillState?.checkBonus || 0);
-    const statusPenalty = statusPenaltyForCheck(room, player, choice.stat);
+    const statusPenalty = statusPenaltyForCheck(room, player, choice.stat) + stressCheckPenalty(player.stress, choice.stat);
     const traitBonus = traitCheckBonus(player, choice.stat);
     const dcReduction = Number(room.nextCheckDcReduction || 0);
     const approach = approachPressure(room, player, choice);
     const dc = Math.max(7, Number(choice.dc || 9) + Number(room.dcPenalty || 0) - dcReduction + Number(approach.dc || 0));
-    const total = roll + abilityMod + skillBonus + statusPenalty + traitBonus;
+    const assistance=currentTableAssistance(room,campaign,player).bonus;
+    const total = roll + abilityMod + skillBonus + statusPenalty + traitBonus + assistance + heroic.checkBonus;
     const success = roll === 20 || (roll !== 1 && total >= dc);
     const margin = total - dc;
     const outcomeGrade = storyOutcomeGrade(roll,total,dc);
@@ -5162,8 +5375,8 @@ io.on('connection', async socket => {
     room.narrativeState.lastRoute = choice.branchValue;
 
     emitRoll(room, player, {
-      sides:20, result:roll, purpose:`메인 스토리 · ${choice.stat} 판정 · DC ${dc}`,
-      kind:'story-choice', stat:choice.stat, total, dc, success, modifiers:[{label:`${choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty},{label:'능력치 특성',value:traitBonus},{label:approach.label || '접근 변화',value:Number(approach.dc||0) ? -Number(approach.dc||0) : 0}].filter(m=>m.value),
+      sides:20, result:roll, rolls:heroic.rolls, heroMode:heroic.mode, outcomeGrade, purpose:`메인 스토리 · ${choice.stat} 판정 · DC ${dc}`,
+      kind:'story-choice', stat:choice.stat, total, dc, success:storyPass, modifiers:[{label:`${choice.stat} 기본 보정`,value:baseAbilityMod},{label:'장비 보정',value:gearBonus},{label:'직업 스킬',value:skillBonus},{label:'상태 효과',value:statusPenalty},{label:'능력치 특성',value:traitBonus},{label:'동료 지원',value:assistance},{label:'위험 감수',value:heroic.checkBonus},{label:approach.label || '접근 변화',value:Number(approach.dc||0) ? -Number(approach.dc||0) : 0}].filter(m=>m.value),
     });
 
     let consequence = '';
@@ -5193,6 +5406,7 @@ io.on('connection', async socket => {
       consequence = deathReason ? `사망 · ${deathReason}` : `큰 실패 · ${status.label} · HP -1 · 위협 +1`;
     }
 
+    if(heroic.extraDangerOnFailure && !storyPass){room.threat=Math.min(MAX_THREAT,room.threat+heroic.extraDangerOnFailure); consequence+=' · 위험 감수의 대가: 위협 +1';}
     if (outcomeGrade === 'critical') room.narrativeState.boon = choice.branchValue;
     else if (!success) room.narrativeState.boon = null;
 
@@ -5200,6 +5414,7 @@ io.on('connection', async socket => {
       ? actionNarrative({ success:storyPass, declaration:choice.label, player, beat, interpretation:freeActionInterpretation || interpretFreeAction(choice.label, player, beat, room), margin })
       : storyResolutionNarrative(room, campaign, beat, choice, player, storyPass, status, outcomeGrade);
     if (choice.freeAction && outcomeGrade === 'mixed') narrative += ` 다만 ${MIXED_COST_TEXT[campaign?.id] || '작은 대가가 남았다.'}`;
+    if(choice.freeAction)narrative+=` ${freeActionAftermath(room,campaign,player,beat,choice,outcomeGrade)}`;
     if (player.dead && player.deathReason) narrative = `${narrative}\n\n${player.name}의 이야기는 여기서 끝났다. ${player.deathReason}`;
     if (choice.jobSpecial) {
       room.jobStory ||= {};

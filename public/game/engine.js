@@ -2,7 +2,7 @@
 import { CLASSES, LEGACY_CLASS_IDS, getClasses, getClass, normalizeClassId } from './professions.js';
 import { startCombat, combatView, previewCombat, applyCombatAction, skipCombatTurn, restoreCombat } from './combat.js';
 export { CLASSES, getClasses, getClass, normalizeClassId } from './professions.js';
-export const VERSION = '15.0.0';
+export const VERSION = '16.0.0';
 export const STAT_LABELS = Object.freeze({ might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' });
 const clone = value => JSON.parse(JSON.stringify(value));
 const bound = (value, low, high) => Math.max(low, Math.min(high, value));

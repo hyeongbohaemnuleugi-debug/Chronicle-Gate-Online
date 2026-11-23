@@ -10,11 +10,19 @@ let client=null, state=null, catalog=[], selected='last-train', busy=false, pend
 let activeTab='clues', secretOpen=false, toastTimer=null, lastScene='',lastResultKey='', lastPerson='';
 let combatTarget=null;
 let draft={text:'',spark:false,flashback:'',chat:''}, entryMode='online', entryKind='create', localCount=2;
-const loadedArt=new Map(),artDimensions=new Map();
+const loadedArt=new Map(),artDimensions=new Map(),waitingArt=new Set();
+let artFrame=0;
+const lazyArtObserver=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
+  for(const entry of entries){
+    if(!entry.isIntersecting)continue;
+    lazyArtObserver.unobserve(entry.target);waitingArt.delete(entry.target);
+    loadArt(entry.target);
+  }
+},{rootMargin:'120px 0px',threshold:0.01}):null;
 const artObserver=typeof ResizeObserver==='function'?new ResizeObserver(entries=>{for(const entry of entries){const dimensions=artDimensions.get(entry.target.dataset.art);if(dimensions)sizeArt(entry.target,dimensions);}}):null;
 const sound=createAudio(updateSoundButton);
 const position = index => ['0% 0%','100% 0%','0% 100%','100% 100%'][Math.max(0,Math.min(3,Number(index)||0))];
-const art = (id,index=0,classes='',label='장면 그림') => `<div class="art-frame ${classes}" data-art="${slug(id)}" data-art-index="${Number(index)||0}" style="--art-position:${position(index)}" role="img" aria-label="${esc(label)}"><span class="art-placeholder" aria-hidden="true">✦</span></div>`;
+const art = (id,index=0,classes='',label='장면 그림') => `<div class="art-frame ${classes}" data-art-priority="${/(?:hero|lobby|scene)-art/.test(classes)?'high':'defer'}" data-art="${slug(id)}" data-art-index="${Number(index)||0}" style="--art-position:${position(index)}" role="img" aria-label="${esc(label)}"><span class="art-placeholder" aria-hidden="true">✦</span></div>`;
 const classList = (campaign=selectedCampaign()) => Array.isArray(campaign?.classes)?campaign.classes:[];
 const classFor = id => classList().find(c=>c.id===id)||catalog.flatMap(c=>c.classes||[]).find(c=>c.id===id);
 const cname = id => classFor(id)?.name||'직업 선택 중';
@@ -56,43 +64,93 @@ function sizeArt(el,dimensions){
   el.style.backgroundPosition=`${(box.width-tileWidth)/2-(index%2)*tileWidth}px ${(box.height-tileHeight)/2-Math.floor(index/2)*tileHeight}px`;
 }
 function applyArt(el,id){
-  el.style.backgroundImage=`url("/game/art/${id}.webp")`;el.classList.add('art-ready');
+  el.style.backgroundImage=`url("/game/art/${id}.webp?v=16000")`;el.classList.add('art-ready');
   const dimensions=artDimensions.get(id);if(dimensions)sizeArt(el,dimensions);
 }
-function hydrateArt(){
-  artObserver?.disconnect();
-  for(const el of document.querySelectorAll('[data-art]')){
-    artObserver?.observe(el);
-    const id=slug(el.dataset.art);
-    if(loadedArt.get(id)===true){applyArt(el,id);continue;}
-    if(loadedArt.has(id))continue;
-    loadedArt.set(id,'loading');const image=new Image();
-    image.onload=()=>{loadedArt.set(id,true);artDimensions.set(id,{width:image.naturalWidth,height:image.naturalHeight});for(const target of document.querySelectorAll(`[data-art="${id}"]`))applyArt(target,id);};
-    image.onerror=()=>{loadedArt.set(id,false);for(const target of document.querySelectorAll(`[data-art="${id}"]`)){target.classList.add('art-unavailable');target.setAttribute('aria-label','장면 그림을 불러오지 못했습니다. 아래 이야기로 계속 진행할 수 있습니다.');}};
-    image.src=`/game/art/${id}.webp`;
+function markArtUnavailable(el){
+  el.classList.add('art-unavailable');
+  el.setAttribute('aria-label','장면 그림을 불러오지 못했습니다. 아래 이야기로 계속 진행할 수 있습니다.');
+}
+function loadArt(el){
+  if(!el.isConnected||el.closest('[hidden]'))return;
+  const id=slug(el.dataset.art),status=loadedArt.get(id);
+  if(status===true){applyArt(el,id);return;}
+  if(status===false){markArtUnavailable(el);return;}
+  if(status==='loading')return;
+  loadedArt.set(id,'loading');const image=new Image();
+  image.decoding='async';image.fetchPriority=el.dataset.artPriority==='high'?'high':'low';
+  image.onload=()=>{
+    loadedArt.set(id,true);artDimensions.set(id,{width:image.naturalWidth,height:image.naturalHeight});
+    for(const target of document.querySelectorAll(`[data-art="${id}"]`))applyArt(target,id);
+  };
+  image.onerror=()=>{
+    loadedArt.set(id,false);
+    for(const target of document.querySelectorAll(`[data-art="${id}"]`))markArtUnavailable(target);
+  };
+  image.src=`/game/art/${id}.webp?v=16000`;
+}
+function loadNearbyArt(){
+  artFrame=0;
+  for(const el of waitingArt){
+    if(!el.isConnected||el.closest('[hidden]')){waitingArt.delete(el);continue;}
+    const rect=el.getBoundingClientRect();
+    if(rect.width>0&&rect.height>0&&rect.top<window.innerHeight+120&&rect.bottom>-120){
+      waitingArt.delete(el);loadArt(el);
+    }
   }
+}
+function scheduleNearbyArt(){if(!artFrame)artFrame=requestAnimationFrame(loadNearbyArt);}
+if(!lazyArtObserver){
+  window.addEventListener('scroll',scheduleNearbyArt,{passive:true});
+  window.addEventListener('resize',scheduleNearbyArt,{passive:true});
+}
+function hydrateArt(){
+  artObserver?.disconnect();lazyArtObserver?.disconnect();waitingArt.clear();
+  for(const el of document.querySelectorAll('[data-art]')){
+    if(el.closest('[hidden]'))continue;
+    artObserver?.observe(el);
+    const status=loadedArt.get(slug(el.dataset.art));
+    if(status===true){applyArt(el,slug(el.dataset.art));continue;}
+    if(status===false){markArtUnavailable(el);continue;}
+    if(status==='loading')continue;
+    if(el.dataset.artPriority==='high'){loadArt(el);continue;}
+    waitingArt.add(el);
+    if(lazyArtObserver)lazyArtObserver.observe(el);
+  }
+  if(!lazyArtObserver)loadNearbyArt();
+}
+const ROMAN=['I','II','III','IV','V','VI','VII'];
+function chronicleSeal(){
+  return `<svg class="chronicle-seal" viewBox="0 0 80 96" fill="none" aria-hidden="true"><path d="M15 77V39a25 25 0 0 1 50 0v38M22 76V39a18 18 0 0 1 36 0v37"/><path d="M40 23v41m-12-20 12-13 12 13-12 13-12-13Z"/><path d="M8 70c13-2 24 0 32 6 8-6 19-8 32-6v13c-13-2-24 0-32 6-8-6-19-8-32-6V70Zm32 6v13M14 77c9-1 16 1 22 4m8 0c6-3 13-5 22-4"/><path d="M40 3v8M3 39h8m58 0h8M11 13l6 6m46 0 6-6"/><circle cx="40" cy="44" r="3"/></svg>`;
 }
 function renderHome(){
   const feature=selectedCampaign();if(!feature)return;
+  const featureNumber=Math.max(0,catalog.findIndex(c=>c.id===feature.id));
   $('home-content').innerHTML=`
     <section class="hero" aria-labelledby="home-title">
-      ${art(feature.id,0,'hero-art',feature.title+'의 시작 장면')}
-      <div class="hero-shade"></div><div class="hero-content">
-        <div class="eyebrow"><span class="tiny-star">✦</span> 친구들과 함께 쓰는 일곱 편의 이야기</div>
-        <h1 id="home-title">다음 장면은,<br><em>우리의 선택으로.</em></h1>
-        <p>뜻밖의 한마디, 아슬아슬한 주사위, 나만 아는 비밀.<br class="desktop-only"> 정답을 찾기보다, 함께 기억할 이야기를 만들어 보세요.</p>
-        <div class="hero-actions"><button class="button primary" data-action="create" type="button">새 이야기 시작 <span aria-hidden="true">↗</span></button><button class="button glass" data-action="join" type="button">친구의 방에 참가</button></div>
-        <div class="hero-meta"><span>1–4명</span><i></i><span>온라인 · 한 기기로 함께</span><i></i><span>진행자 없이 플레이</span></div>
+      <div class="hero-stars" aria-hidden="true"></div>
+      <div class="hero-orbit" aria-hidden="true"><span></span><span></span></div>
+      <div class="hero-portal">${art(feature.id,0,'hero-art',feature.title+'의 시작 장면')}<div class="hero-shade"></div><span class="portal-keystone" aria-hidden="true">✦</span></div>
+      <div class="hero-content">
+        <div class="hero-invitation">${chronicleSeal()}<span>함께 쓰는 운명의 연대기<small>A CHRONICLE OF OUR CHOICES</small></span></div>
+        <h1 id="home-title"><span>CHRONICLE</span><span class="title-gate"><i aria-hidden="true"></i>GATE<i aria-hidden="true"></i></span></h1>
+        <p class="hero-line">문을 열면, 우리의 이야기가 시작된다.</p>
+        <p class="hero-description">서로 다른 비밀을 품은 동료들.<br>한 번의 선택, 한 번의 주사위가 바꾸는 운명.<br>일곱 세계에 당신들의 기록을 남겨 보세요.</p>
+        <div class="hero-actions"><button class="button primary" data-action="create" type="button">새 연대기 펼치기 <span aria-hidden="true">↗</span></button><button class="button glass" data-action="join" type="button">친구의 방에 참가</button></div>
+        <div class="hero-meta"><span>1–4명의 동료</span><i></i><span>온라인 · 한 기기로 함께</span><i></i><span>진행자 없이 플레이</span></div>
       </div>
-      <div class="hero-caption"><span>지금 펼쳐진 세계</span><b>${esc(feature.title)}</b></div>
+      <div class="hero-bottom"><a href="#story-shelf" class="shelf-link"><span aria-hidden="true">↓</span> 일곱 기록 둘러보기</a><div class="hero-caption"><span>CHRONICLE ${ROMAN[featureNumber]||'I'} · 지금 펼쳐진 세계</span><b>${esc(feature.title)}</b></div></div>
     </section>
-    <div class="library-heading"><div><div class="eyebrow">THE STORY SHELF</div><h2>오늘, 어떤 이야기에 들어갈까요?</h2><p>서로 다른 사건과 선택. 한 가지 정답으로 끝나지 않는 일곱 세계.</p></div><div class="text-actions"><button class="text-button" data-action="resume" type="button">이어 하기 ↗</button><button class="text-button" data-action="import" type="button">저장 파일 열기</button></div></div>
-    <section class="campaign-grid" aria-label="시나리오 목록">${catalog.map((c,i)=>`
-      <button class="campaign-card ${c.id===selected?'selected':''}" data-campaign="${slug(c.id)}" type="button" aria-pressed="${c.id===selected}">
-        <div class="cover-wrap">${art(c.id,0,'campaign-art',c.title+' 표지')}<span class="cover-number">${String(i+1).padStart(2,'0')}</span><span class="cover-arrow" aria-hidden="true">↗</span>${c.id===selected?'<span class="selected-chip">선택한 이야기</span>':''}</div>
-        <div class="card-copy"><div class="card-genre">${esc(c.genre||'협력 이야기')}</div><h3>${esc(c.title)}</h3><p>${esc(c.description||c.subtitle||'동료들과 함께 새로운 사건에 뛰어드세요.')}</p><div class="card-bottom"><span>1–4명</span><span>자기 속도로 진행</span></div></div>
-      </button>`).join('')}</section>
-    <section class="table-note"><span class="note-icon" aria-hidden="true">✧</span><div><h2>당신의 엉뚱한 생각도, 이야기의 시작.</h2><p>선택지를 고르거나 행동을 직접 적으세요. 현재 장면의 대상과 행동을 해석한 뒤, 어떤 판정을 할지 먼저 알려드립니다. 친구의 협력과 회상이 결과를 바꿀 수 있어요.</p></div><button class="button quiet" data-action="help" type="button">3분 플레이 안내</button></section>`;
+    <section class="chronicle-promise" aria-label="함께 만드는 연대기"><div><span aria-hidden="true">I</span><p><b>서로 다른 일곱 세계</b>장면과 단서가 만드는 여러 결말</p></div><div><span aria-hidden="true">II</span><p><b>각자의 역할, 함께하는 전투</b>이야기별 네 직업과 하나의 고유 기술</p></div><div><span aria-hidden="true">III</span><p><b>기억에 남을 우리의 선택</b>비밀 · 협력 · 주사위로 이어지는 이야기</p></div></section>
+    <section class="story-shelf" id="story-shelf" aria-labelledby="library-title">
+      <div class="library-heading"><div><div class="eyebrow"><span aria-hidden="true">✦</span> THE SEVEN CHRONICLES</div><h2 id="library-title">오늘 밤, 어떤 기록을 펼칠까요?</h2><p>낯선 세계의 문턱에서, 동료들과 첫 장면을 골라 주세요.</p></div><div class="text-actions"><button class="text-button" data-action="resume" type="button">이전 기록 이어 하기 ↗</button><button class="text-button" data-action="import" type="button">저장 파일 열기</button></div></div>
+      <div class="campaign-grid" aria-label="시나리오 목록">${catalog.map((c,i)=>`
+        <button class="campaign-card ${i===0?'featured':''} ${c.id===selected?'selected':''}" data-campaign="${slug(c.id)}" type="button" aria-pressed="${c.id===selected}">
+          <div class="cover-wrap">${art(c.id,0,'campaign-art',c.title+' 표지')}<span class="cover-number"><small>CHRONICLE</small>${ROMAN[i]||String(i+1)}</span><span class="cover-arrow" aria-hidden="true">↗</span>${c.id===selected?'<span class="selected-chip"><i aria-hidden="true"></i> 선택한 기록</span>':''}</div>
+          <div class="card-copy"><div class="card-genre">${esc(c.genre||'협력 이야기')}</div><h3>${esc(c.title)}</h3><p>${esc(c.description||c.subtitle||'동료들과 함께 새로운 사건에 뛰어드세요.')}</p><div class="card-features"><span>${Number(c.sceneCount)||0}개 장면</span><span>${Number(c.endingCount)||0}개 결말</span><span>전용 직업 ${(c.classes||[]).length}개</span></div><div class="card-bottom"><span>${Number(c.combatCount)||0}번의 전투 · 1–4명</span><b>이 기록 펼치기 <span aria-hidden="true">↗</span></b></div></div>
+        </button>`).join('')}</div>
+    </section>
+    <section class="table-note"><div class="note-icon">${chronicleSeal()}</div><div><div class="eyebrow">EVERY CHOICE LEAVES A TRACE</div><h2>이 연대기의 마지막 문장은, 아직 쓰이지 않았습니다.</h2><p>선택지를 고르거나 행동을 직접 적으세요. 현재 장면에 맞는 행동을 해석하고, 판정과 대가를 먼저 알려드립니다. 동료의 협력과 당신의 회상이 다음 장면을 바꿉니다.</p></div><button class="button quiet" data-action="help" type="button">플레이 방법 살펴보기</button></section>`;
   hydrateArt();sound.scene(feature.id,'mystery');
 }
 function showView(view){

@@ -28,7 +28,7 @@ async function loadSocket(){
 
 export async function createClient(onState=()=>{},onNotice=()=>{}){
   let socket=null, local=null, localSeat=null, current=null, planned=null, reconnecting=false;
-  let lastBackupRevision=-1, disposed=false;
+  let lastBackupRevision=-1, backupCode=null, disposed=false;
   const offlineOnly=location.protocol==='file:' || new URLSearchParams(location.search).get('offline')==='1';
   function notify(message){onNotice(typeof message==='string'?message:message?.error||'다시 시도해 주세요.');}
   function write(storage,key,value){try{storage.setItem(key,JSON.stringify(value));return true;}catch{notify('브라우저 자동 저장을 사용할 수 없습니다. 저장 파일을 내려받아 주세요.');return false;}}
@@ -52,12 +52,20 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
       const io=await loadSocket();
       socket=io('/table',{autoConnect:false,transports:['websocket','polling'],timeout:10000,reconnection:true,reconnectionDelay:700,reconnectionDelayMax:4000});
       socket.on('table:state', state=>{
+        if(backupCode!==state.code){backupCode=state.code;lastBackupRevision=-1;}
         deliver(state);
-        // Host keeps a portable recovery copy even when the server has no durable disk.
-        if(state.meId===state.hostId && state.game && state.game.revision!==lastBackupRevision){
+        // Older servers need an explicit export. v16 sends one private checkpoint without this round trip.
+        if(!state.capabilities?.checkpoints && state.meId===state.hostId && state.game && state.game.revision!==lastBackupRevision){
           lastBackupRevision=state.game.revision;
-          request('table:export').then(r=>{if(r.ok&&r.save)write(localStorage,BACKUP_KEY,r.save);}).catch(()=>{});
+          const code=state.code;
+          request('table:export').then(r=>{if(r.ok&&r.save&&current?.code===code)write(localStorage,BACKUP_KEY,r.save);}).catch(()=>{});
         }
+      });
+      socket.on('table:checkpoint', payload=>{
+        if(current?.mode!=='online'||current.meId!==current.hostId||payload?.code!==current.code||!payload.save?.game)return;
+        const revision=payload.save.game.revision;
+        if(!Number.isSafeInteger(revision)||revision<lastBackupRevision)return;
+        if(write(localStorage,BACKUP_KEY,payload.save))lastBackupRevision=revision;
       });
       socket.on('table:notice',notify);
       socket.on('disconnect',()=>{if(current?.mode==='online')deliver({...current,connected:false});});
@@ -131,7 +139,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
         if(socket?.connected)await request('table:leave').catch(()=>{});
         socket?.disconnect();socket=null;sessionStorage.removeItem(ONLINE_KEY);
       }
-      local=null;localSeat=null;planned=null;lastBackupRevision=-1;deliver(initial());return {ok:true};
+      local=null;localSeat=null;planned=null;lastBackupRevision=-1;backupCode=null;deliver(initial());return {ok:true};
     },
     async start(){if(local){local.game=createGame(getCampaign(local.campaignId),local.players);localChanged({followTurn:true});return {ok:true};}return checked(await request('table:start'));},
     async selectCampaign(campaignId){if(local){if(local.game)throw new Error('진행 중에는 바꿀 수 없습니다.');if(!getCampaign(campaignId))throw new Error('없는 시나리오입니다.');local.players.forEach((p,i)=>{p.classId=remapClassId(getCampaign(local.campaignId),getCampaign(campaignId),p.classId,i);});local.campaignId=campaignId;localChanged();return {ok:true};}return checked(await request('table:campaign',{campaignId}));},
@@ -146,7 +154,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
     async assist(){if(local)return localApply(game=>applyAssist(game,localSeat));return checked(await request('table:assist',{revision:current.game.revision}));},
     async reveal(){if(local)return localApply(game=>revealSecret(game,getCampaign(local.campaignId),localSeat));return checked(await request('table:reveal',{revision:current.game.revision}));},
     async pass(){if(local){const result=passTurn(local.game,localSeat,{campaign:getCampaign(local.campaignId),roll:secureDie});checked(result);local.game=result.game;localChanged({followTurn:true});return {ok:true};}return checked(await request('table:pass',{revision:current.game.revision}));},
-    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v15',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
+    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v16',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
     async importSave(save){
       if(current?.mode==='online')return checked(await request('table:import',{save}));
       const {game,campaign}=validateSave(save,CAMPAIGNS);game.players.forEach(p=>{p.connected=true;});

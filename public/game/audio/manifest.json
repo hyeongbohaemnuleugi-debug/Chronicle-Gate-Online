@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 17,
   "provenance": "Original synthesized scores/effects encoded from project WAV masters. No third-party recordings or samples.",
   "quality": "96 kbps mono MP3 at the original 22050 Hz sample rate. Lossy delivery; not claimed to be bit-identical to WAV.",
   "delivery": "Same-origin MP3, on demand, no Supabase Storage requests.",

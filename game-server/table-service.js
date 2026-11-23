@@ -3,10 +3,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CAMPAIGNS, CATALOG, getCampaign } from '../public/game/campaigns/index.js';
-import { createGame, viewGame, previewAction, applyAction, assist, revealSecret, passTurn, validateSave, CLASSES, cleanText } from '../public/game/engine.js';
+import { createGame, viewGame, previewAction, applyAction, assist, revealSecret, passTurn, validateSave, getClasses, normalizeClassId, cleanText } from '../public/game/engine.js';
 const hash = value => crypto.createHash('sha256').update(String(value)).digest('hex');
 const safeEqual = (a,b) => typeof a === 'string' && typeof b === 'string' && a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
-const CLASS_IDS = new Set(CLASSES.map(c => c.id));
+import { remapClassId } from '../public/game/professions.js';
+import { remapCombatPlayers } from '../public/game/combat.js';
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const codePattern = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 const day = 24 * 60 * 60 * 1000;
@@ -14,7 +15,7 @@ const day = 24 * 60 * 60 * 1000;
 export function attachTableService(io, options = {}) {
   const namespace = io.of('/table');
   const rooms = new Map();
-  const configured = options.storageDir ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
+  const configured = options.storageDir ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
   const storageDir = configured || (process.env.NODE_ENV === 'production' ? '' : path.resolve('.chronicle-v14'));
   const roll = options.roll || (() => crypto.randomInt(1, 21));
   const maxRooms = options.maxRooms || 200;
@@ -26,12 +27,12 @@ export function attachTableService(io, options = {}) {
     room.updatedAt = Date.now();
     if (!storageDir) return;
     try {
-      const data = { schema:14, ...room, players:room.players.map(({socketId,...p})=>({...p,connected:false})), handled:{} };
+      const data = { schema:15, ...room, players:room.players.map(({socketId,...p})=>({...p,connected:false})), handled:{} };
       const temp = `${fileFor(room.code)}.tmp`;
       fs.writeFileSync(temp, JSON.stringify(data), { mode:0o600 });
       fs.renameSync(temp, fileFor(room.code));
       storageError = false;
-    } catch(error) { storageError = true; console.error('[v14 save]', error.message); }
+    } catch(error) { storageError = true; console.error('[v15 save]', error.message); }
   }
   function getRoom(code) {
     if (!codePattern.test(code)) return null;
@@ -39,15 +40,15 @@ export function attachTableService(io, options = {}) {
     if (!storageDir || !fs.existsSync(fileFor(code))) return null;
     try {
       const raw = JSON.parse(fs.readFileSync(fileFor(code),'utf8'));
-      if (raw.schema !== 14 || raw.code !== code || Date.now() - raw.updatedAt > ttl || !getCampaign(raw.campaignId)) return null;
+      if (![14,15].includes(raw.schema) || raw.code !== code || Date.now() - raw.updatedAt > ttl || !getCampaign(raw.campaignId)) return null;
       if (!Array.isArray(raw.players) || raw.players.length > 4) return null;
       if (rooms.size >= maxRooms) return null;
-      raw.players.forEach(p => { p.connected = false; p.socketId = null; });
+      raw.players.forEach((p,i) => { p.connected = false; p.socketId = null; p.classId=normalizeClassId(getCampaign(raw.campaignId),p.classId,i); });
       if (raw.game) { raw.game = validateSave(raw.game, CAMPAIGNS).game; raw.game.players.forEach(p => { p.connected = false; }); }
       raw.handled = {};
       rooms.set(code, raw);
       return raw;
-    } catch(error) { console.error('[v14 load]',error.message); return null; }
+    } catch(error) { console.error('[v15 load]',error.message); return null; }
   }
   function setPresence(room) {
     if (!room.game) return;
@@ -105,11 +106,13 @@ export function attachTableService(io, options = {}) {
     if(!room.game) throw new Error('아직 이야기를 시작하지 않았습니다.');
     if(payload.revision !== room.game.revision) throw new Error('장면이 갱신되었습니다. 행동을 다시 확인해 주세요.');
   }
-  function requirePlayer(payload) {
+  function requirePlayer(payload, campaign, players = []) {
     const name=cleanText(payload.name,18);
     if(!name) throw new Error('플레이어 이름을 입력해 주세요.');
-    if(!CLASS_IDS.has(payload.classId)) throw new Error('직업을 선택해 주세요.');
-    return {name,classId:payload.classId};
+    const classes=getClasses(campaign);
+    const classId=payload.classId || classes.find(c=>!players.some(p=>p.classId===c.id))?.id || classes[0].id;
+    if(!classes.some(c=>c.id===classId))throw new Error('이 이야기에서 선택할 수 없는 직업입니다. 대기실에서 해당 이야기의 직업을 골라 주세요.');
+    return {name,classId};
   }
   const createRate = new Map();
   namespace.on('connection', socket => {
@@ -133,8 +136,9 @@ export function attachTableService(io, options = {}) {
       const rate=createRate.get(ip)||[]; const recentRate=rate.filter(t=>t>Date.now()-60000);
       if(recentRate.length>=8) throw new Error('방을 너무 자주 만들었습니다. 1분 뒤 다시 시도해 주세요.');
       if(rooms.size>=maxRooms) throw new Error('테이블이 가득 찼습니다. 잠시 후 다시 시도해 주세요.');
-      const {name,classId}=requirePlayer(payload);
-      if(!getCampaign(payload.campaignId)) throw new Error('시나리오를 선택해 주세요.');
+      const campaign=getCampaign(payload.campaignId);
+      if(!campaign)throw new Error('시나리오를 선택해 주세요.');
+      const {name,classId}=requirePlayer(payload,campaign);
       const code=makeCode(), token=crypto.randomBytes(32).toString('hex');
       const player={id:crypto.randomUUID(),name,classId,tokenHash:hash(token),connected:true,socketId:socket.id};
       const room={code,hostId:player.id,campaignId:payload.campaignId,players:[player],game:null,messages:[],handled:{},updatedAt:Date.now()};
@@ -147,7 +151,7 @@ export function attachTableService(io, options = {}) {
       if(!room) throw new Error('방을 찾을 수 없습니다. 6자리 코드를 확인해 주세요.');
       if(room.game) throw new Error('이미 시작한 방입니다. 원래 참가자는 이어하기를 사용해 주세요.');
       if(room.players.length>=4) throw new Error('테이블은 최대 4명까지 참가할 수 있습니다.');
-      const {name,classId}=requirePlayer(payload);
+      const {name,classId}=requirePlayer(payload,getCampaign(room.campaignId),room.players);
       const token=crypto.randomBytes(32).toString('hex');
       const player={id:crypto.randomUUID(),name,classId,tokenHash:hash(token),connected:true,socketId:socket.id};
       room.players.push(player);
@@ -165,12 +169,12 @@ export function attachTableService(io, options = {}) {
       const {room,player}=authenticate(socket);hostOnly(room,player);
       if(room.game) throw new Error('진행 중에는 이야기를 바꿀 수 없습니다.');
       if(!getCampaign(payload.campaignId)) throw new Error('없는 시나리오입니다.');
-      room.campaignId=payload.campaignId;persist(room);broadcast(room);return {ok:true};
+      room.players.forEach((p,i)=>{p.classId=remapClassId(getCampaign(room.campaignId),getCampaign(payload.campaignId),p.classId,i);});room.campaignId=payload.campaignId;persist(room);broadcast(room);return {ok:true};
     });
     event('table:class',payload=>{
       const {room,player}=authenticate(socket);
       if(room.game) throw new Error('직업은 시작 전에 선택할 수 있습니다.');
-      if(!CLASS_IDS.has(payload.classId)) throw new Error('없는 직업입니다.');
+      if(!getClasses(getCampaign(room.campaignId)).some(c=>c.id===payload.classId))throw new Error('이 이야기에서 선택할 수 없는 직업입니다.');
       player.classId=payload.classId;persist(room);broadcast(room);return {ok:true};
     });
     event('table:start',()=>{
@@ -197,7 +201,7 @@ export function attachTableService(io, options = {}) {
     for(const [name, action] of [['table:assist',assist],['table:reveal',(game,id)=>revealSecret(game,getCampaign(game.campaignId),id)],['table:pass',passTurn]]) event(name,payload=>{
       const {room,player}=authenticate(socket);ensureFresh(room,payload);
       let result;
-      if(name==='table:pass' && room.hostId===player.id) result=passTurn(room.game,player.id,{allowDisconnected:true});
+      if(name==='table:pass') result=passTurn(room.game,player.id,{allowDisconnected:room.hostId===player.id,campaign:getCampaign(room.campaignId),roll});
       else result=action(room.game,player.id);
       if(!result.ok) return result;
       room.game=result.game;persist(room);broadcast(room);return {ok:true};
@@ -205,7 +209,7 @@ export function attachTableService(io, options = {}) {
     event('table:export',()=>{
       const {room,player}=authenticate(socket);hostOnly(room,player);
       if(!room.game) throw new Error('시작한 이야기만 저장할 수 있습니다.');
-      return {ok:true,save:{format:'chronicle-gate-v14',savedAt:new Date().toISOString(),game:room.game}};
+      return {ok:true,save:{format:'chronicle-gate-v15',savedAt:new Date().toISOString(),game:room.game}};
     });
     event('table:import',payload=>{
       const {room,player}=authenticate(socket);hostOnly(room,player);
@@ -215,7 +219,10 @@ export function attachTableService(io, options = {}) {
       const revivedMap={};
       game.players.forEach((p,i)=>{for(const [key,value] of Object.entries(game.reviveAttempts||{})){const suffix=`:${p.id}`;if(key.endsWith(suffix))revivedMap[`${key.slice(0,-suffix.length)}:${room.players[i].id}`]=value;}});
       game.reviveAttempts=revivedMap;
+      const idMapping=Object.fromEntries(game.players.map((p,i)=>[p.id,room.players[i].id]));
+      remapCombatPlayers(game,idMapping);
       game.players=game.players.map((p,i)=>({...p,id:room.players[i].id,name:room.players[i].name,connected:room.players[i].connected}));
+      room.players.forEach((p,i)=>{p.classId=game.players[i].classId;});
       room.campaignId=campaign.id;room.game=game;persist(room);broadcast(room);return {ok:true};
     });
     event('table:chat',payload=>{

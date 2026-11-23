@@ -571,8 +571,8 @@ test('v18 home presents the chronicle masthead and factual story, class and enco
     }
     assert.equal(app.doc.querySelectorAll('.chronicle-promise>div').length,3);
     assert.ok(query(app,'.site-footer').textContent.includes('v18'));
-    assert.match(html,/styles\.css\?v=18000/);
-    assert.match(html,/app\.js\?v=18000/);
+    assert.match(html,/styles\.css\?v=18100/);
+    assert.match(html,/app\.js\?v=18100/);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });
@@ -1048,6 +1048,8 @@ test('a real ending keeps every paragraph and personal fate while folding the lo
     assert.equal(query(app,'.story-fate').textContent,reading.fate);
     assert.equal(query(app,'.story-fate').closest('details'),null,'Survival and death remain visible at the ending.');
     assert.match(reading.fate,/희생된 사람: 기록자4/);
+    assert.deepEqual([...query(app,'.story-fate').querySelectorAll('.character-name')].map(el=>el.textContent),['기록자1','기록자2','기록자3','기록자4']);
+    for(const person of people)assert.ok([...query(app,'.personal-epilogues').querySelectorAll('.character-name')].some(el=>el.textContent===person.name));
     assert.ok(!query(app,'.prose-main').textContent.includes(reading.personal[0]));
     fold.open=true;
     await click(app,'[data-tab="clues"]');
@@ -1082,6 +1084,127 @@ test('a legacy save with a missing early journal shows only surviving events and
     const text=await blobText(app,app.downloads.at(-1).blob);
     assert.match(text,/일부 기록은 남아 있지 않습니다/);
     assert.ok(text.includes(kept.text));assert.ok(!text.includes(lost));
+    assert.deepEqual(app.errors,[]);
+  }finally{app.close();}
+});
+
+const emphasizedNames=element=>[...element.querySelectorAll('strong.character-name')].map(name=>name.textContent);
+
+for(const count of [1,2])test(`hotel ${count===1?'solo':'group'} reading emphasizes names through real choices, observations, items and chronicle without changing saved prose`,async()=>{
+  const story=CAMPAIGNS.find(c=>c.id==='glass-hotel');
+  const people=fixturePeople(story).slice(0,count),initial=createGame(story,people);
+  const app=await openApp(savedEnvelope(initial),{defaultRoll:20});
+  try{
+    await resumeLocal(app);
+    const opening=query(app,'.prose-main');
+    assert.ok(emphasizedNames(opening).includes('민'));assert.ok(emphasizedNames(opening).includes('우'));
+    assert.deepEqual([...opening.querySelectorAll(':scope>p')].map(p=>p.textContent),story.nodes.entrance.partyText[count===1?'solo':'group']);
+    assert.ok(opening.textContent.includes('짐을 나르는 직원 민'));
+    assert.ok(opening.textContent.includes('호텔 지배인 우'));
+    assert.ok(emphasizedNames(query(app,'.dialogue cite')).includes('우'));
+    const choiceId=count===1?'solo-promise-porter':'group-draw-inspection';
+    assert.ok(emphasizedNames(query(app,`.choices [data-choice="${choiceId}"]`)).includes('민'));
+    await click(app,`.choices [data-choice="${choiceId}"]`);
+    assert.ok(emphasizedNames(query(app,'.preview-action')).includes('민'));
+    assert.ok(emphasizedNames(query(app,'.outcome-details')).includes('민'));
+    await click(app,'[data-action="confirm-action"]');
+    let saved=stored(app);
+    assert.equal(saved.game.nodeId,'service');assert.equal(saved.game.lastResult.grade,'critical');
+    assert.equal(query(app,'.last-result>p').textContent,saved.game.lastResult.text);
+    assert.ok(emphasizedNames(query(app,'.last-result>p')).includes('민'));
+    assert.ok(emphasizedNames(query(app,'.result-actor')).includes(people[0].name));
+    assert.ok(emphasizedNames(query(app,'.chronicle-list')).includes('민'));
+    assert.equal(query(app,'.chronicle-list p').textContent,saved.game.chronicle[0].text);
+
+    await click(app,'.choices [data-choice="help-porter"]');await click(app,'[data-action="confirm-action"]');
+    assert.equal(stored(app).game.nodeId,'laundry');
+    assert.ok(emphasizedNames(query(app,'.prose-main')).includes('조'));
+    const turn=stored(app).game.turn;
+    await click(app,'[data-detail="borrow-light-towel"]');
+    assert.ok(emphasizedNames(query(app,'.preview-action')).includes('조'));
+    await click(app,'[data-action="confirm-action"]');
+    assert.equal(stored(app).game.turn,turn);
+    assert.ok(emphasizedNames(query(app,'.observation-result')).includes('조'));
+    assert.ok(emphasizedNames(query(app,'[data-inventory-item="light-towel"]')).includes('소라'));
+    await click(app,'[data-detail="borrow-light-towel"]');
+    assert.ok(emphasizedNames(query(app,'#info-dialog .modal-intro')).includes('조'));
+    await click(app,'#info-dialog [data-close="info-dialog"]');
+    await click(app,'[data-detail="cart-badge"]');await click(app,'[data-action="confirm-action"]');
+    await click(app,'[data-tab="clues"]');
+    assert.ok(emphasizedNames(query(app,'#notebook-body')).includes('소라'));
+    await click(app,'[data-tab="journal"]');
+    assert.ok(emphasizedNames(query(app,'.chronicle-list')).includes('민'));
+    assert.ok(emphasizedNames(query(app,'.full-journal')).includes('조'));
+    assert.equal(app.doc.querySelector('strong.character-name strong.character-name'),null);
+    saved=stored(app);
+    assert.ok(!JSON.stringify(saved.game).includes('character-name'));
+    assert.ok(!query(app,'#game-view').textContent.includes('**'));
+    await click(app,'.session-actions [data-action="export-chronicle"]');
+    const txt=await blobText(app,app.downloads.at(-1).blob);
+    const view=viewGame(saved.game,story,saved.game.players[saved.game.activeIndex].id);
+    assert.equal(txt,chronicleText(view));assert.ok(!txt.includes('<strong'));assert.ok(!txt.includes('**'));
+    assert.deepEqual(app.errors,[]);
+  }finally{app.close();}
+});
+
+test('all seven actual story screens emphasize their own named people and role cards use the same safe rendering',async()=>{
+  const samples={
+    'last-train':{name:'윤'},'glass-hotel':{name:'민'},'moon-market':{name:'단',node:'tea'},
+    'dragon-banquet':{name:'아르단'},'clock-city':{name:'윤'},'deep-sea':{name:'하람'},'snow-radio':{name:'가람'},
+  };
+  for(const story of CAMPAIGNS){
+    const sample=samples[story.id],people=getClasses(story).map((job,i)=>({id:`cast-${i}`,name:`기록자${i+1}`,classId:job.id,connected:true}));
+    const initial=createGame(story,people);
+    if(sample.node){initial.nodeId=sample.node;initial.visited.push(sample.node);}
+    const app=await openApp(savedEnvelope(initial));
+    try{
+      await resumeLocal(app);
+      const view=viewGame(stored(app).game,story,people[0].id);
+      assert.ok(emphasizedNames(query(app,'.prose-main')).includes(sample.name),story.id);
+      assert.deepEqual([...query(app,'.prose-main').querySelectorAll(':scope>p')].map(p=>p.textContent),view.scene.reading.paragraphs.slice(0,3));
+      if(story.id==='moon-market')assert.ok(!emphasizedNames(query(app,'.scene-prose')).includes('달'));
+      if(story.id==='glass-hotel'){
+        await click(app,`[data-seat="${people[2].id}"]`);await click(app,'[data-action="open-secret"]');
+        assert.ok(emphasizedNames(query(app,'.secret-content')).includes('소라'));
+        assert.ok(emphasizedNames(query(app,'.personal-goal')).includes('소라'));
+        assert.equal(query(app,'.secret-content>p').textContent,story.roles[2].secret);
+        for(const role of [story.roles[0],story.roles[1],story.roles[3]])assert.ok(!query(app,'#info-dialog').textContent.includes(role.secret));
+      }
+      assert.equal(app.doc.querySelector('strong.character-name strong.character-name'),null);
+      assert.deepEqual(app.errors,[]);
+    }finally{app.close();}
+  }
+});
+
+test('known names do not turn quoted player input or HTML chat into attributes or nested markup',async()=>{
+  const app=await openApp(),name='민" autofocus="';
+  try{
+    await click(app,'[data-campaign="glass-hotel"]');await click(app,'[data-mode="local"]');
+    await change(app,'#local-count','1');input(app,'[data-local-row] input',name);
+    await change(app,'#local-count','2');
+    assert.equal(query(app,'[data-local-row]:first-child input').value,name);
+    assert.equal(query(app,'[data-local-row]:first-child input').hasAttribute('autofocus'),false);
+    input(app,'[data-local-row]:nth-child(2) input','우');
+    await submit(app,'#entry-form');await click(app,'[data-action="start"]');
+    assert.ok(emphasizedNames(query(app,'.compact-party')).includes(name));
+    const sameName=query(app,'.party-member:nth-child(2) .character-name');
+    assert.equal(sameName.textContent,'우');assert.equal(sameName.hasAttribute('title'),false,'An NPC/player collision must not assign the NPC role to the player.');
+    const proseBefore=query(app,'.prose-main').innerHTML;
+    await click(app,'[data-tab="chat"]');
+    const payload='민 <img src=x onerror="window.__characterInjection=1"> & 우';
+    input(app,'#chat-input',payload);
+    await click(app,'[data-tab="clues"]');await click(app,'[data-tab="chat"]');
+    assert.equal(query(app,'#chat-input').value,payload);
+    assert.equal(query(app,'#chat-input').querySelector('strong'),null);
+    await submit(app,'#chat-form');
+    const message=stored(app).messages.at(-1);
+    assert.equal(query(app,'.chat-messages>div:last-child>p').textContent,message.text);
+    assert.ok(emphasizedNames(query(app,'.chat-messages')).includes('민'));
+    assert.ok(emphasizedNames(query(app,'.chat-messages')).includes('우'));
+    assert.equal(app.doc.querySelector('img[src="x"],[autofocus],[onerror],[onfocus]'),null);
+    assert.equal(app.w.__characterInjection,undefined);
+    assert.equal(query(app,'.prose-main').innerHTML,proseBefore);
+    assert.equal(app.doc.querySelector('strong.character-name strong.character-name'),null);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });

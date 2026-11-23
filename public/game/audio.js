@@ -1,7 +1,7 @@
 /* Original local audio only. No autoplay until an explicit user gesture. */
 const clamp = (v, fallback = .5) => Number.isFinite(Number(v)) ? Math.min(1, Math.max(0, Number(v))) : fallback;
 const MOODS = new Set(['mystery','calm','tension','danger','hope']);
-const SFX = new Set(['dice','success','mixed','failure','clue','reveal','transition']);
+const SFX = new Set(['dice','success','mixed','failure','clue','reveal','transition','attack','ability','enemy','victory']);
 export function createAudio(onChange = () => {}) {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('cg-v14-audio') || '{}'); } catch {}

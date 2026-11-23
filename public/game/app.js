@@ -4,22 +4,22 @@ const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const slug = value => /^[a-z0-9-]+$/.test(String(value||'')) ? value : 'last-train';
 const STAT = {might:'힘',agility:'민첩',wit:'통찰',heart:'교섭'};
-const CLASS = [
-  {id:'guardian',name:'수호자',icon:'◆',copy:'위험 앞에서 길을 엽니다.',best:'힘 +3',stats:{might:3,agility:1,wit:0,heart:1}},
-  {id:'scout',name:'길잡이',icon:'↗',copy:'숨은 길과 기회를 찾습니다.',best:'민첩 +3',stats:{might:1,agility:3,wit:1,heart:0}},
-  {id:'scholar',name:'분석가',icon:'✧',copy:'단서를 이어 진실에 닿습니다.',best:'통찰 +3',stats:{might:0,agility:1,wit:3,heart:1}},
-  {id:'envoy',name:'중재자',icon:'❧',copy:'사람과 사람 사이를 잇습니다.',best:'교섭 +3',stats:{might:1,agility:0,wit:1,heart:3}},
-];
+const CLASS_ICONS = ['◆','↗','✧','❧'];
 const GRADE = {critical:'눈부신 성공',success:'성공',mixed:'대가 있는 성공',failure:'실패 · 사건의 전환',automatic:'판정 없이 진행',observe:'관찰',safe:'관찰',decision:'선택'};
 let client=null, state=null, catalog=[], selected='last-train', busy=false, pending=null;
 let activeTab='clues', secretOpen=false, toastTimer=null, lastScene='',lastResultKey='', lastPerson='';
+let combatTarget=null;
 let draft={text:'',spark:false,flashback:'',chat:''}, entryMode='online', entryKind='create', localCount=2;
 const loadedArt=new Map(),artDimensions=new Map();
 const artObserver=typeof ResizeObserver==='function'?new ResizeObserver(entries=>{for(const entry of entries){const dimensions=artDimensions.get(entry.target.dataset.art);if(dimensions)sizeArt(entry.target,dimensions);}}):null;
 const sound=createAudio(updateSoundButton);
 const position = index => ['0% 0%','100% 0%','0% 100%','100% 100%'][Math.max(0,Math.min(3,Number(index)||0))];
 const art = (id,index=0,classes='',label='장면 그림') => `<div class="art-frame ${classes}" data-art="${slug(id)}" data-art-index="${Number(index)||0}" style="--art-position:${position(index)}" role="img" aria-label="${esc(label)}"><span class="art-placeholder" aria-hidden="true">✦</span></div>`;
-const cname = id => CLASS.find(c=>c.id===id)?.name || '모험가';
+const classList = (campaign=selectedCampaign()) => Array.isArray(campaign?.classes)?campaign.classes:[];
+const classFor = id => classList().find(c=>c.id===id)||catalog.flatMap(c=>c.classes||[]).find(c=>c.id===id);
+const cname = id => classFor(id)?.name||'직업 선택 중';
+const classIcon = id => CLASS_ICONS[Math.max(0,classList().findIndex(c=>c.id===id))%4];
+const classBest = c => {const stat=c?.basic?.stat||Object.keys(c?.stats||{}).sort((a,b)=>c.stats[b]-c.stats[a])[0];return `${STAT[stat]||'능력'} +${c?.stats?.[stat]??0}`;};
 function healthMarkup(p){if(p.health==null)return '';const hp=Math.max(0,Math.min(p.maxHealth||3,Number(p.health)||0));return `<div class="life-meter ${p.life==='dead'?'life-dead':''}" aria-label="생명력 ${hp}/${p.maxHealth||3}${p.life==='dead'?' · 사망':''}">${Array.from({length:p.maxHealth||3},(_,i)=>`<i class="${i<hp?'filled':''}" aria-hidden="true">♥</i>`).join('')}<small>${p.life==='dead'?'사망 · 잔향':p.revivals?'귀환함':''}</small></div>`;}
 const selectedCampaign = () => catalog.find(c=>c.id===selected)||catalog[0];
 const game = () => state?.game;
@@ -104,7 +104,7 @@ function renderState(next){
   if(next?.catalog?.length)catalog=next.catalog;
   if(next?.campaignId)selected=next.campaignId;
   const person=next?.meId||'';
-  if(person!==lastPerson){secretOpen=false;lastPerson=person;draft={text:'',spark:false,flashback:'',chat:''};}
+  if(person!==lastPerson){secretOpen=false;combatTarget=null;lastPerson=person;draft={text:'',spark:false,flashback:'',chat:''};}
   const connection=$('connection');
   connection.innerHTML=!next?.code?'':`<i class="status-dot ${next.connected===false?'offline':''}"></i>${next.mode==='local'?'한 기기로 함께':next.connected===false?'재연결 중':'온라인'}`;
   if(!next?.code&&!next?.game){showView('home');renderHome();return;}
@@ -112,7 +112,7 @@ function renderState(next){
   showView('game');
   const sceneKey=next.game.campaignId+':'+next.game.scene.id;
   const changed=sceneKey!==lastScene;
-  if(changed){draft.text='';draft.spark=false;draft.flashback='';secretOpen=false;}
+  if(changed){combatTarget=null;draft.text='';draft.spark=false;draft.flashback='';secretOpen=false;}
   if(pending&&next.game.revision!==pending.revision&&!pending.committing){closeDialog('preview-dialog');toast('탁자의 상태가 바뀌었습니다. 행동을 다시 선택하면 최신 판정을 확인할 수 있어요.');}
   renderGame(changed);lastScene=sceneKey;
   sound.scene(next.game.campaignId,next.game.scene.mood);
@@ -121,11 +121,24 @@ function renderState(next){
   // Only sound a new outcome, never a reconnect or a teammate's unchanged state.
   if(result&&old?.game&&JSON.stringify(old.game.lastResult)!==JSON.stringify(result)&&key!==lastResultKey){
     const grade=result.grade;
-    sound.effect(['success','critical'].includes(grade)?'success':grade==='mixed'?'mixed':grade==='failure'?'failure':'transition');
+    if(result.combat){
+      sound.effect(result.combatEvent==='victory'?'victory':result.combatEvent==='defeat'?'failure':result.combatEvent==='ability'?'ability':'attack');
+      if(result.enemyRolls?.some(r=>r.damage>0))setTimeout(()=>sound.effect('enemy'),120);
+    }else sound.effect(['success','critical'].includes(grade)?'success':grade==='mixed'?'mixed':grade==='failure'?'failure':'transition');
   }
   lastResultKey=key;
 }
-function classOptions(value){return CLASS.map(c=>`<option value="${c.id}" ${c.id===value?'selected':''}>${c.name} · ${c.best}</option>`).join('');}
+function classOptions(value,campaign=selectedCampaign()){
+  return classList(campaign).map(c=>`<option value="${esc(c.id)}" ${c.id===value?'selected':''}>${esc(c.name)} · ${esc(classBest(c))}</option>`).join('');
+}
+function professionDetail(profession){
+  if(!profession)return '<p class="small muted">시나리오의 직업을 선택해 주세요.</p>';
+  return `<section class="profession-detail"><div class="profession-heading"><span>${classIcon(profession.id)}</span><div><h3>${esc(profession.name||profession.className)}</h3><p>${esc(profession.description||'')}</p></div></div><div class="profession-stats">${Object.entries(profession.stats||{}).map(([key,value])=>`<span>${esc(STAT[key]||key)} <b>+${value}</b></span>`).join('')}</div><div class="profession-moves"><div><small>기본 공격 · 제한 없음</small><b>${esc(profession.basic?.name||'기본 공격')}</b><p>${esc(profession.basic?.description||profession.basic?.text||'')}</p></div><div><small>고유 기술 · 전투마다 한 번</small><b>${esc(profession.ability?.name||'고유 기술')}</b><p>${esc(profession.ability?.description||profession.ability?.text||'')}</p></div></div></section>`;
+}
+function professionSummary(player){
+  const definition=classFor(player?.classId);if(!definition)return '';
+  return `<div class="party-profession"><div><span>나의 전투 역할</span><button class="text-button" data-action="profession" type="button">자세히 ↗</button></div><h3>${esc(player.className||definition.name)}</h3><p><small>기본</small><b>${esc(player.basic?.name||definition.basic?.name)}</b></p><p><small>고유</small><b>${esc(player.ability?.name||definition.ability?.name)}</b></p></div>`;
+}
 function renderLobby(){
   const campaign=selectedCampaign(), host=state.meId===state.hostId||state.mode==='local';
   const players=state.players||[];
@@ -138,9 +151,10 @@ function renderLobby(){
       ${host?`<label class="field"><span>다른 이야기 선택</span><select id="lobby-campaign">${catalog.map(c=>`<option value="${slug(c.id)}" ${c.id===selected?'selected':''}>${esc(c.title)}</option>`).join('')}</select></label>`:''}
       <div class="lobby-objective"><span>이번 이야기의 첫 목표</span><p>${esc(campaign?.objective||'첫 장면에서 동료들과 함께 목표를 확인하세요.')}</p></div></div>
     </section><section class="lobby-people panel"><div class="panel-heading"><h2>우리의 일행</h2><span>${players.length} / 4</span></div>
-      <div class="party-list">${players.map((p,i)=>`<div class="lobby-person"><div class="avatar color-${i}">${esc(CLASS.find(c=>c.id===p.classId)?.icon||'◆')}</div><div class="person-copy"><b>${esc(p.name)} ${p.id===state.meId?'<small>나</small>':''}</b><span>${cname(p.classId)}${p.id===state.hostId?' · 방장':''}</span></div><span class="connection-small">${p.connected===false?'연결 대기':'준비됨'}</span></div>`).join('')}${Array.from({length:Math.max(0,4-players.length)},()=>`<div class="empty-seat"><span>+</span><p>${state.mode==='local'?'빈 자리':'동료를 기다리는 자리'}</p></div>`).join('')}</div>
-      ${state.mode!=='local'?`<label class="field"><span>내 직업</span><select id="lobby-class">${classOptions(players.find(p=>p.id===state.meId)?.classId||'guardian')}</select></label>`:''}
-      <div class="quiet-note"><b>능력치는 직업에 따라 고정됩니다.</b><p>주사위는 행동의 결과를 정할 때만 굴립니다. 직업이 겹쳐도 함께 플레이할 수 있어요.</p></div>
+      <div class="party-list">${players.map((p,i)=>`<div class="lobby-person"><div class="avatar color-${i}">${esc(classIcon(p.classId))}</div><div class="person-copy"><b>${esc(p.name)} ${p.id===state.meId?'<small>나</small>':''}</b><span>${esc(cname(p.classId))}${p.id===state.hostId?' · 방장':''}</span></div><span class="connection-small">${p.connected===false?'연결 대기':'준비됨'}</span></div>`).join('')}${Array.from({length:Math.max(0,4-players.length)},()=>`<div class="empty-seat"><span>+</span><p>${state.mode==='local'?'빈 자리':'동료를 기다리는 자리'}</p></div>`).join('')}</div>
+      ${state.mode!=='local'?`<label class="field"><span>이번 이야기에서의 내 직업</span><select id="lobby-class">${classOptions(players.find(p=>p.id===state.meId)?.classId)}</select></label>`:`<div class="local-professions">${players.map(p=>`<label class="field"><span>${esc(p.name)}의 직업</span><select data-local-class="${esc(p.id)}">${classOptions(p.classId)}</select></label>`).join('')}</div>`}
+      ${professionDetail(classFor(players.find(p=>p.id===state.meId)?.classId))}
+      <div class="quiet-note"><b>능력치는 직업에 따라 고정됩니다.</b><p>주사위는 행동의 결과를 정할 때만 굴립니다. 이야기마다 전용 직업 네 개가 있고, 각자 기본 공격과 고유 기술 하나를 갖습니다.</p></div>
       ${host?`<button class="button primary full" data-action="start" data-busy-guard type="button" ${state.canStart===false?'disabled':''}>첫 장면 펼치기 <span>↗</span></button>`:'<div class="waiting-note"><span class="pulse-dot"></span>방장이 이야기를 시작하기를 기다리고 있어요.</div>'}
       <p class="small muted">1명으로도 시작할 수 있어요. 온라인에서는 시작 전에 참가해 주세요.</p>
     </section></div>`;
@@ -163,7 +177,7 @@ function renderGame(newScene=false){
         ${g.lastResult?renderResult(g.lastResult):''}${me?.life==='dead'&&!hasEnded?'<div class="death-notice"><b>이 인물은 사망했습니다.</b><p>살아 있는 동료가 행동을 이어갑니다. 비밀을 나누거나 한 번의 잔향으로 도울 수 있고, 이야기에 부활 지점이 나타나면 귀환을 시도할 수 있어요.</p></div>':''}
         <div class="scene-prose">${(Array.isArray(s.text)?s.text:[s.text]).filter(Boolean).map(p=>`<p>${esc(p)}</p>`).join('')}</div>
         ${s.dialogue?.text?`<blockquote class="dialogue"><span class="quote-mark" aria-hidden="true">“</span><p>${esc(s.dialogue.text)}</p><cite>${esc(s.dialogue.who||'누군가')}</cite></blockquote>`:''}
-        ${hasEnded?renderEnding(g):`
+        ${hasEnded?renderEnding(g):g.combat?renderCombat(g,players,me):`
           <div class="scene-objective"><span>눈앞의 문제</span><p>${esc(s.objective||'주변을 살피고 다음 행동을 정하세요.')}</p></div>
           ${(s.details||[]).length?`<div class="examine-row"><span>잠깐 살펴보기</span><div>${s.details.map(d=>`<button class="examine-button" data-detail="${esc(d.id)}" type="button" >⌕ ${esc(d.label)}${d.read?' ✓':''}</button>`).join('')}</div><small>관찰에는 주사위를 굴리지 않습니다.</small></div>`:''}
           ${renderResurrection(g,players)}<section class="action-section" aria-labelledby="action-heading"><div class="action-heading"><div><span class="eyebrow">YOUR NEXT MOVE</span><h2 id="action-heading">이제, 어떻게 할까요?</h2></div><span class="turn-pill ${g.canAct?'my-turn':''}">${g.canAct?'당신의 차례':esc(active?.name||'동료')+'의 차례'}</span></div>
@@ -175,8 +189,8 @@ function renderGame(newScene=false){
           </section>`}
       </div>
     </article><aside class="table-sidebar" aria-label="일행과 기록">
-      <section class="party-panel panel"><div class="panel-heading"><h2>탁자에 앉은 사람들</h2><span>${players.length} / 4</span></div><div class="compact-party">${players.map((p,i)=>`<div class="party-member ${p.id===g.activePlayerId?'active':''} ${p.life==='dead'?'fallen':''}"><div class="avatar color-${i}">${esc(CLASS.find(c=>c.id===p.classId)?.icon||'◆')}</div><div><b>${esc(p.name)}${p.id===state.meId?'<small>나</small>':''}</b><span>${esc(p.className||cname(p.classId))}${p.assisting?' · 협력 +1':''}${p.connected===false?' · 자리 비움':''}</span>${healthMarkup(p)}</div>${p.id===g.activePlayerId?'<span class="active-star" title="현재 차례">✦</span>':''}${state.mode==='local'&&p.id!==state.meId?`<button class="seat-button" data-seat="${esc(p.id)}" type="button" title="${esc(p.name)}의 비밀 카드 확인">카드</button>`:''}</div>`).join('')}</div>
-      <div class="pressure-block"><div><span>${esc(pressure.label)}</span><b>${pressure.value} <small>/ ${pressure.max}</small></b></div><div class="pressure-track" role="meter" aria-label="${esc(pressure.label)}" aria-valuemin="0" aria-valuemax="${pressure.max}" aria-valuenow="${pressure.value}">${Array.from({length:pressure.max||8},(_,i)=>`<i class="${i<pressure.value?'filled':''}"></i>`).join('')}</div><p>위기가 가득 차면 이후 판정의 목표가 +1 높아집니다.</p></div>
+      <section class="party-panel panel"><div class="panel-heading"><h2>탁자에 앉은 사람들</h2><span>${players.length} / 4</span></div><div class="compact-party">${players.map((p,i)=>`<div class="party-member ${p.id===g.activePlayerId?'active':''} ${p.life==='dead'?'fallen':''}"><div class="avatar color-${i}">${esc(classIcon(p.classId))}</div><div><b>${esc(p.name)}${p.id===state.meId?'<small>나</small>':''}</b><span>${esc(p.className||cname(p.classId))}${p.assisting?' · 협력 +1':''}${p.connected===false?' · 자리 비움':''}</span>${healthMarkup(p)}${combatStatusMarkup(g,p.id)}</div>${p.id===g.activePlayerId?'<span class="active-star" title="현재 차례">✦</span>':''}${state.mode==='local'&&p.id!==state.meId?`<button class="seat-button" data-seat="${esc(p.id)}" type="button" title="${esc(p.name)}의 비밀 카드 확인">카드</button>`:''}</div>`).join('')}</div>
+      ${professionSummary(me)}<div class="pressure-block"><div><span>${esc(pressure.label)}</span><b>${pressure.value} <small>/ ${pressure.max}</small></b></div><div class="pressure-track" role="meter" aria-label="${esc(pressure.label)}" aria-valuemin="0" aria-valuemax="${pressure.max}" aria-valuenow="${pressure.value}">${Array.from({length:pressure.max||8},(_,i)=>`<i class="${i<pressure.value?'filled':''}"></i>`).join('')}</div><p>위기가 가득 차면 이후 판정의 목표가 +1 높아집니다.</p></div>
       <button class="secret-button" data-action="secret" type="button"><span>✉</span><div><b>나만의 비밀 카드</b><small>공유할 순간은 당신이 정해요</small></div><span>↗</span></button>
       </section>
       <section class="notebook panel"><div class="notebook-tabs" role="tablist" aria-label="탁자 기록"><button id="tab-clues" data-tab="clues" role="tab" aria-selected="${activeTab==='clues'}" aria-controls="notebook-body" type="button">단서 <small>${(g.clues||[]).length}</small></button><button id="tab-journal" data-tab="journal" role="tab" aria-selected="${activeTab==='journal'}" aria-controls="notebook-body" type="button">기록</button><button id="tab-chat" data-tab="chat" role="tab" aria-selected="${activeTab==='chat'}" aria-controls="notebook-body" type="button">대화</button></div><div id="notebook-body" class="notebook-body" role="tabpanel" aria-labelledby="tab-${activeTab}">${renderNotebook()}</div></section>
@@ -186,6 +200,37 @@ function renderGame(newScene=false){
   if(!newScene&&focusId){const input=$(focusId);if(input){input.focus({preventScroll:true});if(typeof selection==='number'&&input.setSelectionRange){try{input.setSelectionRange(selection,selection);}catch{}}}}
   if($('notebook-body'))$('notebook-body').scrollTop=notebookScroll;
   if(newScene)window.scrollTo({top:0,behavior:'instant'});
+}
+function combatStatusMarkup(g,playerId){
+  if(!g.combat)return '';
+  const status=(g.combat.statuses||[]).find(s=>s.id===playerId)||{};
+  return `<div class="combat-status">${status.shield?`<span>방어 ${status.shield}</span>`:''}${status.boost?`<span>다음 공격 +${status.boost}</span>`:''}${(g.combat.actedIds||[]).includes(playerId)?'<span class="acted">행동 완료</span>':''}</div>`;
+}
+function renderCombatTactics(g,me){
+  const canAct=Boolean(g.combat?.canAct);
+  return `<details class="tactics combat-tactics" ${draft.spark||draft.flashback?'open':''}><summary>이번 공격 판정에 보너스 더하기 <span>+</span></summary><div class="tactics-content"><label class="spark-option"><input id="spend-spark" type="checkbox" ${draft.spark?'checked':''} ${!canAct||!g.sparks?'disabled':''}><span><b>운명 조각 사용 · +3</b><small>파티 공용 ${g.sparks??0}개 남음. 주사위를 굴리는 공격에만 사용합니다.</small></span></label><label class="field"><span>이 상황에 대비했던 준비를 회상하기 · +2</span><input id="flashback" maxlength="160" value="${esc(draft.flashback)}" placeholder="예: 적의 움직임에 맞춰 피할 자리를 살펴 두었다" ${!canAct||me?.focus===false?'disabled':''}><small>인물마다 이야기 전체에서 한 번. 준비 내용을 8자 이상 적어 주세요.</small></label></div></details>`;
+}
+function renderCombat(g,players,me){
+  const c=g.combat;if(!c)return '';
+  const enemy=c.enemy||{},intent=c.intent||{},basic=c.actions?.basic||{},ability=c.actions?.ability||{};
+  const canAct=Boolean(c.canAct)&&state.connected!==false;
+  const active=players.find(p=>p.id===g.activePlayerId);
+  const targets=c.targetOptions||players.filter(p=>p.life!=='dead');
+  if(!targets.some(p=>p.id===combatTarget))combatTarget=targets.find(p=>p.id===me?.id)?.id||targets[0]?.id||'';
+  const announcedTargets=(intent.targetIds||[]).map(id=>players.find(p=>p.id===id)?.name).filter(Boolean);
+  const targetLabel=announcedTargets.length?announcedTargets.join(', '):intent.target==='all'?'생존한 일행 전체':intent.target==='weakest'?'생명력이 가장 낮은 동료':'이번 행동자';
+  const health=Math.max(0,Number(enemy.health)||0),maxHealth=Math.max(1,Number(enemy.maxHealth)||1);
+  return `<section class="combat-panel" aria-labelledby="combat-title">
+    <div class="combat-heading"><div><div class="eyebrow">ENCOUNTER · ROUND ${c.round||1}</div><h2 id="combat-title">${esc(c.title||'함께 맞서는 위기')}</h2></div><span class="turn-pill ${canAct?'my-turn':''}">${canAct?'당신의 차례':esc(active?.name||'동료')+'의 차례'}</span></div>
+    <div class="enemy-card"><div class="enemy-heading"><div><span>맞서야 할 위협</span><h3>${esc(enemy.name||'앞을 막는 적')}</h3></div><div class="enemy-health"><b>${health}</b><small>/ ${maxHealth}</small></div></div><progress class="enemy-health-bar" value="${health}" max="${maxHealth}" aria-label="${esc(enemy.name||'적')} 생명력 ${health}/${maxHealth}"></progress><p>${esc(enemy.description||'')}</p>${c.vulnerable||c.staggered?`<div class="enemy-status">${c.vulnerable?`<span>약점 노출 · 다음 ${Number(c.vulnerable)||2}회 명중 피해 +1</span>`:''}${c.staggered?'<span>제압됨 · 다음 적 행동 한 번 취소</span>':''}</div>`:''}</div>
+    <div class="enemy-intent"><div><span>이번 라운드의 적 행동</span><b>${esc(intent.name||'위협적인 움직임')}</b></div><p>${esc(intent.text||'일행이 행동을 마치면 적이 움직입니다.')}</p><div class="intent-targets"><span><b>대상</b> ${esc(targetLabel)}</span><span><b>피해</b> ${Number(intent.damage)||0}</span><span><b>적 D20 목표</b> ${Number(intent.dc)||12}</span></div><small>살아 있는 일행이 한 번씩 행동한 뒤 적이 판정합니다. 방어는 피해를 먼저 막습니다.</small></div>
+    <div class="combat-turn-status">${players.filter(p=>p.life!=='dead').map(p=>`<span class="${(c.actedIds||[]).includes(p.id)?'done':p.id===g.activePlayerId?'now':''}">${(c.actedIds||[]).includes(p.id)?'✓':'·'} ${esc(p.name)}</span>`).join('')}</div>
+    ${ability.target==='ally'?`<label class="field combat-target-field"><span>${esc(ability.name||'고유 기술')}을 받을 동료</span><select id="combat-target" ${!canAct||!ability.available?'disabled':''}>${targets.map(p=>`<option value="${esc(p.id)}" ${p.id===combatTarget?'selected':''}>${esc(p.name)}${p.id===me?.id?' (나)':''} · 생명 ${p.health??0}/${p.maxHealth||3}</option>`).join('')}</select></label>`:''}
+    <div class="combat-actions"><button class="combat-action basic-action" data-combat="basic" type="button" ${!canAct?'disabled':''}><span class="move-label">기본 공격 · 계속 사용</span><b>${esc(basic.name||'기본 공격')}</b><p>${esc(basic.description||'직업의 주 능력치로 적을 공격합니다.')}</p><small>${esc(STAT[basic.stat]||'주 능력')} 판정 · 성공 피해 2</small><span class="move-arrow" aria-hidden="true">↗</span></button><button class="combat-action ability-action" data-combat="ability" type="button" ${!canAct||!ability.available?'disabled':''}><span class="move-label">고유 기술 · ${(c.usedAbilityIds||[]).includes(me?.id)?'이번 전투 사용 완료':me?.life==='dead'?'사망하여 사용 불가':'전투마다 한 번'}</span><b>${esc(ability.name||'고유 기술')}</b><p>${esc(ability.description||'직업의 특수한 방법으로 위기를 바꿉니다.')}</p><small>${['strike','drain'].includes(ability.type)?'주사위 판정으로 효과 결정':'판정 없이 효과 적용'} · 차례 소모</small><span class="move-arrow" aria-hidden="true">${ability.available?'↗':'✓'}</span></button></div>
+    ${renderCombatTactics(g,me)}
+    ${!canAct?`<div class="waiting-actions"><p>${me?.life==='dead'?'남은 동료에게 마지막 조언을 전할 수 있어요.':`${esc(active?.name||'동료')}의 행동을 기다리며 힘을 보태 주세요.`}</p><button class="button quiet" data-action="assist" data-busy-guard type="button" ${!g.canAssist?'disabled':''}>${me?.assisting?'협력하는 중 ✓':me?.life==='dead'?'잔향으로 돕기 · 한 번만':'동료 돕기 · +1'}</button>${state.meId===state.hostId&&active?.connected===false?'<button class="button quiet" data-action="pass" type="button">연결 끊긴 동료 차례 넘기기</button>':''}</div>`:''}
+    ${(c.log||[]).length?`<details class="combat-history"><summary>전투 기록 ${(c.log||[]).length}개</summary><div>${[...(c.log||[])].reverse().slice(0,8).map(row=>`<p>${esc(row.text||row)}</p>`).join('')}</div></details>`:''}
+  </section>`;
 }
 function renderResurrection(g,players){
   const site=g.scene?.resurrection;if(!site||site.available===false)return '';
@@ -203,8 +248,8 @@ function renderHarmRisk(plan){
 }
 function actionExample(s){const person=(s.entities||[]).find(e=>e.kind==='person');const object=(s.entities||[]).find(e=>e.kind==='object');return person?`${person.label}에게 무슨 일이 있었는지 조심스럽게 묻는다`:object?`${object.label}에 이상한 흔적이 있는지 조사한다`:'주변에서 이동할 수 있는 길을 찾아본다';}
 function renderResult(r){
-  const hasRoll=Number.isFinite(r.roll), grade=GRADE[r.grade]||'행동의 결과';
-  return `<section class="last-result grade-${esc(r.grade||'automatic')}" aria-label="직전 행동의 결과"><div class="result-top"><span>${esc(grade)}</span>${hasRoll?`<span class="result-dice"><b>${r.roll}</b><small>+ ${(r.bonus??(Number(r.total)-Number(r.roll)))||0} = <strong>${r.total}</strong> / 목표 ${r.dc}</small></span>`:'<small>이전 선택이 남긴 변화</small>'}</div><p>${esc(r.text)}</p>${r.actor?`<small class="result-actor">${esc(r.actor)} · ${esc(r.action||'')}</small>`:''}</section>`;
+  const hasRoll=Number.isFinite(r.roll), grade=r.combat&&r.grade==='failure'?'빗나감 · 피해 없음':r.combat&&r.grade==='mixed'?'부분 명중':GRADE[r.grade]||'행동의 결과';
+  return `<section class="last-result grade-${esc(r.grade||'automatic')}" aria-label="직전 행동의 결과"><div class="result-top"><span>${esc(grade)}</span>${hasRoll?`<span class="result-dice"><b>${r.roll}</b><small>+ ${(r.bonus??(Number(r.total)-Number(r.roll)))||0} = <strong>${r.total}</strong> / 목표 ${r.dc}</small></span>`:'<small>이전 선택이 남긴 변화</small>'}</div><p>${esc(r.text)}</p>${r.enemyRolls?.length?`<details class="enemy-rolls"><summary>적의 주사위 판정</summary>${r.enemyRolls.map(check=>`<p>${esc(game()?.players?.find(p=>p.id===check.targetId)?.name||'대상')} · D20 ${check.roll} · 피해 ${check.damage||0}</p>`).join('')}</details>`:''}${r.actor?`<small class="result-actor">${esc(r.actor)} · ${esc(r.action||'')}</small>`:''}</section>`;
 }
 function renderEnding(g){
   const s=g.scene;
@@ -217,21 +262,21 @@ function renderNotebook(){
   return `<div class="chat-messages" aria-live="polite">${(state.messages||[]).length?state.messages.map(m=>`<div><b>${esc(m.name)}</b><p>${esc(m.text)}</p></div>`).join(''):'<p class="chat-placeholder">단서에 대한 생각이나 엉뚱한 계획을 나눠 보세요.</p>'}</div><form id="chat-form"><label class="sr-only" for="chat-input">동료에게 할 말</label><textarea id="chat-input" rows="2" maxlength="300" placeholder="동료에게 할 말…">${esc(draft.chat)}</textarea><button class="button quiet small full" type="submit">보내기</button></form>`;
 }
 function entryValues(){
-  const el=$('entry-dialog');return {name:el.querySelector('#player-name')?.value||'',classId:el.querySelector('#player-class')?.value||'guardian',local:Array.from(el.querySelectorAll('[data-local-row]')).map(r=>({name:r.querySelector('input')?.value||'',classId:r.querySelector('select')?.value||'guardian'}))};
+  const el=$('entry-dialog');return {name:el.querySelector('#player-name')?.value||'',classId:el.querySelector('#player-class')?.value||classList()[0]?.id,local:Array.from(el.querySelectorAll('[data-local-row]')).map((r,i)=>({name:r.querySelector('input')?.value||'',classId:r.querySelector('select')?.value||classList()[i]?.id}))};
 }
 function openEntry(kind='create',keep=null){
-  entryKind=kind;const c=selectedCampaign();const initial=keep||{name:readName(),classId:'guardian',local:[]};
-  const d=openDialog('entry-dialog',`${closeButton('entry-dialog')}<div class="eyebrow">${kind==='join'?'JOIN THE TABLE':'OPEN A NEW STORY'}</div><h2 id="entry-title">${kind==='join'?'친구의 탁자에 앉기':'어떻게 함께할까요?'}</h2><p class="modal-intro">${kind==='join'?'친구가 알려 준 초대 코드와 내 이름을 적어 주세요.':esc(c?.title||'새 이야기')+'에 들어갈 준비를 해요.'}</p>
+  entryKind=kind;const c=selectedCampaign(),classes=classList(c);const initial=keep||{name:readName(),classId:classes[0]?.id,local:[]};
+  openDialog('entry-dialog',`${closeButton('entry-dialog')}<div class="eyebrow">${kind==='join'?'JOIN THE TABLE':'OPEN A NEW STORY'}</div><h2 id="entry-title">${kind==='join'?'친구의 탁자에 앉기':'어떻게 함께할까요?'}</h2><p class="modal-intro">${kind==='join'?'친구가 알려 준 초대 코드와 내 이름을 적어 주세요.':esc(c?.title||'새 이야기')+'에 들어갈 준비를 해요.'}</p>
     ${kind==='create'?`<div class="mode-switch" role="group" aria-label="플레이 방식"><button data-mode="online" class="${entryMode==='online'?'active':''}" type="button"><b>온라인</b><small>각자의 기기로</small></button><button data-mode="local" class="${entryMode==='local'?'active':''}" type="button"><b>한 기기로 함께</b><small>같은 자리에서</small></button></div>`:''}
-    <form id="entry-form">${kind==='join'?'<label class="field"><span>초대 코드</span><input id="join-code" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="예: ABC234" required></label>':''}
-    ${kind==='create'&&entryMode==='local'?`<div class="local-count"><label for="local-count">함께할 인원</label><select id="local-count">${[1,2,3,4].map(n=>`<option value="${n}" ${n===localCount?'selected':''}>${n}명</option>`).join('')}</select></div><div class="local-rows">${Array.from({length:localCount},(_,i)=>`<div class="local-row" data-local-row><span>${i+1}</span><label><span class="sr-only">${i+1}번 플레이어 이름</span><input maxlength="18" placeholder="${i+1}번 플레이어 이름" value="${esc(initial.local[i]?.name||'')}" required></label><label><span class="sr-only">${i+1}번 플레이어 직업</span><select>${classOptions(initial.local[i]?.classId||CLASS[i].id)}</select></label></div>`).join('')}</div><p class="small muted">차례마다 화면을 넘겨 주세요. 각자의 비밀은 카드를 눌렀을 때만 보입니다.</p>`:`<div class="entry-fields"><label class="field"><span>내 이름</span><input id="player-name" maxlength="18" autocomplete="nickname" placeholder="어떻게 불러 드릴까요?" value="${esc(initial.name)}" required></label><label class="field"><span>내 직업</span><select id="player-class">${classOptions(initial.classId)}</select></label></div>`}
-    <div class="class-primer">${CLASS.map(cl=>`<div><span>${cl.icon}</span><b>${cl.name}</b><small>${cl.best}</small></div>`).join('')}</div><p class="small muted">직업 능력치는 고정입니다. 비밀 카드와 개인 목표는 이야기가 시작되면 받습니다.</p>
+    <form id="entry-form">${kind==='join'?'<label class="field"><span>초대 코드</span><input id="join-code" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="예: ABC234" required></label>':''}
+    ${kind==='create'&&entryMode==='local'?`<div class="local-count"><label for="local-count">함께할 인원</label><select id="local-count">${[1,2,3,4].map(n=>`<option value="${n}" ${n===localCount?'selected':''}>${n}명</option>`).join('')}</select></div><div class="local-rows">${Array.from({length:localCount},(_,i)=>`<div class="local-row" data-local-row><span>${i+1}</span><label><span class="sr-only">${i+1}번 플레이어 이름</span><input maxlength="18" placeholder="${i+1}번 플레이어 이름" value="${esc(initial.local[i]?.name||'')}" required></label><label><span class="sr-only">${i+1}번 플레이어 직업</span><select data-entry-class>${classOptions(initial.local[i]?.classId||classes[i]?.id)}</select></label></div>`).join('')}</div><p class="small muted">차례마다 화면을 넘겨 주세요. 각자의 비밀은 카드를 눌렀을 때만 보입니다.</p>`:`<div class="entry-fields ${kind==='join'?'name-only':''}"><label class="field"><span>내 이름</span><input id="player-name" maxlength="18" autocomplete="nickname" placeholder="어떻게 불러 드릴까요?" value="${esc(initial.name)}" required></label>${kind==='create'?`<label class="field"><span>이번 이야기의 직업</span><select id="player-class" data-entry-class>${classOptions(initial.classId)}</select></label>`:''}</div>`}
+    ${kind==='create'?`<div class="class-primer">${classes.map(cl=>`<div><span>${classIcon(cl.id)}</span><b>${esc(cl.name)}</b><small>${esc(classBest(cl))}</small></div>`).join('')}</div><div id="entry-class-preview">${professionDetail(classFor(initial.classId)||classes[0])}</div><p class="small muted">선택한 직업의 공격과 기술입니다. 직업 능력치는 고정이며, 비밀 카드와 개인 목표는 시작 후 받습니다.</p>`:'<div class="quiet-note"><b>직업은 방에 들어간 뒤 고릅니다.</b><p>친구가 고른 시나리오에 맞춰 전용 직업 네 개가 준비됩니다. 대기실에서 내 직업을 바꿀 수 있어요.</p></div>'}
     <button class="button primary full" data-busy-guard type="submit">${kind==='join'?'참가하기':'탁자 만들기'} <span>↗</span></button></form>`);
   if(kind==='join'){const code=new URLSearchParams(location.search).get('room');if(code)$('join-code').value=code.toUpperCase();}
 }
 function readName(){try{return localStorage.getItem('cg-v14-name')||'';}catch{return '';}}
 async function preview(payload){
-  if(!game()||(!game().canAct&&!payload.detailId))return;
+  if(!game()||(!(payload.combatAction?game().combat?.canAct:game().canAct)&&!payload.detailId))return;
   payload={...payload};
   if(!payload.detailId&&!payload.reviveId){if(draft.spark)payload.spendSpark=true;if(draft.flashback.trim())payload.flashback=draft.flashback.trim();}
   let result;
@@ -246,8 +291,8 @@ async function preview(payload){
   pending={payload,plan,revision:game().revision,sceneId:game().scene.id,committing:false};
   const auto=plan.automatic||Boolean(payload.detailId);
   openDialog('preview-dialog',`${closeButton('preview-dialog')}<div class="eyebrow">${auto?'YOUR DECISION':'BEFORE THE DICE'}</div><h2 id="preview-title">${auto?'이 행동으로 진행할까요?':'주사위를 굴리기 전에'}</h2><p class="preview-action">${esc(plan.label||plan.action||payload.text||'장면을 살펴봅니다.')}</p>${plan.interpreted?`<div class="interpretation"><b>장면 해석</b><p>${esc(typeof plan.interpreted==='string'?plan.interpreted:plan.label)}</p></div>`:''}
-    ${auto?'<div class="automatic-note"><span>✧</span><p>위험을 겨루는 행동이 아니므로<br><b>주사위 없이 선택대로 진행합니다.</b></p></div>':`<div class="dice-equation"><div class="die-token">D20</div><span>+</span><div><b>${Number(plan.bonus)||0}</b><small>${esc(STAT[plan.stat]||'행동')} + 도움 + 준비</small></div><span class="equation-arrow">→</span><div><b>${Number(plan.dc)||0}</b><small>성공 목표</small></div></div><div class="bonus-breakdown">직업 +${Number(plan.classBonus??((Number(plan.bonus)||0)-(Number(plan.assistance)||0)-(plan.spendSpark?3:0)-(plan.flashback?2:0)))||0} · 동료 +${Number(plan.assistance)||0}${plan.spendSpark?' · 운명 조각 +3':''}${plan.flashback?' · 회상 +2':''}</div><div class="risk-note"><b>이번 행동에 걸린 것</b><p>${esc(plan.risk||'실패하면 위험이 높아지고, 다른 상황에서 이야기가 이어집니다.')}</p>${renderHarmRisk(plan)}</div><p class="small muted">목표 이상이면 성공. 목표보다 1–2 낮으면 대가 있는 성공. 실패해도 이야기는 다음 상황으로 이어집니다.</p>`}
-    <div class="dialog-actions"><button class="button quiet" data-close="preview-dialog" type="button">다시 생각하기</button><button class="button primary" data-action="confirm-action" data-busy-guard type="button">${auto?'이대로 진행':'D20 굴리기'} <span>↗</span></button></div>`);
+    ${auto?`<div class="automatic-note"><span>✧</span><p>${plan.type==='combat'?'성공 판정이 필요 없는 기술입니다.<br><b>이번 차례와 기술 사용 횟수를 소모합니다.</b>':'위험을 겨루는 행동이 아니므로<br><b>주사위 없이 선택대로 진행합니다.</b>'}</p></div>${plan.type==='combat'?`<div class="risk-note"><b>기술의 효과와 적의 다음 행동</b><p>${esc(plan.risk||'고유 기술을 사용하고 다음 차례로 넘어갑니다.')}</p></div>`:''}`:`<div class="dice-equation"><div class="die-token">D20</div><span>+</span><div><b>${Number(plan.bonus)||0}</b><small>${esc(STAT[plan.stat]||'행동')} + 도움 + 준비</small></div><span class="equation-arrow">→</span><div><b>${Number(plan.dc)||0}</b><small>성공 목표</small></div></div><div class="bonus-breakdown">직업 +${Number(plan.classBonus??((Number(plan.bonus)||0)-(Number(plan.assistance)||0)-(plan.spendSpark?3:0)-(plan.flashback?2:0)))||0} · 동료 +${Number(plan.assistance)||0}${plan.boost?` · 격려 +${Number(plan.boost)||0}`:''}${plan.spendSpark?' · 운명 조각 +3':''}${plan.flashback?' · 회상 +2':''}</div><div class="risk-note"><b>이번 행동에 걸린 것</b><p>${esc(plan.risk||'실패하면 위험이 높아지고, 다른 상황에서 이야기가 이어집니다.')}</p>${renderHarmRisk(plan)}</div><p class="small muted">목표 이상이면 성공. 목표보다 1–2 낮으면 대가 있는 성공. ${plan.type==='combat'?'자연 1은 빗나감, 자연 20은 대성공입니다. 일행의 행동이 끝나면 예고된 적의 판정이 진행됩니다.':'실패해도 이야기는 다음 상황으로 이어집니다.'}</p>`}
+    <div class="dialog-actions"><button class="button quiet" data-close="preview-dialog" type="button">다시 생각하기</button><button class="button primary" data-action="confirm-action" data-busy-guard type="button">${auto?(plan.type==='combat'?'기술 사용하기':'이대로 진행'):'D20 굴리기'} <span>↗</span></button></div>`);
 }
 function showSecret(){
   const g=game();if(!g)return;const secret=g.secret,me=(g.players||[]).find(p=>p.id===state.meId);
@@ -256,7 +301,7 @@ function showSecret(){
   openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">FOR YOUR EYES ONLY</div><h2 id="info-title">${esc(me?.name||'나')}의 비밀 카드</h2>${!secretOpen?`<div class="secret-envelope"><span>✉</span><h3>${esc(title)}</h3><p>${state.mode==='local'?'다른 동료가 화면을 보고 있지 않은지 확인한 뒤 열어 주세요.':'동료에게 아직 공개되지 않은 정보입니다.'}</p><button class="button primary" data-action="open-secret" type="button">나만 보기</button></div>`:`<div class="secret-content"><h3>${esc(title)}</h3><p>${esc(secret.secret)}</p><div class="personal-goal"><span>내가 바라는 것</span><p>${esc(secret.goal)}</p></div></div><div class="risk-note"><b>공유할 내용</b><p>${esc(secret.reveal)}</p></div><button class="button primary full" data-action="reveal" type="button" ${me?.revealed?'disabled':''}>${me?.revealed?'이미 동료들에게 공개한 비밀':'이 비밀을 동료들에게 공개하기'}</button><p class="small muted">공개하면 모두의 기록에 남습니다.</p>`}`);
 }
 function showHelp(){
-  openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">WELCOME TO THE TABLE</div><h2 id="info-title">이야기를 함께 만드는 방법</h2><div class="help-steps"><section><span>01</span><div><h3>장면을 읽고, 동료와 상의해요.</h3><p>눈앞의 문제, 등장인물, 단서가 매 장면 달라집니다. 「잠깐 살펴보기」로 위험 없이 관찰할 수 있어요.</p></div></section><section><span>02</span><div><h3>내 차례에 행동을 정해요.</h3><p>선택지를 누르거나, 대상과 방법을 직접 적으세요. 판정 내용과 실패의 대가를 먼저 보고 실행을 결정합니다.</p></div></section><section><span>03</span><div><h3>불확실한 행동에만 D20을 굴려요.</h3><p>직업의 고정 능력치와 협력 보너스를 더합니다. 성공·대가 있는 성공·실패에 따라 사건이 다르게 이어집니다. 중요한 가치 판단은 주사위가 대신 정하지 않아요.</p></div></section><section><span>04</span><div><h3>혼자만 아는 사실을 나눠요.</h3><p>인물마다 비밀과 목표가 있습니다. 동료를 돕거나, 운명 조각으로 +3, 미리 해 둔 준비를 회상해 +2를 받을 수 있어요.</p></div></section></div><div class="quiet-note"><b>위험은 실제로 인물을 잃게 할 수 있어요.</b><p>각 인물은 생명력 3으로 시작합니다. 위험한 선택의 판정창에서 피해를 먼저 확인하세요. 사망하면 살아 있는 동료가 행동을 이어가며, 부활 지점에서 한 번의 귀환을 시도할 수 있습니다. 모두 사망하면 이야기는 그 자리에서 끝납니다.</p></div><div class="rules-panel"><h3>직업과 고정 보너스</h3><div class="rules-stats">${CLASS.map(c=>`<div><b>${c.icon} ${c.name}</b><p>${Object.entries(c.stats).map(([k,v])=>`${STAT[k]} +${v}`).join(' · ')}</p></div>`).join('')}</div></div><div class="quiet-note"><b>현재 장면을 이해하는 규칙 기반 진행자</b><p>외부 생성형 AI나 API 키 없이 작동합니다. 장면 안의 대상과 준비된 행동을 바탕으로 자유 입력을 해석합니다. 해석하기 어려운 행동은 확인을 요청하며, 없는 인물이나 사건을 임의로 만들어 내지 않습니다.</p></div><p class="small muted">온라인은 방 코드로 1–4명이 참가합니다. 한 기기로 함께 모드는 같은 화면을 차례로 사용하며, 저장 파일로 진행을 옮길 수 있습니다. 장면 그림과 소리는 모두 게임에 포함되어 있습니다.</p>`);
+  openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">WELCOME TO THE TABLE</div><h2 id="info-title">이야기를 함께 만드는 방법</h2><div class="help-steps"><section><span>01</span><div><h3>장면을 읽고, 동료와 상의해요.</h3><p>눈앞의 문제, 등장인물, 단서가 매 장면 달라집니다. 「잠깐 살펴보기」로 위험 없이 관찰할 수 있어요.</p></div></section><section><span>02</span><div><h3>내 차례에 행동을 정해요.</h3><p>선택지를 누르거나, 대상과 방법을 직접 적으세요. 판정 내용과 실패의 대가를 먼저 보고 실행을 결정합니다.</p></div></section><section><span>03</span><div><h3>불확실한 행동에만 D20을 굴려요.</h3><p>직업의 고정 능력치와 협력 보너스를 더합니다. 성공·대가 있는 성공·실패에 따라 사건이 다르게 이어집니다. 중요한 가치 판단은 주사위가 대신 정하지 않아요.</p></div></section><section><span>04</span><div><h3>혼자만 아는 사실을 나눠요.</h3><p>인물마다 비밀과 목표가 있습니다. 동료를 돕거나, 운명 조각으로 +3, 미리 해 둔 준비를 회상해 +2를 받을 수 있어요.</p></div></section></div><div class="quiet-note"><b>전투에서는 기본 공격과 고유 기술 하나만 기억하세요.</b><p>일행이 한 번씩 행동하면 적의 예고된 행동이 진행됩니다. 고유 기술은 전투마다 한 번, 기본 공격은 계속 사용할 수 있어요. 다음 공격 대상과 피해를 살피고 협력하세요. 적을 제압하면 멈췄던 이야기를 다시 이어갑니다.</p></div><div class="quiet-note"><b>위험은 실제로 인물을 잃게 할 수 있어요.</b><p>각 인물은 생명력 3으로 시작합니다. 위험한 선택의 판정창에서 피해를 먼저 확인하세요. 사망하면 살아 있는 동료가 행동을 이어가며, 부활 지점에서 한 번의 귀환을 시도할 수 있습니다. 모두 사망하면 이야기는 그 자리에서 끝납니다.</p></div><div class="rules-panel"><h3>${esc(selectedCampaign()?.title||'이번 이야기')}의 네 직업</h3><div class="rules-stats">${classList().map(c=>`<div><b>${classIcon(c.id)} ${esc(c.name)}</b><p>${Object.entries(c.stats).map(([k,v])=>`${STAT[k]} +${v}`).join(' · ')}</p><p>기본: ${esc(c.basic?.name)}<br>고유: ${esc(c.ability?.name)}</p></div>`).join('')}</div></div><div class="quiet-note"><b>현재 장면을 이해하는 규칙 기반 진행자</b><p>외부 생성형 AI나 API 키 없이 작동합니다. 장면 안의 대상과 준비된 행동을 바탕으로 자유 입력을 해석합니다. 해석하기 어려운 행동은 확인을 요청하며, 없는 인물이나 사건을 임의로 만들어 내지 않습니다.</p></div><p class="small muted">온라인은 방 코드로 1–4명이 참가합니다. 한 기기로 함께 모드는 같은 화면을 차례로 사용하며, 저장 파일로 진행을 옮길 수 있습니다. 장면 그림과 소리는 모두 게임에 포함되어 있습니다.</p>`);
 }
 function updateSoundButton(){
   const p=sound?.preferences;
@@ -285,6 +330,7 @@ document.addEventListener('click',event=>{
   if(el.dataset.close){closeDialog(el.dataset.close);return;}
   if(el.dataset.campaign){selected=el.dataset.campaign;renderHome();openEntry('create');return;}
   if(el.dataset.mode){const values=entryValues();entryMode=el.dataset.mode;openEntry(entryKind,values);return;}
+  if(el.dataset.combat){const action=el.dataset.combat;void guarded(()=>preview({combatAction:action,...(action==='ability'&&game()?.combat?.actions?.ability?.target==='ally'?{targetId:$('combat-target')?.value}:{} )}));return;}
   if(el.dataset.choice){void guarded(()=>preview({choiceId:el.dataset.choice}));return;}
   if(el.dataset.revive){void guarded(()=>preview({reviveId:el.dataset.revive}));return;}
   if(el.dataset.detail){const detail=game()?.scene.details?.find(d=>d.id===el.dataset.detail);if(detail?.read){openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">OBSERVATION</div><h2 id="info-title">${esc(detail.label)}</h2><p class="modal-intro">${esc(detail.text)}</p><button class="button quiet full" data-close="info-dialog" type="button">이야기로 돌아가기</button>`);}else void guarded(()=>preview({detailId:el.dataset.detail}));return;}
@@ -298,6 +344,7 @@ document.addEventListener('click',event=>{
   if(action==='audio-settings'){showAudio();return;}
   if(action==='toggle-audio'){void sound.toggle().then(showAudio);return;}
   if(action==='import'){closeDialog('info-dialog');$('save-file').click();return;}
+  if(action==='profession'){const me=game()?.players?.find(p=>p.id===state.meId);openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">MY PROFESSION</div><h2 id="info-title">${esc(me?.className||cname(me?.classId))}</h2>${professionDetail(classFor(me?.classId))}`);return;}
   if(action==='secret'){secretOpen=false;showSecret();return;}
   if(action==='open-secret'){secretOpen=true;showSecret();return;}
   if(action==='leave'){confirmLeave();return;}
@@ -316,6 +363,7 @@ document.addEventListener('click',event=>{
     else if(action==='confirm-action'&&pending){
       if(game()?.revision!==pending.revision){closeDialog('preview-dialog');toast('상태가 바뀌었어요. 행동을 다시 확인해 주세요.');return;}
       const prepared=pending;prepared.committing=true;
+      if(prepared.plan.type==='combat'){draft.spark=false;draft.flashback='';}
       if(!prepared.plan.automatic&&!prepared.payload.detailId){sound.effect('dice');$('preview-dialog').classList.add('rolling');}
       const result=await call('act',prepared.payload);
       $('preview-dialog').classList.remove('rolling');
@@ -338,6 +386,9 @@ document.addEventListener('input',event=>{
 document.addEventListener('change',event=>{
   const el=event.target;
   if(el.id==='spend-spark')draft.spark=el.checked;
+  else if(el.id==='combat-target')combatTarget=el.value;
+  else if(el.hasAttribute('data-entry-class')){const target=$('entry-class-preview');if(target)target.innerHTML=professionDetail(classFor(el.value));}
+  else if(el.dataset.localClass)void guarded(async()=>{const seat=state.meId;await call('setLocalSeat',el.dataset.localClass);await call('setClass',el.value);if(seat!==el.dataset.localClass)await call('setLocalSeat',seat);});
   else if(el.id==='local-count'){const values=entryValues();localCount=Number(el.value);openEntry('create',values);}
   else if(el.id==='lobby-campaign')void guarded(()=>call('selectCampaign',el.value));
   else if(el.id==='lobby-class')void guarded(()=>call('setClass',el.value));
@@ -348,7 +399,7 @@ document.addEventListener('submit',event=>{
   void guarded(async()=>{
     if(event.target.id==='entry-form'){
       const values=entryValues();let result;
-      if(entryKind==='join')result=await call('join',{name:values.name.trim(),classId:values.classId,code:$('join-code').value.trim().toUpperCase()});
+      if(entryKind==='join')result=await call('join',{name:values.name.trim(),code:$('join-code').value.trim().toUpperCase()});
       else result=await call('create',{name:entryMode==='local'?values.local[0]?.name.trim():values.name.trim(),classId:entryMode==='local'?values.local[0]?.classId:values.classId,campaignId:selected,mode:entryMode,localPlayers:entryMode==='local'?values.local.map(p=>({...p,name:p.name.trim()})):undefined});
       if(result){try{localStorage.setItem('cg-v14-name',values.name);}catch{}closeDialog('entry-dialog');}
     }

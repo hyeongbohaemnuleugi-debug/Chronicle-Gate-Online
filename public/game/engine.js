@@ -1,13 +1,9 @@
-/** Chronicle Gate 14: deterministic, shared story rules. No network or model dependency. */
-export const VERSION = '14.0.0';
+/** Chronicle Gate 15: shared story and combat rules. No network or model dependency. */
+import { CLASSES, LEGACY_CLASS_IDS, getClasses, getClass, normalizeClassId } from './professions.js';
+import { startCombat, combatView, previewCombat, applyCombatAction, skipCombatTurn, restoreCombat } from './combat.js';
+export { CLASSES, getClasses, getClass, normalizeClassId } from './professions.js';
+export const VERSION = '15.0.0';
 export const STAT_LABELS = Object.freeze({ might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' });
-export const CLASSES = Object.freeze([
-  { id: 'guardian', name: '수호자', description: '위험을 막고 정면으로 돌파합니다.', stats: { might: 3, agility: 1, wit: 0, heart: 1 } },
-  { id: 'scout', name: '길잡이', description: '잠입과 기민한 움직임에 강합니다.', stats: { might: 1, agility: 3, wit: 1, heart: 0 } },
-  { id: 'scholar', name: '분석가', description: '단서와 장치의 원리를 읽습니다.', stats: { might: 0, agility: 1, wit: 3, heart: 1 } },
-  { id: 'envoy', name: '중재자', description: '인물의 마음을 움직이고 협상합니다.', stats: { might: 1, agility: 0, wit: 1, heart: 3 } },
-]);
-const CLASS_MAP = Object.fromEntries(CLASSES.map(c => [c.id, c]));
 const clone = value => JSON.parse(JSON.stringify(value));
 const bound = (value, low, high) => Math.max(low, Math.min(high, value));
 export const cleanText = (value, max = 220) => String(value ?? '').replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, max);
@@ -29,6 +25,7 @@ export function conditionMatches(condition, game) {
   return true;
 }
 export function availableChoices(game, campaign) {
+  if (game.combat) return [];
   return (nodeFor(game, campaign)?.choices ?? []).filter(c => conditionMatches(c.requires, game));
 }
 
@@ -36,21 +33,25 @@ export function createGame(campaign, players) {
   if (!campaign?.nodes?.[campaign.start]) throw new Error('시나리오의 시작 장면이 없습니다.');
   if (!Array.isArray(players) || players.length < 1 || players.length > 4) throw new Error('플레이어는 1~4명이어야 합니다.');
   if (new Set(players.map(p => p.id)).size !== players.length) throw new Error('플레이어 ID가 중복되었습니다.');
-  return {
-    schema: 14, version: VERSION, campaignId: campaign.id, nodeId: campaign.start,
+  const game = {
+    schema: 15, version: VERSION, campaignId: campaign.id, nodeId: campaign.start,
     phase: 'playing', revision: 1, turn: 0, activeIndex: 0, pressure: 0, sparks: 2,
     flags: {}, clues: [], visited: [campaign.start], detailsRead: {}, assists: [], reviveAttempts: {},
     players: players.map((p, i) => ({ id: cleanText(p.id, 80), name: cleanText(p.name, 18) || `모험가 ${i + 1}`,
-      classId: CLASS_MAP[p.classId] ? p.classId : CLASSES[i % 4].id,
+      classId: normalizeClassId(campaign, p.classId, i),
       roleIndex: i, focus: true, revealed: false, health:3, maxHealth:3, life:'alive', revivals:0, echoUsed:false, connected: p.connected !== false })),
     journal: [], lastResult: null, startedAt: new Date().toISOString(),
+    combat: null, completedCombats: [], combatRecords: {},
   };
+  startCombat(game, campaign);
+  return game;
 }
 
 export function viewGame(game, campaign, viewerId) {
   const node = nodeFor(game, campaign);
   const me = game.players.find(p => p.id === viewerId);
   const role = me ? campaign.roles?.[me.roleIndex] : null;
+  const combat = combatView(game, campaign, viewerId);
   const callbacks = [...(node.callbacks || []), ...(node.ending ? node.epilogues || [] : [])]
     .filter(c => conditionMatches(c.when, game)).map(c => c.text);
   const actualText = [...(Array.isArray(node.text) ? node.text : [node.text]), ...callbacks].filter(Boolean);
@@ -71,19 +72,19 @@ export function viewGame(game, campaign, viewerId) {
     scene: {
       id: node.id || game.nodeId, title: node.title, chapter: node.chapter || 1,
       location: node.location || campaign.title, art: Number(node.art) || 0,
-      mood: node.mood || 'mystery', text: actualText, dialogue: node.dialogue || null,
-      objective: node.objective || campaign.objective, entities: clone(node.entities || []),
-      details: (node.details || []).map(d => ({ id: d.id, label: d.label,
+      mood: combat ? 'danger' : node.mood || 'mystery', text: combat ? combat.intro : actualText, dialogue: combat ? null : node.dialogue || null,
+      objective: combat ? `${combat.enemy.name}을 제압하고 길을 여세요.` : node.objective || campaign.objective, entities: combat ? [] : clone(node.entities || []),
+      details: (combat ? [] : node.details || []).map(d => ({ id: d.id, label: d.label,
         read: Boolean(game.detailsRead[`${game.nodeId}:${d.id}`]),
         text: game.detailsRead[`${game.nodeId}:${d.id}`] ? d.text : undefined })),
       choices: availableChoices(game, campaign).map(c => ({ id: c.id, label: c.label, stat: c.stat,
         dc: c.automatic ? null : (c.dc || 11) + (game.pressure >= (campaign.pressureMax || 8) ? 1 : 0),
         risk: c.risk || '상황이 바뀌고 다른 경로로 이어집니다.', harmRisk: Math.max(0,...Object.values(c.outcomes || {}).map(o=>(o.harm||0)+(o.harmAll||0))), automatic: Boolean(c.automatic) })),
-      resurrection: node.resurrection ? { ...node.resurrection, available: conditionMatches(node.resurrection.requires,game), eligibleIds:game.players.filter(p=>p.life==='dead'&&p.revivals<1&&!game.reviveAttempts?.[`${game.nodeId}:${p.id}`]).map(p=>p.id) } : null,
+      resurrection: !combat && node.resurrection ? { ...node.resurrection, available: conditionMatches(node.resurrection.requires,game), eligibleIds:game.players.filter(p=>p.life==='dead'&&p.revivals<1&&!game.reviveAttempts?.[`${game.nodeId}:${p.id}`]).map(p=>p.id) } : null,
       ending: Boolean(node.ending), question: node.question || '',
     },
-    players: game.players.map(p => ({ ...p, className: CLASS_MAP[p.classId]?.name,
-      stats: CLASS_MAP[p.classId]?.stats, assisting: game.assists.includes(p.id),
+    players: game.players.map(p => ({ ...p, className: getClass(campaign,p.classId)?.name,
+      stats: getClass(campaign,p.classId)?.stats, basic: getClass(campaign,p.classId)?.basic, ability: getClass(campaign,p.classId)?.ability, assisting: game.assists.includes(p.id),
       revealedText: p.revealed ? campaign.roles?.[p.roleIndex]?.reveal : null })),
     activePlayerId: currentPlayer(game)?.id,
     pressure: { value: game.pressure, max: campaign.pressureMax || 8, label: campaign.pressureLabel || '위기' },
@@ -94,7 +95,8 @@ export function viewGame(game, campaign, viewerId) {
     secret: role ? clone(role) : null,
     canAct: Boolean(me && me.life !== 'dead' && me.id === currentPlayer(game)?.id && game.phase === 'playing'),
     canAssist: Boolean(me && me.id !== currentPlayer(game)?.id && game.phase === 'playing' && !game.assists.includes(me.id) && (me.life !== 'dead' || !me.echoUsed)),
-    helpText: '안전한 관찰은 주사위 없이. 위험한 행동은 D20 + 직업 보너스. 목표보다 1~2 낮으면 대가를 치르고 성공합니다.',
+    combat, completedCombats: [...(game.completedCombats || [])],
+    helpText: combat ? '기본 공격은 계속 사용할 수 있고, 직업 능력은 전투마다 한 번입니다. 생존자들이 한 번씩 행동하면 적이 예고한 대로 공격합니다.' : '안전한 관찰은 주사위 없이. 위험한 행동은 D20 + 직업 보너스. 목표보다 1~2 낮으면 대가를 치르고 성공합니다.',
     ending: Boolean(node.ending), visitedCount: game.visited.length,
   };
 }
@@ -161,6 +163,12 @@ export function previewAction(game, campaign, playerId, payload = {}) {
   const actor = game.players.find(p => p.id === playerId);
   if (!actor) return fail('이 테이블의 참가자가 아닙니다.');
   const node = nodeFor(game, campaign);
+  if (game.combat) {
+    if(actor.life==='dead')return fail('사망한 캐릭터는 공격할 수 없습니다. 마지막 조언으로 동료를 도울 수 있습니다.');
+    if(currentPlayer(game)?.id!==playerId)return fail('지금은 동료의 차례입니다. 협력하거나 전투 상황을 확인해 주세요.');
+    return previewCombat(game,campaign,actor,payload);
+  }
+  if(payload.combatAction)return fail('지금은 전투 중이 아닙니다. 현재 장면의 행동을 골라 주세요.');
   if (payload.detailId) {
     const detail = (node.details || []).find(d => d.id === payload.detailId);
     if (!detail) return fail('현재 장면에 없는 관찰 대상입니다.');
@@ -178,7 +186,7 @@ export function previewAction(game, campaign, playerId, payload = {}) {
     if(game.reviveAttempts?.[`${game.nodeId}:${target.id}`])return fail('이 장소에서 이 동료를 위한 시도는 이미 했습니다. 다른 부활 장소가 필요합니다.');
     const sparkCost=site.sparkCost??1,pressureCost=site.pressureCost??2;
     if(game.sparks<sparkCost)return fail(`부활에는 운명 토큰 ${sparkCost}개가 필요합니다. 비밀을 공개하면 토큰을 얻습니다.`);
-    const stats=CLASS_MAP[actor.classId].stats;const stat=stats.heart>=stats.wit?'heart':'wit';
+    const stats=getClass(campaign,actor.classId).stats;const stat=stats.heart>=stats.wit?'heart':'wit';
     const assistance=Math.min(2,game.assists.length);const bonus=stats[stat]+assistance;
     const dc=(site.dc||12)+(game.pressure >= (campaign.pressureMax||8)?1:0);
     return {ok:true,plan:{type:'revive',reviveId:target.id,label:`${target.name} 부활 · ${site.label}`,stat,statLabel:STAT_LABELS[stat],dc,bonus,assistance,automatic:false,revision:game.revision,sparkCost,pressureCost,requiresConfirmation:true,risk:`운명 토큰 ${sparkCost}개와 위기 ${pressureCost}칸을 소모합니다. 성공: 생명 2, 대가 있는 성공: 생명 1로 부활. 실패: 부활하지 못하고 위기 1칸 추가. 이 장소에서는 한 번만 시도할 수 있습니다.`,successChance:Array.from({length:20},(_,i)=>i+1).filter(d=>d===20||(d!==1&&d+bonus>=dc)).length*5}};
@@ -204,7 +212,7 @@ export function previewAction(game, campaign, playerId, payload = {}) {
   }
   const automatic = Boolean(choice.automatic);
   const stat = choice.stat || 'wit';
-  let bonus = CLASS_MAP[actor.classId].stats[stat] || 0;
+  let bonus = getClass(campaign,actor.classId).stats[stat] || 0;
   const help = Math.min(2, game.assists.filter(id => id !== actor.id && game.players.some(p => p.id === id && p.connected !== false)).length);
   const spendSpark = !automatic && payload.spendSpark === true;
   const flashback = !automatic ? cleanText(payload.flashback, 180) : '';
@@ -220,7 +228,7 @@ export function previewAction(game, campaign, playerId, payload = {}) {
   return { ok: true, plan: {
     type: 'choice', choiceId: choice.id, label: choice.label, declaration, interpreted,
     stat, statLabel: STAT_LABELS[stat], dc, bonus: automatic ? 0 : bonus, automatic,
-    assistance: help, classBonus: CLASS_MAP[actor.classId].stats[stat] || 0,
+    assistance: help, classBonus: getClass(campaign,actor.classId).stats[stat] || 0,
     spendSpark, flashback, pressurePenalty,
     risk: (choice.risk || '실패해도 사건은 진행되지만 더 큰 대가를 치릅니다.')+dangerText, harmRisk, groupHarm,
     successChance: automatic ? 100 : Array.from({length:20},(_,i)=>i+1).filter(d=>d===20 || (d!==1 && d+bonus>=dc)).length*5,
@@ -260,6 +268,13 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
   const next = clone(game);
   const actor = next.players.find(p => p.id === playerId);
   const node = nodeFor(next, campaign);
+  if(plan.type==='combat'){
+    try{
+      const result=applyCombatAction(next,campaign,playerId,plan,{roll,gradeRoll});
+      addJournal(next,{sceneTitle:node.encounter?.title||node.title,...result});
+      return {ok:true,game:next,plan};
+    }catch(error){return fail(error.message);}
+  }
   if (plan.type === 'detail') {
     const detail = node.details.find(d => d.id === plan.detailId);
     next.detailsRead[`${next.nodeId}:${detail.id}`] = true;
@@ -323,6 +338,7 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
   next.turn++;
   next.revision++;
   advanceSeat(next);
+  startCombat(next,campaign);
   return { ok: true, game: next, plan };
 }
 
@@ -350,9 +366,16 @@ export function revealSecret(game, campaign, playerId) {
   next.revision++;
   return { ok: true, game: next };
 }
-export function passTurn(game, playerId, { allowDisconnected = false } = {}) {
+export function passTurn(game, playerId, { allowDisconnected = false, campaign, roll } = {}) {
   if (game.phase !== 'playing') return fail('이미 끝난 이야기입니다.');
   if (currentPlayer(game)?.id !== playerId && !(allowDisconnected && currentPlayer(game)?.connected === false)) return fail('현재 차례인 플레이어만 양보할 수 있습니다.');
+  if(game.combat){
+    if(!allowDisconnected || currentPlayer(game)?.connected !== false)return fail('전투 중에는 기본 공격 또는 직업 능력으로 차례를 마쳐 주세요.');
+    if(!campaign || campaign.id!==game.campaignId)return fail('전투 정보를 확인할 수 없습니다.');
+    const next=clone(game);
+    try{const result=skipCombatTurn(next,campaign,{roll});addJournal(next,{sceneTitle:campaign.nodes[game.nodeId].encounter.title,...result});return {ok:true,game:next};}
+    catch(error){return fail(error.message);}
+  }
   const next = clone(game); advanceSeat(next); next.assists = []; next.revision++;
   return { ok: true, game: next };
 }
@@ -361,12 +384,12 @@ export function passTurn(game, playerId, { allowDisconnected = false } = {}) {
 export function validateSave(data, campaigns) {
   const raw = data?.game ?? data;
   const campaign = campaigns.find(c => c.id === raw?.campaignId);
-  if (!raw || raw.schema !== 14 || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('v14 저장 파일이 아니거나 시나리오가 맞지 않습니다.');
+  if (!raw || ![14,15].includes(raw.schema) || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('v14/v15 저장 파일이 아니거나 시나리오가 맞지 않습니다.');
   if (!Array.isArray(raw.players) || raw.players.length < 1 || raw.players.length > 4) throw new Error('저장 파일의 인원이 올바르지 않습니다.');
   if (JSON.stringify(data).length > 2000000) throw new Error('저장 파일이 너무 큽니다.');
-  if(raw.players.some(p=>!p || typeof p.id!=='string' || !/^[A-Za-z0-9_-]{1,80}$/.test(p.id)))throw new Error('저장 파일의 플레이어 ID가 올바르지 않습니다.');
+  if(raw.players.some(p=>!p || typeof p.id!=='string' || !/^[A-Za-z0-9_-]{1,80}$/.test(p.id) || ['__proto__','constructor','prototype'].includes(p.id)))throw new Error('저장 파일의 플레이어 ID가 올바르지 않습니다.');
   const game = createGame(campaign, raw.players);
-  if (raw.players.some(p => !CLASS_MAP[p.classId])) throw new Error('저장 파일의 직업이 올바르지 않습니다.');
+  if(raw.players.some(p=>!getClasses(campaign).some(c=>c.id===p.classId) && !(raw.schema===14 && LEGACY_CLASS_IDS.includes(p.classId))))throw new Error('저장 파일의 직업이 이 시나리오에 맞지 않습니다.');
   game.nodeId = raw.nodeId;
   game.phase = raw.nodeId==='__all_dead__' || campaign.nodes[raw.nodeId].ending ? 'ended' : 'playing';
   game.deathSceneTitle=cleanText(raw.deathSceneTitle,100);
@@ -391,12 +414,21 @@ export function validateSave(data, campaigns) {
     roll: Number.isInteger(e.roll) && e.roll >= 1 && e.roll <= 20 ? e.roll : null,
     total: Number.isFinite(e.total) ? e.total : null, dc: Number.isFinite(e.dc) ? e.dc : null,
     bonus: Number.isFinite(e.bonus) ? e.bonus : 0,
+    ...(e.combat === true ? {
+      combat: true,
+      combatEvent: ['attack','ability','victory','defeat'].includes(e.combatEvent) ? e.combatEvent : 'attack',
+      damage: bound(Number.isInteger(e.damage) ? e.damage : 0,0,5),
+      targetId: game.players.some(p=>p.id===e.targetId) ? e.targetId : null,
+      enemyRolls: Array.isArray(e.enemyRolls) ? e.enemyRolls.slice(0,4).filter(r=>r&&game.players.some(p=>p.id===r.targetId)&&Number.isInteger(r.roll)&&r.roll>=1&&r.roll<=20).map(r=>({targetId:r.targetId,roll:r.roll,dc:bound(Number.isInteger(r.dc)?r.dc:12,1,20),damage:bound(Number.isInteger(r.damage)?r.damage:0,0,3),blocked:bound(Number.isInteger(r.blocked)?r.blocked:0,0,3)})) : [],
+      deaths: Array.isArray(e.deaths) ? e.deaths.slice(0,4).map(n=>cleanText(n,18)) : [],
+    } : {}),
   })) : [];
   for(const id of Object.keys(campaign.nodes))for(const p of game.players){const key=`${id}:${p.id}`;if(raw.reviveAttempts?.[key]===true)game.reviveAttempts[key]=true;}
   if(game.players.every(p=>p.life==='dead')){game.nodeId='__all_dead__';game.phase='ended';}
   else if(game.nodeId==='__all_dead__')throw new Error('전멸 결말의 생존 상태가 올바르지 않습니다.');
   else if(game.phase==='playing'&&game.players[game.activeIndex].life==='dead')advanceSeat(game);
+  restoreCombat(game,campaign,raw);
   game.lastResult = game.journal.at(-1) || null;
-  game.assists = [];
+  game.assists = [...new Set(Array.isArray(raw.assists) ? raw.assists.filter(id=>id!==game.players[game.activeIndex].id&&game.players.some(p=>p.id===id)) : [])].slice(0,2);
   return { campaign, game };
 }

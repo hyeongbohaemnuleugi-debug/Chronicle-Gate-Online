@@ -1,5 +1,7 @@
 import { CAMPAIGNS, CATALOG, getCampaign } from './campaigns/index.js';
-import { createGame, viewGame, previewAction, applyAction, assist as applyAssist, revealSecret, passTurn, validateSave, CLASSES, cleanText } from './engine.js';
+import { createGame, viewGame, previewAction, applyAction, assist as applyAssist, revealSecret, passTurn, validateSave, getClasses, normalizeClassId, cleanText } from './engine.js';
+import { remapClassId } from './professions.js';
+// Keep the v14 browser storage key so an existing local save can be migrated in place.
 const LOCAL_KEY='chronicle-v14-local';
 const ONLINE_KEY='chronicle-v14-online';
 const BACKUP_KEY='chronicle-v14-online-backup';
@@ -41,7 +43,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
   }
   function localChanged({followTurn=false}={}){
     if(followTurn&&local.game)localSeat=local.game.players[local.game.activeIndex].id;
-    write(localStorage,LOCAL_KEY,{schema:14,...local});deliver(localState());
+    write(localStorage,LOCAL_KEY,{schema:15,...local});deliver(localState());
   }
   async function connect(){
     if(offlineOnly)throw new Error('로컬 실행 중입니다. 온라인 방은 배포된 사이트에서 열어 주세요.');
@@ -103,7 +105,8 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
         const people=localPlayers.length?localPlayers:[{name,classId}];
         if(people.length<1||people.length>4)throw new Error('플레이어를 1~4명으로 정해 주세요.');
         if(people.some(p=>!cleanText(p.name,18)))throw new Error('모든 플레이어의 이름을 입력해 주세요.');
-        local={campaignId,players:people.map((p,i)=>({id:randomId(),name:cleanText(p.name,18),classId:CLASSES.some(c=>c.id===p.classId)?p.classId:CLASSES[i%4].id,connected:true})),game:null,messages:[]};
+        if(people.some(p=>p.classId&&!getClasses(getCampaign(campaignId)).some(c=>c.id===p.classId)))throw new Error('이 이야기에서 선택할 수 없는 직업입니다. 직업을 다시 골라 주세요.');
+        local={campaignId,players:people.map((p,i)=>({id:randomId(),name:cleanText(p.name,18),classId:normalizeClassId(getCampaign(campaignId),p.classId,i),connected:true})),game:null,messages:[]};
         localSeat=local.players[0].id;planned=null;localChanged();return {ok:true};
       }
       await connect();return joinResult(await request('table:create',{name,classId,campaignId}));
@@ -117,8 +120,8 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
       const saved=kind==='backup'?saveRead(localStorage,BACKUP_KEY):saveRead(localStorage,LOCAL_KEY);
       if(!saved)throw new Error('이어할 저장 데이터가 없습니다. 저장 파일을 불러와 주세요.');
       if(saved.game)return api.importSave(saved);
-      if(saved.schema===14&&getCampaign(saved.campaignId)&&Array.isArray(saved.players)&&saved.players.length<=4){
-        local={campaignId:saved.campaignId,players:saved.players.map((p,i)=>({id:randomId(),name:cleanText(p.name,18)||`모험가 ${i+1}`,classId:CLASSES.some(c=>c.id===p.classId)?p.classId:CLASSES[i%4].id,connected:true})),game:null,messages:[]};
+      if([14,15].includes(saved.schema)&&getCampaign(saved.campaignId)&&Array.isArray(saved.players)&&saved.players.length<=4){
+        local={campaignId:saved.campaignId,players:saved.players.map((p,i)=>({id:randomId(),name:cleanText(p.name,18)||`모험가 ${i+1}`,classId:normalizeClassId(getCampaign(saved.campaignId),p.classId,i),connected:true})),game:null,messages:[]};
         localSeat=local.players[0].id;localChanged();return {ok:true};
       }
       throw new Error('저장 데이터가 손상되었습니다. 저장 파일을 불러와 주세요.');
@@ -131,8 +134,8 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
       local=null;localSeat=null;planned=null;lastBackupRevision=-1;deliver(initial());return {ok:true};
     },
     async start(){if(local){local.game=createGame(getCampaign(local.campaignId),local.players);localChanged({followTurn:true});return {ok:true};}return checked(await request('table:start'));},
-    async selectCampaign(campaignId){if(local){if(local.game)throw new Error('진행 중에는 바꿀 수 없습니다.');if(!getCampaign(campaignId))throw new Error('없는 시나리오입니다.');local.campaignId=campaignId;localChanged();return {ok:true};}return checked(await request('table:campaign',{campaignId}));},
-    async setClass(classId){if(local){if(local.game)throw new Error('시작 전에 선택해 주세요.');if(!CLASSES.some(c=>c.id===classId))throw new Error('직업을 선택해 주세요.');local.players.find(p=>p.id===localSeat).classId=classId;localChanged();return {ok:true};}return checked(await request('table:class',{classId}));},
+    async selectCampaign(campaignId){if(local){if(local.game)throw new Error('진행 중에는 바꿀 수 없습니다.');if(!getCampaign(campaignId))throw new Error('없는 시나리오입니다.');local.players.forEach((p,i)=>{p.classId=remapClassId(getCampaign(local.campaignId),getCampaign(campaignId),p.classId,i);});local.campaignId=campaignId;localChanged();return {ok:true};}return checked(await request('table:campaign',{campaignId}));},
+    async setClass(classId){if(local){if(local.game)throw new Error('시작 전에 선택해 주세요.');if(!getClasses(getCampaign(local.campaignId)).some(c=>c.id===classId))throw new Error('직업을 선택해 주세요.');local.players.find(p=>p.id===localSeat).classId=classId;localChanged();return {ok:true};}return checked(await request('table:class',{classId}));},
     async preview(payload){const result=local?previewAction(local.game,getCampaign(local.campaignId),localSeat,payload):await request('table:preview',payload);if(result.ok)planned={payload:{...payload},revision:result.plan.revision};return result;},
     async act(payload){
       const revision=payload?.revision??planned?.revision??current?.game?.revision;
@@ -142,8 +145,8 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
     },
     async assist(){if(local)return localApply(game=>applyAssist(game,localSeat));return checked(await request('table:assist',{revision:current.game.revision}));},
     async reveal(){if(local)return localApply(game=>revealSecret(game,getCampaign(local.campaignId),localSeat));return checked(await request('table:reveal',{revision:current.game.revision}));},
-    async pass(){if(local){const result=passTurn(local.game,localSeat);checked(result);local.game=result.game;localChanged({followTurn:true});return {ok:true};}return checked(await request('table:pass',{revision:current.game.revision}));},
-    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v14',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
+    async pass(){if(local){const result=passTurn(local.game,localSeat,{campaign:getCampaign(local.campaignId),roll:secureDie});checked(result);local.game=result.game;localChanged({followTurn:true});return {ok:true};}return checked(await request('table:pass',{revision:current.game.revision}));},
+    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v15',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
     async importSave(save){
       if(current?.mode==='online')return checked(await request('table:import',{save}));
       const {game,campaign}=validateSave(save,CAMPAIGNS);game.players.forEach(p=>{p.connected=true;});

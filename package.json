@@ -1,6 +1,6 @@
 {
   "name": "chronicle-gate-online",
-  "version": "18.0.0",
+  "version": "18.1.0",
   "private": true,
   "type": "module",
   "description": "Chronicle Gate: seven concise branching chronicles, solo and group story choices, four D20 outcomes, 28 professions, 1–4 players.",
@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "check": "node scripts/qa-v18.mjs",
-    "test": "node --test tests-v18/core.test.mjs tests-v18/items-and-results.test.mjs tests-v18/scenarios.test.mjs tests-v18/combat.test.mjs tests-v18/resource-budget.test.mjs tests-v18/story-integrity.test.mjs tests-v18/content-a.test.mjs tests-v18/narrative.test.mjs tests-v18/party-stories.test.mjs tests-v18/loss-narrative.test.mjs",
+    "test": "node --test tests-v18/core.test.mjs tests-v18/items-and-results.test.mjs tests-v18/scenarios.test.mjs tests-v18/combat.test.mjs tests-v18/resource-budget.test.mjs tests-v18/story-integrity.test.mjs tests-v18/content-a.test.mjs tests-v18/narrative.test.mjs tests-v18/party-stories.test.mjs tests-v18/loss-narrative.test.mjs tests-v18/characters.test.mjs tests-v18/readability.test.mjs",
     "verify": "npm run clean:media && npm run check && npm test",
     "test:legacy": "node --test tests/*.test.mjs",
     "offline": "node scripts/offline-server.mjs",

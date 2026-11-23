@@ -1,0 +1,40 @@
+Chronicle Gate v18.1.0 changed files
+Baseline: chronicle-v18
+Baseline kind: previous-release-directory
+
+REPLACE COPYPASTE/index.html.txt
+ADD     NARRATIVE_REACHABILITY_V18_1.json
+REPLACE PATCH_GUIDE.txt
+ADD     PATCH_NOTES_V18_1.md
+REPLACE README.md
+REPLACE README_V18_KO.md
+ADD     RESOURCE_REPORT_V18_1.json
+ADD     VALIDATION_V18_1.md
+REPLACE game-server/http-service.js
+REPLACE package-lock.json
+REPLACE package.json
+REPLACE public/game/app.js
+REPLACE public/game/campaigns/clock-city.js
+REPLACE public/game/campaigns/combat-data.js
+REPLACE public/game/campaigns/deep-sea.js
+REPLACE public/game/campaigns/dragon-banquet.js
+REPLACE public/game/campaigns/glass-hotel.js
+REPLACE public/game/campaigns/last-train.js
+REPLACE public/game/campaigns/loss-passages.js
+REPLACE public/game/campaigns/moon-market.js
+REPLACE public/game/campaigns/snow-radio.js
+ADD     public/game/characters.js
+REPLACE public/game/engine.js
+REPLACE public/game/styles.css
+REPLACE public/index.html
+REPLACE public/offline.html
+REPLACE scripts/explore-scenarios.mjs
+REPLACE scripts/package-patch.py
+REPLACE server.js
+ADD     tests-v18/characters.test.mjs
+REPLACE tests-v18/deployment.integration.mjs
+ADD     tests-v18/readability.test.mjs
+REPLACE tests-v18/server.integration.mjs
+REPLACE tests-v18/ui.test.mjs
+
+Apply at repository root; read PATCH_NOTES_V18_1.md.

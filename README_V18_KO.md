@@ -1,5 +1,7 @@
 # Chronicle Gate v18 설치와 플레이
 
+> v18.1 업데이트를 적용한다면 먼저 `PATCH_NOTES_V18_1.md`를 읽어 주세요. 아래는 v18부터 이어지는 기본 플레이 안내입니다.
+
 이번 수정의 중심은 **내가 고른 행동이 다음 문장과 다음 장소를 여는 느낌**입니다. 소개문부터 구체적으로 고치고, 결과문과 다음 장면 사이의 이동을 보강합니다. 본문은 짧은 문단으로 읽고, 판정 계산과 상황 정리는 필요할 때 펼칩니다.
 
 ## 1. 어느 ZIP을 적용하나요?
@@ -23,7 +25,7 @@ npm run verify
 npm start
 ```
 
-Node.js 22 또는 24를 사용합니다. 운영 빌드가 개발 도구를 설치하지 않는 구성이라면 `npm ci --omit=dev && npm run verify`가 가능합니다. 시작 명령은 `npm start`입니다. 배포 후 `/health`의 `version: "18.0.0"`과 화면 하단 v18을 확인합니다.
+Node.js 22 또는 24를 사용합니다. 운영 빌드가 개발 도구를 설치하지 않는 구성이라면 `npm ci --omit=dev && npm run verify`가 가능합니다. 시작 명령은 `npm start`입니다. 배포 후 `/health`의 `version: "18.1.0"`과 화면 하단 v18을 확인합니다.
 
 `FILES_CHANGED_V18.txt`에 파일 목록, `V18_PATCH_MANIFEST.json`에 패치 기준·각 파일의 SHA-256이 있습니다. 개인 `.env`, 실제 방 저장, 계정 토큰은 포함하지 않습니다. `COPYPASTE/index.html.txt`는 `public/index.html`과 같은 내용의 복사용 파일입니다. 이 파일 하나만으로 전체 업데이트가 되지는 않습니다.
 

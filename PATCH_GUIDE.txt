@@ -1,31 +1,12 @@
-Chronicle Gate v18 — 선택으로 이어지는 연대기
+Chronicle Gate v18.1
 
-[ZIP 선택]
-FROM_v17_Changed_Files: 바로 전 v17을 적용한 코드용. 바뀐 파일만 있습니다.
-Cumulative_GitHub_PATCH: 처음 제공한 원본 프로젝트 기준 누적 변경입니다.
-둘 중 맞는 하나를 풀어 기존 저장소 루트의 같은 경로에 덮어쓰세요.
-ZIP 자체를 올리거나 public/public처럼 폴더를 중첩하지 마세요.
+v18 프로젝트에 이 변경 ZIP을 풀어 같은 경로에 덮어써 주세요.
+폴더를 중첩하지 말고 public/ · game-server/ · scripts/ · tests-v18/와 루트 파일을 함께 적용합니다.
 
-[실행]
-Node.js 22 또는 24
 npm ci
 npm run verify
 npm start
 
-배포 후 /health 버전이 18.0.0인지 확인하세요.
-기본 서버에 Supabase SQL 마이그레이션이나 AI 키는 필요하지 않습니다.
-
-[먼저 한 기기로 플레이]
-node scripts/offline-server.mjs
-http://127.0.0.1:4173/
-
-[읽을 파일]
-README_V18_KO.md: 설치와 플레이
-STORY_GUIDE_V18.md: 본문/이동/인원별 선택/사망 문장 수정
-FILES_CHANGED_V18.txt: 이 ZIP의 변경 목록
-V18_PATCH_MANIFEST.json: 기준 버전과 파일 해시
-VALIDATION_V18.md: 검사 결과와 확인하지 못한 범위
-
-COPYPASTE/index.html.txt는 public/index.html과 같은 복사용 파일입니다.
-이 파일 하나만 바꾸는 업데이트는 아닙니다.
-tests-v18는 자동 검사를 위한 일반 테스트 폴더입니다.
+Node.js22 또는24를 사용합니다.
+이름 강조는 화면에만 적용하며 기존 진행/규칙/미디어를 유지합니다.
+자세한 내용: PATCH_NOTES_V18_1.md

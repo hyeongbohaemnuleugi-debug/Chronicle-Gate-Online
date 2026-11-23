@@ -1,0 +1,257 @@
+{
+  "version": "18.1.0",
+  "baselineKind": "previous-release-directory",
+  "baselineVersion": "18.0.0",
+  "baselineFilename": "chronicle-v18",
+  "baselineSha256": "a321ce6ab2dc8ac618188b6b155b7d512afb23506e6630143ec0650a3124e1c6",
+  "baselineHashMethod": "sha256 of sorted relative paths and file hashes, excluding dependencies, runtime state and secrets",
+  "createdAt": "2026-11-23T14:17:21.284935+00:00",
+  "entryPoints": {
+    "online": "npm start (after overlay on the stated baseline)",
+    "legacy": "npm run start:legacy (explicit opt-in)",
+    "offline": "PLAY_OFFLINE.html after overlay",
+    "offlineHttp": "node scripts/offline-server.mjs after overlay"
+  },
+  "cleanup": "npm run clean:media removes only unchanged old WAVs with verified MP3 replacements; cloud data is never deleted.",
+  "note": "Only added or changed files relative to the stated baseline are included. Apply paths at repository root. This is not a standalone full repository. Runtime saves and environment secrets are excluded.",
+  "files": [
+    {
+      "path": "COPYPASTE/index.html.txt",
+      "status": "replace",
+      "bytes": 3121,
+      "sha256": "bc966217ea19095f48a57ccda13634c85d25e2793f8dcc3c626c05291724ab1c",
+      "baselineSha256": "e50aeb956a271022bf2727dca8b8821fd7df5ae0a7ad712f4e9063f424c96baa"
+    },
+    {
+      "path": "NARRATIVE_REACHABILITY_V18_1.json",
+      "status": "add",
+      "bytes": 1263409,
+      "sha256": "8691c1cff05b889917039f467ec8325cdbc673621dd36565ae3e4ffff1313a2f",
+      "baselineSha256": null
+    },
+    {
+      "path": "PATCH_GUIDE.txt",
+      "status": "replace",
+      "bytes": 435,
+      "sha256": "dfeee718a3ffc7c0697c7ce91a1bcec362d9dc690471bac2115c8e839298cfad",
+      "baselineSha256": "2d2a06954bc94f6e5c077438c2927fa1a263518a875cfc36fd2df4ab64a2d1f0"
+    },
+    {
+      "path": "PATCH_NOTES_V18_1.md",
+      "status": "add",
+      "bytes": 4730,
+      "sha256": "bd9e0ddec56f0f38157afc19f3149224102253f50220e64cafb96170eeba92ba",
+      "baselineSha256": null
+    },
+    {
+      "path": "README.md",
+      "status": "replace",
+      "bytes": 1881,
+      "sha256": "7637c1a8c4ba0c7f067553742744558d2ae48c9c5f3ab36ad1c056bd94c68863",
+      "baselineSha256": "d3a5057c88a22385d326087bcfeff00f6864d2a337c03cb5fd49ebd09c8f06fa"
+    },
+    {
+      "path": "README_V18_KO.md",
+      "status": "replace",
+      "bytes": 11908,
+      "sha256": "8fe1aa273fe023487a71733b7fd56c9ecd19ac5c7673bdcab1e432a01b479c84",
+      "baselineSha256": "26e34b8f932ae8d0559f776c692e6818c83977c13916c432c5b5bbf1a91c7b38"
+    },
+    {
+      "path": "RESOURCE_REPORT_V18_1.json",
+      "status": "add",
+      "bytes": 12001,
+      "sha256": "efcdfdedbd799b605ac12af200c37b49ea4de7790d39d935a8e6e9703d5fc91f",
+      "baselineSha256": null
+    },
+    {
+      "path": "VALIDATION_V18_1.md",
+      "status": "add",
+      "bytes": 8379,
+      "sha256": "554458500de7a967b29274dc2f8debc464ce8630a38269aee990ad238e7481fb",
+      "baselineSha256": null
+    },
+    {
+      "path": "game-server/http-service.js",
+      "status": "replace",
+      "bytes": 16224,
+      "sha256": "8c16b80a957c15a4250fde38708092164ead1093c8d484f03bbcb171aad6f498",
+      "baselineSha256": "546da1d8ebe134fdc7157996378c557a006c8a9465dfeae5d5a03a711f238051"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "replace",
+      "bytes": 73416,
+      "sha256": "e45c7b92517c178bc53c6b386f8640384d0b25610f377eccf80e81e3af3da288",
+      "baselineSha256": "0206ab1e8a8a50bde1b1ba21aa798c0bfbd5ff486a22cf7b7ea949ed724f251c"
+    },
+    {
+      "path": "package.json",
+      "status": "replace",
+      "bytes": 2194,
+      "sha256": "912133a236df2ec92a2df4ee78ee06ad8ab9ba9c4afdd76cd2fa067bb3052a4f",
+      "baselineSha256": "b54858289e746fc9cce779ef3d9b876325055b355324452c416146733f7c08bb"
+    },
+    {
+      "path": "public/game/app.js",
+      "status": "replace",
+      "bytes": 82129,
+      "sha256": "b9577e6403fdf8d308465c7b3cdbe1879b70885d3572801f09f10ce4a63a44bc",
+      "baselineSha256": "67c9c0576c9fff0e10cf18a2a2fd0c3d3c285f37d73483e22b054eabccd0422a"
+    },
+    {
+      "path": "public/game/campaigns/clock-city.js",
+      "status": "replace",
+      "bytes": 150864,
+      "sha256": "c9aa1dae785ecf09c30cf55a0ff2ca1544657fbb8ee2b1933c82c30127587e21",
+      "baselineSha256": "72e4c69aaa4c6805fefd47bdb9537bb5b7daa1892c49a00402d9cb1ac712e89a"
+    },
+    {
+      "path": "public/game/campaigns/combat-data.js",
+      "status": "replace",
+      "bytes": 35134,
+      "sha256": "cffd8253153972c2cbb65550fd3a676692f7292205634531cf12e5bfff96bb8a",
+      "baselineSha256": "6fcc66596b251141d46cbfa8a44e781545fd0463b6351e10d7d62af5dca19554"
+    },
+    {
+      "path": "public/game/campaigns/deep-sea.js",
+      "status": "replace",
+      "bytes": 157416,
+      "sha256": "24c1ff2b0bb3f312f4fbc6efcd34da7d5dce9fbd1bae91e463e552b80716fe23",
+      "baselineSha256": "ee64097c171cd7eb90d5c2b96c56e43f2ce00206162dc4ebf660ab85c520198d"
+    },
+    {
+      "path": "public/game/campaigns/dragon-banquet.js",
+      "status": "replace",
+      "bytes": 116824,
+      "sha256": "d7b6e1ed33cedbcb9b2bffa131382bc6f4b4d63aad614db52e716cf1583f94b1",
+      "baselineSha256": "11b69b2f6ebf10278539c8185d315eaa4f564c9017c07263ea582dc409a473f3"
+    },
+    {
+      "path": "public/game/campaigns/glass-hotel.js",
+      "status": "replace",
+      "bytes": 114897,
+      "sha256": "899ca9485891d41f984da015d4920e55543a4e1f073e9b1df1a597a7e1451cfe",
+      "baselineSha256": "7ef518d385190e8d697c073b933edb41edef915801661f5e79763697fcb4cc33"
+    },
+    {
+      "path": "public/game/campaigns/last-train.js",
+      "status": "replace",
+      "bytes": 106302,
+      "sha256": "0afb2e22d0b3431b266bfbfb3b494e0b0a06c7e5fe58d9b0c7c1d5c8119c53ba",
+      "baselineSha256": "2b22631544f1368dea1e1a048e76ecaa7f05d346bd794d23e0bf10421da94c83"
+    },
+    {
+      "path": "public/game/campaigns/loss-passages.js",
+      "status": "replace",
+      "bytes": 48711,
+      "sha256": "5de42d448f510b8913541aac6fc6e5ca1208cf7b1f5ab798e95dd9dc40800911",
+      "baselineSha256": "e415f941435facf45ce1bca58d097300057f2db8a8d2f637402359b4865b5362"
+    },
+    {
+      "path": "public/game/campaigns/moon-market.js",
+      "status": "replace",
+      "bytes": 108748,
+      "sha256": "ba50770c29fc4bcd905af130940de8ed02c1f0765408e116123462c87dcf5885",
+      "baselineSha256": "1909dda8c34f2b440638cd3a1be732d0d4c0b9f2df10ef0c5b2da754ff7c6dc8"
+    },
+    {
+      "path": "public/game/campaigns/snow-radio.js",
+      "status": "replace",
+      "bytes": 155756,
+      "sha256": "b4047ed631e7c8a14b6ac1a55c97094fcddff416869e4b21a2fef0773cadb2bd",
+      "baselineSha256": "590342cca9978b3676a48b4b2fdb7a0dad181fd4fea6018a4c12ba4c606398a6"
+    },
+    {
+      "path": "public/game/characters.js",
+      "status": "add",
+      "bytes": 7870,
+      "sha256": "a88eb34c105e235894171765d5b759e68121c37363b193855c5cb2880a2629e7",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/engine.js",
+      "status": "replace",
+      "bytes": 41289,
+      "sha256": "1129d214d69313e046fdc2ac19d0a64bbc54fd865156358618e2dc46f5056013",
+      "baselineSha256": "22a3d34a730e21b0e19c4edd3078f60842aa6de655051245870a4ab1f26e0c09"
+    },
+    {
+      "path": "public/game/styles.css",
+      "status": "replace",
+      "bytes": 86211,
+      "sha256": "7000903eeb102a0c7e784dea9ae941b57102bf8f4d41874592f299c36b810f1d",
+      "baselineSha256": "35568faa78e7e439ec8b9719c12a6b25c3f37152e3d287a390359c860a5d8d53"
+    },
+    {
+      "path": "public/index.html",
+      "status": "replace",
+      "bytes": 3121,
+      "sha256": "bc966217ea19095f48a57ccda13634c85d25e2793f8dcc3c626c05291724ab1c",
+      "baselineSha256": "e50aeb956a271022bf2727dca8b8821fd7df5ae0a7ad712f4e9063f424c96baa"
+    },
+    {
+      "path": "public/offline.html",
+      "status": "replace",
+      "bytes": 1931449,
+      "sha256": "3ce609968fd2ea327741c4a43a1f4aa39504b79552f439d55b1771d68fc30210",
+      "baselineSha256": "90748d5410818bb2fab9b09080a6e0961afd29e7df16383fbd7405671351c4ea"
+    },
+    {
+      "path": "scripts/explore-scenarios.mjs",
+      "status": "replace",
+      "bytes": 8800,
+      "sha256": "7929dc0d159850afc7ea5e4d1f7f073d0186b557df4040bae018c38f1f33b684",
+      "baselineSha256": "8d0c1ec0e0e21708862dc39f46c366900963215a2c6cde302a8b72ef385d489e"
+    },
+    {
+      "path": "scripts/package-patch.py",
+      "status": "replace",
+      "bytes": 6010,
+      "sha256": "cc5dc3c253a306d12a860d43ffc11600833116859ff31d4483dc369e7d6b3e0a",
+      "baselineSha256": "055d67d497740ef1d657c01915cdd9e2f204eb6244b0521a686850e458549a68"
+    },
+    {
+      "path": "server.js",
+      "status": "replace",
+      "bytes": 1655,
+      "sha256": "c1095aa643b45d3020f8787c5c2660da65df952a098799df5d0d7fa5e3e3b251",
+      "baselineSha256": "a3806caa623d959545e00bc0e95fdb6fd33b00be844085f1d49d7dd22f3ce18c"
+    },
+    {
+      "path": "tests-v18/characters.test.mjs",
+      "status": "add",
+      "bytes": 7052,
+      "sha256": "94ae2773e4812cc980217e6063345ffc7a54c33eb1ef884cfdeb2844dfe27e80",
+      "baselineSha256": null
+    },
+    {
+      "path": "tests-v18/deployment.integration.mjs",
+      "status": "replace",
+      "bytes": 19298,
+      "sha256": "0176489a535ebc4842427d80325b3c920e6c8555d47b02fad2c9f1f73a245ffe",
+      "baselineSha256": "67aa0efeb64f384227dba10ad3ef65d73f4ff872e6e572cc3f75b848266a735d"
+    },
+    {
+      "path": "tests-v18/readability.test.mjs",
+      "status": "add",
+      "bytes": 2565,
+      "sha256": "56435f2b64314e084818dd82287a8a508ac7606f140c025f06457ecac2d11e76",
+      "baselineSha256": null
+    },
+    {
+      "path": "tests-v18/server.integration.mjs",
+      "status": "replace",
+      "bytes": 26073,
+      "sha256": "a4a04822aaf5f005106ffbb48f4946fde1b60dde4f5bccbd64f1d2056f13b2fc",
+      "baselineSha256": "c03e98207c1a7568f642bb95c604ff4a8f9dc7bb1ec0d2d253fce69588f6a271"
+    },
+    {
+      "path": "tests-v18/ui.test.mjs",
+      "status": "replace",
+      "bytes": 73385,
+      "sha256": "c9d807922ec09e7dea338f7c15a6456ffac810d8af04351763050a656536194f",
+      "baselineSha256": "a35a74367aa327d26bf56a621b58a13f9883a13326e40de6ed71a9a3ff0ecf66"
+    }
+  ]
+}

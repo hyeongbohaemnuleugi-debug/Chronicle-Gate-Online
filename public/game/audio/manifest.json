@@ -1,14 +1,11 @@
 {
-  "version": 15,
-  "provenance": "Original algorithmic compositions and synthesized effects; no third-party samples.",
+  "version": 16,
+  "provenance": "Original synthesized scores/effects encoded from project WAV masters. No third-party recordings or samples.",
+  "quality": "96 kbps mono MP3 at the original 22050 Hz sample rate. Lossy delivery; not claimed to be bit-identical to WAV.",
+  "delivery": "Same-origin MP3, on demand, no Supabase Storage requests.",
   "files": [
     {
-      "file": "last-train-calm.wav",
       "kind": "music",
-      "seconds": 27.273,
-      "sampleRate": 22050,
-      "channels": 1,
-      "peak": 0.79,
       "theme": "last-train",
       "mood": "calm",
       "bpm": 70.4,
@@ -21,15 +18,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "last-train-mystery.wav",
-      "kind": "music",
-      "seconds": 25.0,
+      ],
+      "file": "last-train-calm.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 27.35,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 328559,
+      "sha256": "37b80ae207686c7d74c030a195c0d5dfb1ecfd7d50fc347deeb5f044081c79f0",
+      "sourceWavBytes": 1202770,
+      "sourceWavSha256": "357405b59913184e5c747d5cdce29bb97f91d5a4ab79415e91f9b02313a7fe06"
+    },
+    {
+      "kind": "music",
       "theme": "last-train",
       "mood": "mystery",
       "bpm": 76.8,
@@ -42,15 +45,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "last-train-tension.wav",
-      "kind": "music",
-      "seconds": 24.0,
+      ],
+      "file": "last-train-mystery.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 25.078,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 301288,
+      "sha256": "82b46a1b371e93cd7416d5a26087c2700d4b60f2a84c701b2fc93cac03460e1c",
+      "sourceWavBytes": 1102544,
+      "sourceWavSha256": "cdc458d2745e93cdeb40e5e1b685661057a6f1631220ae2059b0538e04b930bd"
+    },
+    {
+      "kind": "music",
       "theme": "last-train",
       "mood": "tension",
       "bpm": 80,
@@ -63,15 +72,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "last-train-danger.wav",
-      "kind": "music",
-      "seconds": 21.429,
+      ],
+      "file": "last-train-tension.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 24.059,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 289062,
+      "sha256": "b02dfca29fe89f0dc137bd35168b04635ed6f35ee81efd918d5004d13d0f14f2",
+      "sourceWavBytes": 1058444,
+      "sourceWavSha256": "baae6c914f38a4e8cfd85da2bd04731ad59d8cbc6de03cb4d1ebf93238cea3d2"
+    },
+    {
+      "kind": "music",
       "theme": "last-train",
       "mood": "danger",
       "bpm": 89.6,
@@ -84,15 +99,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "last-train-hope.wav",
-      "kind": "music",
-      "seconds": 25.0,
+      ],
+      "file": "last-train-danger.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 21.499,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 258342,
+      "sha256": "74ee67831256890f205ab96824029317b89c9cf18f7bc68408786de30a68663a",
+      "sourceWavBytes": 945042,
+      "sourceWavSha256": "33e7c6335a53e31d28a19d35effacc4f913918288bb1052fdfebe1909b4fbccc"
+    },
+    {
+      "kind": "music",
       "theme": "last-train",
       "mood": "hope",
       "bpm": 76.8,
@@ -105,15 +126,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "glass-hotel-calm.wav",
-      "kind": "music",
-      "seconds": 24.242,
+      ],
+      "file": "last-train-hope.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 25.078,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 301288,
+      "sha256": "d718454e11dbaeb58b518279e9fd26cd00ddaaaec4271b48b66f8859c9ccddcc",
+      "sourceWavBytes": 1102544,
+      "sourceWavSha256": "c32d2b79ab99704865339b012140e9132d5a0be1ae78ecb632d28e87984d3b04"
+    },
+    {
+      "kind": "music",
       "theme": "glass-hotel",
       "mood": "calm",
       "bpm": 79.2,
@@ -126,15 +153,21 @@
         7,
         3,
         2
-      ]
-    },
-    {
-      "file": "glass-hotel-mystery.wav",
-      "kind": "music",
-      "seconds": 22.222,
+      ],
+      "file": "glass-hotel-calm.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 24.32,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 292197,
+      "sha256": "f88c5116e66a9d4439377f4e104a011db02d3509f84a5ec062773ca188bc8b2e",
+      "sourceWavBytes": 1069134,
+      "sourceWavSha256": "38729b41f53074b4c5822c195c613f7317ab1d2fc2a1c9413f7ab2dc4914d766"
+    },
+    {
+      "kind": "music",
       "theme": "glass-hotel",
       "mood": "mystery",
       "bpm": 86.4,
@@ -147,15 +180,21 @@
         7,
         3,
         2
-      ]
-    },
-    {
-      "file": "glass-hotel-tension.wav",
-      "kind": "music",
-      "seconds": 21.333,
+      ],
+      "file": "glass-hotel-mystery.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 22.282,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 267746,
+      "sha256": "7b4bde54f6bbcc23bd51218ea38c3a53d2d150d091cd1914d50d614f2ef52be9",
+      "sourceWavBytes": 980044,
+      "sourceWavSha256": "c61bcf94e2404723705437c9702665fb9236d68ed3dbb95b16d647e73a98e38b"
+    },
+    {
+      "kind": "music",
       "theme": "glass-hotel",
       "mood": "tension",
       "bpm": 90,
@@ -168,15 +207,21 @@
         7,
         3,
         2
-      ]
-    },
-    {
-      "file": "glass-hotel-danger.wav",
-      "kind": "music",
-      "seconds": 19.048,
+      ],
+      "file": "glass-hotel-tension.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 21.394,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 257088,
+      "sha256": "ebcc8bf281c6750b431436af93162655ba82a9417476a25f3d7d9f203f3c58ac",
+      "sourceWavBytes": 940844,
+      "sourceWavSha256": "c34011dd8b8da3aa36971073827ca567ca1c9d3473f0e2e9f14014f410e70b30"
+    },
+    {
+      "kind": "music",
       "theme": "glass-hotel",
       "mood": "danger",
       "bpm": 100.8,
@@ -189,15 +234,21 @@
         7,
         3,
         2
-      ]
-    },
-    {
-      "file": "glass-hotel-hope.wav",
-      "kind": "music",
-      "seconds": 22.222,
+      ],
+      "file": "glass-hotel-danger.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 19.122,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 229817,
+      "sha256": "14923aea9fb6b42cc3d832e4395e837ac5edbad2b4396cfbb1e3d43acebff82e",
+      "sourceWavBytes": 840042,
+      "sourceWavSha256": "e71c3b2fac7e74e32bb12434d0c11791a619ab38cf025e01a8ad564577432733"
+    },
+    {
+      "kind": "music",
       "theme": "glass-hotel",
       "mood": "hope",
       "bpm": 86.4,
@@ -210,15 +261,21 @@
         7,
         3,
         2
-      ]
-    },
-    {
-      "file": "moon-market-calm.wav",
-      "kind": "music",
-      "seconds": 27.273,
+      ],
+      "file": "glass-hotel-hope.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 22.282,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 267746,
+      "sha256": "0ddebb630252abb9005f802051c137ba1980b9828998e2ad38cbe223e5010c7f",
+      "sourceWavBytes": 980044,
+      "sourceWavSha256": "2ebed624e51affc2db2b31e60f6e9ad797a3f1a6e9e162fca8c96b4af3c60513"
+    },
+    {
+      "kind": "music",
       "theme": "moon-market",
       "mood": "calm",
       "bpm": 70.4,
@@ -231,15 +288,21 @@
         2,
         0,
         -3
-      ]
-    },
-    {
-      "file": "moon-market-mystery.wav",
-      "kind": "music",
-      "seconds": 25.0,
+      ],
+      "file": "moon-market-calm.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 27.35,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 328559,
+      "sha256": "11a1a2560787b715db3d3cc195e2e9891c730e0b1c4c8a0aae5d5104e6521d2d",
+      "sourceWavBytes": 1202770,
+      "sourceWavSha256": "c2e1853842e9d45c265566bc4b41d3f9ac397d127c27f5bd5e9b0678bc5aafab"
+    },
+    {
+      "kind": "music",
       "theme": "moon-market",
       "mood": "mystery",
       "bpm": 76.8,
@@ -252,15 +315,21 @@
         2,
         0,
         -3
-      ]
-    },
-    {
-      "file": "moon-market-tension.wav",
-      "kind": "music",
-      "seconds": 24.0,
+      ],
+      "file": "moon-market-mystery.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 25.078,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 301288,
+      "sha256": "7c7a71c4576b7bf780815bb3a41c7b5c7f712657744ad126174a6b4d8187b5ac",
+      "sourceWavBytes": 1102544,
+      "sourceWavSha256": "d8560e14dbd4b629f555f15d022c520b614c996f3f0add5ecff730a534a24ba2"
+    },
+    {
+      "kind": "music",
       "theme": "moon-market",
       "mood": "tension",
       "bpm": 80,
@@ -273,15 +342,21 @@
         2,
         0,
         -3
-      ]
-    },
-    {
-      "file": "moon-market-danger.wav",
-      "kind": "music",
-      "seconds": 21.429,
+      ],
+      "file": "moon-market-tension.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 24.059,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 289062,
+      "sha256": "b3e4f82e64220ddd19878eaf85a320b326203920cf0447c498afa5d9e9340619",
+      "sourceWavBytes": 1058444,
+      "sourceWavSha256": "47136518de86a5abf6a85783730c764be52b1cbbf01e845ebea4aee299c40051"
+    },
+    {
+      "kind": "music",
       "theme": "moon-market",
       "mood": "danger",
       "bpm": 89.6,
@@ -294,15 +369,21 @@
         2,
         0,
         -3
-      ]
-    },
-    {
-      "file": "moon-market-hope.wav",
-      "kind": "music",
-      "seconds": 25.0,
+      ],
+      "file": "moon-market-danger.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 21.499,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 258342,
+      "sha256": "708129fd6559c9df6c4d9ca7e84cfaf9bc8d77c359d550f7faa060c3afb244ca",
+      "sourceWavBytes": 945042,
+      "sourceWavSha256": "d71eed073368f198afc7ffabb4dfe6a58d6a969878ff6140d295d6bc84fd9e53"
+    },
+    {
+      "kind": "music",
       "theme": "moon-market",
       "mood": "hope",
       "bpm": 76.8,
@@ -315,15 +396,21 @@
         2,
         0,
         -3
-      ]
-    },
-    {
-      "file": "deep-sea-calm.wav",
-      "kind": "music",
-      "seconds": 30.303,
+      ],
+      "file": "moon-market-hope.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 25.078,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 301288,
+      "sha256": "f4cd06d285ec058d4e8bf043eb4543d9ef0ccf165911ef477b729c12bfbda0eb",
+      "sourceWavBytes": 1102544,
+      "sourceWavSha256": "cf418df64bf6dfae4b373c1abeb0ac1e988247e69b1e1f32ca761a0e2a92f051"
+    },
+    {
+      "kind": "music",
       "theme": "deep-sea",
       "mood": "calm",
       "bpm": 63.36,
@@ -336,15 +423,21 @@
         2,
         -2,
         0
-      ]
-    },
-    {
-      "file": "deep-sea-mystery.wav",
-      "kind": "music",
-      "seconds": 27.778,
+      ],
+      "file": "deep-sea-calm.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 30.38,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 364922,
+      "sha256": "c9cdfae6f867d30f6313d6e161316240a08ed37f9d6157934d7433fad254cf6b",
+      "sourceWavBytes": 1336406,
+      "sourceWavSha256": "b2bd38918a898d761bb44037555379689a73214f496422394e5901ce568ce67f"
+    },
+    {
+      "kind": "music",
       "theme": "deep-sea",
       "mood": "mystery",
       "bpm": 69.12,
@@ -357,15 +450,21 @@
         2,
         -2,
         0
-      ]
-    },
-    {
-      "file": "deep-sea-tension.wav",
-      "kind": "music",
-      "seconds": 26.667,
+      ],
+      "file": "deep-sea-mystery.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 27.847,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 334515,
+      "sha256": "8f87dd7b5a9ddfb9550d10f6feb1fe5372a8c24bcb541b38862fd02f5a9fbc89",
+      "sourceWavBytes": 1225042,
+      "sourceWavSha256": "51d31b8000a29ce441dbf0a096a9974b40b682700f0827de4223f471bbf2d2fa"
+    },
+    {
+      "kind": "music",
       "theme": "deep-sea",
       "mood": "tension",
       "bpm": 72,
@@ -378,15 +477,21 @@
         2,
         -2,
         0
-      ]
-    },
-    {
-      "file": "deep-sea-danger.wav",
-      "kind": "music",
-      "seconds": 23.809,
+      ],
+      "file": "deep-sea-tension.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 26.723,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 321036,
+      "sha256": "a4bdd8fb751187c53f012dbcc07e4762795723b554e629951421e450a26bc472",
+      "sourceWavBytes": 1176044,
+      "sourceWavSha256": "bc8137b60b9626d55b85dc226567d1056aa016aac3fd07cf6bbcfbb275ec5969"
+    },
+    {
+      "kind": "music",
       "theme": "deep-sea",
       "mood": "danger",
       "bpm": 80.64,
@@ -399,15 +504,21 @@
         2,
         -2,
         0
-      ]
-    },
-    {
-      "file": "deep-sea-hope.wav",
-      "kind": "music",
-      "seconds": 27.778,
+      ],
+      "file": "deep-sea-danger.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 23.876,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 286868,
+      "sha256": "78a67a713710279117e7224d4b123ccae6d9b10cee6628d1cb0bcbd804cb00c0",
+      "sourceWavBytes": 1050042,
+      "sourceWavSha256": "6d92bff3661be7fde855d82cf020366d4d1def238b674b2b7f172999853aca0c"
+    },
+    {
+      "kind": "music",
       "theme": "deep-sea",
       "mood": "hope",
       "bpm": 69.12,
@@ -420,15 +531,21 @@
         2,
         -2,
         0
-      ]
-    },
-    {
-      "file": "dragon-banquet-calm.wav",
-      "kind": "music",
-      "seconds": 22.727,
+      ],
+      "file": "deep-sea-hope.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 27.847,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 334515,
+      "sha256": "118cccd7b7a19b793e00c104e939e15b33dc14c160c61a5c929f925467135310",
+      "sourceWavBytes": 1225042,
+      "sourceWavSha256": "c97bccdbe13373ba8756f0741abb2a96317bef8629d515ccdc0df721522de14e"
+    },
+    {
+      "kind": "music",
       "theme": "dragon-banquet",
       "mood": "calm",
       "bpm": 84.48,
@@ -441,15 +558,21 @@
         7,
         2,
         4
-      ]
-    },
-    {
-      "file": "dragon-banquet-mystery.wav",
-      "kind": "music",
-      "seconds": 20.833,
+      ],
+      "file": "dragon-banquet-calm.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 22.805,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 274016,
+      "sha256": "5c52ae78bf5a831c8d0534693ecfcadc825128fa835928b802bd9ad1af561f5f",
+      "sourceWavBytes": 1002316,
+      "sourceWavSha256": "80240d39d8eb3d7c9ba5be1c879c0f1f0c07d513a56fda5e26e54cc44ca81cfa"
+    },
+    {
+      "kind": "music",
       "theme": "dragon-banquet",
       "mood": "mystery",
       "bpm": 92.16,
@@ -462,15 +585,21 @@
         7,
         2,
         4
-      ]
-    },
-    {
-      "file": "dragon-banquet-tension.wav",
-      "kind": "music",
-      "seconds": 20.0,
+      ],
+      "file": "dragon-banquet-mystery.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 20.898,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 251133,
+      "sha256": "503d4474c19d0a041f287322e7c9979d0cb2dff3c2a50fcd534dd4396e80ddd7",
+      "sourceWavBytes": 918794,
+      "sourceWavSha256": "a4a149206152e5243de3589ff82dc660e12c2e0e2d9711b2d8f7687500d16537"
+    },
+    {
+      "kind": "music",
       "theme": "dragon-banquet",
       "mood": "tension",
       "bpm": 96,
@@ -483,15 +612,21 @@
         7,
         2,
         4
-      ]
-    },
-    {
-      "file": "dragon-banquet-danger.wav",
-      "kind": "music",
-      "seconds": 17.857,
+      ],
+      "file": "dragon-banquet-tension.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 20.062,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 241102,
+      "sha256": "44b3f621ff74c87d7538fab6519c877a101a928d79dce07da79c76119d1cfbf8",
+      "sourceWavBytes": 882044,
+      "sourceWavSha256": "d393b9d8b047bd68eb7b98a6b411c71b1570a683c466c28500392b96672d0689"
+    },
+    {
+      "kind": "music",
       "theme": "dragon-banquet",
       "mood": "danger",
       "bpm": 107.52,
@@ -504,15 +639,21 @@
         7,
         2,
         4
-      ]
-    },
-    {
-      "file": "dragon-banquet-hope.wav",
-      "kind": "music",
-      "seconds": 20.833,
+      ],
+      "file": "dragon-banquet-danger.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 17.92,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 215397,
+      "sha256": "8bb7e7037986c14d2f26a312d9e89f03377ea68da01dd9b4958c098d58872d74",
+      "sourceWavBytes": 787542,
+      "sourceWavSha256": "c2e535b7f6b9e7866924dce2a9f4ea216c3f4807f590fc10e83a5869fc3abd64"
+    },
+    {
+      "kind": "music",
       "theme": "dragon-banquet",
       "mood": "hope",
       "bpm": 92.16,
@@ -525,15 +666,21 @@
         7,
         2,
         4
-      ]
-    },
-    {
-      "file": "clock-city-calm.wav",
-      "kind": "music",
-      "seconds": 21.818,
+      ],
+      "file": "dragon-banquet-hope.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 20.898,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 251133,
+      "sha256": "4e525cb7e1fe9342dfd70336e7822c5c2ebc3df339f947d7c67d215137b3964d",
+      "sourceWavBytes": 918794,
+      "sourceWavSha256": "d562676d60bb5c5bb71a900267a865604605c256db860cbc5912a937679e7c26"
+    },
+    {
+      "kind": "music",
       "theme": "clock-city",
       "mood": "calm",
       "bpm": 88.0,
@@ -546,15 +693,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "clock-city-mystery.wav",
-      "kind": "music",
-      "seconds": 20.0,
+      ],
+      "file": "clock-city-calm.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 21.891,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 263044,
+      "sha256": "8993c51f8d8ee3c7a6f9caf42edcb2f0b5623cec199cfe1b7356f4e5d25bc13d",
+      "sourceWavBytes": 962224,
+      "sourceWavSha256": "1027f09e6ce09bf0a5e9a304271eaf4f8175da7e1ebaa73921528a49576e38cc"
+    },
+    {
+      "kind": "music",
       "theme": "clock-city",
       "mood": "mystery",
       "bpm": 96.0,
@@ -567,15 +720,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "clock-city-tension.wav",
-      "kind": "music",
-      "seconds": 19.2,
+      ],
+      "file": "clock-city-mystery.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 20.062,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 241102,
+      "sha256": "3dd6e3e9107f37e649b3000cd774a3fd413bfaa61e4c03d21141b68e08c088ac",
+      "sourceWavBytes": 882044,
+      "sourceWavSha256": "8efcb7b936934a7910fa4bde164bba705dc99ca8381e86af0976f362e1a174ab"
+    },
+    {
+      "kind": "music",
       "theme": "clock-city",
       "mood": "tension",
       "bpm": 100,
@@ -588,15 +747,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "clock-city-danger.wav",
-      "kind": "music",
-      "seconds": 17.143,
+      ],
+      "file": "clock-city-tension.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 19.252,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 231384,
+      "sha256": "8a6150b321357216558da188af29e3b0c7094d88241cb15a9468764345d0d5fd",
+      "sourceWavBytes": 846764,
+      "sourceWavSha256": "6dbca834b2aa3d73a47ad03d96dd46efb8eb8ea3a92d88e318e4ce778bab58d3"
+    },
+    {
+      "kind": "music",
       "theme": "clock-city",
       "mood": "danger",
       "bpm": 112.0,
@@ -609,15 +774,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "clock-city-hope.wav",
-      "kind": "music",
-      "seconds": 20.0,
+      ],
+      "file": "clock-city-danger.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 17.215,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 206933,
+      "sha256": "2122b93c56d3e4e2b7b6ac753287be431be275aef390a92781e19e8558c8290d",
+      "sourceWavBytes": 756044,
+      "sourceWavSha256": "59fdba2ef32e2ef1363bd4f5a7d144989720b4a786b651fad4ca832a10fb733e"
+    },
+    {
+      "kind": "music",
       "theme": "clock-city",
       "mood": "hope",
       "bpm": 96.0,
@@ -630,15 +801,21 @@
         10,
         7,
         2
-      ]
-    },
-    {
-      "file": "snow-radio-calm.wav",
-      "kind": "music",
-      "seconds": 30.303,
+      ],
+      "file": "clock-city-hope.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 20.062,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 241102,
+      "sha256": "703ad3a4f8bf81ae41746fab146aba3a1325d1f1ba978dce9ca3fb8271af0264",
+      "sourceWavBytes": 882044,
+      "sourceWavSha256": "8f55ea3c35c596e8222b31a17ccf6a761354c3a5283665d9b7edfc053845302f"
+    },
+    {
+      "kind": "music",
       "theme": "snow-radio",
       "mood": "calm",
       "bpm": 63.36,
@@ -651,15 +828,21 @@
         -3,
         2,
         7
-      ]
-    },
-    {
-      "file": "snow-radio-mystery.wav",
-      "kind": "music",
-      "seconds": 27.778,
+      ],
+      "file": "snow-radio-calm.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 30.38,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 364922,
+      "sha256": "74479e021fdc096f1253ac5ec69fd7dd0e726f2af8e35eb4bddfbc829ebef833",
+      "sourceWavBytes": 1336406,
+      "sourceWavSha256": "1d7e6beff168ed601b883d54236c35cac83247167c6a38046179504b5775e7bb"
+    },
+    {
+      "kind": "music",
       "theme": "snow-radio",
       "mood": "mystery",
       "bpm": 69.12,
@@ -672,15 +855,21 @@
         -3,
         2,
         7
-      ]
-    },
-    {
-      "file": "snow-radio-tension.wav",
-      "kind": "music",
-      "seconds": 26.667,
+      ],
+      "file": "snow-radio-mystery.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 27.847,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 334515,
+      "sha256": "d84b8a75c56e1c34585fad1df4eccd9e8d7085bfd6f59c1d5dba0cd697d1a3e7",
+      "sourceWavBytes": 1225042,
+      "sourceWavSha256": "db6d02e2ba6cd756856694588f22a313b797d93996c0256bec37c53d26c72828"
+    },
+    {
+      "kind": "music",
       "theme": "snow-radio",
       "mood": "tension",
       "bpm": 72,
@@ -693,15 +882,21 @@
         -3,
         2,
         7
-      ]
-    },
-    {
-      "file": "snow-radio-danger.wav",
-      "kind": "music",
-      "seconds": 23.809,
+      ],
+      "file": "snow-radio-tension.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 26.723,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 321036,
+      "sha256": "6802322c8fb69af190b5ed6426b4e65b7f41e2cf02279463729b4504ae7e8257",
+      "sourceWavBytes": 1176044,
+      "sourceWavSha256": "7973e9330855f0607f191f3531dd21c22db5427f63d8b45d59d0b394524b068d"
+    },
+    {
+      "kind": "music",
       "theme": "snow-radio",
       "mood": "danger",
       "bpm": 80.64,
@@ -714,15 +909,21 @@
         -3,
         2,
         7
-      ]
-    },
-    {
-      "file": "snow-radio-hope.wav",
-      "kind": "music",
-      "seconds": 27.778,
+      ],
+      "file": "snow-radio-danger.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 23.876,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79,
+      "bitrate": "96k",
+      "bytes": 286868,
+      "sha256": "813edb95d83a2d49e79d2adab86377a8764c31ed02f4d363b5576c7009c99bfc",
+      "sourceWavBytes": 1050042,
+      "sourceWavSha256": "c976e4af929a3b60fb12442afba19a692de5e474d544077db816b497c388d0b9"
+    },
+    {
+      "kind": "music",
       "theme": "snow-radio",
       "mood": "hope",
       "bpm": 69.12,
@@ -735,99 +936,176 @@
         -3,
         2,
         7
-      ]
-    },
-    {
-      "file": "dice.wav",
-      "kind": "effect",
-      "seconds": 0.72,
+      ],
+      "file": "snow-radio-hope.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 27.847,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79
+      "bitrate": "96k",
+      "bytes": 334515,
+      "sha256": "136712f8a5cb56b0e04c24bffd2426c5977b4bb20d93b51a23303dbe37db3647",
+      "sourceWavBytes": 1225042,
+      "sourceWavSha256": "482859ff0ada25526156cd1931bf2d1bb3774b3a44c05be9b8b8b42dbd8422b6"
     },
     {
-      "file": "success.wav",
       "kind": "effect",
-      "seconds": 1.15,
+      "file": "dice.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 0.784,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79
+      "bitrate": "96k",
+      "bytes": 9761,
+      "sha256": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+      "sourceWavBytes": 31796,
+      "sourceWavSha256": "4c35352c1e9ae43a98085fe2ad6189d612519610533cf417f90995b95161bf40"
     },
     {
-      "file": "mixed.wav",
       "kind": "effect",
-      "seconds": 1.0,
+      "file": "success.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 1.228,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79
+      "bitrate": "96k",
+      "bytes": 15090,
+      "sha256": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+      "sourceWavBytes": 50758,
+      "sourceWavSha256": "dc893f46e235fd420a3d1ae49a1db16ff8527a74d036492d49be39245ce4db67"
     },
     {
-      "file": "failure.wav",
       "kind": "effect",
-      "seconds": 0.95,
+      "file": "mixed.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 1.071,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79
+      "bitrate": "96k",
+      "bytes": 13209,
+      "sha256": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+      "sourceWavBytes": 44144,
+      "sourceWavSha256": "885d7797e256bc19e702196e3772792bc880dd790ddb5b1c2a19e45e6a8d84df"
     },
     {
-      "file": "clue.wav",
       "kind": "effect",
-      "seconds": 0.65,
+      "file": "failure.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 1.019,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79
+      "bitrate": "96k",
+      "bytes": 12582,
+      "sha256": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+      "sourceWavBytes": 41938,
+      "sourceWavSha256": "a4e3aef67b3a9317c4753cc4c9ad5e918164d5354ce621bb09f6a6c54c30c0e5"
     },
     {
-      "file": "reveal.wav",
       "kind": "effect",
-      "seconds": 1.4,
+      "file": "clue.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 0.705,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79
+      "bitrate": "96k",
+      "bytes": 8821,
+      "sha256": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+      "sourceWavBytes": 28708,
+      "sourceWavSha256": "16066c34ddf78fdb16a1a9097ee1c787ddb6614433804395a19dc6c0c5a7983d"
     },
     {
-      "file": "transition.wav",
       "kind": "effect",
-      "seconds": 0.9,
+      "file": "reveal.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 1.463,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.79
+      "bitrate": "96k",
+      "bytes": 17911,
+      "sha256": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+      "sourceWavBytes": 61782,
+      "sourceWavSha256": "5a8a92302ce1817f2e6aea6b50bf1e9811175b05b6a8c845da1699ddc7e15947"
     },
     {
-      "file": "attack.wav",
       "kind": "effect",
-      "seconds": 0.42,
+      "file": "transition.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 0.967,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.72,
-      "addedIn": 15
+      "bitrate": "96k",
+      "bytes": 11955,
+      "sha256": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+      "sourceWavBytes": 39734,
+      "sourceWavSha256": "9c0b0101768554180d08883658a37319b51637c793a012b0dd09ec7b4f62aa97"
     },
     {
-      "file": "ability.wav",
       "kind": "effect",
-      "seconds": 0.85,
+      "addedIn": 15,
+      "file": "attack.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 0.496,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.72,
-      "addedIn": 15
+      "bitrate": "96k",
+      "bytes": 6313,
+      "sha256": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+      "sourceWavBytes": 18566,
+      "sourceWavSha256": "bca41d200f1ef8a0282998f562eaa2bcd9df8bf5651a1f01cffaa15f1d115239"
     },
     {
-      "file": "enemy.wav",
       "kind": "effect",
-      "seconds": 0.65,
+      "addedIn": 15,
+      "file": "ability.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 0.914,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.72,
-      "addedIn": 15
+      "bitrate": "96k",
+      "bytes": 11328,
+      "sha256": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+      "sourceWavBytes": 37528,
+      "sourceWavSha256": "73b9721d0b976d16ceb0153fb057b0dba42fd36bf9e28502e7b997a183229e3c"
     },
     {
-      "file": "victory.wav",
       "kind": "effect",
-      "seconds": 1.65,
+      "addedIn": 15,
+      "file": "enemy.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 0.705,
       "sampleRate": 22050,
       "channels": 1,
-      "peak": 0.72,
-      "addedIn": 15
+      "bitrate": "96k",
+      "bytes": 8821,
+      "sha256": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+      "sourceWavBytes": 28708,
+      "sourceWavSha256": "8071e612344f353140b39a592b13e0f05879da025ad2ff706e0bfce1b1e76a33"
+    },
+    {
+      "kind": "effect",
+      "addedIn": 15,
+      "file": "victory.mp3",
+      "codec": "mp3",
+      "mime": "audio/mpeg",
+      "seconds": 1.724,
+      "sampleRate": 22050,
+      "channels": 1,
+      "bitrate": "96k",
+      "bytes": 21046,
+      "sha256": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+      "sourceWavBytes": 72808,
+      "sourceWavSha256": "1a5acf98879b3732382d8cf43a6ab96706f3c6dbb8d8a7bb2dd6ffef0d2437b9"
     }
   ]
 }

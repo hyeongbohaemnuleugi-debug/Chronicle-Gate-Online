@@ -1,0 +1,797 @@
+{
+  "version": 14,
+  "provenance": "Original algorithmic compositions and synthesized effects; no third-party samples.",
+  "files": [
+    {
+      "file": "last-train-calm.wav",
+      "kind": "music",
+      "seconds": 27.273,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "last-train",
+      "mood": "calm",
+      "bpm": 70.4,
+      "originalMotif": [
+        0,
+        7,
+        3,
+        2,
+        0,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "last-train-mystery.wav",
+      "kind": "music",
+      "seconds": 25.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "last-train",
+      "mood": "mystery",
+      "bpm": 76.8,
+      "originalMotif": [
+        0,
+        7,
+        3,
+        2,
+        0,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "last-train-tension.wav",
+      "kind": "music",
+      "seconds": 24.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "last-train",
+      "mood": "tension",
+      "bpm": 80,
+      "originalMotif": [
+        0,
+        7,
+        3,
+        2,
+        0,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "last-train-danger.wav",
+      "kind": "music",
+      "seconds": 21.429,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "last-train",
+      "mood": "danger",
+      "bpm": 89.6,
+      "originalMotif": [
+        0,
+        7,
+        3,
+        2,
+        0,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "last-train-hope.wav",
+      "kind": "music",
+      "seconds": 25.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "last-train",
+      "mood": "hope",
+      "bpm": 76.8,
+      "originalMotif": [
+        0,
+        7,
+        3,
+        2,
+        0,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "glass-hotel-calm.wav",
+      "kind": "music",
+      "seconds": 24.242,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "glass-hotel",
+      "mood": "calm",
+      "bpm": 79.2,
+      "originalMotif": [
+        0,
+        3,
+        7,
+        10,
+        9,
+        7,
+        3,
+        2
+      ]
+    },
+    {
+      "file": "glass-hotel-mystery.wav",
+      "kind": "music",
+      "seconds": 22.222,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "glass-hotel",
+      "mood": "mystery",
+      "bpm": 86.4,
+      "originalMotif": [
+        0,
+        3,
+        7,
+        10,
+        9,
+        7,
+        3,
+        2
+      ]
+    },
+    {
+      "file": "glass-hotel-tension.wav",
+      "kind": "music",
+      "seconds": 21.333,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "glass-hotel",
+      "mood": "tension",
+      "bpm": 90,
+      "originalMotif": [
+        0,
+        3,
+        7,
+        10,
+        9,
+        7,
+        3,
+        2
+      ]
+    },
+    {
+      "file": "glass-hotel-danger.wav",
+      "kind": "music",
+      "seconds": 19.048,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "glass-hotel",
+      "mood": "danger",
+      "bpm": 100.8,
+      "originalMotif": [
+        0,
+        3,
+        7,
+        10,
+        9,
+        7,
+        3,
+        2
+      ]
+    },
+    {
+      "file": "glass-hotel-hope.wav",
+      "kind": "music",
+      "seconds": 22.222,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "glass-hotel",
+      "mood": "hope",
+      "bpm": 86.4,
+      "originalMotif": [
+        0,
+        3,
+        7,
+        10,
+        9,
+        7,
+        3,
+        2
+      ]
+    },
+    {
+      "file": "moon-market-calm.wav",
+      "kind": "music",
+      "seconds": 27.273,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "moon-market",
+      "mood": "calm",
+      "bpm": 70.4,
+      "originalMotif": [
+        0,
+        2,
+        7,
+        9,
+        7,
+        2,
+        0,
+        -3
+      ]
+    },
+    {
+      "file": "moon-market-mystery.wav",
+      "kind": "music",
+      "seconds": 25.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "moon-market",
+      "mood": "mystery",
+      "bpm": 76.8,
+      "originalMotif": [
+        0,
+        2,
+        7,
+        9,
+        7,
+        2,
+        0,
+        -3
+      ]
+    },
+    {
+      "file": "moon-market-tension.wav",
+      "kind": "music",
+      "seconds": 24.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "moon-market",
+      "mood": "tension",
+      "bpm": 80,
+      "originalMotif": [
+        0,
+        2,
+        7,
+        9,
+        7,
+        2,
+        0,
+        -3
+      ]
+    },
+    {
+      "file": "moon-market-danger.wav",
+      "kind": "music",
+      "seconds": 21.429,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "moon-market",
+      "mood": "danger",
+      "bpm": 89.6,
+      "originalMotif": [
+        0,
+        2,
+        7,
+        9,
+        7,
+        2,
+        0,
+        -3
+      ]
+    },
+    {
+      "file": "moon-market-hope.wav",
+      "kind": "music",
+      "seconds": 25.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "moon-market",
+      "mood": "hope",
+      "bpm": 76.8,
+      "originalMotif": [
+        0,
+        2,
+        7,
+        9,
+        7,
+        2,
+        0,
+        -3
+      ]
+    },
+    {
+      "file": "deep-sea-calm.wav",
+      "kind": "music",
+      "seconds": 30.303,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "deep-sea",
+      "mood": "calm",
+      "bpm": 63.36,
+      "originalMotif": [
+        0,
+        7,
+        12,
+        10,
+        3,
+        2,
+        -2,
+        0
+      ]
+    },
+    {
+      "file": "deep-sea-mystery.wav",
+      "kind": "music",
+      "seconds": 27.778,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "deep-sea",
+      "mood": "mystery",
+      "bpm": 69.12,
+      "originalMotif": [
+        0,
+        7,
+        12,
+        10,
+        3,
+        2,
+        -2,
+        0
+      ]
+    },
+    {
+      "file": "deep-sea-tension.wav",
+      "kind": "music",
+      "seconds": 26.667,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "deep-sea",
+      "mood": "tension",
+      "bpm": 72,
+      "originalMotif": [
+        0,
+        7,
+        12,
+        10,
+        3,
+        2,
+        -2,
+        0
+      ]
+    },
+    {
+      "file": "deep-sea-danger.wav",
+      "kind": "music",
+      "seconds": 23.809,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "deep-sea",
+      "mood": "danger",
+      "bpm": 80.64,
+      "originalMotif": [
+        0,
+        7,
+        12,
+        10,
+        3,
+        2,
+        -2,
+        0
+      ]
+    },
+    {
+      "file": "deep-sea-hope.wav",
+      "kind": "music",
+      "seconds": 27.778,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "deep-sea",
+      "mood": "hope",
+      "bpm": 69.12,
+      "originalMotif": [
+        0,
+        7,
+        12,
+        10,
+        3,
+        2,
+        -2,
+        0
+      ]
+    },
+    {
+      "file": "dragon-banquet-calm.wav",
+      "kind": "music",
+      "seconds": 22.727,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "dragon-banquet",
+      "mood": "calm",
+      "bpm": 84.48,
+      "originalMotif": [
+        0,
+        4,
+        7,
+        12,
+        9,
+        7,
+        2,
+        4
+      ]
+    },
+    {
+      "file": "dragon-banquet-mystery.wav",
+      "kind": "music",
+      "seconds": 20.833,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "dragon-banquet",
+      "mood": "mystery",
+      "bpm": 92.16,
+      "originalMotif": [
+        0,
+        4,
+        7,
+        12,
+        9,
+        7,
+        2,
+        4
+      ]
+    },
+    {
+      "file": "dragon-banquet-tension.wav",
+      "kind": "music",
+      "seconds": 20.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "dragon-banquet",
+      "mood": "tension",
+      "bpm": 96,
+      "originalMotif": [
+        0,
+        4,
+        7,
+        12,
+        9,
+        7,
+        2,
+        4
+      ]
+    },
+    {
+      "file": "dragon-banquet-danger.wav",
+      "kind": "music",
+      "seconds": 17.857,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "dragon-banquet",
+      "mood": "danger",
+      "bpm": 107.52,
+      "originalMotif": [
+        0,
+        4,
+        7,
+        12,
+        9,
+        7,
+        2,
+        4
+      ]
+    },
+    {
+      "file": "dragon-banquet-hope.wav",
+      "kind": "music",
+      "seconds": 20.833,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "dragon-banquet",
+      "mood": "hope",
+      "bpm": 92.16,
+      "originalMotif": [
+        0,
+        4,
+        7,
+        12,
+        9,
+        7,
+        2,
+        4
+      ]
+    },
+    {
+      "file": "clock-city-calm.wav",
+      "kind": "music",
+      "seconds": 21.818,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "clock-city",
+      "mood": "calm",
+      "bpm": 88.0,
+      "originalMotif": [
+        0,
+        3,
+        2,
+        7,
+        6,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "clock-city-mystery.wav",
+      "kind": "music",
+      "seconds": 20.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "clock-city",
+      "mood": "mystery",
+      "bpm": 96.0,
+      "originalMotif": [
+        0,
+        3,
+        2,
+        7,
+        6,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "clock-city-tension.wav",
+      "kind": "music",
+      "seconds": 19.2,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "clock-city",
+      "mood": "tension",
+      "bpm": 100,
+      "originalMotif": [
+        0,
+        3,
+        2,
+        7,
+        6,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "clock-city-danger.wav",
+      "kind": "music",
+      "seconds": 17.143,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "clock-city",
+      "mood": "danger",
+      "bpm": 112.0,
+      "originalMotif": [
+        0,
+        3,
+        2,
+        7,
+        6,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "clock-city-hope.wav",
+      "kind": "music",
+      "seconds": 20.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "clock-city",
+      "mood": "hope",
+      "bpm": 96.0,
+      "originalMotif": [
+        0,
+        3,
+        2,
+        7,
+        6,
+        10,
+        7,
+        2
+      ]
+    },
+    {
+      "file": "snow-radio-calm.wav",
+      "kind": "music",
+      "seconds": 30.303,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "snow-radio",
+      "mood": "calm",
+      "bpm": 63.36,
+      "originalMotif": [
+        0,
+        7,
+        9,
+        2,
+        0,
+        -3,
+        2,
+        7
+      ]
+    },
+    {
+      "file": "snow-radio-mystery.wav",
+      "kind": "music",
+      "seconds": 27.778,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "snow-radio",
+      "mood": "mystery",
+      "bpm": 69.12,
+      "originalMotif": [
+        0,
+        7,
+        9,
+        2,
+        0,
+        -3,
+        2,
+        7
+      ]
+    },
+    {
+      "file": "snow-radio-tension.wav",
+      "kind": "music",
+      "seconds": 26.667,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "snow-radio",
+      "mood": "tension",
+      "bpm": 72,
+      "originalMotif": [
+        0,
+        7,
+        9,
+        2,
+        0,
+        -3,
+        2,
+        7
+      ]
+    },
+    {
+      "file": "snow-radio-danger.wav",
+      "kind": "music",
+      "seconds": 23.809,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "snow-radio",
+      "mood": "danger",
+      "bpm": 80.64,
+      "originalMotif": [
+        0,
+        7,
+        9,
+        2,
+        0,
+        -3,
+        2,
+        7
+      ]
+    },
+    {
+      "file": "snow-radio-hope.wav",
+      "kind": "music",
+      "seconds": 27.778,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79,
+      "theme": "snow-radio",
+      "mood": "hope",
+      "bpm": 69.12,
+      "originalMotif": [
+        0,
+        7,
+        9,
+        2,
+        0,
+        -3,
+        2,
+        7
+      ]
+    },
+    {
+      "file": "dice.wav",
+      "kind": "effect",
+      "seconds": 0.72,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79
+    },
+    {
+      "file": "success.wav",
+      "kind": "effect",
+      "seconds": 1.15,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79
+    },
+    {
+      "file": "mixed.wav",
+      "kind": "effect",
+      "seconds": 1.0,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79
+    },
+    {
+      "file": "failure.wav",
+      "kind": "effect",
+      "seconds": 0.95,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79
+    },
+    {
+      "file": "clue.wav",
+      "kind": "effect",
+      "seconds": 0.65,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79
+    },
+    {
+      "file": "reveal.wav",
+      "kind": "effect",
+      "seconds": 1.4,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79
+    },
+    {
+      "file": "transition.wav",
+      "kind": "effect",
+      "seconds": 0.9,
+      "sampleRate": 22050,
+      "channels": 1,
+      "peak": 0.79
+    }
+  ]
+}

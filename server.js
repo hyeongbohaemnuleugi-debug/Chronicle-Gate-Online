@@ -1,4 +1,5 @@
 import express from 'express';
+import { attachTableService } from './game-server/table-service.js';
 import http from 'http';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -340,7 +341,8 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '12.0.0';
+const APP_VERSION = '14.0.0';
+const tabletop = attachTableService(io);
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
 const TARGET_STORY = 30;
@@ -416,6 +418,7 @@ app.use((req, res, next) => {
   ].join('; '));
   next();
 });
+app.get('/api/table/catalog', (_req, res) => res.json({ ok:true, version:APP_VERSION, campaigns:tabletop.catalog, storage:tabletop.storage }));
 app.use(express.static('public', {
   maxAge: 0,
   etag: true,
@@ -433,7 +436,9 @@ app.get('/health', (_req, res) => res.json({
   accountStoreDurable: accountPersistenceEnabled || localAccountDurable,
   timestamp: new Date().toISOString(),
   uptimeSeconds: Math.floor(process.uptime()),
-  release: 'auth-persistence-and-ultra-dice-fx',
+  release: 'seven-stories-tabletop-v14',
+  tabletopRooms: tabletop.rooms.size,
+  tabletopStorage: tabletop.storage,
 }));
 app.get('/api/config', (_req, res) => res.json({
   version: APP_VERSION,

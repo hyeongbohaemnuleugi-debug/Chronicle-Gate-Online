@@ -1,16 +1,23 @@
 {
   "name": "chronicle-gate-online",
-  "version": "12.0.0",
+  "version": "14.0.0",
   "private": true,
   "type": "module",
-  "description": "Editable GitHub source for a 1-4 player narrative TRPG with server-rolled D20, dramatic pressure, bonds, contextual free actions, persistent chronicles, 9 worlds, pixel artwork, and original adaptive audio.",
+  "description": "Seven original branching Korean TRPG stories with 1–4 player online or shared-device offline play, contextual D20 checks, chapter artwork and adaptive original audio.",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node scripts/qa.mjs",
-    "test": "node --test tests-release/*.test.mjs",
+    "check": "node scripts/qa-v14.mjs",
+    "test": "node --test tests-v14/core.test.mjs tests-v14/scenarios.test.mjs",
     "verify": "npm run check && npm test",
-    "test:legacy": "node --test tests/*.test.mjs"
+    "test:legacy": "node --test tests/*.test.mjs",
+    "offline": "node scripts/offline-server.mjs",
+    "test:integration": "node tests-v14/network.integration.mjs && node tests-v14/deployment.integration.mjs",
+    "test:legacy-release": "node --test tests-release/*.test.mjs",
+    "check:legacy": "node scripts/qa.mjs",
+    "build:offline": "node scripts/build-offline.mjs",
+    "test:ui": "node --test tests-v14/ui.test.mjs",
+    "test:all": "npm run verify && npm run test:ui && npm run test:integration"
   },
   "dependencies": {
     "express": "5.2.1",
@@ -18,6 +25,11 @@
     "three": "0.185.1"
   },
   "engines": {
-    "node": ">=20 <23"
+    "node": ">=22 <25"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "jsdom": "26.1.0",
+    "socket.io-client": "^4.8.3"
   }
 }

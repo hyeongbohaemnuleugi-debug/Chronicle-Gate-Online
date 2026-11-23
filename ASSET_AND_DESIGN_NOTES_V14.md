@@ -1,0 +1,25 @@
+# v14 제작 및 설계 출처
+
+## 신규 자산
+
+- `public/game/campaigns/`의 7개 이야기는 이번 작업에서 새로 작성했습니다. 왈도쿤·여까의 기존 방송 대본이나 시나리오를 옮겨 쓰지 않았습니다.
+- `public/game/art/`는 기본 이미지 생성 도구로 제작한 AI 이미지입니다. 사용자의 피드백에 따라 제한적인 명암과 무광 색감의 픽셀풍으로 수정했습니다. 사람의 수작업 원화라고 표시하지 않습니다. 생성/수정 프롬프트는 같은 폴더의 `provenance.json`에 있습니다.
+- `public/game/audio/`는 `scripts/build-audio.py`로 만든 원본 합성 음원입니다. 7개 세계의 개별 모티프와 5개 분위기 편곡을 사용합니다. 상업 음원·외부 샘플·유명 곡의 음원을 복사하지 않았습니다. 이 스크립트를 다시 실행할 때만 Python과 NumPy가 필요하며, 게임 플레이에는 필요하지 않습니다.
+- 이미 존재하던 구버전 자산과 코드는 별도로 유지했습니다. 이 문서는 기존 저장소 전체의 라이선스를 바꾸지 않습니다.
+
+## 조사한 설계 자료
+
+- Blades in the Dark, Action Roll: https://bladesinthedark.com/action-roll
+  위험이 있을 때 판정하고, 목표·효과·대가를 먼저 합의하는 구조를 참고했습니다. v14는 이 게임의 규칙을 그대로 구현한 것이 아니라 자체 D20·생명력·이야기 규칙을 사용합니다.
+- Fate Accelerated, Outcomes, Actions, and Approaches: https://fate-srd.com/fate-accelerated/how-do-stuff-outcomes-actions-and-approaches
+  대가를 치른 성공, 도움, 안전한 행동과 위험한 행동 구분을 검토했습니다. 원문의 문장이나 설정은 게임에 복사하지 않았습니다.
+- Dungeon World 공개 소개: https://www.dungeon-world.com/about/
+  플레이 중 무엇이 일어나는지 알아가는 진행 방향을 참고했습니다.
+- 공개 영상 소개: 왈도쿤 다시보기 ‘통깡이’s TRPG (w.통깡이, 여까, 모잉)’ https://www.youtube.com/watch?v=xjbNKwkCmAY
+  공개 설명으로 사용자가 말한 협동 TRPG 방송 맥락을 확인했습니다. 영상 전체를 시청하거나 모든 진행 대본을 분석했다고 주장하지 않습니다.
+- Socket.IO 공식 문서: https://socket.io/docs/v4/server-api/ / https://socket.io/docs/v4/client-api/
+  별도 네임스페이스, 응답 확인, 재접속 동작을 구현할 때 확인했습니다.
+
+## 범위
+
+장면 해석기는 규칙 기반이며 인터넷이나 LLM API를 호출하지 않습니다. 28개의 결말 기본형과 상태별 후일담을 조합합니다. 상태 탐색 보고서에 있는 수많은 ‘상태 조합’은 각각 완전히 다른 집필 결말의 수가 아닙니다.

@@ -4,7 +4,7 @@
 Development only: Python 3 + ffmpeg/ffprobe. The deployed game needs neither.
 Usage: python scripts/optimize-audio.py [--source-dir PATH]
 Run build-audio.py and build-combat-audio.py first to recreate WAV masters.
-WAVs are kept by this script; cleanup-v16.mjs removes verified obsolete assets.
+WAVs are kept by this script; cleanup-v17.mjs removes verified obsolete assets.
 """
 from pathlib import Path
 import argparse
@@ -43,7 +43,7 @@ for entry in manifest['files']:
         'sampleRate': int(stream['sample_rate']), 'channels': stream['channels'], 'bitrate': rate,
         'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
         'sourceWavBytes': master.stat().st_size, 'sourceWavSha256': hashlib.sha256(master.read_bytes()).hexdigest()})
-result = {'version':16, 'provenance':'Original synthesized scores/effects encoded from project WAV masters. No third-party recordings or samples.',
+result = {'version':17, 'provenance':'Original synthesized scores/effects encoded from project WAV masters. No third-party recordings or samples.',
     'quality':'96 kbps mono MP3 at the original 22050 Hz sample rate. Lossy delivery; not claimed to be bit-identical to WAV.',
     'delivery':'Same-origin MP3, on demand, no Supabase Storage requests.',
     'files': records}

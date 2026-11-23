@@ -1,295 +1,39 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <link rel="icon" href="data:,">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Chronicle Gate Online</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;800&family=Noto+Serif+KR:wght@400;600;700;800&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=11000">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#121a1f">
+  <meta name="description" content="친구 1–4명과 단서와 비밀을 나누며 만들어 가는 일곱 편의 이야기. 크로니클 게이트 이야기 탁자.">
+  <title>크로니클 게이트 · 이야기 탁자</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/game/styles.css?v=14000">
 </head>
 <body>
-<div id="app">
-  <div class="world-bg"></div>
-  <div class="bg-haze"></div>
-  <div class="bg-silhouette"></div>
-  <div id="particles"></div>
-
-  <header class="hud-top hidden" id="hudTop">
-    <div class="brand-small">CHRONICLE <i>GATE</i> ONLINE</div>
-    <div class="hud-actions">
-      <button class="ghost mini" id="helpBtn" type="button">ESC GUIDE</button>
-      <div class="room-chip"><span class="live-dot"></span><span id="connectionText">ONLINE</span> · ROOM <b id="roomCodeTop">-----</b><button id="leaveRoomBtn" class="room-leave" type="button">EXIT</button></div>
-    </div>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="크로니클 게이트 처음으로"><span class="brand-mark" aria-hidden="true">✦</span><span>CHRONICLE <b>GATE</b><small>이야기 탁자</small></span></a>
+    <nav class="header-actions" aria-label="게임 메뉴">
+      <span id="connection" class="connection"></span>
+      <button id="sound-toggle" class="icon-button" type="button" aria-label="소리 켜기" title="소리 켜기">♪ <span>소리 켜기</span></button>
+      <button data-action="audio-settings" class="icon-button settings-link" type="button" aria-label="음량 설정">음량</button>
+      <button data-action="help" class="icon-button" type="button">플레이 방법</button>
+    </nav>
   </header>
-  <div id="resumeGate" class="resume-gate hidden"></div>
-
-  <main id="views">
-    <section class="view active" id="homeView">
-      <div class="home-content">
-        <div class="crest">✦</div>
-        <div class="eyebrow">ONLINE CO-OP TRPG</div>
-        <h1>CHRONICLE<br><span>GATE</span></h1>
-        <p>
-          1~4명이 즐기는 스토리 중심 온라인 TRPG입니다. 혼자 테스트하거나 친구들과 함께 플레이할 수 있습니다.<br>
-          방을 만들고, 연대기를 고르고, 각 세계에 맞는 직업과 능력치를 굴린 뒤<br>
-          정해진 선택지 외에도 직접 행동을 선언하고, 동료와 협력하며 주사위 판정으로 서로 다른 결말을 만들어 보세요.
-        </p>
-        <div class="home-account" id="homeAccountBar">
-          <div class="account-copy"><span id="accountStatus">로그인하면 이어하기·도감·보상을 사용할 수 있습니다.</span><b id="accountPointLabel">CHRONICLE POINT 0</b></div>
-          <div class="account-actions"><button class="ghost mini" id="loginOpenBtn" type="button">로그인</button><button class="ghost mini hidden" id="collectionOpenBtn" type="button">도감</button><button class="ghost mini hidden" id="diceStoreOpenBtn" type="button">주사위 보관함</button><button class="ghost mini hidden" id="logoutBtn" type="button">로그아웃</button></div>
-        </div>
-        <div class="home-actions">
-          <button class="primary huge" id="openCreate" type="button">방 만들기</button>
-          <button class="ghost huge" id="openJoin" type="button">방 참가하기</button>
-          <button class="ghost huge" id="openResume" type="button">이어하기</button>
-        </div>
-      </div>
-      <div class="home-vignette"></div>
-      <div class="version" id="versionLabel">ONLINE EDITION · DRAMATIC TABLETOP · 9 CHRONICLES · v12.0.0</div>
+  <main id="main" tabindex="-1">
+    <section id="home-view" class="page home-view">
+      <div id="home-content"><div class="loading-state"><span class="loader" aria-hidden="true"></span><h1>이야기 책장을 여는 중…</h1><p>시나리오와 플레이 화면을 준비하고 있어요.</p></div></div>
     </section>
-
-    <section class="view" id="entryView">
-      <button class="back" id="entryBack" type="button">←</button>
-      <div class="center-card ornate">
-        <div class="eyebrow" id="entryEyebrow">CREATE ROOM</div>
-        <h2 id="entryTitle">새로운 연대기를 시작합니다.</h2>
-        <label class="field"><span>플레이어 이름</span><input id="nameInput" maxlength="18" placeholder="예: 재의 기사 아린"></label>
-        <div id="createRoomFields" class="room-create-fields">
-          <label class="field"><span>방 이름</span><input id="roomNameInput" maxlength="28" placeholder="예: 금요일 밤 연대기"></label>
-          <div class="room-access-select"><span>입장 방식</span><label><input type="radio" name="roomAccess" value="public" checked> 공개방</label><label><input type="radio" name="roomAccess" value="locked"> 비밀번호방</label></div>
-          <label class="field hidden" id="passwordCreateField"><span>방 비밀번호</span><input id="roomPasswordCreate" maxlength="40" type="password" placeholder="2자 이상"></label>
-        </div>
-        <label class="field" id="codeField"><span>방 코드로 바로 참가</span><input id="codeInput" maxlength="5" placeholder="ABCDE"></label>
-        <label class="field hidden" id="joinPasswordField"><span>방 비밀번호</span><input id="joinPasswordInput" maxlength="40" type="password" placeholder="비밀번호방일 때 입력"></label>
-        <button class="primary full" id="entrySubmit" type="button">방 만들기</button>
-        <section id="roomBrowser" class="room-browser hidden"><div class="room-browser-head"><div><b>열려 있는 방</b><small>코드를 몰라도 참가할 수 있습니다.</small></div><button id="refreshRooms" class="mini" type="button">새로고침</button></div><div id="roomList" class="room-list"></div></section>
-        <div id="resumeCandidates" class="resume-candidates"></div>
-        <div class="error" id="entryError"></div>
-      </div>
-    </section>
-
-    <section class="view" id="lobbyView">
-      <div class="lobby-shell">
-        <div class="lobby-header">
-          <div><div class="eyebrow">SESSION LOBBY</div><h2 id="roomNameLobby">연대기의 동료들</h2></div>
-          <div class="code-display"><span>ROOM CODE</span><b id="roomCodeLobby">-----</b><button class="mini" id="copyCode" type="button">COPY</button></div>
-        </div>
-        <div class="lobby-grid lobby-grid-extended">
-          <section class="ornate panel players-panel">
-            <div class="panel-title"><span>PLAYERS</span><small>1~4명 · SOLO 지원</small></div>
-            <div id="playerSlots" class="player-slots"></div>
-          </section>
-          <section class="ornate panel campaign-panel">
-            <div class="panel-title"><span>CHRONICLE</span><small id="campaignHint">방장이 선택</small></div>
-            <div id="campaignCarousel" class="campaign-carousel"></div>
-            <div id="campaignDetail" class="campaign-detail"></div>
-          </section>
-          <section class="ornate panel character-panel">
-            <div class="panel-title"><span>YOUR CHARACTER</span><small>스토리별 1회 생성</small></div>
-            <div class="character-summary" id="characterSummary"></div>
-            <div class="char-actions"><button class="primary" id="rollClassBtn" type="button">D6 직업 배정</button><button class="ghost" id="rollStatsBtn" type="button">4D6 능력치 생성</button></div>
-          </section>
-          <section class="ornate panel lobby-chat-panel">
-            <div class="panel-title"><span>TABLE CHAT</span><small>게임 시작 전에도 대화 가능</small></div>
-            <div id="lobbyChatLog" class="chat-log chat-log-lobby"></div>
-            <form id="lobbyChatForm"><input id="lobbyChatInput" maxlength="240" placeholder="연대기를 고르기 전에 대화를 나눠보세요…"><button type="submit">↗</button></form>
-            <div class="lobby-guide-row">
-              <button class="ghost full" id="lobbyGuideBtn" type="button">가이드 열기 (ESC)</button>
-            </div>
-          </section>
-        </div>
-        <div class="lobby-footer"><span id="lobbyStatus">모든 동료가 준비되면 모험을 시작할 수 있습니다.</span><div class="lobby-footer-actions"><button class="ghost huge" id="lobbyHomeBtn" type="button">처음 화면으로 나가기</button><button class="primary huge" id="startGameBtn" type="button">SESSION START</button></div></div>
-      </div>
-    </section>
-
-    <section class="view" id="storyView">
-      <div class="game-shell">
-        <aside class="party-rail ornate" id="partyRail"></aside>
-        <section class="story-stage ornate">
-          <div class="stage-top">
-            <div>
-              <div class="eyebrow" id="actLabel">ACT I</div>
-              <h2 id="eventTitle">GM이 다음 장면을 준비하고 있습니다.</h2>
-              <div class="turn-banner" id="turnBanner">이번 장면의 행동 순서는 곧 결정됩니다.</div>
-            </div>
-            <div class="deck-meter"><span>EVENT DECK</span><b id="deckCount">30</b><small id="eventCadence">3턴마다 자동</small></div>
-          </div>
-          <figure class="scene-art ornate-subtle">
-            <img id="storySceneImg" alt="스토리 장면 이미지">
-            <figcaption id="storySceneCaption">장면 분위기에 맞는 이미지가 이곳에 표시됩니다.</figcaption>
-          </figure>
-          <section id="spotlightPanel" class="director-spotlight" hidden aria-live="polite"></section>
-          <section id="psychePanel" class="director-psyche" hidden aria-label="캐릭터 긴장과 동료 유대"></section>
-          <div class="story-clarity" id="storyClarity">
-            <div class="clarity-card"><span>상황</span><p id="storySituation">현재 장면을 준비하고 있습니다.</p></div>
-            <div class="clarity-card objective"><span>지금 할 일</span><p id="storyObjective">현재 목표를 확인 중입니다.</p></div>
-            <div class="clarity-card"><span>중요</span><p id="storyWhy">이 선택이 이후 이야기에 영향을 줍니다.</p></div>
-          </div>
-          <div class="narration" id="eventText">장면을 불러오는 중입니다…</div>
-          <div class="player-prompt" id="storyPrompt"></div>
-          <div class="table-tools hidden" id="tableTools" hidden>
-            <div class="table-roll-modes" id="rollModeChoices" aria-label="주사위 판정 방식">
-              <span class="table-mode-label">THIS ROLL</span>
-              <button type="button" data-roll-mode="normal" aria-pressed="true">🎲 기본 D20</button>
-              <button type="button" data-roll-mode="inspiration" aria-pressed="false">✦ 영감 · 유리한 주사위</button>
-              <button type="button" data-roll-mode="push" aria-pressed="false">⚡ 위험 감수 +2</button>
-              <button type="button" data-roll-mode="desperate" aria-pressed="false">◆ 극적 돌파 · 2D20</button>
-            </div>
-            <p class="roll-mode-hint" id="rollModeHint">D20 한 번 + 능력치·장비·협력 보정</p>
-            <div class="table-assist-line"><span id="rollAssistLabel">동료의 지원을 받을 수 있습니다.</span><button class="ghost mini" id="assistTurnBtn" type="button">🛡 동료 돕기</button></div>
-            <div class="scene-notebook" id="sceneNotebook"></div>
-          </div>
-          <div class="story-action-box disabled" id="storyActionBox" hidden>
-            <div class="role-context" id="storyRoleContext"></div>
-            <div class="action-suggestions" id="actionSuggestions"></div>
-            <label for="storyActionInput">플레이어 자유 선언 · 상황에 맞는 행동을 직접 적어 보세요</label>
-            <div class="story-action-row"><textarea id="storyActionInput" maxlength="220" rows="3" placeholder="예: 꽃가게 주인에게 오늘 아침에도 나를 본 적이 있는지 묻는다."></textarea><span id="storyActionCount">0/220</span></div>
-            <div class="story-action-help">인물에게 질문하거나 단서를 살펴보는 행동은 최대 2회 무료 조사할 수 있습니다. 위험한 시도는 판정되며, 불가능한 행동은 이유를 알려줍니다.</div>
-            <button class="primary story-declare-btn" id="storyActionSubmitBtn" type="button">이 행동을 시도한다</button>
-            <div class="last-action-result" id="lastActionResult"></div>
-          </div>
-          <div id="voteTimer" class="vote-timer hidden"></div>
-          <div id="facilityPanel" class="facility-panel hidden"></div>
-          <div id="choiceArea" class="choice-area"></div>
-          <div class="gm-bar" id="gmBar"><button class="primary" id="advanceStoryBtn" type="button">메인 스토리 진행</button><button class="ghost" id="continueBtn" type="button" hidden style="display:none">계속</button></div>
-        </section>
-        <aside class="right-rail">
-          <section class="ornate stat-card"><div class="panel-title"><span>YOU</span><small id="myJobMini">UNASSIGNED</small></div><div id="myStatsMini"></div><div id="economyPanel" class="economy-panel"></div><div class="job-skill-panel" id="jobSkillPanel"><div class="skill-copy"><span id="jobSkillName">SKILL</span><small id="jobSkillDesc"></small></div><button class="primary skill-button" id="jobSkillBtn" type="button">스킬 사용</button><div class="skill-cooldown" id="jobSkillCooldown"></div></div></section>
-          <section class="ornate threat-card"><div class="threat-head"><span>WORLD THREAT</span><b id="threatValue">0</b></div><div class="threat-track" id="threatTrack"></div><div class="story-progress"><span>STORY</span><div class="bar"><i id="storyFill"></i></div><b id="storyValue">0</b></div></section>
-          <section class="ornate chat-card"><div id="chatLog" class="chat-log"></div><form id="chatForm"><input id="chatInput" maxlength="240" placeholder="동료에게 말하기…"><button type="submit">↗</button></form></section>
-        </aside>
-      </div>
-    </section>
-
-    <section class="view" id="combatView">
-      <div class="combat-shell">
-        <div class="combat-title"><div class="eyebrow">ENCOUNTER</div><h1 id="monsterName">UNKNOWN</h1><p>내 차례에는 공격·방어·직업 스킬 중 하나만 고르면 됩니다. 모두 행동하면 적이 한 번 행동합니다.</p></div>
-        <div class="combat-turn-panel ornate" id="combatTurnPanel">
-          <div class="combat-turn-head"><span id="combatTurnPhase">PLAYER TURN</span><b id="combatRoundLabel">ROUND 1</b></div>
-          <div class="combat-timeline" id="combatTimeline"></div>
-          <div class="boss-turn-warning" id="bossTurnWarning">모든 플레이어 행동 완료 후 보스가 공격합니다.</div>
-        </div>
-        <figure class="combat-visual ornate-subtle"><img id="combatSceneImg" alt="전투 보스 이미지"></figure>
-        <div class="monster-card ornate"><div class="monster-sigil">☠</div><div><span>ARMOR CLASS <b id="monsterAC">—</b></span><div class="monster-hp"><i id="monsterHpFill"></i></div><strong id="monsterHpText">— / —</strong></div></div>
-        <div id="combatParty" class="combat-party"></div>
-        <div class="combat-actions"><button class="ghost huge" id="combatSkillBtn" type="button">직업 스킬</button><button class="ghost huge" id="defendBtn" type="button">방어</button><button class="primary huge combat-attack" id="attackBtn" type="button">공격</button></div>
-        <div class="combat-log" id="combatLog"></div>
-      </div>
-    </section>
-
-    <section class="view" id="endingView">
-      <div class="ending-shell">
-        <div class="ending-card ornate">
-          <div class="eyebrow" id="endingEyebrow">CHRONICLE COMPLETE</div>
-          <div class="ending-icon" id="endingIcon">◆</div>
-          <h1 id="endingTitle">연대기가 끝났습니다.</h1>
-          <p id="endingText"></p>
-          <div class="ending-reward" id="endingReward"></div><div class="ending-stats" id="endingStats"></div>
-          <button class="primary huge" id="endingHomeBtn" type="button">새 연대기 시작</button>
-        </div>
-      </div>
-    </section>
+    <section id="lobby-view" class="page lobby-view" hidden></section>
+    <section id="game-view" class="game-view" hidden></section>
   </main>
-
-  <div class="toast" id="toast"></div>
-  <div class="resolution-modal" id="resolutionModal"><div class="resolution-card ornate"><div class="eyebrow" id="resolutionEyebrow">RESULT</div><h2 id="resolutionTitle"></h2><p id="resolutionText"></p><button class="primary" id="resolutionClose" type="button">확인</button></div></div>
-  <div class="dice-overlay" id="diceOverlay"><canvas id="diceCanvas"></canvas><div class="dice-ui"><div class="eyebrow" id="diceRoller">THE DIE IS CAST</div><h2 id="dicePurpose">D20 CHECK</h2><div class="dice-final" id="diceFinal"></div><div class="dice-breakdown" id="diceBreakdown" aria-live="polite"></div><div class="dice-sub" id="diceSub">서버가 결과를 확정했습니다.</div></div></div>
-
-  <div class="account-modal" id="authModal" hidden aria-hidden="true">
-    <div class="account-card ornate auth-card-v900">
-      <button class="modal-x" id="authCloseBtn" type="button">×</button>
-      <div class="eyebrow">CHRONICLE ACCOUNT</div><h2>연대기를 계정에 남기세요.</h2>
-      <div class="auth-tabs"><button id="authLoginTab" class="selected" type="button">로그인</button><button id="authRegisterTab" type="button">회원가입</button></div>
-      <div class="auth-storage-hint" id="authStorageHint" hidden></div>
-      <label class="field"><span>이메일</span><input id="authEmail" type="email" autocomplete="email" maxlength="160" inputmode="email"></label>
-      <label class="field"><span>비밀번호</span><div class="auth-password-row"><input id="authPassword" type="password" autocomplete="current-password" minlength="4" maxlength="72"><button id="authPasswordToggle" type="button" aria-label="비밀번호 표시 전환">보기</button></div><small id="authPasswordHint" class="hidden">회원가입 비밀번호는 4~72자입니다. 숫자만 강제하지 않으며 영문·숫자·기호를 자유롭게 사용할 수 있습니다.</small><small id="authPasswordCount" class="auth-password-count">0/72</small></label>
-      <label class="field hidden" id="authNameField"><span>닉네임</span><input id="authDisplayName" maxlength="18" autocomplete="nickname"></label>
-      <button class="primary full" id="authSubmitBtn" type="button">로그인</button><div class="error" id="authError"></div>
-    </div>
-  </div>
-  <div class="account-modal" id="collectionModal" hidden aria-hidden="true"><div class="account-card collection-card ornate"><button class="modal-x" id="collectionCloseBtn" type="button">×</button><div class="eyebrow">CHRONICLE ARCHIVE</div><h2>엔딩 도감</h2><p>처음 본 엔딩은 도감에 기록되고 크로니클 포인트 5P를 획득합니다. 같은 엔딩을 다시 보면 1P를 획득합니다.</p><div id="collectionGrid" class="collection-grid"></div></div></div>
-  <div class="account-modal" id="diceStoreModal" hidden aria-hidden="true"><div class="account-card dice-store-card ornate"><button class="modal-x" id="diceStoreCloseBtn" type="button">×</button><div class="eyebrow">DICE VAULT</div><h2>주사위 보관함</h2><div class="dice-wallet" id="diceWallet">0 CP</div><p>외형만 바뀌며 판정 확률에는 영향을 주지 않습니다. 당신이 굴리면 방 안의 모든 플레이어가 장착한 외형을 함께 봅니다.</p><div id="diceStoreGrid" class="dice-store-grid"></div></div></div>
-  <div class="achievement-toast" id="achievementToast"><small>업적 달성</small><b id="achievementTitle"></b><span id="achievementReward"></span></div>
-
-  <div class="help-modal" id="helpModal" aria-hidden="true" hidden>
-    <div class="help-card help-card-v35 ornate" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-      <div class="help-head help-head-v35">
-        <div class="help-title-wrap">
-          <div class="help-mark">✦</div>
-          <div>
-            <div class="eyebrow">ESC · CHRONICLE MENU</div>
-            <h2 id="helpTitle">연대기 안내서</h2>
-            <p>플레이 방법, 개인 화면 설정, 세션 관리를 한곳에서 확인합니다.</p>
-          </div>
-        </div>
-        <button class="help-close-btn" id="helpClose" type="button" aria-label="안내서 닫기">×</button>
-      </div>
-
-      <div class="help-tabs" role="tablist" aria-label="ESC 메뉴">
-        <button class="help-tab active" id="helpTabGuide" type="button" data-help-tab="guide">게임 안내</button>
-        <button class="help-tab" id="helpTabSettings" type="button" data-help-tab="settings">화면 설정</button>
-        <button class="help-tab" id="helpTabSession" type="button" data-help-tab="session">세션 관리</button>
-      </div>
-
-      <div class="help-content-v35">
-        <section class="help-panel active" id="helpPanelGuide" data-help-panel="guide">
-          <div id="helpBody" class="help-body"></div>
-        </section>
-
-        <section class="help-panel" id="helpPanelSettings" data-help-panel="settings">
-          <div class="settings-hero">
-            <div><div class="eyebrow">PERSONAL DISPLAY</div><h3>내 화면만 편하게 조절하기</h3></div>
-            <span>다른 참가자에게 영향 없음</span>
-          </div>
-          <div class="settings-grid">
-            <div class="setting-card">
-              <div class="setting-icon">◐</div>
-              <div class="setting-copy"><b>화면 테마</b><small>기본은 검정입니다. 밝은 환경에서는 하양 테마를 사용할 수 있습니다.</small></div>
-              <div class="segmented">
-                <button class="ghost" id="themeDarkBtn" type="button">검정</button>
-                <button class="ghost" id="themeLightBtn" type="button">하양</button>
-              </div>
-            </div>
-            <div class="setting-card setting-card-wide">
-              <div class="setting-icon">↔</div>
-              <div class="setting-copy"><b>채팅창 크기</b><small>스토리 우측 채팅 영역과 로비 채팅 높이를 내 화면에서만 조절합니다.</small></div>
-              <div class="range-wrap"><input id="chatSizeRange" type="range" min="300" max="520" step="20" value="300"><b id="chatSizeValue">기본</b></div>
-            </div>
-            <div class="setting-card setting-card-wide audio-setting-card">
-              <div class="setting-icon">♪</div>
-              <div class="setting-copy"><b>게임 사운드</b><small>캠페인별 배경음과 주사위·전투·성공/실패 효과음을 조절합니다.</small></div>
-              <div class="audio-setting-controls">
-                <button class="ghost" id="audioMuteBtn" type="button">사운드 켜짐</button>
-                <button class="ghost" id="audioTestBtn" type="button">소리 테스트</button>
-                <div class="range-wrap"><input id="audioVolumeRange" type="range" min="0" max="100" step="5" value="65"><b id="audioVolumeValue">65%</b></div>
-              </div>
-            </div>
-          </div>
-          <button class="ghost full settings-reset" id="uiResetBtn" type="button">화면 설정 기본값으로 되돌리기</button>
-        </section>
-
-        <section class="help-panel" id="helpPanelSession" data-help-panel="session">
-          <div class="session-warning">
-            <div class="setting-icon">⚑</div>
-            <div><b>현재 연대기 관리</b><p>모험 진행 중 포기하려면 참가자 전원의 찬성이 필요합니다. 한 명이라도 반대하면 현재 스토리는 계속됩니다.</p></div>
-          </div>
-          <div class="abandon-box" id="abandonVoteBox"></div>
-          <div class="help-actions help-actions-v35">
-            <button class="ghost" id="abandonRequestBtn" type="button">포기 투표 시작</button>
-            <button class="primary" id="abandonYes" type="button">포기 찬성</button>
-            <button class="ghost" id="abandonNo" type="button">포기 반대</button>
-          </div>
-        </section>
-      </div>
-
-      <div class="help-footer-v35"><span>ESC를 다시 누르면 닫힙니다.</span><span id="helpConnectionHint">세션 연결 상태를 확인 중…</span></div>
-    </div>
-  </div>
-</div>
-<script src="/socket.io/socket.io.js"></script>
-<script type="module" src="/app.js?v=11000"></script>
+  <footer id="site-footer" class="site-footer"><span>CHRONICLE GATE · STORY TABLE v14</span><span>7개의 세계 · 1–4명의 동료 · 당신들의 선택</span></footer>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <dialog id="entry-dialog" class="modal entry-dialog" aria-labelledby="entry-title"></dialog>
+  <dialog id="preview-dialog" class="modal preview-dialog" aria-labelledby="preview-title"></dialog>
+  <dialog id="info-dialog" class="modal info-dialog" aria-labelledby="info-title"></dialog>
+  <input id="save-file" type="file" accept=".json,application/json" hidden>
+  <noscript><div class="noscript">이 게임은 JavaScript가 필요합니다. 브라우저에서 JavaScript를 켜 주세요.</div></noscript>
+  <script type="module" src="/game/app.js?v=14000"></script>
 </body>
 </html>

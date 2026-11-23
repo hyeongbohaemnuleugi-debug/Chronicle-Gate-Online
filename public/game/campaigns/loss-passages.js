@@ -31,7 +31,7 @@ export const LOSS_PASSAGES = {
       survivorArrival: '열차가 느려진 동안 남은 일행은 바닥의 규정집을 챙기고 터널을 향한 연결 통로로 들어선다.',
     },
     'brake/reverse-shortcut/failure': {
-      lossText: '한 박자 늦은 역전이 객차 전체를 뒤흔들어 몸들을 바닥과 의자에 내던진다. 완충기는 탈선을 막지만 분기기로 곧장 가던 지름길은 닫힌다.',
+      lossText: '동력을 거꾸로 돌리는 순간 객차가 요동쳐 일행을 바닥과 의자로 내던진다. 완충기가 탈선은 막지만, 분기기 곁에 세우려던 열차는 그대로 지나친다.',
       survivorArrival: '남은 일행은 윤이 가리킨 우회 통로를 따라 터널 쪽 객차로 옮겨, 앞의 현장 분기기로 갈 길을 찾는다.',
     },
     'brake/reverse-shortcut/fumble': {
@@ -63,7 +63,7 @@ export const LOSS_PASSAGES = {
       survivorArrival: '윤이 비상 제동으로 열차를 붙든 틈에 남은 일행은 점검 통로를 따라 정비 다리 입구로 물러난다.',
     },
     'switch/relay-bridge/failure': {
-      lossText: '타 버린 릴레이에서 차량 손잡이로 전류가 번진다. 손을 떼기도 전에 몸들이 꺾이고 바닥에 전선의 불꽃이 흩어진다.',
+      lossText: '타 버린 릴레이에서 차량 손잡이로 전류가 번진다. 손을 떼기도 전에 무릎이 꺾이고, 바닥에는 끊어진 전선의 불꽃이 튄다.',
       survivorArrival: '윤이 전원을 끊고 열차를 다리 입구에 세우자 남은 일행은 전선에서 떨어져 점검 통로로 그곳에 건너간다.',
     },
     'switch/relay-bridge/fumble': {
@@ -241,7 +241,7 @@ export const LOSS_PASSAGES = {
       survivorArrival: '남은 일행은 수조 제어를 더 붙들지 못한 채 누리의 비상 통로로 올라가 상승 구획 앞에 닿는다.',
     },
     'reactor/solo-signed-release/failure': {
-      lossText: '끝까지 내리지 못한 차단기의 반동이 손을 찧고 몸을 제어판에 밀어붙인다. 누리가 예비 케이블로 분리를 마치지만 서명 칸에는 작업 완료가 남지 않는다.',
+      lossText: '끝까지 내리지 못한 차단기의 반동이 손을 찧고 몸을 제어판에 밀어붙인다. 누리가 예비 케이블로 분리를 마치지만, 쓰러진 사람은 작업 기록에 서명하지 못한다.',
       survivorArrival: '남은 일행은 누리가 연 비상 통로를 통해 반응로를 벗어나 상승 구획의 연결교까지 올라간다.',
     },
     'reactor/solo-signed-release/fumble': {

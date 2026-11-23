@@ -3,7 +3,7 @@ services:
     name: chronicle-gate-online
     runtime: node
     plan: free
-    buildCommand: npm install --omit=dev && npm run verify
+    buildCommand: npm ci --omit=dev && npm run verify
     startCommand: npm start
     healthCheckPath: /health
     autoDeploy: true
@@ -12,9 +12,11 @@ services:
         value: 22
       - key: NODE_ENV
         value: production
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SECRET_KEY
-        sync: false
-      - key: PUBLIC_BASE_URL
-        sync: false
+      - key: CHRONICLE_MAX_ROOMS
+        value: 32
+      - key: CHRONICLE_ROOM_TTL_HOURS
+        value: 24
+      - key: CHRONICLE_CHAT_TTL_MINUTES
+        value: 30
+      - key: CHRONICLE_MAX_ROOM_KB
+        value: 256

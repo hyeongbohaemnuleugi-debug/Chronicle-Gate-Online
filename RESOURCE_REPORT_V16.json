@@ -1,0 +1,70 @@
+{
+  "version": "16.0.0",
+  "date": "2026-11-23",
+  "baseline": "local verified v15 build",
+  "unit": "bytes; decimal MB is 1000000 bytes",
+  "audio": {
+    "v15DirectoryBytes": 36967594,
+    "v16DirectoryBytes": 10136538,
+    "sourceWavBytes": 36953028,
+    "mp3Bytes": 10108567,
+    "files": 46,
+    "music": 35,
+    "effects": 11,
+    "bitrateKbps": 96,
+    "sampleRateHz": 22050,
+    "channels": 1,
+    "encoding": "lossy MP3, same source compositions and sample rate; perceptual transparency is not certified",
+    "reductionPercent": 72.64
+  },
+  "game": {
+    "v15Bytes": 39285802,
+    "v16Bytes": 12475376,
+    "reductionPercent": 68.24
+  },
+  "public": {
+    "v15Bytes": 46114457,
+    "v16Bytes": 19326395
+  },
+  "preservation": {
+    "identicalFiles": {
+      "public/game/art/moon-market.webp": true,
+      "public/game/art/last-train.webp": true,
+      "public/game/art/snow-radio.webp": true,
+      "public/game/art/clock-city.webp": true,
+      "public/game/art/deep-sea.webp": true,
+      "public/game/art/dragon-banquet.webp": true,
+      "public/game/art/glass-hotel.webp": true,
+      "public/game/campaigns/moon-market.js": true,
+      "public/game/campaigns/combat-data.js": true,
+      "public/game/campaigns/last-train.js": true,
+      "public/game/campaigns/deep-sea.js": true,
+      "public/game/campaigns/clock-city.js": true,
+      "public/game/campaigns/glass-hotel.js": true,
+      "public/game/campaigns/snow-radio.js": true,
+      "public/game/campaigns/dragon-banquet.js": true,
+      "public/game/campaigns/index.js": true,
+      "public/game/combat.js": true,
+      "public/game/professions.js": true
+    },
+    "engineUnchangedExceptReleaseVersion": true,
+    "originalWavFormats": [
+      [
+        22050,
+        1,
+        2
+      ]
+    ]
+  },
+  "limits": {
+    "publicGameReleaseBudgetBytes": 13000000,
+    "defaultMaxRooms": 32,
+    "playersPerRoom": 4,
+    "defaultRoomSnapshotBytes": 262144,
+    "inactiveRoomTtlHours": 24,
+    "chatMessages": 30,
+    "chatTtlMinutes": 30,
+    "defaultMaxConnections": 160
+  },
+  "scope": "Source and asset measurements; not a Supabase account measurement, real-device performance benchmark, or load-capacity certification."
+}

@@ -1,5 +1,5 @@
 /**
- * Chronicle Gate v17 default host. This module never imports legacy persistence,
+ * Chronicle Gate v18 default host. This module never imports legacy persistence,
  * account code or a Supabase client. Static serving uses Node built-ins so the
  * shared-device offline server also works without npm install.
  */
@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 
 const gzipAsync = promisify(gzip);
 const PUBLIC_ROOT = fileURLToPath(new URL('../public/', import.meta.url));
-const VERSION = '17.0.0';
+const VERSION = '18.0.0';
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',

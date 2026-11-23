@@ -15,8 +15,8 @@ with zipfile.ZipFile(original) as source:
   parts=Path(info.filename).parts
   relative='/'.join(parts[1:]) if parts and parts[0]=='Chronicle-Gate-Online-main' else info.filename
   base[relative]=source.read(info)
-exclude_dirs={'node_modules','.git','.chronicle-data','.chronicle-v14','.ui-qa','__pycache__'}
-exclude_names={'IMPLEMENTATION_CONTRACT.md','V14_PATCH_MANIFEST.json','FILES_CHANGED_V14.txt','.env'}
+exclude_dirs={'node_modules','.git','.chronicle-data','.chronicle-v14','.chronicle-v15','.ui-qa','.uiqa','__pycache__','tests-v14'}
+exclude_names={'IMPLEMENTATION_CONTRACT.md','IMPLEMENTATION_V15.md','V14_PATCH_MANIFEST.json','FILES_CHANGED_V14.txt','V15_PATCH_MANIFEST.json','FILES_CHANGED_V15.txt','README_V14_KO.md','VALIDATION_V14.md','ASSET_AND_DESIGN_NOTES_V14.md','qa-v14.mjs','.env'}
 changed=[]
 for file in sorted(root.rglob('*')):
  if not file.is_file():continue
@@ -27,14 +27,14 @@ for file in sorted(root.rglob('*')):
 # The unchanged icon makes the independent local-play folder complete.
 if not any(key=='public/favicon.svg' for key,_ in changed):changed.append(('public/favicon.svg',(root/'public/favicon.svg').read_bytes()))
 changed.sort()
-manifest={'version':'14.0.0','baselineFilename':original.name,'baselineSha256':sha(original.read_bytes()),'createdAt':datetime.now(timezone.utc).isoformat(),'entryPoints':{'online':'npm start (after overlay on original repository)','offline':'PLAY_OFFLINE.html','offlineHttp':'node scripts/offline-server.mjs'},'note':'Paths are relative to the repository root. This is a patch, not the full legacy server project. Local bundled play is included. Runtime saves and environment secrets are excluded.','files':[{'path':key,'status':'replace' if key in base else 'add','bytes':len(data),'sha256':sha(data),'baselineSha256':sha(base[key]) if key in base else None} for key,data in changed]}
+manifest={'version':'15.0.0','baselineFilename':original.name,'baselineSha256':sha(original.read_bytes()),'createdAt':datetime.now(timezone.utc).isoformat(),'entryPoints':{'online':'npm start (after overlay on original repository)','offline':'PLAY_OFFLINE.html','offlineHttp':'node scripts/offline-server.mjs'},'note':'Paths are relative to the repository root. This is a patch, not the full legacy server project. Local bundled play is included. Runtime saves and environment secrets are excluded.','files':[{'path':key,'status':'replace' if key in base else 'add','bytes':len(data),'sha256':sha(data),'baselineSha256':sha(base[key]) if key in base else None} for key,data in changed]}
 manifest_data=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
-listing=('Chronicle Gate v14 changed files\nBaseline: '+original.name+'\n\n'+'\n'.join(('REPLACE ' if key in base else 'ADD     ')+key for key,_ in changed)+'\n\nApply at repository root; read README_V14_KO.md.\n').encode()
-(root/'V14_PATCH_MANIFEST.json').write_bytes(manifest_data);(root/'FILES_CHANGED_V14.txt').write_bytes(listing)
+listing=('Chronicle Gate v15 changed files\nBaseline: '+original.name+'\n\n'+'\n'.join(('REPLACE ' if key in base else 'ADD     ')+key for key,_ in changed)+'\n\nApply at repository root; read README_V15_KO.md.\n').encode()
+(root/'V15_PATCH_MANIFEST.json').write_bytes(manifest_data);(root/'FILES_CHANGED_V15.txt').write_bytes(listing)
 output.parent.mkdir(parents=True,exist_ok=True)
 with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
  for key,data in changed:archive.writestr(key,data)
- archive.writestr('V14_PATCH_MANIFEST.json',manifest_data);archive.writestr('FILES_CHANGED_V14.txt',listing)
+ archive.writestr('V15_PATCH_MANIFEST.json',manifest_data);archive.writestr('FILES_CHANGED_V15.txt',listing)
 with zipfile.ZipFile(output) as archive:
  assert archive.testzip() is None
  for record in manifest['files']:assert sha(archive.read(record['path']))==record['sha256']

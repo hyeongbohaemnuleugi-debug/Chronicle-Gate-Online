@@ -2,14 +2,27 @@
 import fs from 'node:fs';
 import { CAMPAIGNS } from '../public/game/campaigns/index.js';
 import { createGame, previewAction, applyAction, availableChoices, viewGame } from '../public/game/engine.js';
-const roster=['guardian','scout','scholar','envoy'].map((classId,i)=>({id:`p${i}`,name:`플레이어${i+1}`,classId}));
+const roster=campaign=>campaign.classes.map((job,i)=>({id:`p${i}`,name:`플레이어${i+1}`,classId:job.id}));
+function resolveFight(game,campaign,win){
+ let state=structuredClone(game);
+ for(let n=0;n<100&&state.combat;n++){
+  let first=true;
+  const result=applyAction(state,campaign,state.players[state.activeIndex].id,{combatAction:'basic',revision:state.revision},{roll:()=>{const die=first?(win?20:1):(win?1:20);first=false;return die;}});
+  if(!result.ok)throw new Error(result.error);state=result.game;
+ }
+ if(state.combat)throw new Error('Combat route did not terminate');return state;
+}
 const report=[];let issues=[];
 for(const campaign of CAMPAIGNS){
- const queue=[createGame(campaign,roster)],seen=new Set(),endings=new Set(),endingStates=new Set(),edges=new Set();
+ const queue=[createGame(campaign,roster(campaign))],seen=new Set(),endings=new Set(),endingStates=new Set(),edges=new Set();
  const touched=new Set(),deadSeen=new Set(),revivedSeen=new Set();let completed=0;
  const cap=35000;
  while(queue.length&&seen.size<cap){
   const game=queue.pop();
+  if(game.combat){
+   for(const win of [true,false]){const resolved=resolveFight(game,campaign,win);resolved.journal=[];resolved.lastResult=null;queue.push(resolved);edges.add(`${game.nodeId}/combat:${win?'victory':'defeat'}->${resolved.nodeId}`);}
+   continue;
+  }
   const key=JSON.stringify([game.nodeId,Object.keys(game.flags).sort(),[...game.clues].sort(),game.pressure,game.sparks,game.activeIndex,game.players.map(p=>[p.health,p.revivals]),Object.keys(game.reviveAttempts||{}).sort()]);
   if(seen.has(key))continue;seen.add(key);touched.add(game.nodeId);
   game.players.forEach(p=>{if(p.life==='dead')deadSeen.add(p.id);if(p.revivals>0)revivedSeen.add(p.id);});
@@ -50,6 +63,6 @@ for(const campaign of CAMPAIGNS){
  report.push({id:campaign.id,title:campaign.title,statesExplored:seen.size,transitionVariants:edges.size,endingStateVariants:endingStates.size,endingsReached:[...endings].sort(),normalEndingCount:ordinary.length,visitedSceneCount:touched.size,deathObserved:deadSeen.size>0,revivalObserved:revivedSeen.size>0,exhaustive:queue.length===0});
  console.log(`${campaign.id}: ${seen.size} states, ${edges.size} transitions, ${endingStates.size} final state variants, ${endings.size} ending templates${queue.length?' (bounded)':''}`);
 }
-const result={generatedAt:new Date().toISOString(),method:'Bounded exact-rule state exploration, four fixed characters; includes successful/mixed/failed/critical checks, reading/skipping details and available revival attempts. Counts are tested state variants, not unique written endings. Maximum 35,000 states per campaign.',scenarios:report,issues:[...new Set(issues)]};
+const result={generatedAt:new Date().toISOString(),method:'Bounded exact-rule state exploration, four fixed campaign-specific characters; combats are resolved through two representative real-rule routes (all player critical/enemy miss, or player miss/enemy hit), not every tactical or dice combination; includes successful/mixed/failed/critical checks, reading/skipping details and available revival attempts. Counts are tested state variants, not unique written endings. Maximum 35,000 states per campaign.',scenarios:report,issues:[...new Set(issues)]};
 if(process.argv.includes('--write'))fs.writeFileSync(new URL('../SCENARIO_REACHABILITY.json',import.meta.url),JSON.stringify(result,null,2)+'\n');
 if(result.issues.length){console.error(result.issues.slice(0,60).join('\n'));process.exitCode=1;}

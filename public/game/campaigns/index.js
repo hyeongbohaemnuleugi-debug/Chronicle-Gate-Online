@@ -6,10 +6,20 @@ import dragonBanquet from './dragon-banquet.js';
 import clockCity from './clock-city.js';
 import snowRadio from './snow-radio.js';
 import { CAMPAIGN_COMBAT } from './combat-data.js';
+import { LOSS_PASSAGES } from './loss-passages.js';
 
 function withCombat(source) {
   const { classes, encounter } = CAMPAIGN_COMBAT[source.id];
-  const nodes = Object.fromEntries(Object.entries(source.nodes).map(([id, node]) => [id, { ...node }]));
+  const nodes = Object.fromEntries(Object.entries(source.nodes).map(([id, node]) => [id, {
+    ...node,
+    choices:(node.choices||[]).map(choice=>({
+      ...choice,
+      outcomes:Object.fromEntries(Object.entries(choice.outcomes).map(([grade,outcome])=>{
+        const passage=LOSS_PASSAGES[source.id]?.[`${id}/${choice.id}/${grade}`];
+        return [grade,passage?{...outcome,lossText:passage.lossText,survivorArrival:passage.survivorArrival}:outcome];
+      })),
+    })),
+  }]));
   if (!nodes[encounter.nodeId] || nodes[encounter.nodeId].ending) throw new Error(`Invalid combat scene: ${source.id}`);
   nodes[encounter.nodeId] = {
     ...nodes[encounter.nodeId], encounter,

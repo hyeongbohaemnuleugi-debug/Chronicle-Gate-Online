@@ -1,5 +1,6 @@
 import { createAudio } from './audio.js';
 import { chronicleText } from './narrative.js';
+import { formatCharacters } from './characters.js';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,6 +34,22 @@ const classBest = c => {const stat=c?.basic?.stat||Object.keys(c?.stats||{}).sor
 function healthMarkup(p){if(p.health==null)return '';const hp=Math.max(0,Math.min(p.maxHealth||3,Number(p.health)||0));return `<div class="life-meter ${p.life==='dead'?'life-dead':''}" aria-label="생명력 ${hp}/${p.maxHealth||3}${p.life==='dead'?' · 사망':''}">${Array.from({length:p.maxHealth||3},(_,i)=>`<i class="${i<hp?'filled':''}" aria-hidden="true">♥</i>`).join('')}<small>${p.life==='dead'?'사망 · 잔향':p.revivals?'귀환함':''}</small></div>`;}
 const selectedCampaign = () => catalog.find(c=>c.id===selected)||catalog[0];
 const game = () => state?.game;
+// Emphasize text nodes after normal escaping, never attributes or form values.
+// Every reading surface shares this path, including dynamically opened dialogs.
+function highlightNames(root,campaignId=game()?.campaignId||selected,players=game()?.players||state?.players||[]){
+  if(!root)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nodes=[];
+  for(let node=walker.nextNode();node;node=walker.nextNode())nodes.push(node);
+  const template=document.createElement('template');
+  for(const node of nodes){
+    const parent=node.parentElement;
+    if(!node.nodeValue.trim()||!parent||parent.closest('input,textarea,select,option,script,style,svg,.character-name'))continue;
+    const storyId=parent.closest('[data-campaign]')?.dataset.campaign||campaignId;
+    const markup=formatCharacters(node.nodeValue,storyId,players);
+    if(!markup.includes('<strong class="character-name"'))continue;
+    template.innerHTML=markup;node.replaceWith(template.content);
+  }
+}
 function toast(message, kind='info'){
   if(!message)return;
   const region=$('toast-region');region.className=`toast-region ${kind}`;region.textContent=String(message);
@@ -54,7 +71,7 @@ async function call(method,...args){
   }catch(error){toast(error?.message||'연결 상태를 확인한 뒤 다시 시도해 주세요.','error');return null;}
 }
 async function guarded(fn){if(busy)return;setBusy(true);try{return await fn();}catch(e){toast(e.message||'처리 중 문제가 생겼어요.','error');}finally{setBusy(false);}}
-function openDialog(id,html){const el=$(id);el.innerHTML=html;if(!el.open)el.showModal();return el;}
+function openDialog(id,html){const el=$(id);el.innerHTML=html;highlightNames(el);if(!el.open)el.showModal();return el;}
 function closeDialog(id){const el=$(id);if(el.open)el.close();if(id==='preview-dialog')pending=null;}
 const closeButton = id => `<button class="dialog-close" data-close="${id}" aria-label="닫기" type="button">×</button>`;
 function sizeArt(el,dimensions){
@@ -153,7 +170,7 @@ function renderHome(){
         </button>`).join('')}</div>
     </section>
     <section class="table-note"><div class="note-icon">${chronicleSeal()}</div><div><div class="eyebrow">EVERY CHOICE LEAVES A TRACE</div><h2>이 연대기의 마지막 문장은, 아직 쓰이지 않았습니다.</h2><p>한 장면을 읽고 다음 행동을 고르면, 그 결과가 우리의 연대기에 남습니다. 위험한 선택 앞에서는 주사위를 굴리고 동료와 힘을 모으세요. 함께 써 내려간 기록은 글 파일로 간직할 수 있습니다.</p></div><button class="button quiet" data-action="help" type="button">플레이 방법 살펴보기</button></section>`;
-  hydrateArt();sound.scene(feature.id,'mystery');
+  highlightNames($('home-content'),feature.id,[]);hydrateArt();sound.scene(feature.id,'mystery');
 }
 function showView(view){
   for(const name of ['home','lobby','game'])$(name+'-view').hidden=name!==view;
@@ -224,7 +241,7 @@ function renderLobby(){
       ${host?`<button class="button primary full" data-action="start" data-busy-guard type="button" ${state.canStart===false?'disabled':''}>첫 장면 펼치기 <span>↗</span></button>`:'<div class="waiting-note"><span class="pulse-dot"></span>방장이 이야기를 시작하기를 기다리고 있어요.</div>'}
       <p class="small muted">1명으로도 시작할 수 있어요. 온라인에서는 시작 전에 참가해 주세요.</p>
     </section></div>`;
-  hydrateArt();sound.scene(campaign?.id||selected,'calm');
+  highlightNames($('lobby-view'));hydrateArt();sound.scene(campaign?.id||selected,'calm');
 }
 function renderGame(newScene=false){
   const g=game(),s=g.scene,players=g.players||state.players||[],active=players.find(p=>p.id===g.activePlayerId),me=players.find(p=>p.id===state.meId);
@@ -265,7 +282,7 @@ function renderGame(newScene=false){
       ${renderInventory(g)}<section class="notebook panel"><div class="notebook-tabs" role="tablist" aria-label="탁자 기록"><button id="tab-clues" data-tab="clues" role="tab" aria-selected="${activeTab==='clues'}" aria-controls="notebook-body" type="button">단서 <small>${(g.clues||[]).length}</small></button><button id="tab-journal" data-tab="journal" role="tab" aria-selected="${activeTab==='journal'}" aria-controls="notebook-body" type="button">연대기</button><button id="tab-chat" data-tab="chat" role="tab" aria-selected="${activeTab==='chat'}" aria-controls="notebook-body" type="button">대화</button></div><div id="notebook-body" class="notebook-body" role="tabpanel" aria-labelledby="tab-${activeTab}">${renderNotebook()}</div></section>
       <div class="table-caption"><span>✧</span><p>놀라운 이야기는<br>동료의 한마디에서 시작되기도 해요.</p></div>
     </aside></div>`;
-  hydrateArt();
+  highlightNames($('game-view'));hydrateArt();
   for(const fold of $('game-view').querySelectorAll('details[data-fold]'))if(folds.has(fold.dataset.fold))fold.open=folds.get(fold.dataset.fold);
   if(!newScene&&focusedFold){const fold=[...$('game-view').querySelectorAll('details[data-fold]')].find(el=>el.dataset.fold===focusedFold);fold?.querySelector('summary')?.focus({preventScroll:true});}
   if(!newScene&&focusId){const input=$(focusId);if(input){input.focus({preventScroll:true});if(typeof selection==='number'&&input.setSelectionRange){try{input.setSelectionRange(selection,selection);}catch{}}}}
@@ -544,7 +561,7 @@ document.addEventListener('change',event=>{
   if(el.id==='spend-spark')draft.spark=el.checked;
   else if(el.id==='use-preparation')draft.preparation=el.checked;
   else if(el.id==='combat-target')combatTarget=el.value;
-  else if(el.hasAttribute('data-entry-class')){const target=$('entry-class-preview');if(target)target.innerHTML=professionDetail(classFor(el.value));}
+  else if(el.hasAttribute('data-entry-class')){const target=$('entry-class-preview');if(target){target.innerHTML=professionDetail(classFor(el.value));highlightNames(target);}}
   else if(el.dataset.localClass)void guarded(async()=>{const seat=state.meId;await call('setLocalSeat',el.dataset.localClass);await call('setClass',el.value);if(seat!==el.dataset.localClass)await call('setLocalSeat',seat);});
   else if(el.id==='local-count'){const values=entryValues();localCount=Number(el.value);openEntry('create',values);}
   else if(el.id==='lobby-campaign')void guarded(()=>call('selectCampaign',el.value));

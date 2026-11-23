@@ -292,6 +292,8 @@ button::-moz-focus-inner { border: 0; }
 .scene-orientation [data-context=stakes] dd { color: #665449; }
 
 .scene-prose { font-family: var(--serif); font-size: 18px; line-height: 2.05; letter-spacing: -.01em; color: #2e3746; word-break: normal; overflow-wrap: anywhere; }
+/* Names stay in the sentence; weight, rather than color alone, identifies them. */
+.character-name { color: inherit; font-weight: 700; font-synthesis: weight; }
 .scene-prose p+p { margin-top: 22px; }
 .scene-echoes { margin-top: 22px; }
 .scene-echoes p { font-size: 17px; color: #48505c; }

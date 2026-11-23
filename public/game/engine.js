@@ -5,7 +5,7 @@ import { gradeRoll, gradeChances, GRADE_LABELS, ROLLED_GRADES } from './judgemen
 import { appendChronicle, restoreChronicle } from './narrative.js';
 export { gradeRoll } from './judgement.js';
 export { CLASSES, getClasses, getClass, normalizeClassId } from './professions.js';
-export const VERSION = '18.0.0';
+export const VERSION = '18.1.0';
 export const STAT_LABELS = Object.freeze({ might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' });
 const clone = value => JSON.parse(JSON.stringify(value));
 const bound = (value, low, high) => Math.max(low, Math.min(high, value));

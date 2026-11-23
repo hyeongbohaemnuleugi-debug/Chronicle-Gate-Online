@@ -1,4 +1,5 @@
 import { createAudio } from './audio.js';
+import { chronicleText } from './narrative.js';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,7 +9,7 @@ const CLASS_ICONS = ['◆','↗','✧','❧'];
 const GRADE = {critical:'대성공',success:'성공',failure:'실패',fumble:'대실패',mixed:'대가 있는 성공 · 이전 기록',automatic:'판정 없이 진행',observe:'관찰',safe:'관찰',decision:'선택'};
 const ROLLED_GRADES=['critical','success','failure','fumble'];
 let client=null, state=null, catalog=[], selected='last-train', busy=false, pending=null;
-let activeTab='clues', secretOpen=false, toastTimer=null, lastScene='',lastResultKey='', lastPerson='';
+let activeTab='journal', secretOpen=false, toastTimer=null, lastScene='',lastResultKey='', lastPerson='';
 let combatTarget=null;
 let draft={spark:false,preparation:false,chat:''}, entryMode='online', entryKind='create', localCount=2;
 const loadedArt=new Map(),artDimensions=new Map(),waitingArt=new Set();
@@ -135,23 +136,23 @@ function renderHome(){
       <div class="hero-content">
         <div class="hero-invitation">${chronicleSeal()}<span>함께 쓰는 운명의 연대기<small>A CHRONICLE OF OUR CHOICES</small></span></div>
         <h1 id="home-title"><span>CHRONICLE</span><span class="title-gate"><i aria-hidden="true"></i>GATE<i aria-hidden="true"></i></span></h1>
-        <p class="hero-line">문을 열면, 우리의 이야기가 시작된다.</p>
-        <p class="hero-description">서로 다른 비밀을 품은 동료들.<br>한 번의 선택, 한 번의 주사위가 바꾸는 운명.<br>일곱 세계에 당신들의 기록을 남겨 보세요.</p>
+        <p class="hero-line">우리의 선택으로, 다음 문장을 써 내려간다.</p>
+        <p class="hero-description">짧은 장면을 읽고, 다음 행동을 고르세요.<br>혼자든 함께든, 선택이 이야기를 바꿉니다.<br>일곱 세계에서 우리의 연대기를 펼쳐 보세요.</p>
         <div class="hero-actions"><button class="button primary" data-action="create" type="button">새 연대기 펼치기 <span aria-hidden="true">↗</span></button><button class="button glass" data-action="join" type="button">친구의 방에 참가</button></div>
-        <div class="hero-meta"><span>1–4명의 동료</span><i></i><span>온라인 · 한 기기로 함께</span><i></i><span>진행자 없이 플레이</span></div>
+        <div class="hero-meta"><span>혼자 또는 최대 4명</span><i></i><span>온라인 · 한 기기로 함께</span><i></i><span>진행자 없이 플레이</span></div>
       </div>
       <div class="hero-bottom"><a href="#story-shelf" class="shelf-link"><span aria-hidden="true">↓</span> 일곱 기록 둘러보기</a><div class="hero-caption"><span>CHRONICLE ${ROMAN[featureNumber]||'I'} · 지금 펼쳐진 세계</span><b>${esc(feature.title)}</b></div></div>
     </section>
     <section class="chronicle-promise" aria-label="함께 만드는 연대기"><div><span aria-hidden="true">I</span><p><b>서로 다른 일곱 세계</b>장면과 단서가 만드는 여러 결말</p></div><div><span aria-hidden="true">II</span><p><b>각자의 역할, 함께하는 전투</b>이야기별 네 직업과 하나의 고유 기술</p></div><div><span aria-hidden="true">III</span><p><b>기억에 남을 우리의 선택</b>비밀 · 협력 · 주사위로 이어지는 이야기</p></div></section>
     <section class="story-shelf" id="story-shelf" aria-labelledby="library-title">
-      <div class="library-heading"><div><div class="eyebrow"><span aria-hidden="true">✦</span> THE SEVEN CHRONICLES</div><h2 id="library-title">오늘 밤, 어떤 기록을 펼칠까요?</h2><p>낯선 세계의 문턱에서, 동료들과 첫 장면을 골라 주세요.</p></div><div class="text-actions"><button class="text-button" data-action="resume" type="button">이전 기록 이어 하기 ↗</button><button class="text-button" data-action="import" type="button">저장 파일 열기</button></div></div>
+      <div class="library-heading"><div><div class="eyebrow"><span aria-hidden="true">✦</span> THE SEVEN CHRONICLES</div><h2 id="library-title">오늘 밤, 어떤 기록을 펼칠까요?</h2><p>오늘 펼칠 이야기를 골라 주세요.</p></div><div class="text-actions"><button class="text-button" data-action="resume" type="button">이전 기록 이어 하기 ↗</button><button class="text-button" data-action="import" type="button">저장 파일 열기</button></div></div>
       <div class="campaign-grid" aria-label="시나리오 목록">${catalog.map((c,i)=>`
         <button class="campaign-card ${i===0?'featured':''} ${c.id===selected?'selected':''}" data-campaign="${slug(c.id)}" type="button" aria-pressed="${c.id===selected}">
           <div class="cover-wrap">${art(c.id,0,'campaign-art',c.title+' 표지')}<span class="cover-number"><small>CHRONICLE</small>${ROMAN[i]||String(i+1)}</span><span class="cover-arrow" aria-hidden="true">↗</span>${c.id===selected?'<span class="selected-chip"><i aria-hidden="true"></i> 선택한 기록</span>':''}</div>
           <div class="card-copy"><div class="card-genre">${esc(c.genre||'협력 이야기')}</div><h3>${esc(c.title)}</h3><p>${esc(c.description||c.subtitle||'동료들과 함께 새로운 사건에 뛰어드세요.')}</p><div class="card-features"><span>${Number(c.sceneCount)||0}개 장면</span><span>${Number(c.endingCount)||0}개 결말</span><span>전용 직업 ${(c.classes||[]).length}개</span></div><div class="card-bottom"><span>${Number(c.combatCount)||0}번의 전투 · 1–4명</span><b>이 기록 펼치기 <span aria-hidden="true">↗</span></b></div></div>
         </button>`).join('')}</div>
     </section>
-    <section class="table-note"><div class="note-icon">${chronicleSeal()}</div><div><div class="eyebrow">EVERY CHOICE LEAVES A TRACE</div><h2>이 연대기의 마지막 문장은, 아직 쓰이지 않았습니다.</h2><p>지금의 상황과 목표를 읽고, 눈앞의 선택지를 골라 주세요. 소지품으로 새로운 길을 열고 동료와 힘을 모으세요. 주사위를 굴리기 전에 네 가지 결과와 그에 따른 변화를 확인할 수 있습니다.</p></div><button class="button quiet" data-action="help" type="button">플레이 방법 살펴보기</button></section>`;
+    <section class="table-note"><div class="note-icon">${chronicleSeal()}</div><div><div class="eyebrow">EVERY CHOICE LEAVES A TRACE</div><h2>이 연대기의 마지막 문장은, 아직 쓰이지 않았습니다.</h2><p>한 장면을 읽고 다음 행동을 고르면, 그 결과가 우리의 연대기에 남습니다. 위험한 선택 앞에서는 주사위를 굴리고 동료와 힘을 모으세요. 함께 써 내려간 기록은 글 파일로 간직할 수 있습니다.</p></div><button class="button quiet" data-action="help" type="button">플레이 방법 살펴보기</button></section>`;
   hydrateArt();sound.scene(feature.id,'mystery');
 }
 function showView(view){
@@ -198,18 +199,24 @@ function professionSummary(player){
   const definition=classFor(player?.classId);if(!definition)return '';
   return `<div class="party-profession"><div><span>나의 전투 역할</span><button class="text-button" data-action="profession" type="button">자세히 ↗</button></div><h3>${esc(player.className||definition.name)}</h3><p><small>기본</small><b>${esc(player.basic?.name||definition.basic?.name)}</b></p><p><small>고유</small><b>${esc(player.ability?.name||definition.ability?.name)}</b></p></div>`;
 }
+function renderPlayMode(campaign,count){
+  const mode=count===1?'solo':'group',description=campaign?.playModes?.[mode];
+  if(!description)return '';
+  return `<div class="story-mode-note" data-play-mode="${mode}" data-party-size="${count}"><b>${count===1?'혼자 펼치는 이야기':`${count}명이 함께 펼치는 이야기`}</b><p>${esc(description)}</p></div>`;
+}
 function renderLobby(){
   const campaign=selectedCampaign(), host=state.meId===state.hostId||state.mode==='local';
   const players=state.players||[];
   $('lobby-view').innerHTML=`
     <div class="page-top"><button class="text-button" data-action="leave" type="button">← 이야기 책장</button><span class="eyebrow">BEFORE THE FIRST PAGE</span></div>
-    <div class="lobby-heading"><div><h1>동료들이 모이는 자리</h1><p>${state.mode==='local'?'한 화면을 번갈아 보며 이야기를 이어가세요.':'방 코드를 친구에게 알려 주세요. 모두 모이면 시작할 수 있어요.'}</p></div><div class="room-code"><small>${state.mode==='local'?'PLAY TOGETHER':'초대 코드'}</small><b>${state.mode==='local'?'LOCAL':esc(state.code)}</b>${state.mode!=='local'?'<button class="text-button" data-action="copy-code" type="button">코드 복사</button>':''}</div></div>
+    <div class="lobby-heading"><div><h1>첫 장면을 펼치기 전에</h1><p>${state.mode==='local'?(players.length===1?'내 인물과 이야기를 고르면 준비가 끝나요.':'한 화면을 번갈아 보며 이야기를 이어가세요.'):(players.length===1?'혼자 시작하거나, 친구에게 방 코드를 알려 주세요.':'친구들이 모두 모이면 이야기를 시작하세요.')}</p></div><div class="room-code"><small>${state.mode==='local'?'PLAY TOGETHER':'초대 코드'}</small><b>${state.mode==='local'?'LOCAL':esc(state.code)}</b>${state.mode!=='local'?'<button class="text-button" data-action="copy-code" type="button">코드 복사</button>':''}</div></div>
     <div class="lobby-layout"><section class="lobby-story panel">
       ${art(campaign?.id||selected,0,'lobby-art',campaign?.title||'시나리오 그림')}
       <div class="lobby-story-copy"><div class="eyebrow">선택한 이야기</div><h2>${esc(campaign?.title)}</h2><p>${esc(campaign?.description||campaign?.subtitle)}</p><div class="tag-row">${(campaign?.contentNotes||[]).map(n=>`<span>${esc(n)}</span>`).join('')}</div>
       ${host?`<label class="field"><span>다른 이야기 선택</span><select id="lobby-campaign">${catalog.map(c=>`<option value="${slug(c.id)}" ${c.id===selected?'selected':''}>${esc(c.title)}</option>`).join('')}</select></label>`:''}
-      <div class="lobby-objective"><span>이번 이야기의 첫 목표</span><p>${esc(campaign?.objective||'첫 장면에서 동료들과 함께 목표를 확인하세요.')}</p></div></div>
-    </section><section class="lobby-people panel"><div class="panel-heading"><h2>우리의 일행</h2><span>${players.length} / 4</span></div>
+      ${renderPlayMode(campaign,players.length)}
+      <div class="lobby-objective"><span>이야기의 목표</span><p>${esc(campaign?.objective||'첫 장면을 읽고, 어디로 갈지 골라 보세요.')}</p></div></div>
+    </section><section class="lobby-people panel"><div class="panel-heading"><h2>${players.length===1?'내 인물':'우리의 일행'}</h2><span>${players.length} / 4</span></div>
       <div class="party-list">${players.map((p,i)=>`<div class="lobby-person"><div class="avatar color-${i}">${esc(classIcon(p.classId))}</div><div class="person-copy"><b>${esc(p.name)} ${p.id===state.meId?'<small>나</small>':''}</b><span>${esc(cname(p.classId))}${p.id===state.hostId?' · 방장':''}</span></div><span class="connection-small">${p.connected===false?'연결 대기':'준비됨'}</span></div>`).join('')}${Array.from({length:Math.max(0,4-players.length)},()=>`<div class="empty-seat"><span>+</span><p>${state.mode==='local'?'빈 자리':'동료를 기다리는 자리'}</p></div>`).join('')}</div>
       ${state.mode!=='local'?`<label class="field"><span>이번 이야기에서의 내 직업</span><select id="lobby-class">${classOptions(players.find(p=>p.id===state.meId)?.classId)}</select></label>`:`<div class="local-professions">${players.map(p=>`<label class="field"><span>${esc(p.name)}의 직업</span><select data-local-class="${esc(p.id)}">${classOptions(p.classId)}</select></label>`).join('')}</div>`}
       ${professionDetail(classFor(players.find(p=>p.id===state.meId)?.classId))}
@@ -221,26 +228,31 @@ function renderLobby(){
 }
 function renderGame(newScene=false){
   const g=game(),s=g.scene,players=g.players||state.players||[],active=players.find(p=>p.id===g.activePlayerId),me=players.find(p=>p.id===state.meId);
+  const readingResult=lastNarrativeResult(g),observation=isObservation(g.lastResult)?g.lastResult:null;
   if(!g.sparks)draft.spark=false;if(me?.focus===false)draft.preparation=false;
   const focused=document.activeElement,focusId=focused?.id,selection=focused?.selectionStart;
   const notebookScroll=$('notebook-body')?.scrollTop||0;
+  const folds=newScene?new Map():new Map([...$('game-view').querySelectorAll('details[data-fold]')].map(el=>[el.dataset.fold,el.open]));
+  const focusedFold=focused?.tagName==='SUMMARY'?focused.parentElement?.dataset.fold:null;
   const hasEnded=g.phase==='ended'||s.ending;
   const pressure=g.pressure||{value:0,max:8,label:'긴장'};
   $('game-view').innerHTML=`
-    <div class="session-bar"><div class="session-title"><span class="tiny-star" aria-hidden="true">✦</span><div><small>${esc(g.title)}</small><span>${state.mode==='local'?'함께 앉은 탁자':`ROOM ${esc(state.code)}`}</span></div></div><div class="session-actions"><button class="text-button" data-action="export" type="button" ${state.mode!=='local'&&state.hostId!==state.meId?'disabled title="방장이 저장 파일을 내보낼 수 있습니다."':''}>저장 파일</button><button class="text-button" data-action="leave" type="button">나가기</button></div></div>
+    <div class="session-bar"><div class="session-title"><span class="tiny-star" aria-hidden="true">✦</span><div><small>${esc(g.title)}</small><span>${state.mode==='local'?'함께 앉은 탁자':`ROOM ${esc(state.code)}`}</span></div></div><div class="session-actions"><button class="text-button" data-action="export-chronicle" type="button">연대기 TXT</button><button class="text-button" data-action="export" type="button" ${state.mode!=='local'&&state.hostId!==state.meId?'disabled title="방장이 저장 파일을 내보낼 수 있습니다."':''}>저장 파일</button><button class="text-button" data-action="leave" type="button">나가기</button></div></div>
     ${state.connected===false&&state.mode!=='local'?'<div class="reconnect-banner" role="status">서버에 다시 연결하는 중입니다. 연결되면 같은 자리에서 이어갑니다. 새로고침 전에 잠시 기다려 주세요.</div>':''}
     <div class="table-layout"><article class="story-column" id="story-column">
       <div class="scene-visual">${art(g.campaignId,s.art,'scene-art',`${s.location||s.title} · ${s.title}`)}<div class="scene-visual-shade"></div><div class="scene-location"><span class="eyebrow">${hasEnded?'EPILOGUE':`CHAPTER ${String(s.chapter||1).padStart(2,'0')}`}</span><span>${esc(s.location||'이야기의 한 장면')}</span></div></div>
       <div class="story-paper">
-        <div class="scene-heading"><div class="eyebrow">${hasEnded?'우리의 이야기가 남긴 것':'지금, 이 장면'}</div><h1 id="scene-title" tabindex="-1">${esc(s.title)}</h1></div>
-        ${g.lastResult?renderResult(g.lastResult):''}${me?.life==='dead'&&!hasEnded?'<div class="death-notice"><b>이 인물은 사망했습니다.</b><p>살아 있는 동료가 행동을 이어갑니다. 비밀을 나누거나 한 번의 잔향으로 도울 수 있고, 이야기에 부활 지점이 나타나면 귀환을 시도할 수 있어요.</p></div>':''}
-        ${!hasEnded?renderArrival(s,g.lastResult)+renderOrientation(s):''}<div class="scene-prose">${(Array.isArray(s.text)?s.text:[s.text]).filter(Boolean).map(p=>`<p>${esc(p)}</p>`).join('')}</div>
+        ${readingResult?renderResult(readingResult):!hasEnded?renderArrival(g):''}${me?.life==='dead'&&!hasEnded?'<div class="death-notice"><b>이 인물은 사망했습니다.</b><p>살아 있는 동료가 행동을 이어갑니다. 비밀을 나누거나 한 번의 잔향으로 도울 수 있고, 이야기에 부활 지점이 나타나면 귀환을 시도할 수 있어요.</p></div>':''}
+        <div class="scene-heading"><div class="eyebrow">${hasEnded?'우리의 이야기가 남긴 것':'다음 한 장'}</div><h1 id="scene-title" tabindex="-1">${esc(s.title)}</h1></div>
+        ${renderReading(s,{ended:hasEnded,combat:Boolean(g.combat)})}
         ${s.dialogue?.text?`<blockquote class="dialogue"><span class="quote-mark" aria-hidden="true">“</span><p>${esc(s.dialogue.text)}</p><cite>${esc(s.dialogue.who||'누군가')}</cite></blockquote>`:''}
+        ${observation?renderObservation(observation):''}
+        ${!hasEnded?renderOrientation(s):''}
         ${hasEnded?renderEnding(g):g.combat?renderCombat(g,players,me):`
           ${(s.details||[]).length?`<div class="examine-row"><span>잠깐 살펴보기</span><div>${s.details.map(d=>`<button class="examine-button" data-detail="${esc(d.id)}" type="button" >⌕ ${esc(d.label)}${d.read?' ✓':''}</button>`).join('')}</div><small>관찰에는 주사위를 굴리지 않습니다.</small></div>`:''}
           ${renderResurrection(g,players)}<section class="action-section" aria-labelledby="action-heading"><div class="action-heading"><div><span class="eyebrow">YOUR NEXT MOVE</span><h2 id="action-heading">이제, 어떻게 할까요?</h2></div><span class="turn-pill ${g.canAct?'my-turn':''}">${g.canAct?'당신의 차례':esc(active?.name||'동료')+'의 차례'}</span></div>
           <p class="action-instruction">행동을 고르면 결과와 필요한 소지품을 먼저 확인합니다.</p>
-          <div class="choices">${(s.choices||[]).map((c,i)=>`<button class="choice" data-choice="${esc(c.id)}" type="button" ${!g.canAct||state.connected===false?'disabled':''}><span class="choice-number">${String(i+1).padStart(2,'0')}</span><span class="choice-body"><b>${esc(c.label)}</b><small>${c.automatic?'선택으로 결정 · 주사위 없음':`${esc(STAT[c.stat]||c.stat||'행동')} 판정${Number.isFinite(c.dc)?` · 목표 ${c.dc}`:''}`}${c.harmRisk?` <span class="choice-harm">· ♥ 최대 -${Number(c.harmRisk)||0}</span>`:''}</small>${renderChoiceItems(c)}${c.hint?`<span class="choice-hint">${esc(c.hint)}</span>`:''}</span><span class="choice-arrow" aria-hidden="true">↗</span></button>`).join('')}</div>
+          <div class="choices">${(s.choices||[]).map((c,i)=>`<button class="choice" data-choice="${esc(c.id)}" type="button" ${!g.canAct||state.connected===false?'disabled':''}><span class="choice-number">${String(i+1).padStart(2,'0')}</span><span class="choice-body"><b>${esc(c.label)}</b><small>${c.automatic?'선택으로 결정 · 주사위 없음':`${esc(STAT[c.stat]||c.stat||'행동')} 판정${Number.isFinite(c.dc)?` · 목표 ${c.dc}`:''}`}${c.harmRisk?` <span class="choice-harm">· ♥ 최대 -${Number(c.harmRisk)||0}${Number(c.harmRisk)>=3?' · 사망 위험':''}</span>`:''}</small>${renderChoiceItems(c)}${c.hint?`<span class="choice-hint">${esc(c.hint)}</span>`:''}</span><span class="choice-arrow" aria-hidden="true">↗</span></button>`).join('')}</div>
           ${renderLockedChoices(s.lockedChoices)}${renderTactics(g,me)}
           ${!g.canAct?`<div class="waiting-actions"><p>${esc(active?.name||'동료')}의 이야기를 듣고, 다음 행동에 힘을 보태 주세요.</p><button class="button quiet" data-action="assist" data-busy-guard type="button" ${!g.canAssist?'disabled':''}>${me?.assisting?'협력하는 중 ✓':me?.life==='dead'?'잔향으로 돕기 · 한 번만':'동료 돕기 · +1'}</button>${state.meId===state.hostId&&active?.connected===false?'<button class="button quiet" data-action="pass" type="button">연결 끊긴 동료 차례 넘기기</button>':''}</div>`:`<div class="pass-row"><button class="text-button" data-action="pass" type="button">다음 동료에게 차례 넘기기 →</button></div>`}
           </section>`}
@@ -250,10 +262,12 @@ function renderGame(newScene=false){
       ${professionSummary(me)}<div class="pressure-block"><div><span>${esc(pressure.label)}</span><b>${pressure.value} <small>/ ${pressure.max}</small></b></div><div class="pressure-track" role="meter" aria-label="${esc(pressure.label)}" aria-valuemin="0" aria-valuemax="${pressure.max}" aria-valuenow="${pressure.value}">${Array.from({length:pressure.max||8},(_,i)=>`<i class="${i<pressure.value?'filled':''}"></i>`).join('')}</div><p>위기가 가득 차면 이후 판정의 목표가 +1 높아집니다.</p></div>
       <button class="secret-button" data-action="secret" type="button"><span>✉</span><div><b>나만의 비밀 카드</b><small>공유할 순간은 당신이 정해요</small></div><span>↗</span></button>
       </section>
-      ${renderInventory(g)}<section class="notebook panel"><div class="notebook-tabs" role="tablist" aria-label="탁자 기록"><button id="tab-clues" data-tab="clues" role="tab" aria-selected="${activeTab==='clues'}" aria-controls="notebook-body" type="button">단서 <small>${(g.clues||[]).length}</small></button><button id="tab-journal" data-tab="journal" role="tab" aria-selected="${activeTab==='journal'}" aria-controls="notebook-body" type="button">기록</button><button id="tab-chat" data-tab="chat" role="tab" aria-selected="${activeTab==='chat'}" aria-controls="notebook-body" type="button">대화</button></div><div id="notebook-body" class="notebook-body" role="tabpanel" aria-labelledby="tab-${activeTab}">${renderNotebook()}</div></section>
+      ${renderInventory(g)}<section class="notebook panel"><div class="notebook-tabs" role="tablist" aria-label="탁자 기록"><button id="tab-clues" data-tab="clues" role="tab" aria-selected="${activeTab==='clues'}" aria-controls="notebook-body" type="button">단서 <small>${(g.clues||[]).length}</small></button><button id="tab-journal" data-tab="journal" role="tab" aria-selected="${activeTab==='journal'}" aria-controls="notebook-body" type="button">연대기</button><button id="tab-chat" data-tab="chat" role="tab" aria-selected="${activeTab==='chat'}" aria-controls="notebook-body" type="button">대화</button></div><div id="notebook-body" class="notebook-body" role="tabpanel" aria-labelledby="tab-${activeTab}">${renderNotebook()}</div></section>
       <div class="table-caption"><span>✧</span><p>놀라운 이야기는<br>동료의 한마디에서 시작되기도 해요.</p></div>
     </aside></div>`;
   hydrateArt();
+  for(const fold of $('game-view').querySelectorAll('details[data-fold]'))if(folds.has(fold.dataset.fold))fold.open=folds.get(fold.dataset.fold);
+  if(!newScene&&focusedFold){const fold=[...$('game-view').querySelectorAll('details[data-fold]')].find(el=>el.dataset.fold===focusedFold);fold?.querySelector('summary')?.focus({preventScroll:true});}
   if(!newScene&&focusId){const input=$(focusId);if(input){input.focus({preventScroll:true});if(typeof selection==='number'&&input.setSelectionRange){try{input.setSelectionRange(selection,selection);}catch{}}}}
   if($('notebook-body'))$('notebook-body').scrollTop=notebookScroll;
   if(newScene)window.scrollTo({top:0,behavior:'instant'});
@@ -263,16 +277,45 @@ function combatStatusMarkup(g,playerId){
   const status=(g.combat.statuses||[]).find(s=>s.id===playerId)||{};
   return `<div class="combat-status">${status.shield?`<span>방어 ${status.shield}</span>`:''}${status.boost?`<span>다음 공격 +${status.boost}</span>`:''}${(g.combat.actedIds||[]).includes(playerId)?'<span class="acted">행동 완료</span>':''}</div>`;
 }
-function renderArrival(scene,result){
-  const arrival=scene.arrival;if(!arrival?.text)return '';
-  const normalize=value=>String(value||'').replace(/\s+/g,' ').trim();
-  if(normalize(result?.text).includes(normalize(arrival.text)))return '';
-  return `<details class="scene-arrival" ${!result?'open':''}><summary>직전 선택에서 이어진 상황</summary><div><p>${esc(arrival.text)}</p>${arrival.fromSceneTitle?`<small>${esc(arrival.fromSceneTitle)}${arrival.action?` · ${esc(arrival.action)}`:''}</small>`:''}</div></details>`;
+const isObservation = result => ['observe','safe'].includes(result?.grade);
+function lastNarrativeResult(g){
+  if(!isObservation(g.lastResult))return g.lastResult;
+  const entries=g.journal||[];
+  // Observation never replaces a journey, a revival, or the end of a battle.
+  // Reuse the real receipt only when the following entries still belong here.
+  let index=entries.length-1;
+  while(index>=0&&(isObservation(entries[index])||entries[index].grade==='reveal'))index--;
+  const recent=entries[index],following=entries.slice(index+1);
+  if(!recent?.text||!following.length||following.some(entry=>entry.sceneTitle!==g.scene.title||(!isObservation(entry)&&entry.grade!=='reveal')))return null;
+  if(recent.combat)return ['victory','defeat'].includes(recent.combatEvent)?recent:null;
+  const arrival=g.scene.arrival;
+  if(recent.sceneTitle===g.scene.title)return recent;
+  if(arrival&&recent.sceneTitle===arrival.fromSceneTitle&&recent.action===arrival.action&&recent.nextSceneTitle===g.scene.title)return recent;
+  return null;
+}
+function renderArrival(g){
+  const arrival=g.scene.arrival;if(!arrival?.text)return '';
+  // A surviving later battle/revival record must not be followed by an older arrival.
+  const recent=g.chronicle?.at(-1);
+  if(recent&&['combat','revival'].includes(recent.kind))return '';
+  return `<section class="scene-arrival" aria-label="이곳에 이르기까지"><small>${esc(arrival.fromSceneTitle||'앞선 장면')}${arrival.action?` · ${esc(arrival.action)}`:''}</small><p>${esc(arrival.text)}</p></section>`;
+}
+function renderObservation(result){
+  return `<details class="observation-result" data-fold="observation-${esc(game()?.scene.id)}-${esc(result.action)}" open><summary>살펴본 것 · ${esc(result.action)}</summary><div><p>${esc(result.text)}</p>${resultChanges(result)}</div></details>`;
 }
 function renderOrientation(scene){
   const rows=[['지금 상황',scene.summary,'summary'],['해결할 일',scene.objective,'objective'],['주의할 점',scene.stakes,'stakes']].filter(([,text])=>text);
   if(!rows.length)return '';
-  return `<section class="scene-orientation" aria-label="장면 안내"><dl>${rows.map(([label,text,key])=>`<div data-context="${key}"><dt>${label}</dt><dd>${esc(text)}</dd></div>`).join('')}</dl></section>`;
+  return `<details class="scene-orientation" data-fold="orientation" aria-label="장면 안내"><summary>장면 정리</summary><dl>${rows.map(([label,text,key])=>`<div data-context="${key}"><dt>${label}</dt><dd>${esc(text)}</dd></div>`).join('')}</dl></details>`;
+}
+function renderReading(scene,{ended=false,combat=false}={}){
+  const full=Array.isArray(scene.text)?scene.text:[scene.text];
+  const reading=!combat&&scene.reading?scene.reading:{paragraphs:full,echoes:[],personal:[],fate:''};
+  const paragraphs=(reading.paragraphs||[]).filter(Boolean),echoes=(reading.echoes||[]).filter(Boolean),personal=(reading.personal||[]).filter(Boolean);
+  const visibleEchoes=!ended&&echoes.length<=2&&echoes.join('').length<=240?echoes:[];
+  const extra=[...paragraphs.slice(3),...(visibleEchoes.length?[]:echoes)];
+  const prose=values=>values.map(text=>`<p>${esc(text)}</p>`).join('');
+  return `<div class="scene-prose"><div class="prose-main">${prose(paragraphs.slice(0,3))}</div>${visibleEchoes.length?`<div class="scene-echoes">${prose(visibleEchoes)}</div>`:''}${reading.fate?`<p class="story-fate">${esc(reading.fate)}</p>`:''}${extra.length||personal.length?`<details class="story-traces" data-fold="traces-${esc(scene.id)}"><summary>이 선택이 남긴 흔적</summary><div class="traces-prose">${prose(extra)}${personal.length?`<div class="personal-epilogues">${prose(personal)}</div>`:''}</div></details>`:''}</div>`;
 }
 const itemNames=values=>[...new Set((Array.isArray(values)?values:[]).map(value=>typeof value==='string'?value:value?.name).filter(Boolean))];
 function renderChoiceItems(choice){
@@ -338,28 +381,35 @@ function resultChanges(result){
   return `<div class="result-changes" role="list" aria-label="이 행동으로 달라진 것">${changes.map(text=>`<span role="listitem" data-result-change>${esc(text)}</span>`).join('')}${itemChanges.map(item=>`<span role="listitem" class="item-change ${item.kind}" data-item-change="${item.kind}">${esc(item.text)}</span>`).join('')}</div>`;
 }
 function renderResult(r){
-  const hasRoll=Number.isFinite(r.roll),grade=GRADE[r.grade]||'행동의 결과';
-  return `<section class="last-result grade-${esc(r.grade||'automatic')}" aria-label="직전 행동의 결과"><div class="result-top"><span class="result-grade">${esc(grade)}</span>${hasRoll?`<span class="result-dice"><b>${r.roll}</b><small>+ ${(r.bonus??(Number(r.total)-Number(r.roll)))||0} = <strong>${r.total}</strong> / 목표 ${r.dc}</small></span>`:'<small>주사위 없이 확인한 변화</small>'}</div>${r.actor?`<small class="result-actor">${esc(r.actor)} · ${esc(r.action||'')}</small>`:''}<p>${esc(r.text)}</p>${resultChanges(r)}${r.enemyRolls?.length?`<details class="enemy-rolls"><summary>적의 주사위 판정</summary>${r.enemyRolls.map(check=>`<p>${esc(game()?.players?.find(p=>p.id===check.targetId)?.name||'대상')} · D20 ${check.roll} · 피해 ${check.damage||0}</p>`).join('')}</details>`:''}${r.nextSceneTitle?`<div class="result-next"><span>이 행동 뒤에 이어지는 장면</span><b>${esc(r.nextSceneTitle)} <span aria-hidden="true">→</span></b></div>`:''}</section>`;
+  const hasRoll=Number.isFinite(r.roll),grade=GRADE[r.grade]||'행동의 결과',narrative=r.narrativeText||r.text;
+  return `<section class="last-result grade-${esc(r.grade||'automatic')}" aria-label="직전 행동의 결과"><div class="result-top"><small class="result-actor">${r.actor?`${esc(r.actor)}의 선택 · `:''}${esc(r.action||'이야기에 남은 변화')}</small><span class="result-grade">${esc(grade)}</span></div><p>${esc(narrative)}</p><details class="result-details" data-fold="result-${esc(r.id||r.text)}"><summary>판정과 변화</summary><div>${r.narrativeText&&r.narrativeText!==r.text?`<p class="result-receipt">${esc(r.text)}</p>`:''}${hasRoll?`<div class="result-dice"><span>D20</span><b>${r.roll}</b><small>+ ${(r.bonus??(Number(r.total)-Number(r.roll)))||0} = <strong>${r.total}</strong> / 목표 ${r.dc}</small></div>`:'<p class="automatic-note">주사위 없이 확인한 변화입니다.</p>'}${resultChanges(r)}${r.enemyRolls?.length?`<details class="enemy-rolls"><summary>적의 주사위 판정</summary>${r.enemyRolls.map(check=>`<p>${esc(game()?.players?.find(p=>p.id===check.targetId)?.name||'대상')} · D20 ${check.roll} · 피해 ${check.damage||0}</p>`).join('')}</details>`:''}${r.nextSceneTitle?`<div class="result-next"><span>이어지는 장면</span><b>${esc(r.nextSceneTitle)} <span aria-hidden="true">→</span></b></div>`:''}</div></details></section>`;
 }
 function renderEnding(g){
   const s=g.scene;
-  return `<section class="ending-card"><span class="ending-star" aria-hidden="true">✦</span><div class="eyebrow">THE END · OUR VERSION</div><h2>이 결말은, 우리가 만든 이야기.</h2><p>${esc(s.question||'가장 오래 기억할 선택은 무엇이었나요? 서로의 이야기를 들어보세요.')}</p><div class="ending-stats"><span><b>${g.visitedCount||1}</b> 지나온 장면</span><span><b>${(g.clues||[]).length}</b> 모은 단서</span><span><b>${(g.players||[]).length}</b> 함께한 사람</span></div><div class="ending-actions"><button class="button primary" data-action="export" type="button" ${state.mode!=='local'&&state.hostId!==state.meId?'disabled':''}>우리의 이야기 저장</button><button class="button quiet" data-action="leave" type="button">다음 이야기 고르기</button></div><small>다른 선택과 단서는 다른 결말로 이어질 수 있습니다.</small></section>`;
+  return `<section class="ending-card"><span class="ending-star" aria-hidden="true">✦</span><div class="eyebrow">THE END · OUR VERSION</div><h2>이 결말은, 우리가 만든 이야기.</h2><p>${esc(s.question||'가장 오래 기억할 선택은 무엇이었나요? 서로의 이야기를 들어보세요.')}</p><div class="ending-stats"><span><b>${g.visitedCount||1}</b> 지나온 장면</span><span><b>${(g.clues||[]).length}</b> 모은 단서</span><span><b>${(g.players||[]).length}</b> 함께한 사람</span></div><div class="ending-actions"><button class="button primary" data-action="export-chronicle" type="button">우리의 연대기 TXT</button><button class="button quiet" data-action="export" type="button" ${state.mode!=='local'&&state.hostId!==state.meId?'disabled':''}>진행 저장 JSON</button><button class="button quiet" data-action="leave" type="button">다음 이야기 고르기</button></div><small>다른 선택과 단서는 다른 결말로 이어질 수 있습니다.</small></section>`;
 }
 function renderNotebook(){
   const g=game();if(!g)return '';
   if(activeTab==='clues')return `${(g.clues||[]).length?g.clues.map((c,i)=>`<article class="clue-card"><span class="clue-index">CLUE ${String(i+1).padStart(2,'0')}</span><h3>${esc(c.title)}</h3><p>${esc(c.text)}</p></article>`).join(''):'<div class="empty-notebook"><span>⌕</span><h3>아직 펼치지 않은 기록</h3><p>장면을 관찰하거나 행동하면,<br>발견한 단서가 여기에 남습니다.</p></div>'}${(g.flags||[]).length?`<div class="story-changes"><h3>우리가 바꾼 것</h3>${g.flags.map(f=>`<p>• ${esc(typeof f==='string'?f:f.text||f.title)}</p>`).join('')}</div>`:''}`;
-  if(activeTab==='journal')return (g.journal||[]).length?`<div class="journal-list">${[...g.journal].reverse().map(j=>`<article><small>${esc(j.sceneTitle||'기록')} ${j.actor?'· '+esc(j.actor):''}</small><h3>${esc(j.action||GRADE[j.grade]||'이야기의 변화')}</h3><p>${esc(j.text)}</p>${Number.isFinite(j.roll)?`<span class="journal-roll">D20 ${j.roll} · 합계 ${j.total} / 목표 ${j.dc}</span>`:''}</article>`).join('')}</div>`:'<div class="empty-notebook"><span>✎</span><h3>첫 문장을 기다려요.</h3><p>행동과 그 결과가<br>차곡차곡 기록됩니다.</p></div>';
+  if(activeTab==='journal')return renderChronicle(g);
   return `<div class="chat-messages" aria-live="polite">${(state.messages||[]).length?state.messages.map(m=>`<div><b>${esc(m.name)}</b><p>${esc(m.text)}</p></div>`).join(''):'<p class="chat-placeholder">단서에 대한 생각이나 엉뚱한 계획을 나눠 보세요.</p>'}</div><form id="chat-form"><label class="sr-only" for="chat-input">동료에게 할 말</label><textarea id="chat-input" rows="2" maxlength="300" placeholder="동료에게 할 말…">${esc(draft.chat)}</textarea><button class="button quiet small full" type="submit">보내기</button></form>`;
+}
+function renderChronicle(g){
+  const events=(g.chronicle||[]).filter(event=>['choice','revival','combat'].includes(event.kind));
+  const fullLog=g.journal||[];
+  const partySize=g.partySize??(g.players||[]).length,mode=g.storyMode||(partySize===1?'solo':'group');
+  return `<div class="chronicle-notebook"><p class="chronicle-party" data-story-mode="${mode}" data-party-size="${partySize}">${mode==='solo'?'혼자 시작한 이야기':`${partySize}명이 함께 시작한 이야기`}</p><div class="chronicle-tools"><span>선택이 남긴 문장들</span><button class="text-button" data-action="export-chronicle" type="button">TXT 내려받기 ↗</button></div>${g.chroniclePartial?'<p class="chronicle-partial">현재 보관된 선택부터 연대기가 이어집니다.</p>':''}${events.length?`<ol class="chronicle-list">${events.map((event,i)=>`<li data-chronicle-id="${esc(event.id)}" data-chronicle-kind="${esc(event.kind)}"><span class="chronicle-index" aria-hidden="true">${String(i+1).padStart(2,'0')}</span><article><small>${esc(event.sceneTitle||'우리의 이야기')}${event.actor?` · ${esc(event.actor)}`:''}</small><h3>${esc(event.action||({choice:'우리가 고른 길',revival:'되돌아온 동료',combat:'함께 맞선 위기'}[event.kind]))}</h3><p>${esc(event.text)}</p></article></li>`).join('')}</ol>`:'<div class="empty-notebook"><span>✎</span><h3>첫 문장을 기다려요.</h3><p>내린 선택과 그 결과가<br>시간순으로 이어집니다.</p></div>'}${fullLog.length?`<details class="full-journal" data-fold="full-journal"><summary>전체 플레이 기록</summary><div class="journal-list">${fullLog.map(entry=>`<article><small>${esc(entry.sceneTitle||'기록')}${entry.actor?` · ${esc(entry.actor)}`:''}</small><h3>${esc(entry.action||GRADE[entry.grade]||'이야기의 변화')}</h3><p>${esc(entry.text)}</p>${Number.isFinite(entry.roll)?`<span class="journal-roll">D20 ${entry.roll} · 합계 ${entry.total} / 목표 ${entry.dc}</span>`:''}</article>`).join('')}</div></details>`:''}</div>`;
 }
 function entryValues(){
   const el=$('entry-dialog');return {name:el.querySelector('#player-name')?.value||'',classId:el.querySelector('#player-class')?.value||classList()[0]?.id,local:Array.from(el.querySelectorAll('[data-local-row]')).map((r,i)=>({name:r.querySelector('input')?.value||'',classId:r.querySelector('select')?.value||classList()[i]?.id}))};
 }
 function openEntry(kind='create',keep=null){
   entryKind=kind;const c=selectedCampaign(),classes=classList(c);const initial=keep||{name:readName(),classId:classes[0]?.id,local:[]};
-  openDialog('entry-dialog',`${closeButton('entry-dialog')}<div class="eyebrow">${kind==='join'?'JOIN THE TABLE':'OPEN A NEW STORY'}</div><h2 id="entry-title">${kind==='join'?'친구의 탁자에 앉기':'어떻게 함께할까요?'}</h2><p class="modal-intro">${kind==='join'?'친구가 알려 준 초대 코드와 내 이름을 적어 주세요.':esc(c?.title||'새 이야기')+'에 들어갈 준비를 해요.'}</p>
+  openDialog('entry-dialog',`${closeButton('entry-dialog')}<div class="eyebrow">${kind==='join'?'JOIN THE TABLE':'OPEN A NEW STORY'}</div><h2 id="entry-title">${kind==='join'?'친구의 탁자에 앉기':'어떻게 시작할까요?'}</h2><p class="modal-intro">${kind==='join'?'친구가 알려 준 초대 코드와 내 이름을 적어 주세요.':esc(c?.title||'새 이야기')+'에 들어갈 준비를 해요.'}</p>
     ${kind==='create'?`<div class="mode-switch" role="group" aria-label="플레이 방식"><button data-mode="online" class="${entryMode==='online'?'active':''}" type="button"><b>온라인</b><small>각자의 기기로</small></button><button data-mode="local" class="${entryMode==='local'?'active':''}" type="button"><b>한 기기로 함께</b><small>같은 자리에서</small></button></div>`:''}
     <form id="entry-form">${kind==='join'?'<label class="field"><span>초대 코드</span><input id="join-code" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="예: ABC234" required></label>':''}
-    ${kind==='create'&&entryMode==='local'?`<div class="local-count"><label for="local-count">함께할 인원</label><select id="local-count">${[1,2,3,4].map(n=>`<option value="${n}" ${n===localCount?'selected':''}>${n}명</option>`).join('')}</select></div><div class="local-rows">${Array.from({length:localCount},(_,i)=>`<div class="local-row" data-local-row><span>${i+1}</span><label><span class="sr-only">${i+1}번 플레이어 이름</span><input maxlength="18" placeholder="${i+1}번 플레이어 이름" value="${esc(initial.local[i]?.name||'')}" required></label><label><span class="sr-only">${i+1}번 플레이어 직업</span><select data-entry-class>${classOptions(initial.local[i]?.classId||classes[i]?.id)}</select></label></div>`).join('')}</div><p class="small muted">차례마다 화면을 넘겨 주세요. 각자의 비밀은 카드를 눌렀을 때만 보입니다.</p>`:`<div class="entry-fields ${kind==='join'?'name-only':''}"><label class="field"><span>내 이름</span><input id="player-name" maxlength="18" autocomplete="nickname" placeholder="어떻게 불러 드릴까요?" value="${esc(initial.name)}" required></label>${kind==='create'?`<label class="field"><span>이번 이야기의 직업</span><select id="player-class" data-entry-class>${classOptions(initial.classId)}</select></label>`:''}</div>`}
+    ${kind==='create'&&entryMode==='local'?`<div class="local-count"><label for="local-count">함께할 인원</label><select id="local-count">${[1,2,3,4].map(n=>`<option value="${n}" ${n===localCount?'selected':''}>${n}명</option>`).join('')}</select></div><div class="local-rows">${Array.from({length:localCount},(_,i)=>`<div class="local-row" data-local-row><span>${i+1}</span><label><span class="sr-only">${i+1}번 플레이어 이름</span><input maxlength="18" placeholder="${i+1}번 플레이어 이름" value="${esc(initial.local[i]?.name||'')}" required></label><label><span class="sr-only">${i+1}번 플레이어 직업</span><select data-entry-class>${classOptions(initial.local[i]?.classId||classes[i]?.id)}</select></label></div>`).join('')}</div><p class="small muted">${localCount===1?'비밀 카드를 펼치면 내 인물의 사연을 읽을 수 있어요.':'차례마다 화면을 넘겨 주세요. 각자의 비밀은 카드를 눌렀을 때만 보입니다.'}</p>`:`<div class="entry-fields ${kind==='join'?'name-only':''}"><label class="field"><span>내 이름</span><input id="player-name" maxlength="18" autocomplete="nickname" placeholder="어떻게 불러 드릴까요?" value="${esc(initial.name)}" required></label>${kind==='create'?`<label class="field"><span>이번 이야기의 직업</span><select id="player-class" data-entry-class>${classOptions(initial.classId)}</select></label>`:''}</div>`}
+    ${kind==='create'&&entryMode==='local'?renderPlayMode(c,localCount):''}
     ${kind==='create'?`<div class="class-primer">${classes.map(cl=>`<div><span>${classIcon(cl.id)}</span><b>${esc(cl.name)}</b><small>${esc(classBest(cl))}</small></div>`).join('')}</div><div id="entry-class-preview">${professionDetail(classFor(initial.classId)||classes[0])}</div><p class="small muted">선택한 직업의 공격과 기술입니다. 직업 능력치는 고정이며, 비밀 카드와 개인 목표는 시작 후 받습니다.</p>`:'<div class="quiet-note"><b>직업은 방에 들어간 뒤 고릅니다.</b><p>친구가 고른 시나리오에 맞춰 전용 직업 네 개가 준비됩니다. 대기실에서 내 직업을 바꿀 수 있어요.</p></div>'}
     <button class="button primary full" data-busy-guard type="submit">${kind==='join'?'참가하기':'탁자 만들기'} <span>↗</span></button></form>`);
   if(kind==='join'){const code=new URLSearchParams(location.search).get('room');if(code)$('join-code').value=code.toUpperCase();}
@@ -401,7 +451,7 @@ function showSecret(){
   openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">FOR YOUR EYES ONLY</div><h2 id="info-title">${esc(me?.name||'나')}의 비밀 카드</h2>${!secretOpen?`<div class="secret-envelope"><span>✉</span><h3>${esc(title)}</h3><p>${state.mode==='local'?'다른 동료가 화면을 보고 있지 않은지 확인한 뒤 열어 주세요.':'동료에게 아직 공개되지 않은 정보입니다.'}</p><button class="button primary" data-action="open-secret" type="button">나만 보기</button></div>`:`<div class="secret-content"><h3>${esc(title)}</h3><p>${esc(secret.secret)}</p><div class="personal-goal"><span>내가 바라는 것</span><p>${esc(secret.goal)}</p></div></div><div class="risk-note"><b>공유할 내용</b><p>${esc(secret.reveal)}</p></div><button class="button primary full" data-action="reveal" type="button" ${me?.revealed?'disabled':''}>${me?.revealed?'이미 동료들에게 공개한 비밀':'이 비밀을 동료들에게 공개하기'}</button><p class="small muted">공개하면 모두의 기록에 남습니다.</p>`}`);
 }
 function showHelp(){
-  openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">WELCOME TO THE TABLE</div><h2 id="info-title">이야기를 함께 만드는 방법</h2><div class="help-steps"><section><span>01</span><div><h3>지금 상황과 해결할 일을 읽어요.</h3><p>각 장면 위에 현재 상황, 목표, 주의할 점이 나옵니다. 「잠깐 살펴보기」로 차례를 쓰지 않고 단서나 물건을 확인할 수 있어요.</p></div></section><section><span>02</span><div><h3>현재 장면의 행동을 골라요.</h3><p>선택지마다 무엇을 하려는지와 필요한 소지품이 표시됩니다. 행동을 누르면 먼저 결과를 확인할 수 있고, 필요한 물건이 없으면 어디서 찾을지 안내합니다.</p></div></section><section><span>03</span><div><h3>불확실한 행동에만 D20을 굴려요.</h3><p>대성공·성공·실패·대실패의 네 가지 결과가 있습니다. 자연 20은 대성공, 자연 1은 대실패입니다. 나머지는 주사위와 보너스의 합이 목표 이상이면 성공, 미만이면 실패입니다. 각 결과의 확률과 실제 변화를 굴리기 전에 볼 수 있어요.</p></div></section><section><span>04</span><div><h3>소지품과 동료의 힘을 보태요.</h3><p>물건은 일행이 함께 씁니다. 사용 가능한 물건은 가방에서 알 수 있어요. 동료를 돕거나 운명 조각으로 +3을 더하고, 인물마다 한 번 「준비한 수단 사용」을 골라 +2를 받을 수 있습니다.</p></div></section></div><div class="quiet-note"><b>소지품과 단서는 다릅니다.</b><p>단서는 알아낸 사실을 기록한 것입니다. 소지품은 정해진 선택지에 실제로 사용하는 물건입니다. 소모되는 물건은 실행 전에 알려주며, 행동한 뒤 가방에서 빠집니다.</p></div><div class="quiet-note"><b>전투에서는 기본 공격과 고유 기술 하나만 기억하세요.</b><p>일행이 한 번씩 행동하면 적의 예고된 행동이 진행됩니다. 고유 기술은 전투마다 한 번, 기본 공격은 계속 사용할 수 있어요. 다음 공격 대상과 피해를 살피고 협력하세요. 적을 제압하면 멈췄던 이야기를 다시 이어갑니다.</p></div><div class="quiet-note"><b>위험은 실제로 인물을 잃게 할 수 있어요.</b><p>각 인물은 생명력 3으로 시작합니다. 위험한 선택의 판정창에서 피해를 먼저 확인하세요. 사망하면 살아 있는 동료가 행동을 이어가며, 부활 지점에서 한 번의 귀환을 시도할 수 있습니다. 모두 사망하면 이야기는 그 자리에서 끝납니다.</p></div><div class="rules-panel"><h3>${esc(selectedCampaign()?.title||'이번 이야기')}의 네 직업</h3><div class="rules-stats">${classList().map(c=>`<div><b>${classIcon(c.id)} ${esc(c.name)}</b><p>${Object.entries(c.stats).map(([k,v])=>`${STAT[k]} +${v}`).join(' · ')}</p><p>기본: ${esc(c.basic?.name)}<br>고유: ${esc(c.ability?.name)}</p></div>`).join('')}</div></div><p class="small muted">온라인은 방 코드로 1–4명이 참가합니다. 한 기기로 함께 모드는 같은 화면을 차례로 사용하며, 저장 파일로 진행을 옮길 수 있습니다. 장면 그림과 소리는 모두 게임에 포함되어 있습니다.</p>`);
+  openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">WELCOME TO THE TABLE</div><h2 id="info-title">함께 다음 문장을 쓰는 방법</h2><div class="help-steps"><section><span>01</span><div><h3>지금 상황과 해결할 일을 읽어요.</h3><p>짧은 장면을 읽고 다음 행동을 고르세요. 도움이 필요하면 「장면 정리」에서 상황과 목표를 확인하고, 「잠깐 살펴보기」로 차례를 쓰지 않고 주변을 살펴볼 수 있어요.</p></div></section><section><span>02</span><div><h3>현재 장면의 행동을 골라요.</h3><p>선택지마다 무엇을 하려는지와 필요한 소지품이 표시됩니다. 행동을 누르면 먼저 결과를 확인할 수 있고, 필요한 물건이 없으면 어디서 찾을지 안내합니다.</p></div></section><section><span>03</span><div><h3>불확실한 행동에만 D20을 굴려요.</h3><p>대성공·성공·실패·대실패의 네 가지 결과가 있습니다. 자연 20은 대성공, 자연 1은 대실패입니다. 나머지는 주사위와 보너스의 합이 목표 이상이면 성공, 미만이면 실패입니다. 각 결과의 확률과 실제 변화를 굴리기 전에 볼 수 있어요.</p></div></section><section><span>04</span><div><h3>소지품과 동료의 힘을 보태요.</h3><p>물건은 일행이 함께 씁니다. 사용 가능한 물건은 가방에서 알 수 있어요. 동료를 돕거나 운명 조각으로 +3을 더하고, 인물마다 한 번 「준비한 수단 사용」을 골라 +2를 받을 수 있습니다.</p></div></section></div><div class="quiet-note"><b>우리의 선택은 연대기에 남습니다.</b><p>연대기에는 실제 선택과 부활, 전투의 결말이 시간순으로 이어집니다. 「연대기 TXT」는 읽을 글을, 「저장 파일」은 나중에 이어 할 진행을 보관합니다. 긴 후일담과 판정 수치는 접힌 제목을 눌러 끝까지 읽을 수 있어요.</p></div><div class="quiet-note"><b>소지품과 단서는 다릅니다.</b><p>단서는 알아낸 사실을 기록한 것입니다. 소지품은 정해진 선택지에 실제로 사용하는 물건입니다. 소모되는 물건은 실행 전에 알려주며, 행동한 뒤 가방에서 빠집니다.</p></div><div class="quiet-note"><b>전투에서는 기본 공격과 고유 기술 하나만 기억하세요.</b><p>일행이 한 번씩 행동하면 적의 예고된 행동이 진행됩니다. 고유 기술은 전투마다 한 번, 기본 공격은 계속 사용할 수 있어요. 다음 공격 대상과 피해를 살피고 협력하세요. 적을 제압하면 멈췄던 이야기를 다시 이어갑니다.</p></div><div class="quiet-note"><b>위험은 실제로 인물을 잃게 할 수 있어요.</b><p>각 인물은 생명력 3으로 시작합니다. 위험한 선택의 판정창에서 피해를 먼저 확인하세요. 사망하면 살아 있는 동료가 행동을 이어가며, 부활 지점에서 한 번의 귀환을 시도할 수 있습니다. 모두 사망하면 이야기는 그 자리에서 끝납니다.</p></div><div class="rules-panel"><h3>${esc(selectedCampaign()?.title||'이번 이야기')}의 네 직업</h3><div class="rules-stats">${classList().map(c=>`<div><b>${classIcon(c.id)} ${esc(c.name)}</b><p>${Object.entries(c.stats).map(([k,v])=>`${STAT[k]} +${v}`).join(' · ')}</p><p>기본: ${esc(c.basic?.name)}<br>고유: ${esc(c.ability?.name)}</p></div>`).join('')}</div></div><p class="small muted">온라인은 방 코드로 1–4명이 참가합니다. 한 기기로 함께 모드는 같은 화면을 차례로 사용하며, 저장 파일로 진행을 옮길 수 있습니다. 장면 그림과 소리는 모두 게임에 포함되어 있습니다.</p>`);
 }
 function updateSoundButton(){
   const p=sound?.preferences;
@@ -422,7 +472,14 @@ async function exportSave(){
   const result=await call('exportSave');if(!result)return;
   const data=result.save||result;
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`ChronicleGate-${slug(game()?.campaignId||selected)}-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('저장 파일을 내려받았습니다. 다른 기기에서는 「저장 파일 열기」로 이어갈 수 있어요.');
+  const a=document.createElement('a');a.href=url;a.download=`chronicle-gate-v18-${slug(game()?.campaignId||selected)}-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('저장 파일을 내려받았습니다. 다른 기기에서는 「저장 파일 열기」로 이어갈 수 있어요.');
+}
+
+function exportChronicle(){
+  const view=game();if(!view)return;
+  const blob=new Blob([chronicleText(view)],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob);
+  const anchor=document.createElement('a');anchor.href=url;anchor.download=`chronicle-gate-v18-${slug(view.campaignId)}-${new Date().toISOString().slice(0,10)}.txt`;
+  anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('지금까지의 연대기를 글 파일로 간직했습니다. 진행을 이어 하려면 JSON 저장 파일도 내려받아 주세요.');
 }
 
 document.addEventListener('click',event=>{
@@ -456,6 +513,7 @@ document.addEventListener('click',event=>{
     else if(action==='pass'){await call('pass');}
     else if(action==='reveal'){const result=await call('reveal');if(result){closeDialog('info-dialog');sound.effect('reveal');toast('비밀을 동료들과 나눴습니다. 기록에서도 확인할 수 있어요.');}}
     else if(action==='export')await exportSave();
+    else if(action==='export-chronicle')exportChronicle();
     else if(action==='leave-confirm'){closeDialog('info-dialog');await call('leave');lastScene='';secretOpen=false;}
     else if(action==='copy-code'){
       try{await navigator.clipboard.writeText(state.code);toast('초대 코드를 복사했습니다. 친구에게 알려 주세요.');}catch{toast(`초대 코드: ${state.code}`);}

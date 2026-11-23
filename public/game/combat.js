@@ -128,6 +128,7 @@ function endInDefeat(game, campaign, encounter, result) {
   const combat = game.combat;
   result.combatEvent = 'defeat';
   result.text += ` ${encounter.defeatText}`;
+  result.narrativeText = `${encounter.defeatText} ${game.players.map(p=>p.name).join(', ')}의 다음 선택은 기록되지 않았다.`;
   game.combatRecords[encounter.id] = { result: 'defeat', rounds: combat.round, fallenIds: [...combat.fallenIds], usedAbilityIds: [...combat.usedAbilityIds] };
   game.deathSceneTitle = encounter.title;
   game.nodeId = '__all_dead__';
@@ -144,6 +145,8 @@ function endInVictory(game, campaign, encounter, result) {
   for (const p of living(game)) p.health = Math.min(p.maxHealth, p.health + 1);
   result.combatEvent = 'victory';
   result.text += ` ${encounter.victoryText} 살아 있는 일행은 숨을 고르며 생명을 1씩 회복합니다. 위기 −1, 운명 토큰 +1. 사망한 동료는 자동으로 부활하지 않습니다.`;
+  const fallen=game.players.filter(p=>p.life==='dead').map(p=>p.name);
+  result.narrativeText = `${encounter.victoryText}${fallen.length?` ${fallen.join(', ')}의 대답은 돌아오지 않는다. 남은 일행이 열린 길 앞에 선다.`:''}`;
   const actorIndex = game.activeIndex;
   for (let offset = 1; offset <= game.players.length; offset++) {
     const next = (actorIndex + offset) % game.players.length;
@@ -239,6 +242,7 @@ export function applyCombatAction(game, campaign, actorId, plan, { roll, gradeRo
     if(!actor.health){actor.life='dead';actor.echoUsed=false;combat.fallenIds.push(actor.id);result.deaths.push(actor.name);result.text+=` ${actor.name} 사망. 살아 있는 동료가 귀환 장소에 도착해야 부활을 시도할 수 있습니다.`;}
   }
   finishCombatTurn(game, campaign, actor, result, roll);
+  if(result.deaths.length&&!result.narrativeText)result.narrativeText=`${result.deaths.join(', ')}의 목소리가 전투 속에서 끊긴다. 남은 동료들이 서로의 위치를 확인한다. 싸움은 아직 끝나지 않았다.`;
   game.lastResult = result;
   return result;
 }

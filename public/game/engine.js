@@ -1,10 +1,11 @@
-/** Chronicle Gate 17: authored choices, shared items and four-result story/combat rules. */
+/** Chronicle Gate 18: a concise story shaped by the party's actual choices. */
 import { CLASSES, LEGACY_CLASS_IDS, getClasses, getClass, normalizeClassId } from './professions.js';
 import { startCombat, combatView, previewCombat, applyCombatAction, skipCombatTurn, restoreCombat } from './combat.js';
 import { gradeRoll, gradeChances, GRADE_LABELS, ROLLED_GRADES } from './judgement.js';
+import { appendChronicle, restoreChronicle } from './narrative.js';
 export { gradeRoll } from './judgement.js';
 export { CLASSES, getClasses, getClass, normalizeClassId } from './professions.js';
-export const VERSION = '17.0.0';
+export const VERSION = '18.0.0';
 export const STAT_LABELS = Object.freeze({ might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' });
 const clone = value => JSON.parse(JSON.stringify(value));
 const bound = (value, low, high) => Math.max(low, Math.min(high, value));
@@ -14,6 +15,14 @@ const nodeFor = (game, campaign) => game.nodeId === '__all_dead__' ? { id:'__all
 const currentPlayer = game => game.players[game.activeIndex];
 const trustedDie = source => { try { const value=typeof source==='function'?source():source;return Number.isInteger(value)&&value>=1&&value<=20?value:null; } catch { return null; } };
 const storedItemIds = value => Array.isArray(value)?value.map(item=>item?.id):[];
+
+// Story seats are fixed when the game begins. Death or a lost connection must
+// never rewrite a shared journey into the solo version halfway through.
+export const storyMode = game => game.players.length === 1 ? 'solo' : 'group';
+export function sceneParagraphs(node, game) {
+  const text = node.partyText?.[storyMode(game)] || node.text;
+  return (Array.isArray(text) ? text : [text]).filter(value => typeof value === 'string' && value.trim());
+}
 
 export function conditionMatches(condition, game) {
   if (!condition) return true;
@@ -28,6 +37,9 @@ export function conditionMatches(condition, game) {
   if (condition.notItem && (game.inventory || []).includes(condition.notItem)) return false;
   if (condition.pressureAtMost != null && game.pressure > condition.pressureAtMost) return false;
   if (condition.pressureAtLeast != null && game.pressure < condition.pressureAtLeast) return false;
+  if (condition.partyMin != null && game.players.length < condition.partyMin) return false;
+  if (condition.partyMax != null && game.players.length > condition.partyMax) return false;
+  if (condition.aliveMin != null && game.players.filter(p => p.life !== 'dead').length < condition.aliveMin) return false;
   return true;
 }
 export function availableChoices(game, campaign) {
@@ -62,11 +74,31 @@ function describeOutcome(outcome,game,campaign,{consumedItems=[],critical=false}
   if(campaign.nodes[outcome.next])changes.push(`다음 장면: ${campaign.nodes[outcome.next].title}`);
   return changes;
 }
-function outcomePreviews(choice,game,campaign,bonus,dc) {
+function healthAfterOutcome(outcome,person,actorId) {
+  const damage=(Number(outcome.harmAll)||0)+(person.id===actorId?(Number(outcome.harm)||0):0);
+  const healing=person.id===actorId?(Number(outcome.heal)||0):0;
+  return bound(person.health-damage+healing,0,3);
+}
+function storyPassage(outcome,deaths=[],allDead=false) {
+  if(!deaths.length)return outcome.text;
+  const stopped=`${deaths.join(', ')}의 목소리가 끊긴다.`;
+  const fate=allDead?'그 뒤를 이어 걸을 사람이 남지 않았다. 일행의 마지막 페이지가 이곳에서 닫힌다.':'남은 이들이 동료의 이름을 부른다. 대답은 돌아오지 않는다.';
+  return [outcome.lossText||outcome.text,stopped,fate,!allDead&&outcome.survivorArrival].filter(Boolean).join(' ');
+}
+function outcomePreview(outcome,game,campaign,actorId,options) {
+  const living=game.players.filter(p=>p.life!=='dead');
+  const deaths=living.filter(p=>healthAfterOutcome(outcome,p,actorId)===0).map(p=>p.name);
+  const allDead=deaths.length>0&&deaths.length===living.length;
+  let changes=describeOutcome(outcome,game,campaign,options);
+  if(deaths.length)changes.push(`사망: ${deaths.join(', ')}`);
+  if(allDead)changes=changes.filter(line=>!line.startsWith('다음 장면:')).concat(`전원 사망: ${campaign.deathEnding?.title||'돌아오지 못한 일행'}`);
+  return {text:storyPassage(outcome,deaths,allDead),changes};
+}
+function outcomePreviews(choice,game,campaign,actorId,bonus,dc) {
   const chances=gradeChances(bonus,dc);
   return ROLLED_GRADES.map(grade=>{
     const outcome=choice.outcomes?.[grade];
-    return {grade,label:GRADE_LABELS[grade],chance:chances[grade],text:outcome?.text||'',changes:outcome?describeOutcome(outcome,game,campaign,{consumedItems:choice.consumeItems||[],critical:grade==='critical'}):[]};
+    return {grade,label:GRADE_LABELS[grade],chance:chances[grade],...(outcome?outcomePreview(outcome,game,campaign,actorId,{consumedItems:choice.consumeItems||[],critical:grade==='critical'}):{text:'',changes:[]})};
   });
 }
 
@@ -81,7 +113,7 @@ export function createGame(campaign, players) {
     players: players.map((p, i) => ({ id: cleanText(p.id, 80), name: cleanText(p.name, 18) || `모험가 ${i + 1}`,
       classId: normalizeClassId(campaign, p.classId, i),
       roleIndex: i, focus: true, revealed: false, health:3, maxHealth:3, life:'alive', revivals:0, echoUsed:false, connected: p.connected !== false })),
-    journal: [], lastResult: null, arrival: null, startedAt: new Date().toISOString(),
+    journal: [], chronicle: [], chroniclePartial:false, lastResult: null, arrival: null, startedAt: new Date().toISOString(),
     combat: null, completedCombats: [], combatRecords: {},
   };
   startCombat(game, campaign);
@@ -96,7 +128,10 @@ export function viewGame(game, campaign, viewerId) {
   const choices=availableChoices(game,campaign);
   const callbacks = [...(node.callbacks || []), ...(node.ending ? node.epilogues || [] : [])]
     .filter(c => conditionMatches(c.when, game)).map(c => c.text);
-  const actualText = [...(Array.isArray(node.text) ? node.text : [node.text]), ...callbacks].filter(Boolean);
+  const prose=sceneParagraphs(node,game);
+  const personal=[];
+  let fate='';
+  const actualText = [...prose, ...callbacks];
   if(node.ending){
     if(game.deathSceneTitle)actualText.push(`마지막 발걸음은 ‘${game.deathSceneTitle}’에 남았습니다.`);
     const alive=game.players.filter(p=>p.life!=='dead').map(p=>p.name);
@@ -105,12 +140,15 @@ export function viewGame(game, campaign, viewerId) {
     for(const person of game.players){
       const personalRole=campaign.roles?.[person.roleIndex];
       const parts=person.life==='dead' && personalRole?.deadEpilogue ? [personalRole.deadEpilogue] : (personalRole?.epilogues||[]).filter(e=>conditionMatches(e.when,game)).map(e=>e.text);
-      if(parts.length)actualText.push(`${person.name}의 ${person.life==='dead'?'유산':'후일담'} — ${parts.join(' ')}`);
+      if(parts.length){const paragraph=`${person.name}의 ${person.life==='dead'?'유산':'후일담'} — ${parts.join(' ')}`;personal.push(paragraph);actualText.push(paragraph);}
     }
-    actualText.push(`살아남은 사람: ${alive.join(', ') || '없음'}. 희생된 사람: ${dead.join(', ') || '없음'}.${revived.length?` 죽음에서 돌아온 사람: ${revived.join(', ')}.`:''}`);
+    fate=`살아남은 사람: ${alive.join(', ') || '없음'}. 희생된 사람: ${dead.join(', ') || '없음'}.${revived.length?` 죽음에서 돌아온 사람: ${revived.join(', ')}.`:''}`;
+    actualText.push(fate);
   }
   return {
     campaignId: campaign.id, title: campaign.title, revision: game.revision, phase: game.phase,
+    storyMode:storyMode(game),partySize:game.players.length,
+    modeDescription:campaign.playModes?.[storyMode(game)]||'',
     scene: {
       id: node.id || game.nodeId, title: node.title, chapter: node.chapter || 1,
       location: node.location || campaign.title, art: Number(node.art) || 0,
@@ -118,6 +156,7 @@ export function viewGame(game, campaign, viewerId) {
       stakes: combat ? '기본 공격은 계속 쓸 수 있고, 고유 기술은 전투당 한 번입니다. 생명이 0이 되면 사망합니다.' : node.stakes || '',
       arrival: game.arrival?.toSceneId===game.nodeId ? clone(game.arrival) : null,
       mood: combat ? 'danger' : node.mood || 'mystery', text: combat ? combat.intro : actualText, dialogue: combat ? null : node.dialogue || null,
+      reading:combat?null:{paragraphs:prose,echoes:[...callbacks,...(node.ending&&game.deathSceneTitle?[`마지막 발걸음은 ‘${game.deathSceneTitle}’에 남았습니다.`]:[])],personal,fate},
       objective: combat ? `${combat.enemy.name}을 제압하고 길을 여세요.` : node.objective || campaign.objective, entities: combat ? [] : clone(node.entities || []),
       details: (combat ? [] : node.details || []).map(d => ({ id: d.id, label: d.label,
         read: Boolean(game.detailsRead[`${game.nodeId}:${d.id}`]),
@@ -140,6 +179,8 @@ export function viewGame(game, campaign, viewerId) {
     inventory: validItems(campaign,game.inventory).map(id=>({...itemInfo(campaign,id),usableHere:choices.some(c=>[...(c.useItems||[]),...(c.consumeItems||[])].includes(id)),actionIds:choices.filter(c=>[...(c.useItems||[]),...(c.consumeItems||[])].includes(id)).map(c=>c.id)})),
     flags: Object.keys(game.flags).filter(k => game.flags[k] && campaign.flags?.[k]).map(k => campaign.flags[k]),
     journal: clone(game.journal), lastResult: clone(game.lastResult),
+    chronicle:clone(game.chronicle||[]),chroniclePartial:game.chroniclePartial===true,
+    chroniclePrologue:sceneParagraphs(campaign.nodes[campaign.start],game),
     secret: role ? clone(role) : null,
     canAct: Boolean(me && me.life !== 'dead' && me.id === currentPlayer(game)?.id && game.phase === 'playing'),
     canAssist: Boolean(me && me.id !== currentPlayer(game)?.id && game.phase === 'playing' && !game.assists.includes(me.id) && (me.life !== 'dead' || !me.echoUsed)),
@@ -217,7 +258,7 @@ export function previewAction(game, campaign, playerId, payload = {}) {
     spendSpark, preparation, pressurePenalty, itemNames, consumedItemNames,
     risk: (choice.risk || '실패해도 사건은 진행되지만 더 큰 대가를 치릅니다.')+dangerText+consumption, harmRisk, groupHarm,
     successChance: automatic ? 100 : chances.critical+chances.success,
-    gradeChances:chances,outcomes:automatic?[{grade:'automatic',label:'선택대로 진행',chance:100,text:choice.outcomes.success.text,changes:describeOutcome(choice.outcomes.success,game,campaign,{consumedItems:choice.consumeItems||[]})}]:outcomePreviews(choice,game,campaign,bonus,dc),
+    gradeChances:chances,outcomes:automatic?[{grade:'automatic',label:'선택대로 진행',chance:100,...outcomePreview(choice.outcomes.success,game,campaign,actor.id,{consumedItems:choice.consumeItems||[]})}]:outcomePreviews(choice,game,campaign,actor.id,bonus,dc),
     revision: game.revision, requiresConfirmation: true,
   } };
 }
@@ -228,6 +269,7 @@ function addClues(game, campaign, ids = []) {
 function addJournal(game, entry) {
   const id = `${game.turn}:${game.revision}:${game.journal.length}`;
   game.journal.push({ id, ...entry });
+  appendChronicle(game,{id,...entry});
   if (game.journal.length > 200) game.journal = game.journal.slice(-200);
 }
 function advanceSeat(game) {
@@ -274,7 +316,7 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
     const pressureExtra=grade==='fumble'?2:grade==='failure'?1:0;
     next.pressure=bound(next.pressure+plan.pressureCost+pressureExtra,0,campaign.pressureMax||8);
     if(returned){target.life='alive';target.health=grade==='critical'?3:2;target.revivals++;target.echoUsed=false;}
-    const text=returned?`${node.resurrection.text} ${target.name}의 숨이 돌아옵니다. 생명 ${target.health}로 부활했지만, 이 캐릭터에게 두 번째 부활은 없습니다.`:grade==='fumble'?`${node.resurrection.label}이 거세게 흔들리고 귀환의 신호가 끊깁니다. ${target.name}은 돌아오지 못했습니다. 장치를 수습하느라 위기가 2칸 더 높아졌습니다. 다른 귀환 장소를 찾거나 남은 동료끼리 진행해야 합니다.`:`${node.resurrection.label}에 응답이 없습니다. ${target.name}은 돌아오지 못했고, 시간을 들인 만큼 위기가 1칸 더 높아졌습니다. 다른 귀환 장소에서는 다시 시도할 수 있습니다.`;
+    const text=returned?`${node.resurrection.text} ${target.name}의 숨이 돌아온다. ${grade==='critical'?'다시 일어선 동료가 자신의 이름에 또렷하게 대답한다.':'돌아온 동료는 가쁜 숨을 고르며 일행 곁에 앉는다.'}`:grade==='fumble'?`${target.name}의 이름에 닿으려던 귀환의 신호가 끊긴다. 흔들리는 ${node.resurrection.label}을 수습하고 나니 동료의 자리는 여전히 비어 있다. 이곳에서의 기회는 다했다.`:`${node.resurrection.label}에 이름을 불러도 대답은 돌아오지 않는다. 기다리는 동안 주변의 위험만 가까워졌다. ${target.name}을 다시 부르려면 다른 귀환 장소를 찾아야 한다.`;
     next.lastResult={action:plan.label,text,actor:actor.name,grade,roll:die,total:die+plan.bonus,dc:plan.dc,bonus:plan.bonus,stat:plan.stat,revivedId:returned?target.id:null,changes:[`운명 조각 −${plan.sparkCost}`,`위기 +${plan.pressureCost+pressureExtra}`,...(returned?[`${target.name} 생명 ${target.health}로 귀환`]:['이번 장소에서 재시도 불가'])]};
     addJournal(next,{sceneTitle:node.title,...next.lastResult});next.assists=[];next.turn++;next.revision++;advanceSeat(next);
     return {ok:true,game:next,plan};
@@ -305,15 +347,13 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
   const died=[];
   for(const person of next.players){
     if(person.life==='dead')continue;
-    const damage=(Number(outcome.harmAll)||0)+(person.id===actor.id?(Number(outcome.harm)||0):0);
-    const healing=person.id===actor.id?(Number(outcome.heal)||0):0;
-    person.health=bound(person.health-damage+healing,0,3);
+    person.health=healthAfterOutcome(outcome,person,actor.id);
     if(person.health===0){person.life='dead';person.echoUsed=false;died.push(person.name);}
   }
   const allDead=next.players.every(p=>p.life==='dead');
-  const deathText=died.length?` ${died.join(', ')} 사망. ${allDead?'살아 있는 일행이 없어 다음 장소로 이동하거나 부활을 시도할 수 없습니다. 이곳에서 이야기가 끝납니다.':'남은 동료는 부활의 장소를 찾거나 이 희생을 안고 계속 진행해야 합니다.'}`:'';
+  if(died.length)changes.push(`사망: ${died.join(', ')}`);
   next.lastResult = { action: choice.label,
-    text: outcome.text+deathText, deaths:died, actor: actor.name, grade, roll: die, total, dc: plan.dc, bonus: plan.bonus,
+    text: storyPassage(outcome,died,allDead), deaths:died, actor: actor.name, grade, roll: die, total, dc: plan.dc, bonus: plan.bonus,
     stat: plan.stat, assistance: plan.assistance, spentSpark: plan.spendSpark,
     preparation: plan.preparation, gainedSpark: grade === 'critical', fromSceneId: next.nodeId,
     ...items,usedItems:validItems(campaign,[...(choice.useItems||[]),...(choice.consumeItems||[])]).map(id=>({id,name:campaign.items[id].name})),changes };
@@ -322,7 +362,7 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
   next.phase = allDead || campaign.nodes[outcome.next].ending ? 'ended' : 'playing';
   next.lastResult.nextSceneTitle=nodeFor(next,campaign).title;
   if(allDead)next.lastResult.changes=changes.filter(change=>!change.startsWith('다음 장면:')).concat(`전원 사망: ${next.lastResult.nextSceneTitle}`);
-  next.arrival={fromSceneId:game.nodeId,toSceneId:next.nodeId,fromSceneTitle:node.title,action:choice.label,grade,text:allDead?next.lastResult.text:outcome.arrival||outcome.text};
+  next.arrival={fromSceneId:game.nodeId,toSceneId:next.nodeId,fromSceneTitle:node.title,action:choice.label,grade,text:died.length?next.lastResult.text:outcome.arrival||outcome.text};
   addJournal(next, { sceneTitle: node.title, ...next.lastResult });
   next.assists = [];
   next.turn++;
@@ -374,7 +414,7 @@ export function passTurn(game, playerId, { allowDisconnected = false, campaign, 
 export function validateSave(data, campaigns) {
   const raw = data?.game ?? data;
   const campaign = campaigns.find(c => c.id === raw?.campaignId);
-  if (!raw || ![14,15,17].includes(raw.schema) || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('지원하는 저장 파일이 아니거나 시나리오가 맞지 않습니다. v14–v17 게임 저장을 선택해 주세요.');
+  if (!raw || ![14,15,17].includes(raw.schema) || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('지원하는 저장 파일이 아니거나 시나리오가 맞지 않습니다. v14–v18 게임 저장을 선택해 주세요.');
   if (!Array.isArray(raw.players) || raw.players.length < 1 || raw.players.length > 4) throw new Error('저장 파일의 인원이 올바르지 않습니다.');
   if (JSON.stringify(data).length > 2000000) throw new Error('저장 파일이 너무 큽니다.');
   if(raw.players.some(p=>!p || typeof p.id!=='string' || !/^[A-Za-z0-9_-]{1,80}$/.test(p.id) || ['__proto__','constructor','prototype'].includes(p.id)))throw new Error('저장 파일의 플레이어 ID가 올바르지 않습니다.');
@@ -407,7 +447,7 @@ export function validateSave(data, campaigns) {
   game.players.forEach((p,i) => { p.roleIndex = i; p.focus = raw.players[i].focus !== false; p.revealed = raw.players[i].revealed === true; p.health=bound(Math.floor(Number(raw.players[i].health??3)),0,3);if(!Number.isFinite(p.health))p.health=3;p.life=p.health===0?'dead':'alive';p.revivals=bound(Math.floor(Number(raw.players[i].revivals)||0),0,1);p.echoUsed=raw.players[i].echoUsed===true; });
   game.journal = Array.isArray(raw.journal) ? raw.journal.slice(-200).filter(e => e && typeof e === 'object').map((e,i) => ({
     id: `restored:${i}`, sceneTitle: cleanText(e.sceneTitle, 100), actor: cleanText(e.actor, 18),
-    action: cleanText(e.action, 220), text: cleanText(e.text, 1800), grade: cleanText(e.grade, 20),
+    action: cleanText(e.action, 220), text: cleanText(e.text, 1800), narrativeText:cleanText(e.narrativeText,700), grade: cleanText(e.grade, 20),
     roll: Number.isInteger(e.roll) && e.roll >= 1 && e.roll <= 20 ? e.roll : null,
     total: Number.isFinite(e.total) ? e.total : null, dc: Number.isFinite(e.dc) ? e.dc : null,
     bonus: Number.isFinite(e.bonus) ? e.bonus : 0,
@@ -425,6 +465,7 @@ export function validateSave(data, campaigns) {
       deaths: Array.isArray(e.deaths) ? e.deaths.slice(0,4).map(n=>cleanText(n,18)) : [],
     } : {}),
   })) : [];
+  Object.assign(game,restoreChronicle(raw,game.journal,{turn:game.turn,startTitle:campaign.nodes[campaign.start].title}));
   for(const id of Object.keys(campaign.nodes))for(const p of game.players){const key=`${id}:${p.id}`;if(raw.reviveAttempts?.[key]===true)game.reviveAttempts[key]=true;}
   if(game.players.every(p=>p.life==='dead')){game.nodeId='__all_dead__';game.phase='ended';}
   else if(game.nodeId==='__all_dead__')throw new Error('전멸 결말의 생존 상태가 올바르지 않습니다.');

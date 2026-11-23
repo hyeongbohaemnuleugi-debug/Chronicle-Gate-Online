@@ -1,0 +1,18 @@
+import { build } from 'esbuild';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
+const result=await build({entryPoints:[path.join(root,'public/game/app.js')],bundle:true,write:false,format:'iife',platform:'browser',target:['chrome100','firefox100','safari15.4'],minify:false,legalComments:'inline'});
+let js=result.outputFiles[0].text.replaceAll('/game/art/','./game/art/').replaceAll('/game/audio/','./game/audio/');
+js=js.replace(/<\/script/gi,'<\\/script');
+const css=fs.readFileSync(path.join(root,'public/game/styles.css'),'utf8');
+let html=fs.readFileSync(path.join(root,'public/index.html'),'utf8');
+html=html.replace(/<link[^>]+href="\/game\/styles\.css[^>]*>/,`<style>${css}</style>`);
+html=html.replace(/<script[^>]+src="\/game\/app\.js[^>]*><\/script>/,()=>`<script>${js}</script>`);
+html=html.replaceAll('href="/favicon.svg"','href="./favicon.svg"');
+html=html.replace('<title>','<title>[로컬] ');
+if(/src="\/game\/app\.js/.test(html)||/href="\/game\/styles\.css/.test(html))throw new Error('Could not replace entry points');
+fs.writeFileSync(path.join(root,'public/offline.html'),html);
+fs.writeFileSync(path.join(root,'PLAY_OFFLINE.html'),'<!doctype html><html lang="ko"><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./public/offline.html?offline=1"><title>Chronicle Gate 로컬 실행</title><p><a href="./public/offline.html?offline=1">로컬 게임 시작하기</a></p></html>\n');
+console.log(`Built public/offline.html (${Buffer.byteLength(html).toLocaleString()} bytes). Open PLAY_OFFLINE.html directly; media stays in public/game/.`);

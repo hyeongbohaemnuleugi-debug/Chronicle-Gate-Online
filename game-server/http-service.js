@@ -1,5 +1,5 @@
 /**
- * Chronicle Gate v16 default host. This module never imports legacy persistence,
+ * Chronicle Gate v17 default host. This module never imports legacy persistence,
  * account code or a Supabase client. Static serving uses Node built-ins so the
  * shared-device offline server also works without npm install.
  */
@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 
 const gzipAsync = promisify(gzip);
 const PUBLIC_ROOT = fileURLToPath(new URL('../public/', import.meta.url));
-const VERSION = '16.0.0';
+const VERSION = '17.0.0';
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
@@ -152,7 +152,7 @@ export function createStaticHandler({ root = PUBLIC_ROOT, offline = false } = {}
     if (!stat.isFile()) { empty(response, 404); return; }
     const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
     const media = MEDIA_EXTENSIONS.has(extension);
-    const cache = media ? (url.searchParams.get('v') === '16000' ? 'public, max-age=31536000, immutable' : 'public, max-age=3600, must-revalidate') : 'no-cache, must-revalidate';
+    const cache = media ? (url.searchParams.get('v') === '17000' ? 'public, max-age=31536000, immutable' : 'public, max-age=3600, must-revalidate') : 'no-cache, must-revalidate';
     response.setHeader('Cache-Control', cache);
     response.setHeader('ETag', etag);
     response.setHeader('Last-Modified', stat.mtime.toUTCString());

@@ -20,7 +20,7 @@ export function attachTableService(io, options = {}) {
   const rooms = new Map(), diskFiles = new Map(), persistedHashes = new Map();
   const broadcastKeys = new Map(), checkpointKeys = new Map(), timers = new Set();
   const clock = typeof options.now === 'function' ? options.now : Date.now;
-  const configured = options.storageDir ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
+  const configured = options.storageDir ?? process.env.CHRONICLE_V17_DATA_DIR ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
   const storageDir = configured || (process.env.NODE_ENV === 'production' ? '' : path.resolve('.chronicle-v14'));
   const roll = options.roll || (() => crypto.randomInt(1, 21));
   const maxRooms = bounded(options.maxRooms ?? process.env.CHRONICLE_MAX_ROOMS, 32, 1, 128);
@@ -50,7 +50,7 @@ export function attachTableService(io, options = {}) {
   }
   function snapshot(room) {
     return {
-      format: 'chronicle-table-room', schema: 15, code: room.code, hostId: room.hostId, campaignId: room.campaignId,
+      format: 'chronicle-table-room', schema: 17, code: room.code, hostId: room.hostId, campaignId: room.campaignId,
       players: room.players.map(({ id, name, classId, tokenHash }) => ({ id, name, classId, tokenHash, connected: false })),
       game: room.game ? { ...room.game, players: room.game.players.map(player => ({ ...player, connected: false })) } : null,
       messages: room.messages, updatedAt: room.updatedAt,
@@ -104,7 +104,7 @@ export function attachTableService(io, options = {}) {
       fd = fs.openSync(filename, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
       const raw = JSON.parse(fs.readFileSync(fd, 'utf8'));
       if (raw.format !== undefined && raw.format !== 'chronicle-table-room') return null;
-      if (![14, 15].includes(raw.schema) || raw.code !== code || !getCampaign(raw.campaignId) || !Number.isFinite(raw.updatedAt) || raw.updatedAt < 0) return null;
+      if (![14, 15, 17].includes(raw.schema) || raw.code !== code || !getCampaign(raw.campaignId) || !Number.isFinite(raw.updatedAt) || raw.updatedAt < 0) return null;
       if (!Array.isArray(raw.players) || raw.players.length < 1 || raw.players.length > 4 || !Array.isArray(raw.messages)) return null;
       if (raw.players.some(player => !player || typeof player.id !== 'string' || player.id.length > 100 || !player.id || typeof player.name !== 'string' || !/^[a-f0-9]{64}$/.test(player.tokenHash))) return null;
       if (new Set(raw.players.map(player => player.id)).size !== raw.players.length || !raw.players.some(player => player.id === raw.hostId)) return null;
@@ -189,7 +189,7 @@ export function attachTableService(io, options = {}) {
       canStart: room.hostId === meId && !room.game && room.players.length >= 1 && room.players.every(player => player.connected),
     };
   }
-  const portableSave = room => ({ format: 'chronicle-gate-v16', savedAt: new Date(clock()).toISOString(), game: room.game });
+  const portableSave = room => ({ format: 'chronicle-gate-v17', savedAt: new Date(clock()).toISOString(), game: room.game });
   function checkpoint(room) {
     if (!room.game) return;
     const host = room.players.find(player => player.id === room.hostId && player.connected);

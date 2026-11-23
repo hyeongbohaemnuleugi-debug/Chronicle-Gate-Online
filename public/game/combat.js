@@ -1,5 +1,6 @@
 /** Pure combat rules. The server/local controller supplies every die; payloads supply no outcomes. */
 import { getClass } from './professions.js';
+import { gradeChances, GRADE_LABELS, ROLLED_GRADES } from './judgement.js';
 
 const copy = value => JSON.parse(JSON.stringify(value));
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
@@ -57,7 +58,7 @@ export function combatView(game, campaign, viewerId) {
     enemy: { name: encounter.enemyName, description: encounter.enemyDescription, health: game.combat.enemyHealth, maxHealth: game.combat.enemyMaxHealth },
     intent: intentView(game, encounter), actedIds: [...game.combat.actedIds], usedAbilityIds: [...game.combat.usedAbilityIds],
     actions: profession ? {
-      basic: { name: profession.basic.name, description: `${profession.basic.text} D20 + ${STAT_NAMES[profession.basic.stat]} ≥ ${BASIC_DC}: 피해 2 · 대가 있는 성공 1 · 대성공 3.`, stat: profession.basic.stat },
+      basic: { name: profession.basic.name, description: `${profession.basic.text} 성공 피해 2 · 자연 20 대성공 피해 3 · 실패 피해 0 · 자연 1 대실패는 자신 생명 −1.`, stat: profession.basic.stat },
       ability: { ...profession.ability, available: !used && player.life !== 'dead' },
     } : null,
     targetOptions: living(game).map(({ id, name, health, maxHealth }) => ({ id, name, health, maxHealth })),
@@ -88,24 +89,26 @@ export function previewCombat(game, campaign, actor, payload = {}) {
   const stat = automatic ? null : (move.stat || job.basic.stat);
   const assistance = automatic ? 0 : Math.min(2, game.assists.filter(id => id !== actor.id && game.players.some(p => p.id === id && p.connected !== false)).length);
   const spendSpark = !automatic && payload.spendSpark === true;
-  const flashback = automatic ? '' : clean(payload.flashback, 180);
+  const preparation = !automatic && payload.usePreparation === true;
   if (spendSpark && game.sparks < 1) return failure('남은 운명 토큰이 없습니다.');
-  if (flashback && !actor.focus) return failure('이 캐릭터의 회상은 이미 사용했습니다.');
-  if (flashback && flashback.length < 8) return failure('어떤 준비를 해 두었는지 회상을 8자 이상 적어 주세요.');
+  if (preparation && !actor.focus) return failure('이 캐릭터의 준비 보너스는 이미 사용했습니다.');
   const classBonus = automatic ? 0 : job.stats[stat] || 0;
   const boost = automatic ? 0 : combat.boosts[actor.id] || 0;
-  const bonus = classBonus + assistance + boost + (spendSpark ? 3 : 0) + (flashback ? 2 : 0);
+  const bonus = classBonus + assistance + boost + (spendSpark ? 3 : 0) + (preparation ? 2 : 0);
   const intent = intentView(game, encounter);
   const targetNames = intent.targetIds.map(id => game.players.find(p => p.id === id)?.name).filter(Boolean).join(', ');
   const damage = ability && move.type === 'strike' ? 3 : 2;
-  const risk = `${automatic ? move.description : `성공: 적에게 피해 ${damage}, 대가 있는 성공: 피해 1, 실패: 피해 없음.`} ${ability ? '사용하면 성공·실패와 관계없이 이번 전투의 능력 1회를 소모합니다. ' : ''}라운드가 끝나면 ${encounter.enemyName}의 ‘${intent.name}’: ${targetNames}에게 D20 ${intent.dc} 이상이면 생명 ${intent.damage} 피해. 생명 0은 사망이며 전원 사망 시 즉시 결말입니다.${combat.staggered ? ' 다음 적 행동은 기절로 취소될 예정입니다.' : ''}`;
+  const risk = `${automatic ? move.description : `대성공: 적에게 피해 ${damage+1}, 성공: 피해 ${damage}, 실패: 피해 없음. 대실패: 피해를 주지 못하고 자신의 생명 1을 잃습니다(방어막으로 막지 못함).`} ${ability ? '사용하면 성공·실패와 관계없이 이번 전투의 능력 1회를 소모합니다. ' : ''}라운드가 끝나면 ${encounter.enemyName}의 ‘${intent.name}’: ${targetNames}에게 D20 ${intent.dc} 이상이면 생명 ${intent.damage} 피해. 생명 0은 사망이며 전원 사망 시 즉시 결말입니다.${combat.staggered ? ' 다음 적 행동은 기절로 취소될 예정입니다.' : ''}`;
+  const chances=automatic?null:gradeChances(bonus,BASIC_DC);
+  const strikeBonus=combat.vulnerable>0?1:0;
+  const descriptions={critical:`빈틈을 정확히 찔러 적에게 피해 ${damage+1+strikeBonus}를 줍니다.`,success:`공격이 맞아 적에게 피해 ${damage+strikeBonus}를 줍니다.`,failure:'적이 공격을 막습니다. 적과 자신의 생명은 이 공격으로 줄지 않습니다.',fumble:'공격 자세가 무너집니다. 적에게 피해를 주지 못하고 자신의 생명 1을 잃습니다.'};
   return { ok: true, plan: {
     type: 'combat', combatAction: payload.combatAction, targetId, label: move.name,
     stat, statLabel: STAT_NAMES[stat] || '확정 효과', dc: automatic ? 0 : BASIC_DC, bonus, automatic,
-    assistance, classBonus, boost, spendSpark, flashback, pressurePenalty: 0,
-    risk, harmRisk: intent.damage, groupHarm: intent.target === 'all' ? intent.damage : 0,
-    successChance: automatic ? 100 : Array.from({ length: 20 }, (_, i) => i + 1).filter(d => d === 20 || (d !== 1 && d + bonus >= BASIC_DC)).length * 5,
-    mixedChance: automatic ? 0 : Array.from({ length: 20 }, (_, i) => i + 1).filter(d => d !== 1 && d !== 20 && d + bonus < BASIC_DC && d + bonus >= BASIC_DC - 2).length * 5,
+    assistance, classBonus, boost, spendSpark, preparation, pressurePenalty: 0,
+    risk, harmRisk: automatic?intent.damage:intent.damage+1, groupHarm: intent.target === 'all' ? intent.damage : 0,
+    gradeChances:chances,successChance:automatic?100:chances.critical+chances.success,
+    outcomes:automatic?[{grade:'automatic',label:'확정 효과',chance:100,text:move.description,changes:['기술 사용 횟수 1회 소모','적에게 피해 1']}]:ROLLED_GRADES.map(grade=>({grade,label:GRADE_LABELS[grade],chance:chances[grade],text:descriptions[grade],changes:[...(grade==='critical'?['운명 조각 +1 (최대 4)']:[]),...(ability?['기술 사용 횟수 1회 소모']:[]),...(ability&&move.type==='drain'&&['critical','success'].includes(grade)?['자신 생명 +1 (최대 3)']:[]),'일행의 행동이 끝나면 예고된 적 행동 진행']})),
     revision: game.revision, requiresConfirmation: true,
   } };
 }
@@ -154,6 +157,7 @@ function finishCombatTurn(game, campaign, actor, result, roll) {
   game.assists = [];
   game.turn++;
   game.revision++;
+  if (!living(game).length) { endInDefeat(game,campaign,encounter,result); return; }
   if (combat.enemyHealth <= 0) { endInVictory(game, campaign, encounter, result); return; }
   if (!combat.actedIds.includes(actor.id)) combat.actedIds.push(actor.id);
   if (selectPending(game)) return;
@@ -198,16 +202,16 @@ export function applyCombatAction(game, campaign, actorId, plan, { roll, gradeRo
   const move = isAbility ? job.ability : job.basic;
   const die = plan.automatic ? null : rollDie(roll);
   const grade = plan.automatic ? 'automatic' : gradeRoll(die, die + plan.bonus, plan.dc);
-  const hit = grade !== 'failure';
+  const hit = ['critical','success','automatic'].includes(grade);
   let damage = 0;
   const notes = [];
   if (plan.spendSpark) game.sparks--;
-  if (plan.flashback) actor.focus = false;
+  if (plan.preparation) actor.focus = false;
   if (grade === 'critical') game.sparks = Math.min(4, game.sparks + 1);
   if (!plan.automatic) combat.boosts[actorId] = 0;
   if (isAbility) combat.usedAbilityIds.push(actorId);
   if (!isAbility || rolledAbility(move.type)) {
-    damage = !hit ? 0 : grade === 'mixed' ? 1 : grade === 'critical' ? (move.type === 'strike' ? 4 : 3) : (move.type === 'strike' ? 3 : 2);
+    damage = !hit ? 0 : grade === 'critical' ? (move.type === 'strike' ? 4 : 3) : (move.type === 'strike' ? 3 : 2);
     if (damage && combat.vulnerable > 0) { damage++; combat.vulnerable--; notes.push('드러난 약점을 찔러 피해 +1'); }
     if (isAbility && move.type === 'drain' && hit) { actor.health = Math.min(actor.maxHealth, actor.health + 1); notes.push(`${actor.name} 생명 1 회복`); }
   } else {
@@ -220,16 +224,20 @@ export function applyCombatAction(game, campaign, actorId, plan, { roll, gradeRo
     if (move.type === 'rally') { for (const p of living(game)) combat.boosts[p.id] = 2; notes.push('살아 있는 일행의 다음 공격 판정 +2 (중첩되지 않음)'); }
   }
   combat.enemyHealth = Math.max(0, combat.enemyHealth - damage);
-  const narration = grade === 'failure' ? `‘${move.name}’을 시도했지만 적의 대응에 막혔습니다. 피해를 주지 못했습니다.` : `${move.text} 적에게 피해 ${damage}.`;
+  const narration = grade === 'fumble' ? `‘${move.name}’을 시도하다 자세가 무너졌습니다. 적에게 피해를 주지 못했고 자신의 생명 1을 잃었습니다.` : grade === 'failure' ? `‘${move.name}’을 시도했지만 적의 대응에 막혔습니다. 피해를 주지 못했습니다.` : `${move.text} 적에게 피해 ${damage}.`;
   const text = `${actor.name} · ${move.name}. ${narration}${notes.length ? ' ' + notes.join(' · ') + '.' : ''}`;
   note(combat, text, isAbility ? 'ability' : 'attack');
   const result = {
     action: move.name, actor: actor.name, text, grade, roll: die, total: die == null ? null : die + plan.bonus,
     dc: plan.dc, bonus: plan.bonus, stat: plan.stat, assistance: plan.assistance, spentSpark: plan.spendSpark,
-    flashback: plan.flashback, gainedSpark: grade === 'critical', fromSceneId: game.nodeId,
+    preparation: plan.preparation, gainedSpark: grade === 'critical', fromSceneId: game.nodeId,
     combat: true, combatEvent: isAbility ? 'ability' : 'attack', damage, targetId: plan.targetId,
-    enemyRolls: [], deaths: [],
+    enemyRolls: [], deaths: [],changes:[`적 생명 −${damage}`,...notes,...(grade==='fumble'?['자신 생명 −1']:[]),...(plan.preparation?['인물의 준비 보너스 사용 완료']:[])],
   };
+  if(grade==='fumble'){
+    actor.health=Math.max(0,actor.health-1);
+    if(!actor.health){actor.life='dead';actor.echoUsed=false;combat.fallenIds.push(actor.id);result.deaths.push(actor.name);result.text+=` ${actor.name} 사망. 살아 있는 동료가 귀환 장소에 도착해야 부활을 시도할 수 있습니다.`;}
+  }
   finishCombatTurn(game, campaign, actor, result, roll);
   game.lastResult = result;
   return result;

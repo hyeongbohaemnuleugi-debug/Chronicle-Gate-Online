@@ -29,7 +29,7 @@ export function createAudio(onChange = () => {}) {
     if (current?.dataset.key === desired) { current.volume=prefs.music; if(current.paused){try{await current.play();}catch{}} return; }
     const token = ++transition;
     if (previous) dispose(previous);
-    const old=current, next=new Audio(`/game/audio/${desired}.mp3?v=16000`);
+    const old=current, next=new Audio(`/game/audio/${desired}.mp3?v=17000`);
     next.dataset.key=desired; next.loop=true; next.volume=0; next.preload='none';
     current=next; previous=old;
     next.addEventListener('error',()=>{ if(current===next){current=null;dispose(old);} },{once:true});
@@ -63,7 +63,7 @@ export function createAudio(onChange = () => {}) {
       if(!prefs.enabled||isPaused||prefs.effects===0||!SFX.has(name))return;
       // Avoid a pile-up of simultaneous one-shots on reconnection.
       if(activeEffects.size>=4)return;
-      const el=new Audio(`/game/audio/${name}.mp3?v=16000`);el.preload='none';el.volume=prefs.effects;activeEffects.add(el);
+      const el=new Audio(`/game/audio/${name}.mp3?v=17000`);el.preload='none';el.volume=prefs.effects;activeEffects.add(el);
       const cleanup=()=>{activeEffects.delete(el);dispose(el);};
       el.addEventListener('ended',cleanup,{once:true});el.addEventListener('error',cleanup,{once:true});
       el.play().catch(cleanup);

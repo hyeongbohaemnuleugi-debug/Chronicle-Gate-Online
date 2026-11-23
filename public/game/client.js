@@ -43,7 +43,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
   }
   function localChanged({followTurn=false}={}){
     if(followTurn&&local.game)localSeat=local.game.players[local.game.activeIndex].id;
-    write(localStorage,LOCAL_KEY,{schema:15,...local});deliver(localState());
+    write(localStorage,LOCAL_KEY,{schema:17,...local});deliver(localState());
   }
   async function connect(){
     if(offlineOnly)throw new Error('로컬 실행 중입니다. 온라인 방은 배포된 사이트에서 열어 주세요.');
@@ -54,7 +54,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
       socket.on('table:state', state=>{
         if(backupCode!==state.code){backupCode=state.code;lastBackupRevision=-1;}
         deliver(state);
-        // Older servers need an explicit export. v16 sends one private checkpoint without this round trip.
+        // Older servers need an explicit export. v17 sends one private checkpoint without this round trip.
         if(!state.capabilities?.checkpoints && state.meId===state.hostId && state.game && state.game.revision!==lastBackupRevision){
           lastBackupRevision=state.game.revision;
           const code=state.code;
@@ -128,7 +128,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
       const saved=kind==='backup'?saveRead(localStorage,BACKUP_KEY):saveRead(localStorage,LOCAL_KEY);
       if(!saved)throw new Error('이어할 저장 데이터가 없습니다. 저장 파일을 불러와 주세요.');
       if(saved.game)return api.importSave(saved);
-      if([14,15].includes(saved.schema)&&getCampaign(saved.campaignId)&&Array.isArray(saved.players)&&saved.players.length<=4){
+      if([14,15,17].includes(saved.schema)&&getCampaign(saved.campaignId)&&Array.isArray(saved.players)&&saved.players.length<=4){
         local={campaignId:saved.campaignId,players:saved.players.map((p,i)=>({id:randomId(),name:cleanText(p.name,18)||`모험가 ${i+1}`,classId:normalizeClassId(getCampaign(saved.campaignId),p.classId,i),connected:true})),game:null,messages:[]};
         localSeat=local.players[0].id;localChanged();return {ok:true};
       }
@@ -154,7 +154,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
     async assist(){if(local)return localApply(game=>applyAssist(game,localSeat));return checked(await request('table:assist',{revision:current.game.revision}));},
     async reveal(){if(local)return localApply(game=>revealSecret(game,getCampaign(local.campaignId),localSeat));return checked(await request('table:reveal',{revision:current.game.revision}));},
     async pass(){if(local){const result=passTurn(local.game,localSeat,{campaign:getCampaign(local.campaignId),roll:secureDie});checked(result);local.game=result.game;localChanged({followTurn:true});return {ok:true};}return checked(await request('table:pass',{revision:current.game.revision}));},
-    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v16',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
+    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v17',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
     async importSave(save){
       if(current?.mode==='online')return checked(await request('table:import',{save}));
       const {game,campaign}=validateSave(save,CAMPAIGNS);game.players.forEach(p=>{p.connected=true;});

@@ -1,8 +1,10 @@
-/** Chronicle Gate 15: shared story and combat rules. No network or model dependency. */
+/** Chronicle Gate 17: authored choices, shared items and four-result story/combat rules. */
 import { CLASSES, LEGACY_CLASS_IDS, getClasses, getClass, normalizeClassId } from './professions.js';
 import { startCombat, combatView, previewCombat, applyCombatAction, skipCombatTurn, restoreCombat } from './combat.js';
+import { gradeRoll, gradeChances, GRADE_LABELS, ROLLED_GRADES } from './judgement.js';
+export { gradeRoll } from './judgement.js';
 export { CLASSES, getClasses, getClass, normalizeClassId } from './professions.js';
-export const VERSION = '16.0.0';
+export const VERSION = '17.0.0';
 export const STAT_LABELS = Object.freeze({ might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' });
 const clone = value => JSON.parse(JSON.stringify(value));
 const bound = (value, low, high) => Math.max(low, Math.min(high, value));
@@ -10,6 +12,8 @@ export const cleanText = (value, max = 220) => String(value ?? '').replace(/[\u0
 const fail = (error, hints = []) => ({ ok: false, error, hints });
 const nodeFor = (game, campaign) => game.nodeId === '__all_dead__' ? { id:'__all_dead__', chapter:4, location:game.deathSceneTitle || campaign.title, ending:true, choices:[], ...(campaign.deathEnding || {title:'돌아오지 못한 일행',text:['일행의 마지막 목소리가 끊겼습니다. 이곳에서 이야기가 끝납니다.'],art:2,mood:'danger'}) } : campaign.nodes[game.nodeId];
 const currentPlayer = game => game.players[game.activeIndex];
+const trustedDie = source => { try { const value=typeof source==='function'?source():source;return Number.isInteger(value)&&value>=1&&value<=20?value:null; } catch { return null; } };
+const storedItemIds = value => Array.isArray(value)?value.map(item=>item?.id):[];
 
 export function conditionMatches(condition, game) {
   if (!condition) return true;
@@ -20,13 +24,50 @@ export function conditionMatches(condition, game) {
   if (condition.notFlag && game.flags[condition.notFlag]) return false;
   if (condition.clue && !game.clues.includes(condition.clue)) return false;
   if (condition.notClue && game.clues.includes(condition.notClue)) return false;
+  if (condition.item && !(game.inventory || []).includes(condition.item)) return false;
+  if (condition.notItem && (game.inventory || []).includes(condition.notItem)) return false;
   if (condition.pressureAtMost != null && game.pressure > condition.pressureAtMost) return false;
   if (condition.pressureAtLeast != null && game.pressure < condition.pressureAtLeast) return false;
   return true;
 }
 export function availableChoices(game, campaign) {
   if (game.combat) return [];
-  return (nodeFor(game, campaign)?.choices ?? []).filter(c => conditionMatches(c.requires, game));
+  return (nodeFor(game, campaign)?.choices ?? []).filter(c => conditionMatches(c.requires, game) && [...(c.useItems||[]),...(c.consumeItems||[])].every(id=>(game.inventory||[]).includes(id)));
+}
+
+const itemInfo = (campaign,id) => ({id,...campaign.items[id]});
+const validItems = (campaign,ids=[]) => [...new Set(Array.isArray(ids)?ids.filter(id=>typeof id==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(id)&&!['__proto__','constructor','prototype'].includes(id)&&Object.hasOwn(campaign.items||{},id)):[])];
+function itemDelta(game,campaign,gains=[],losses=[]) {
+  game.inventory ||= []; game.spentItems ||= [];
+  const lost=validItems(campaign,losses).filter(id=>game.inventory.includes(id));
+  game.inventory=game.inventory.filter(id=>!lost.includes(id));
+  game.spentItems=[...new Set([...game.spentItems,...lost])];
+  const gained=validItems(campaign,gains).filter(id=>!game.inventory.includes(id));
+  game.inventory.push(...gained);
+  game.spentItems=game.spentItems.filter(id=>!gained.includes(id));
+  return {gainedItems:gained.map(id=>({id,name:campaign.items[id].name})),lostItems:lost.map(id=>({id,name:campaign.items[id].name}))};
+}
+function describeOutcome(outcome,game,campaign,{consumedItems=[],critical=false}={}) {
+  const changes=[];
+  if(outcome.harm)changes.push(`행동한 인물 생명 −${outcome.harm}`);
+  if(outcome.harmAll)changes.push(`살아 있는 일행 모두 생명 −${outcome.harmAll}`);
+  if(outcome.heal)changes.push(`행동한 인물 생명 +${outcome.heal} (최대 3)`);
+  if(outcome.pressure)changes.push(`${campaign.pressureLabel||'위기'} ${outcome.pressure>0?'+':'−'}${Math.abs(outcome.pressure)}`);
+  for(const id of outcome.clues||[])if(campaign.clues?.[id]&&!game.clues.includes(id))changes.push(`단서 확보: ${campaign.clues[id].title}`);
+  for(const id of validItems(campaign,outcome.gainItems))changes.push(`소지품 획득: ${campaign.items[id].name}`);
+  for(const id of validItems(campaign,[...consumedItems,...(outcome.loseItems||[])]))changes.push(`소지품 소모: ${campaign.items[id].name}`);
+  for(const id of outcome.set||[])if(campaign.flags?.[id]&&!game.flags[id])changes.push(campaign.flags[id]);
+  for(const id of outcome.unset||[])if(campaign.flags?.[id]&&game.flags[id])changes.push(`기록 변경: ${campaign.flags[id]} → 해제`);
+  if(critical)changes.push('운명 조각 +1 (최대 4)');
+  if(campaign.nodes[outcome.next])changes.push(`다음 장면: ${campaign.nodes[outcome.next].title}`);
+  return changes;
+}
+function outcomePreviews(choice,game,campaign,bonus,dc) {
+  const chances=gradeChances(bonus,dc);
+  return ROLLED_GRADES.map(grade=>{
+    const outcome=choice.outcomes?.[grade];
+    return {grade,label:GRADE_LABELS[grade],chance:chances[grade],text:outcome?.text||'',changes:outcome?describeOutcome(outcome,game,campaign,{consumedItems:choice.consumeItems||[],critical:grade==='critical'}):[]};
+  });
 }
 
 export function createGame(campaign, players) {
@@ -34,13 +75,13 @@ export function createGame(campaign, players) {
   if (!Array.isArray(players) || players.length < 1 || players.length > 4) throw new Error('플레이어는 1~4명이어야 합니다.');
   if (new Set(players.map(p => p.id)).size !== players.length) throw new Error('플레이어 ID가 중복되었습니다.');
   const game = {
-    schema: 15, version: VERSION, campaignId: campaign.id, nodeId: campaign.start,
+    schema: 17, version: VERSION, campaignId: campaign.id, nodeId: campaign.start,
     phase: 'playing', revision: 1, turn: 0, activeIndex: 0, pressure: 0, sparks: 2,
-    flags: {}, clues: [], visited: [campaign.start], detailsRead: {}, assists: [], reviveAttempts: {},
+    flags: {}, clues: [], inventory: [], spentItems: [], visited: [campaign.start], detailsRead: {}, assists: [], reviveAttempts: {},
     players: players.map((p, i) => ({ id: cleanText(p.id, 80), name: cleanText(p.name, 18) || `모험가 ${i + 1}`,
       classId: normalizeClassId(campaign, p.classId, i),
       roleIndex: i, focus: true, revealed: false, health:3, maxHealth:3, life:'alive', revivals:0, echoUsed:false, connected: p.connected !== false })),
-    journal: [], lastResult: null, startedAt: new Date().toISOString(),
+    journal: [], lastResult: null, arrival: null, startedAt: new Date().toISOString(),
     combat: null, completedCombats: [], combatRecords: {},
   };
   startCombat(game, campaign);
@@ -52,6 +93,7 @@ export function viewGame(game, campaign, viewerId) {
   const me = game.players.find(p => p.id === viewerId);
   const role = me ? campaign.roles?.[me.roleIndex] : null;
   const combat = combatView(game, campaign, viewerId);
+  const choices=availableChoices(game,campaign);
   const callbacks = [...(node.callbacks || []), ...(node.ending ? node.epilogues || [] : [])]
     .filter(c => conditionMatches(c.when, game)).map(c => c.text);
   const actualText = [...(Array.isArray(node.text) ? node.text : [node.text]), ...callbacks].filter(Boolean);
@@ -72,14 +114,19 @@ export function viewGame(game, campaign, viewerId) {
     scene: {
       id: node.id || game.nodeId, title: node.title, chapter: node.chapter || 1,
       location: node.location || campaign.title, art: Number(node.art) || 0,
+      summary: combat ? `일행의 앞을 ${combat.enemy.name}이 가로막았습니다. 적의 다음 공격과 대상을 확인하고 차례대로 행동하세요.` : node.summary || (node.text||[])[0] || campaign.description,
+      stakes: combat ? '기본 공격은 계속 쓸 수 있고, 고유 기술은 전투당 한 번입니다. 생명이 0이 되면 사망합니다.' : node.stakes || '',
+      arrival: game.arrival?.toSceneId===game.nodeId ? clone(game.arrival) : null,
       mood: combat ? 'danger' : node.mood || 'mystery', text: combat ? combat.intro : actualText, dialogue: combat ? null : node.dialogue || null,
       objective: combat ? `${combat.enemy.name}을 제압하고 길을 여세요.` : node.objective || campaign.objective, entities: combat ? [] : clone(node.entities || []),
       details: (combat ? [] : node.details || []).map(d => ({ id: d.id, label: d.label,
         read: Boolean(game.detailsRead[`${game.nodeId}:${d.id}`]),
         text: game.detailsRead[`${game.nodeId}:${d.id}`] ? d.text : undefined })),
-      choices: availableChoices(game, campaign).map(c => ({ id: c.id, label: c.label, stat: c.stat,
+      choices: choices.map(c => ({ id: c.id, label: c.label, stat: c.stat,
         dc: c.automatic ? null : (c.dc || 11) + (game.pressure >= (campaign.pressureMax || 8) ? 1 : 0),
-        risk: c.risk || '상황이 바뀌고 다른 경로로 이어집니다.', harmRisk: Math.max(0,...Object.values(c.outcomes || {}).map(o=>(o.harm||0)+(o.harmAll||0))), automatic: Boolean(c.automatic) })),
+        risk: c.risk || '상황이 바뀌고 다른 경로로 이어집니다.', harmRisk: Math.max(0,...Object.values(c.outcomes || {}).map(o=>(o.harm||0)+(o.harmAll||0))), automatic: Boolean(c.automatic),
+        useItems:validItems(campaign,c.useItems).map(id=>itemInfo(campaign,id)),consumeItems:validItems(campaign,c.consumeItems).map(id=>itemInfo(campaign,id)),hint:c.hint||'' })),
+      lockedChoices: (combat?[]:node.choices||[]).filter(c=>c.lockedHint&&!choices.some(x=>x.id===c.id)).map(c=>({id:c.id,label:c.label,reason:c.lockedHint})),
       resurrection: !combat && node.resurrection ? { ...node.resurrection, available: conditionMatches(node.resurrection.requires,game), eligibleIds:game.players.filter(p=>p.life==='dead'&&p.revivals<1&&!game.reviveAttempts?.[`${game.nodeId}:${p.id}`]).map(p=>p.id) } : null,
       ending: Boolean(node.ending), question: node.question || '',
     },
@@ -90,74 +137,21 @@ export function viewGame(game, campaign, viewerId) {
     pressure: { value: game.pressure, max: campaign.pressureMax || 8, label: campaign.pressureLabel || '위기' },
     sparks: game.sparks,
     clues: game.clues.map(id => ({ id, ...(campaign.clues?.[id] || { title: id, text: '' }) })),
+    inventory: validItems(campaign,game.inventory).map(id=>({...itemInfo(campaign,id),usableHere:choices.some(c=>[...(c.useItems||[]),...(c.consumeItems||[])].includes(id)),actionIds:choices.filter(c=>[...(c.useItems||[]),...(c.consumeItems||[])].includes(id)).map(c=>c.id)})),
     flags: Object.keys(game.flags).filter(k => game.flags[k] && campaign.flags?.[k]).map(k => campaign.flags[k]),
     journal: clone(game.journal), lastResult: clone(game.lastResult),
     secret: role ? clone(role) : null,
     canAct: Boolean(me && me.life !== 'dead' && me.id === currentPlayer(game)?.id && game.phase === 'playing'),
     canAssist: Boolean(me && me.id !== currentPlayer(game)?.id && game.phase === 'playing' && !game.assists.includes(me.id) && (me.life !== 'dead' || !me.echoUsed)),
     combat, completedCombats: [...(game.completedCombats || [])],
-    helpText: combat ? '기본 공격은 계속 사용할 수 있고, 직업 능력은 전투마다 한 번입니다. 생존자들이 한 번씩 행동하면 적이 예고한 대로 공격합니다.' : '안전한 관찰은 주사위 없이. 위험한 행동은 D20 + 직업 보너스. 목표보다 1~2 낮으면 대가를 치르고 성공합니다.',
+    helpText: combat ? '기본 공격은 계속 사용할 수 있고, 직업 능력은 전투마다 한 번입니다. 자연 20은 대성공, 자연 1은 대실패입니다. 생존자들이 한 번씩 행동하면 적이 예고한 대로 공격합니다.' : '정해진 행동을 고르세요. 안전한 관찰에는 주사위를 쓰지 않습니다. 위험 행동은 자연 20 대성공·자연 1 대실패, 나머지는 합계가 목표 이상이면 성공, 미만이면 실패입니다.',
     ending: Boolean(node.ending), visitedCount: game.visited.length,
   };
 }
 
-const INTENTS = [
-  ['help', /구하|구조|치료|붕대|살리|보호|지탱|받쳐|안심|돌보|돕/],
-  ['trick', /거짓|속이|속여|위조|연기|흉내|변장|미끼|시선|주의.*돌|속임/],
-  ['perform', /노래|춤|연주|공연|웃기|농담|요리|조리|먹이|음식/],
-  ['sneak', /몰래|잠입|숨[어는기]|은밀|훔치|도둑|소매치|재빨|피하|피해|점프|뛰어/],
-  ['force', /부수|파괴|공격|때리|때려|싸우|베어|내리치|밀어|들어올|막아|버티|강제로/],
-  ['talk', /설득|대화|협상|타협|거래|흥정|묻|물어|질문|말하|말을|듣|부탁|대답|약속|증언|고백|공개/],
-  ['use', /사용|연결|조작|수리|작동|끄|켜|전원|해킹|열어|돌려|복구|해체|조립|꽂/],
-  ['investigate', /조사|살펴|살핀|검사|추적|분석|확인|읽|찾아|찾는|검색|증거|비교|관찰|알아/],
-  ['move', /이동|들어가|올라|내려|떠나|돌아가|건너|따라|향해|진입|탈출/],
-  ['wait', /기다|대기|멈춰|쉰|쉬어/],
-  ['observe', /주변|둘러|무엇|상황|보이는|둘러본/],
-];
-export function classifyAction(text) {
-  return INTENTS.find(([, re]) => re.test(text))?.[0] || 'unknown';
-}
-const INTENT_FAMILY = {
-  observe: ['observe', 'investigate'], investigate: ['investigate', 'observe', 'use'],
-  talk: ['talk', 'trick'], trick: ['trick', 'talk', 'perform'],
-  help: ['help', 'use'], force: ['force'], use: ['use', 'investigate'],
-  sneak: ['sneak', 'move'], move: ['move', 'sneak'], perform: ['perform', 'trick'], wait: ['wait'],
-};
-function scoreChoice(choice, text, intent, matchedEntities) {
-  let score = 0;
-  for (const keyword of choice.keywords || []) {
-    if (keyword && text.includes(keyword)) score += Math.min(6, Math.max(2, keyword.length));
-  }
-  if (choice.label === text) score += 100;
-  if (choice.intent === intent) score += 5;
-  else if (INTENT_FAMILY[intent]?.includes(choice.intent)) score += 2;
-  if (choice.target && matchedEntities.some(e => e.id === choice.target)) score += 6;
-  if (choice.target && matchedEntities.length && !matchedEntities.some(e => e.id === choice.target)) score -= 8;
-  return score;
-}
-function inferChoice(text, choices, node) {
-  const entities = node.entities || [];
-  const explicitRecipients=[...text.matchAll(/([가-힣A-Za-z0-9·]{1,20})(?:에게|한테|더러)/g)].map(m=>m[1]);
-  const genericPeople=new Set(['그','그녀','그들','동료','일행','친구','상대','상대방','사람','모두']);
-  for(const name of explicitRecipients){
-    if(genericPeople.has(name))continue;
-    if(!entities.some(e=>[e.label,...(e.aliases||[])].some(alias=>alias&&(alias.includes(name)||name.includes(alias)))))return null;
-  }
-  const matchedEntities = entities.filter(e => [e.label, ...(e.aliases || [])].some(n => n && n.length > 1 && text.includes(n)));
-  const intent = classifyAction(text);
-  const ranked = choices.map(choice => ({ choice, score: scoreChoice(choice, text, intent, matchedEntities) }))
-    .sort((a, b) => b.score - a.score);
-  const top = ranked[0];
-  const ambiguous = ranked[1] && top.score === ranked[1].score;
-  // A verb alone must not silently choose an unrelated action or invent a target.
-  const enoughGrounding = matchedEntities.length > 0 || choices.some(c => (c.keywords || []).some(k => k.length > 1 && text.includes(k))) || choices.some(c => c.label === text);
-  if (!top || top.score < 5 || ambiguous || !enoughGrounding) return null;
-  // An explicit hostile action cannot become a friendly conversation by keyword alone.
-  if (intent === 'force' && !['force','help'].includes(top.choice.intent)) return null;
-  return { ...top, intent, matchedEntities };
-}
-
 export function previewAction(game, campaign, playerId, payload = {}) {
+  if(!payload||typeof payload!=='object'||Array.isArray(payload))return fail('현재 화면의 행동 버튼을 선택해 주세요.');
+  if(Object.hasOwn(payload,'text')||Object.hasOwn(payload,'flashback'))return fail('직접 입력하는 행동은 사용하지 않습니다. 현재 장면의 선택지를 골라 주세요.');
   if (!game || game.campaignId !== campaign.id) return fail('현재 시나리오와 저장 데이터가 맞지 않습니다.');
   if (game.phase !== 'playing') return fail('이 이야기는 끝났습니다. 새 테이블에서 다른 결말을 만나 보세요.');
   const actor = game.players.find(p => p.id === playerId);
@@ -189,61 +183,45 @@ export function previewAction(game, campaign, playerId, payload = {}) {
     const stats=getClass(campaign,actor.classId).stats;const stat=stats.heart>=stats.wit?'heart':'wit';
     const assistance=Math.min(2,game.assists.length);const bonus=stats[stat]+assistance;
     const dc=(site.dc||12)+(game.pressure >= (campaign.pressureMax||8)?1:0);
-    return {ok:true,plan:{type:'revive',reviveId:target.id,label:`${target.name} 부활 · ${site.label}`,stat,statLabel:STAT_LABELS[stat],dc,bonus,assistance,automatic:false,revision:game.revision,sparkCost,pressureCost,requiresConfirmation:true,risk:`운명 토큰 ${sparkCost}개와 위기 ${pressureCost}칸을 소모합니다. 성공: 생명 2, 대가 있는 성공: 생명 1로 부활. 실패: 부활하지 못하고 위기 1칸 추가. 이 장소에서는 한 번만 시도할 수 있습니다.`,successChance:Array.from({length:20},(_,i)=>i+1).filter(d=>d===20||(d!==1&&d+bonus>=dc)).length*5}};
+    const chances=gradeChances(bonus,dc);
+    const summaries={critical:'생명 3으로 동료가 돌아옵니다.',success:'생명 2로 동료가 돌아옵니다.',failure:'동료가 돌아오지 못하고 위기가 1칸 더 높아집니다.',fumble:'귀환 장치가 거세게 흔들립니다. 동료가 돌아오지 못하고 위기가 2칸 더 높아집니다.'};
+    return {ok:true,plan:{type:'revive',reviveId:target.id,label:`${target.name} 부활 · ${site.label}`,stat,statLabel:STAT_LABELS[stat],dc,bonus,assistance,classBonus:stats[stat],automatic:false,revision:game.revision,sparkCost,pressureCost,requiresConfirmation:true,risk:`운명 조각 ${sparkCost}개와 위기 ${pressureCost}칸을 소모합니다. 대성공은 생명 3, 성공은 생명 2로 부활합니다. 실패는 추가 위기 1, 대실패는 추가 위기 2이며 부활하지 못합니다. 이 장소에서는 한 번만 시도할 수 있습니다.`,gradeChances:chances,successChance:chances.critical+chances.success,outcomes:ROLLED_GRADES.map(grade=>({grade,label:GRADE_LABELS[grade],chance:chances[grade],text:summaries[grade],changes:[`운명 조각 −${sparkCost}`,`위기 +${pressureCost+(grade==='fumble'?2:grade==='failure'?1:0)}`,'이 장소에서 이 동료에게 다시 시도할 수 없음']}))}};
   }
   const choices = availableChoices(game, campaign);
-  let choice = payload.choiceId ? choices.find(c => c.id === payload.choiceId) : null;
-  let declaration = '';
-  let interpreted = false;
-  if (payload.choiceId && !choice) return fail('그 행동은 현재 장면에서 할 수 없습니다. 최신 선택지를 확인하세요.');
-  if (!choice) {
-    declaration = cleanText(payload.text);
-    if (declaration.length < 2) return fail('누구에게 무엇을 할지 적어 주세요.', choices.map(c => c.label));
-    // Safe observations only resolve explicit authored details; they never manufacture clues.
-    if (/^(주변(을)?\s*)?(둘러본다|둘러봐|둘러보기|살펴본다|살펴보기)$/.test(declaration)) {
-      const detail = (node.details || []).find(d => !game.detailsRead[`${game.nodeId}:${d.id}`]);
-      if (detail) return previewAction(game, campaign, playerId, { detailId: detail.id });
-      return fail('눈에 보이는 단서는 모두 확인했습니다. 다음 행동을 정해 주세요.', choices.map(c => c.label));
-    }
-    const match = inferChoice(declaration, choices, node);
-    if (!match) return fail('그 행동의 목표를 이 장면과 연결하기 어렵습니다. 아래 목표 중 하나를 골라 방법을 덧붙여 주세요.', choices.map(c => c.label));
-    choice = match.choice;
-    interpreted = declaration !== choice.label;
-  }
+  const choice = choices.find(c => c.id === payload.choiceId);
+  if (!choice) return fail('그 행동은 현재 장면에서 할 수 없습니다. 필요한 소지품과 최신 선택지를 확인하세요.',choices.map(c=>c.label));
   const automatic = Boolean(choice.automatic);
+  const requiredGrades=automatic?['success']:ROLLED_GRADES;
+  if(requiredGrades.some(grade=>!choice.outcomes?.[grade]?.text||!campaign.nodes[choice.outcomes[grade].next]))return fail('이 행동의 결과 정보가 완성되지 않았습니다. 다른 행동을 선택하거나 제작자에게 알려 주세요.');
   const stat = choice.stat || 'wit';
   let bonus = getClass(campaign,actor.classId).stats[stat] || 0;
   const help = Math.min(2, game.assists.filter(id => id !== actor.id && game.players.some(p => p.id === id && p.connected !== false)).length);
   const spendSpark = !automatic && payload.spendSpark === true;
-  const flashback = !automatic ? cleanText(payload.flashback, 180) : '';
+  const preparation = !automatic && payload.usePreparation === true;
   if (spendSpark && game.sparks < 1) return fail('남은 운명 토큰이 없습니다.');
-  if (flashback && !actor.focus) return fail('이 캐릭터의 회상은 이미 사용했습니다.');
-  if (flashback && flashback.length < 8) return fail('어떤 준비를 해 두었는지 회상을 8자 이상 적어 주세요.');
-  bonus += help + (spendSpark ? 3 : 0) + (flashback ? 2 : 0);
+  if (preparation && !actor.focus) return fail('이 캐릭터의 준비 보너스는 이미 사용했습니다.');
+  bonus += help + (spendSpark ? 3 : 0) + (preparation ? 2 : 0);
   const pressurePenalty = game.pressure >= (campaign.pressureMax || 8) ? 1 : 0;
   const dc = automatic ? 0 : (choice.dc || 11) + pressurePenalty;
   const harmRisk=Math.max(0,...Object.values(choice.outcomes||{}).map(o=>(o.harm||0)+(o.harmAll||0)));
   const groupHarm=Math.max(0,...Object.values(choice.outcomes||{}).map(o=>o.harmAll||0));
   const dangerText=harmRisk>0?` 최대 생명 ${harmRisk} 손실${groupHarm>0?` (일행 전체 최대 ${groupHarm})`:''}. 생명이 0이 되면 사망합니다.`:'';
+  const itemNames=validItems(campaign,[...(choice.useItems||[]),...(choice.consumeItems||[])]).map(id=>campaign.items[id].name);
+  const consumedItemNames=validItems(campaign,choice.consumeItems).map(id=>campaign.items[id].name);
+  const consumption=consumedItemNames.length?` ${consumedItemNames.join(', ')}은 실행하면 결과와 관계없이 소모됩니다.`:'';
+  const chances=automatic?null:gradeChances(bonus,dc);
   return { ok: true, plan: {
-    type: 'choice', choiceId: choice.id, label: choice.label, declaration, interpreted,
+    type: 'choice', choiceId: choice.id, label: choice.label,
     stat, statLabel: STAT_LABELS[stat], dc, bonus: automatic ? 0 : bonus, automatic,
     assistance: help, classBonus: getClass(campaign,actor.classId).stats[stat] || 0,
-    spendSpark, flashback, pressurePenalty,
-    risk: (choice.risk || '실패해도 사건은 진행되지만 더 큰 대가를 치릅니다.')+dangerText, harmRisk, groupHarm,
-    successChance: automatic ? 100 : Array.from({length:20},(_,i)=>i+1).filter(d=>d===20 || (d!==1 && d+bonus>=dc)).length*5,
-    mixedChance: automatic ? 0 : Array.from({length:20},(_,i)=>i+1).filter(d=>d!==20 && d!==1 && d+bonus<dc && d+bonus>=dc-2).length*5,
+    spendSpark, preparation, pressurePenalty, itemNames, consumedItemNames,
+    risk: (choice.risk || '실패해도 사건은 진행되지만 더 큰 대가를 치릅니다.')+dangerText+consumption, harmRisk, groupHarm,
+    successChance: automatic ? 100 : chances.critical+chances.success,
+    gradeChances:chances,outcomes:automatic?[{grade:'automatic',label:'선택대로 진행',chance:100,text:choice.outcomes.success.text,changes:describeOutcome(choice.outcomes.success,game,campaign,{consumedItems:choice.consumeItems||[]})}]:outcomePreviews(choice,game,campaign,bonus,dc),
     revision: game.revision, requiresConfirmation: true,
   } };
 }
 
-export function gradeRoll(roll, total, dc) {
-  if (roll === 1) return 'failure';
-  if (roll === 20) return 'critical';
-  if (total >= dc) return 'success';
-  if (total >= dc - 2) return 'mixed';
-  return 'failure';
-}
 function addClues(game, campaign, ids = []) {
   for (const id of ids) if (campaign.clues?.[id] && !game.clues.includes(id)) game.clues.push(id);
 }
@@ -261,7 +239,7 @@ function advanceSeat(game) {
 }
 
 export function applyAction(game, campaign, playerId, payload = {}, { roll } = {}) {
-  if (payload.revision != null && payload.revision !== game.revision) return fail('장면이 갱신되었습니다. 판정 내용을 다시 확인해 주세요.');
+  if (payload?.revision != null && payload.revision !== game.revision) return fail('장면이 갱신되었습니다. 판정 내용을 다시 확인해 주세요.');
   const preview = previewAction(game, campaign, playerId, payload);
   if (!preview.ok) return preview;
   const plan = preview.plan;
@@ -279,42 +257,50 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
     const detail = node.details.find(d => d.id === plan.detailId);
     next.detailsRead[`${next.nodeId}:${detail.id}`] = true;
     addClues(next, campaign, detail.clue ? [detail.clue] : detail.clues || []);
-    next.lastResult = { action: detail.label, text: detail.text, actor: actor.name, grade: 'observe', roll: null, total: null, dc: 0, bonus: 0 };
+    const items=itemDelta(next,campaign,detail.gainItems);
+    next.lastResult = { action: detail.label, text: detail.text, actor: actor.name, grade: 'observe', roll: null, total: null, dc: 0, bonus: 0,
+      ...items,usedItems:[],changes:[...(detail.clue?[detail.clue]:detail.clues||[]).filter(id=>campaign.clues?.[id]).map(id=>`단서 기록: ${campaign.clues[id].title}`),...items.gainedItems.map(item=>`소지품 획득: ${item.name}`)] };
     addJournal(next, { sceneTitle: node.title, ...next.lastResult });
     next.revision++;
     return { ok: true, game: next, plan };
   }
   if(plan.type==='revive'){
-    const die=typeof roll==='function'?roll():roll;
+    const die=trustedDie(roll);
     if(!Number.isInteger(die)||die<1||die>20)return fail('주사위 판정에 실패했습니다. 상태는 바뀌지 않았습니다.');
     const grade=gradeRoll(die,die+plan.bonus,plan.dc);const target=next.players.find(p=>p.id===plan.reviveId);
     next.reviveAttempts ||= {};next.reviveAttempts[`${next.nodeId}:${target.id}`]=true;
     next.sparks-=plan.sparkCost;
-    next.pressure=bound(next.pressure+plan.pressureCost+(grade==='failure'?1:0),0,campaign.pressureMax||8);
-    if(grade!=='failure'){target.life='alive';target.health=grade==='mixed'?1:2;target.revivals++;target.echoUsed=false;}
-    const text=grade==='failure'?`${node.resurrection.label}에 응답이 없습니다. ${target.name}의 죽음은 되돌아오지 않았고, 일행에게 남은 시간이 줄었습니다.`:`${node.resurrection.text} ${target.name}의 숨이 돌아옵니다. 생명 ${target.health}로 부활했지만, 이 캐릭터에게 두 번째 부활은 없습니다.`;
-    next.lastResult={action:plan.label,text,actor:actor.name,grade,roll:die,total:die+plan.bonus,dc:plan.dc,bonus:plan.bonus,stat:plan.stat,revivedId:grade==='failure'?null:target.id};
+    const returned=grade==='critical'||grade==='success';
+    const pressureExtra=grade==='fumble'?2:grade==='failure'?1:0;
+    next.pressure=bound(next.pressure+plan.pressureCost+pressureExtra,0,campaign.pressureMax||8);
+    if(returned){target.life='alive';target.health=grade==='critical'?3:2;target.revivals++;target.echoUsed=false;}
+    const text=returned?`${node.resurrection.text} ${target.name}의 숨이 돌아옵니다. 생명 ${target.health}로 부활했지만, 이 캐릭터에게 두 번째 부활은 없습니다.`:grade==='fumble'?`${node.resurrection.label}이 거세게 흔들리고 귀환의 신호가 끊깁니다. ${target.name}은 돌아오지 못했습니다. 장치를 수습하느라 위기가 2칸 더 높아졌습니다. 다른 귀환 장소를 찾거나 남은 동료끼리 진행해야 합니다.`:`${node.resurrection.label}에 응답이 없습니다. ${target.name}은 돌아오지 못했고, 시간을 들인 만큼 위기가 1칸 더 높아졌습니다. 다른 귀환 장소에서는 다시 시도할 수 있습니다.`;
+    next.lastResult={action:plan.label,text,actor:actor.name,grade,roll:die,total:die+plan.bonus,dc:plan.dc,bonus:plan.bonus,stat:plan.stat,revivedId:returned?target.id:null,changes:[`운명 조각 −${plan.sparkCost}`,`위기 +${plan.pressureCost+pressureExtra}`,...(returned?[`${target.name} 생명 ${target.health}로 귀환`]:['이번 장소에서 재시도 불가'])]};
     addJournal(next,{sceneTitle:node.title,...next.lastResult});next.assists=[];next.turn++;next.revision++;advanceSeat(next);
     return {ok:true,game:next,plan};
   }
   const choice = availableChoices(next, campaign).find(c => c.id === plan.choiceId);
   let die = null;
   if (!plan.automatic) {
-    die = typeof roll === 'function' ? roll() : roll;
+    die = trustedDie(roll);
     if (!Number.isInteger(die) || die < 1 || die > 20) return fail('주사위 판정에 실패했습니다. 상태는 바뀌지 않았습니다.');
   }
   const total = die == null ? null : die + plan.bonus;
   const grade = plan.automatic ? 'automatic' : gradeRoll(die, total, plan.dc);
-  const outcomeKey = grade === 'critical' || grade === 'automatic' ? 'success' : grade;
-  const outcome = choice.outcomes?.[outcomeKey] || choice.outcomes?.success;
+  const outcomeKey = grade === 'automatic' ? 'success' : grade;
+  const outcome = choice.outcomes?.[outcomeKey];
   if (!outcome || !campaign.nodes[outcome.next]) return fail('연결된 다음 장면을 찾을 수 없습니다. 저장 후 제작자에게 알려 주세요.');
   if (next.visited.includes(outcome.next)) return fail('같은 장면으로 돌아가는 연결 오류를 발견했습니다. 상태는 바뀌지 않았습니다.');
   if (plan.spendSpark) next.sparks--;
-  if (plan.flashback) actor.focus = false;
+  if (plan.preparation) actor.focus = false;
+  const changes=describeOutcome(outcome,game,campaign,{consumedItems:choice.consumeItems||[],critical:grade==='critical'});
+  if(plan.spendSpark)changes.unshift('운명 조각 −1');
+  if(plan.preparation)changes.unshift('인물의 준비 보너스 사용 완료');
   if (grade === 'critical') next.sparks = Math.min(4, next.sparks + 1);
   for (const flag of outcome.set || []) next.flags[flag] = true;
   for (const flag of outcome.unset || []) delete next.flags[flag];
   addClues(next, campaign, outcome.clues || []);
+  const items=itemDelta(next,campaign,outcome.gainItems,[...(choice.consumeItems||[]),...(outcome.loseItems||[])]);
   next.pressure = bound(next.pressure + (Number(outcome.pressure) || 0), 0, campaign.pressureMax || 8);
   const died=[];
   for(const person of next.players){
@@ -324,16 +310,20 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
     person.health=bound(person.health-damage+healing,0,3);
     if(person.health===0){person.life='dead';person.echoUsed=false;died.push(person.name);}
   }
-  const deathText=died.length?` ${died.join(', ')} 사망. 남은 동료는 부활의 장소를 찾거나 이 희생을 안고 계속 진행해야 합니다.`:'';
-  next.lastResult = { action: plan.declaration || choice.label, interpretedAs: plan.interpreted ? choice.label : null,
+  const allDead=next.players.every(p=>p.life==='dead');
+  const deathText=died.length?` ${died.join(', ')} 사망. ${allDead?'살아 있는 일행이 없어 다음 장소로 이동하거나 부활을 시도할 수 없습니다. 이곳에서 이야기가 끝납니다.':'남은 동료는 부활의 장소를 찾거나 이 희생을 안고 계속 진행해야 합니다.'}`:'';
+  next.lastResult = { action: choice.label,
     text: outcome.text+deathText, deaths:died, actor: actor.name, grade, roll: die, total, dc: plan.dc, bonus: plan.bonus,
     stat: plan.stat, assistance: plan.assistance, spentSpark: plan.spendSpark,
-    flashback: plan.flashback, gainedSpark: grade === 'critical', fromSceneId: next.nodeId };
-  addJournal(next, { sceneTitle: node.title, ...next.lastResult });
-  const allDead=next.players.every(p=>p.life==='dead');
+    preparation: plan.preparation, gainedSpark: grade === 'critical', fromSceneId: next.nodeId,
+    ...items,usedItems:validItems(campaign,[...(choice.useItems||[]),...(choice.consumeItems||[])]).map(id=>({id,name:campaign.items[id].name})),changes };
   next.nodeId = allDead?'__all_dead__':outcome.next;
   if(allDead)next.deathSceneTitle=node.title;else next.visited.push(outcome.next);
   next.phase = allDead || campaign.nodes[outcome.next].ending ? 'ended' : 'playing';
+  next.lastResult.nextSceneTitle=nodeFor(next,campaign).title;
+  if(allDead)next.lastResult.changes=changes.filter(change=>!change.startsWith('다음 장면:')).concat(`전원 사망: ${next.lastResult.nextSceneTitle}`);
+  next.arrival={fromSceneId:game.nodeId,toSceneId:next.nodeId,fromSceneTitle:node.title,action:choice.label,grade,text:allDead?next.lastResult.text:outcome.arrival||outcome.text};
+  addJournal(next, { sceneTitle: node.title, ...next.lastResult });
   next.assists = [];
   next.turn++;
   next.revision++;
@@ -384,7 +374,7 @@ export function passTurn(game, playerId, { allowDisconnected = false, campaign, 
 export function validateSave(data, campaigns) {
   const raw = data?.game ?? data;
   const campaign = campaigns.find(c => c.id === raw?.campaignId);
-  if (!raw || ![14,15].includes(raw.schema) || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('v14/v15 저장 파일이 아니거나 시나리오가 맞지 않습니다.');
+  if (!raw || ![14,15,17].includes(raw.schema) || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('지원하는 저장 파일이 아니거나 시나리오가 맞지 않습니다. v14–v17 게임 저장을 선택해 주세요.');
   if (!Array.isArray(raw.players) || raw.players.length < 1 || raw.players.length > 4) throw new Error('저장 파일의 인원이 올바르지 않습니다.');
   if (JSON.stringify(data).length > 2000000) throw new Error('저장 파일이 너무 큽니다.');
   if(raw.players.some(p=>!p || typeof p.id!=='string' || !/^[A-Za-z0-9_-]{1,80}$/.test(p.id) || ['__proto__','constructor','prototype'].includes(p.id)))throw new Error('저장 파일의 플레이어 ID가 올바르지 않습니다.');
@@ -402,6 +392,13 @@ export function validateSave(data, campaigns) {
   for (const node of Object.values(campaign.nodes)) for (const choice of node.choices || []) for (const outcome of Object.values(choice.outcomes || {})) for (const f of outcome.set || []) allowedFlags.add(f);
   for (const f of allowedFlags) if (raw.flags?.[f] === true && !['__proto__','constructor','prototype'].includes(f)) game.flags[f] = true;
   game.clues = [...new Set(Array.isArray(raw.clues) ? raw.clues.filter(c => Object.hasOwn(campaign.clues || {}, c)) : [])];
+  if(raw.schema===17){
+    game.inventory=validItems(campaign,raw.inventory);
+    game.spentItems=validItems(campaign,raw.spentItems).filter(id=>!game.inventory.includes(id));
+  }else{
+    // Old builds had story proof but no bag. Only earned clues/flags restore an item.
+    game.inventory=validItems(campaign,Object.entries(campaign.items||{}).filter(([,item])=>(item.legacyClues||[]).some(id=>game.clues.includes(id))||(item.legacyFlags||[]).some(id=>game.flags[id])).map(([id])=>id));
+  }
   game.visited = [...new Set((Array.isArray(raw.visited) ? raw.visited : []).filter(id => Object.hasOwn(campaign.nodes, id)))];
   if (!game.visited.includes(game.nodeId)) game.visited.push(game.nodeId);
   for (const [id, node] of Object.entries(campaign.nodes)) for (const detail of node.details || []) {
@@ -414,6 +411,11 @@ export function validateSave(data, campaigns) {
     roll: Number.isInteger(e.roll) && e.roll >= 1 && e.roll <= 20 ? e.roll : null,
     total: Number.isFinite(e.total) ? e.total : null, dc: Number.isFinite(e.dc) ? e.dc : null,
     bonus: Number.isFinite(e.bonus) ? e.bonus : 0,
+    changes:Array.isArray(e.changes)?e.changes.slice(0,20).map(text=>cleanText(text,250)):[],
+    gainedItems:validItems(campaign,storedItemIds(e.gainedItems)).map(id=>({id,name:campaign.items[id].name})),
+    lostItems:validItems(campaign,storedItemIds(e.lostItems)).map(id=>({id,name:campaign.items[id].name})),
+    usedItems:validItems(campaign,storedItemIds(e.usedItems)).map(id=>({id,name:campaign.items[id].name})),
+    nextSceneTitle:cleanText(e.nextSceneTitle,100),preparation:e.preparation===true,
     ...(e.combat === true ? {
       combat: true,
       combatEvent: ['attack','ability','victory','defeat'].includes(e.combatEvent) ? e.combatEvent : 'attack',
@@ -429,6 +431,10 @@ export function validateSave(data, campaigns) {
   else if(game.phase==='playing'&&game.players[game.activeIndex].life==='dead')advanceSeat(game);
   restoreCombat(game,campaign,raw);
   game.lastResult = game.journal.at(-1) || null;
+  const arrival=raw.arrival;
+  if(arrival&&typeof arrival==='object'&&arrival.toSceneId===game.nodeId&&Object.hasOwn(campaign.nodes,arrival.fromSceneId)&&[...ROLLED_GRADES,'automatic'].includes(arrival.grade)){
+    game.arrival={fromSceneId:arrival.fromSceneId,toSceneId:game.nodeId,fromSceneTitle:campaign.nodes[arrival.fromSceneId].title,action:cleanText(arrival.action,220),grade:arrival.grade,text:cleanText(arrival.text,1600)};
+  }
   game.assists = [...new Set(Array.isArray(raw.assists) ? raw.assists.filter(id=>id!==game.players[game.activeIndex].id&&game.players.some(p=>p.id===id)) : [])].slice(0,2);
   return { campaign, game };
 }

@@ -1,0 +1,63 @@
+Chronicle Gate v18 changed files
+Baseline: chronicle-v17
+Baseline kind: previous-release-directory
+
+REPLACE .env.example
+REPLACE .gitignore
+ADD     ASSET_AND_DESIGN_NOTES_V18.md
+ADD     CLASS_GUIDE_V18.md
+ADD     COPYPASTE/index.html.txt
+ADD     NARRATIVE_REACHABILITY_V18.json
+REPLACE PATCH_GUIDE.txt
+REPLACE README.md
+ADD     README_V18_KO.md
+ADD     RESOURCE_REPORT_V18.json
+ADD     SERVER_AND_STORAGE_V18.md
+ADD     STORY_GUIDE_V18.md
+ADD     VALIDATION_V18.md
+REPLACE game-server/http-service.js
+REPLACE game-server/table-service.js
+REPLACE package-lock.json
+REPLACE package.json
+REPLACE public/game/app.js
+REPLACE public/game/campaigns/clock-city.js
+REPLACE public/game/campaigns/combat-data.js
+REPLACE public/game/campaigns/deep-sea.js
+REPLACE public/game/campaigns/dragon-banquet.js
+REPLACE public/game/campaigns/glass-hotel.js
+REPLACE public/game/campaigns/index.js
+REPLACE public/game/campaigns/last-train.js
+ADD     public/game/campaigns/loss-passages.js
+REPLACE public/game/campaigns/moon-market.js
+REPLACE public/game/campaigns/snow-radio.js
+REPLACE public/game/client.js
+REPLACE public/game/combat.js
+REPLACE public/game/engine.js
+ADD     public/game/narrative.js
+REPLACE public/game/styles.css
+REPLACE public/index.html
+REPLACE public/offline.html
+REPLACE scripts/explore-scenarios.mjs
+REPLACE scripts/package-patch.py
+ADD     scripts/qa-v18.mjs
+ADD     scripts/report-v18.mjs
+REPLACE server.js
+ADD     tests-v18/combat-network.integration.mjs
+ADD     tests-v18/combat.test.mjs
+ADD     tests-v18/content-a.test.mjs
+ADD     tests-v18/core.test.mjs
+ADD     tests-v18/deployment.integration.mjs
+ADD     tests-v18/items-and-results.test.mjs
+ADD     tests-v18/loss-narrative.test.mjs
+ADD     tests-v18/narrative.test.mjs
+ADD     tests-v18/network.integration.mjs
+ADD     tests-v18/party-network.integration.mjs
+ADD     tests-v18/party-stories.test.mjs
+ADD     tests-v18/resource-budget.test.mjs
+ADD     tests-v18/scenarios.test.mjs
+ADD     tests-v18/server.integration.mjs
+ADD     tests-v18/story-integrity.test.mjs
+ADD     tests-v18/story-network.integration.mjs
+ADD     tests-v18/ui.test.mjs
+
+Apply at repository root; read README_V18_KO.md.

@@ -1,0 +1,507 @@
+{
+  "version": "18.0.0",
+  "generatedAt": "2026-11-23T13:03:21.159Z",
+  "unit": "bytes; decimal MB=1000000 bytes",
+  "baseline": "verified local v17 source and final media",
+  "game": {
+    "v17Bytes": 12820139,
+    "v18Bytes": 13020970,
+    "increaseBytes": 200831,
+    "budgetBytes": 13100000
+  },
+  "audio": {
+    "files": 46,
+    "music": 35,
+    "effects": 11,
+    "mp3Bytes": 10108567,
+    "directoryBytes": 10136538,
+    "v15WavBytes": 36953028,
+    "reductionFromV15Percent": 72.64,
+    "bitrateKbps": 96,
+    "sampleRateHz": 22050,
+    "channels": 1,
+    "reencodedInV18": false
+  },
+  "art": {
+    "atlases": 7,
+    "frames": 28,
+    "directoryBytes": 1635310,
+    "regeneratedInV18": false
+  },
+  "content": {
+    "scenarios": [
+      {
+        "id": "last-train",
+        "title": "막차의 일곱 번째 승객",
+        "playableScenes": 12,
+        "normalEndingTemplates": 3,
+        "partyDeathTemplates": 1,
+        "choices": 32,
+        "soloChoices": 2,
+        "groupChoices": 2,
+        "partyIntroductions": 2,
+        "riskyChoices": 19,
+        "authoredRiskOutcomes": 76,
+        "items": 3,
+        "clues": 8,
+        "professions": 4,
+        "revivalSites": 3,
+        "combatEncounters": 1
+      },
+      {
+        "id": "glass-hotel",
+        "title": "유리 호텔의 도난당한 새벽",
+        "playableScenes": 12,
+        "normalEndingTemplates": 3,
+        "partyDeathTemplates": 1,
+        "choices": 32,
+        "soloChoices": 2,
+        "groupChoices": 2,
+        "partyIntroductions": 2,
+        "riskyChoices": 23,
+        "authoredRiskOutcomes": 92,
+        "items": 3,
+        "clues": 8,
+        "professions": 4,
+        "revivalSites": 3,
+        "combatEncounters": 1
+      },
+      {
+        "id": "moon-market",
+        "title": "달을 파는 야시장",
+        "playableScenes": 12,
+        "normalEndingTemplates": 3,
+        "partyDeathTemplates": 1,
+        "choices": 33,
+        "soloChoices": 2,
+        "groupChoices": 2,
+        "partyIntroductions": 2,
+        "riskyChoices": 20,
+        "authoredRiskOutcomes": 80,
+        "items": 3,
+        "clues": 8,
+        "professions": 4,
+        "revivalSites": 3,
+        "combatEncounters": 1
+      },
+      {
+        "id": "deep-sea",
+        "title": "해저 기지의 마지막 방송",
+        "playableScenes": 13,
+        "normalEndingTemplates": 3,
+        "partyDeathTemplates": 1,
+        "choices": 37,
+        "soloChoices": 2,
+        "groupChoices": 2,
+        "partyIntroductions": 2,
+        "riskyChoices": 28,
+        "authoredRiskOutcomes": 112,
+        "items": 3,
+        "clues": 10,
+        "professions": 4,
+        "revivalSites": 3,
+        "combatEncounters": 1
+      },
+      {
+        "id": "dragon-banquet",
+        "title": "용의 마지막 만찬",
+        "playableScenes": 12,
+        "normalEndingTemplates": 3,
+        "partyDeathTemplates": 1,
+        "choices": 32,
+        "soloChoices": 2,
+        "groupChoices": 2,
+        "partyIntroductions": 2,
+        "riskyChoices": 21,
+        "authoredRiskOutcomes": 84,
+        "items": 3,
+        "clues": 8,
+        "professions": 4,
+        "revivalSites": 3,
+        "combatEncounters": 1
+      },
+      {
+        "id": "clock-city",
+        "title": "13분 뒤에 사라지는 도시",
+        "playableScenes": 13,
+        "normalEndingTemplates": 3,
+        "partyDeathTemplates": 1,
+        "choices": 36,
+        "soloChoices": 2,
+        "groupChoices": 2,
+        "partyIntroductions": 2,
+        "riskyChoices": 29,
+        "authoredRiskOutcomes": 116,
+        "items": 3,
+        "clues": 10,
+        "professions": 4,
+        "revivalSites": 3,
+        "combatEncounters": 1
+      },
+      {
+        "id": "snow-radio",
+        "title": "설원에서 온 내 목소리",
+        "playableScenes": 13,
+        "normalEndingTemplates": 3,
+        "partyDeathTemplates": 1,
+        "choices": 36,
+        "soloChoices": 2,
+        "groupChoices": 2,
+        "partyIntroductions": 2,
+        "riskyChoices": 27,
+        "authoredRiskOutcomes": 108,
+        "items": 3,
+        "clues": 9,
+        "professions": 4,
+        "revivalSites": 3,
+        "combatEncounters": 1
+      }
+    ],
+    "totals": {
+      "playableScenes": 87,
+      "normalEndingTemplates": 21,
+      "partyDeathTemplates": 7,
+      "choices": 238,
+      "soloChoices": 14,
+      "groupChoices": 14,
+      "partyIntroductions": 14,
+      "riskyChoices": 167,
+      "authoredRiskOutcomes": 668,
+      "items": 21,
+      "clues": 61,
+      "professions": 28,
+      "revivalSites": 21,
+      "combatEncounters": 7
+    }
+  },
+  "preservation": [
+    {
+      "path": "public/game/art/clock-city.webp",
+      "bytes": 261306,
+      "sha256": "d9ffee192d99529977cefd6f97088074f077500b03b4af1e04c302c0c9a72575",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/art/deep-sea.webp",
+      "bytes": 194978,
+      "sha256": "050d953ef653969d3e37d80f1b4b4d2a0be862d3e2127d316d1c57987d68ff66",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/art/dragon-banquet.webp",
+      "bytes": 260974,
+      "sha256": "e1e1c9208d11313ad75bc05ae305a75f62f5448cb6dc3db48d597fe69cc59843",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/art/glass-hotel.webp",
+      "bytes": 257584,
+      "sha256": "57f487d23f3ace870055229ba508c30d89aefba92d79582d932613e072072444",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/art/last-train.webp",
+      "bytes": 234046,
+      "sha256": "c4072fec960689323d2a2fdf693bb6a16299242fcc5d7a9ef198cddfd732ce6c",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/art/moon-market.webp",
+      "bytes": 244882,
+      "sha256": "912b4698302fbbfbb803f797516d5547b64d0fd8e837246667a1b9dfd755ad76",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/art/snow-radio.webp",
+      "bytes": 167922,
+      "sha256": "e12bdf2a312f3d1a582e1758447ec6a720dab26ca387d04f0adb19f85b696ea6",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/ability.mp3",
+      "bytes": 11328,
+      "sha256": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/attack.mp3",
+      "bytes": 6313,
+      "sha256": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/clock-city-calm.mp3",
+      "bytes": 263044,
+      "sha256": "8993c51f8d8ee3c7a6f9caf42edcb2f0b5623cec199cfe1b7356f4e5d25bc13d",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/clock-city-danger.mp3",
+      "bytes": 206933,
+      "sha256": "2122b93c56d3e4e2b7b6ac753287be431be275aef390a92781e19e8558c8290d",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/clock-city-hope.mp3",
+      "bytes": 241102,
+      "sha256": "703ad3a4f8bf81ae41746fab146aba3a1325d1f1ba978dce9ca3fb8271af0264",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/clock-city-mystery.mp3",
+      "bytes": 241102,
+      "sha256": "3dd6e3e9107f37e649b3000cd774a3fd413bfaa61e4c03d21141b68e08c088ac",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/clock-city-tension.mp3",
+      "bytes": 231384,
+      "sha256": "8a6150b321357216558da188af29e3b0c7094d88241cb15a9468764345d0d5fd",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/clue.mp3",
+      "bytes": 8821,
+      "sha256": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/deep-sea-calm.mp3",
+      "bytes": 364922,
+      "sha256": "c9cdfae6f867d30f6313d6e161316240a08ed37f9d6157934d7433fad254cf6b",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/deep-sea-danger.mp3",
+      "bytes": 286868,
+      "sha256": "78a67a713710279117e7224d4b123ccae6d9b10cee6628d1cb0bcbd804cb00c0",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/deep-sea-hope.mp3",
+      "bytes": 334515,
+      "sha256": "118cccd7b7a19b793e00c104e939e15b33dc14c160c61a5c929f925467135310",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/deep-sea-mystery.mp3",
+      "bytes": 334515,
+      "sha256": "8f87dd7b5a9ddfb9550d10f6feb1fe5372a8c24bcb541b38862fd02f5a9fbc89",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/deep-sea-tension.mp3",
+      "bytes": 321036,
+      "sha256": "a4bdd8fb751187c53f012dbcc07e4762795723b554e629951421e450a26bc472",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/dice.mp3",
+      "bytes": 9761,
+      "sha256": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-calm.mp3",
+      "bytes": 274016,
+      "sha256": "5c52ae78bf5a831c8d0534693ecfcadc825128fa835928b802bd9ad1af561f5f",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-danger.mp3",
+      "bytes": 215397,
+      "sha256": "8bb7e7037986c14d2f26a312d9e89f03377ea68da01dd9b4958c098d58872d74",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-hope.mp3",
+      "bytes": 251133,
+      "sha256": "4e525cb7e1fe9342dfd70336e7822c5c2ebc3df339f947d7c67d215137b3964d",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-mystery.mp3",
+      "bytes": 251133,
+      "sha256": "503d4474c19d0a041f287322e7c9979d0cb2dff3c2a50fcd534dd4396e80ddd7",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-tension.mp3",
+      "bytes": 241102,
+      "sha256": "44b3f621ff74c87d7538fab6519c877a101a928d79dce07da79c76119d1cfbf8",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/enemy.mp3",
+      "bytes": 8821,
+      "sha256": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/failure.mp3",
+      "bytes": 12582,
+      "sha256": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/glass-hotel-calm.mp3",
+      "bytes": 292197,
+      "sha256": "f88c5116e66a9d4439377f4e104a011db02d3509f84a5ec062773ca188bc8b2e",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/glass-hotel-danger.mp3",
+      "bytes": 229817,
+      "sha256": "14923aea9fb6b42cc3d832e4395e837ac5edbad2b4396cfbb1e3d43acebff82e",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/glass-hotel-hope.mp3",
+      "bytes": 267746,
+      "sha256": "0ddebb630252abb9005f802051c137ba1980b9828998e2ad38cbe223e5010c7f",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/glass-hotel-mystery.mp3",
+      "bytes": 267746,
+      "sha256": "7b4bde54f6bbcc23bd51218ea38c3a53d2d150d091cd1914d50d614f2ef52be9",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/glass-hotel-tension.mp3",
+      "bytes": 257088,
+      "sha256": "ebcc8bf281c6750b431436af93162655ba82a9417476a25f3d7d9f203f3c58ac",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/last-train-calm.mp3",
+      "bytes": 328559,
+      "sha256": "37b80ae207686c7d74c030a195c0d5dfb1ecfd7d50fc347deeb5f044081c79f0",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/last-train-danger.mp3",
+      "bytes": 258342,
+      "sha256": "74ee67831256890f205ab96824029317b89c9cf18f7bc68408786de30a68663a",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/last-train-hope.mp3",
+      "bytes": 301288,
+      "sha256": "d718454e11dbaeb58b518279e9fd26cd00ddaaaec4271b48b66f8859c9ccddcc",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/last-train-mystery.mp3",
+      "bytes": 301288,
+      "sha256": "82b46a1b371e93cd7416d5a26087c2700d4b60f2a84c701b2fc93cac03460e1c",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/last-train-tension.mp3",
+      "bytes": 289062,
+      "sha256": "b02dfca29fe89f0dc137bd35168b04635ed6f35ee81efd918d5004d13d0f14f2",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/mixed.mp3",
+      "bytes": 13209,
+      "sha256": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/moon-market-calm.mp3",
+      "bytes": 328559,
+      "sha256": "11a1a2560787b715db3d3cc195e2e9891c730e0b1c4c8a0aae5d5104e6521d2d",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/moon-market-danger.mp3",
+      "bytes": 258342,
+      "sha256": "708129fd6559c9df6c4d9ca7e84cfaf9bc8d77c359d550f7faa060c3afb244ca",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/moon-market-hope.mp3",
+      "bytes": 301288,
+      "sha256": "f4cd06d285ec058d4e8bf043eb4543d9ef0ccf165911ef477b729c12bfbda0eb",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/moon-market-mystery.mp3",
+      "bytes": 301288,
+      "sha256": "7c7a71c4576b7bf780815bb3a41c7b5c7f712657744ad126174a6b4d8187b5ac",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/moon-market-tension.mp3",
+      "bytes": 289062,
+      "sha256": "b3e4f82e64220ddd19878eaf85a320b326203920cf0447c498afa5d9e9340619",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/reveal.mp3",
+      "bytes": 17911,
+      "sha256": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/snow-radio-calm.mp3",
+      "bytes": 364922,
+      "sha256": "74479e021fdc096f1253ac5ec69fd7dd0e726f2af8e35eb4bddfbc829ebef833",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/snow-radio-danger.mp3",
+      "bytes": 286868,
+      "sha256": "813edb95d83a2d49e79d2adab86377a8764c31ed02f4d363b5576c7009c99bfc",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/snow-radio-hope.mp3",
+      "bytes": 334515,
+      "sha256": "136712f8a5cb56b0e04c24bffd2426c5977b4bb20d93b51a23303dbe37db3647",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/snow-radio-mystery.mp3",
+      "bytes": 334515,
+      "sha256": "d84b8a75c56e1c34585fad1df4eccd9e8d7085bfd6f59c1d5dba0cd697d1a3e7",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/snow-radio-tension.mp3",
+      "bytes": 321036,
+      "sha256": "6802322c8fb69af190b5ed6426b4e65b7f41e2cf02279463729b4504ae7e8257",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/success.mp3",
+      "bytes": 15090,
+      "sha256": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/transition.mp3",
+      "bytes": 11955,
+      "sha256": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+      "identicalToV17": true
+    },
+    {
+      "path": "public/game/audio/victory.mp3",
+      "bytes": 21046,
+      "sha256": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+      "identicalToV17": true
+    }
+  ],
+  "limits": {
+    "defaultRooms": 32,
+    "playersPerRoom": 4,
+    "roomSnapshotBytes": 262144,
+    "inactiveTtlHours": 24,
+    "chatMessages": 30,
+    "chatTtlMinutes": 30,
+    "defaultConnections": 160
+  },
+  "scope": "Measured source/media bytes and exact media hashes. Not a real-device latency benchmark, server load-capacity certification or Supabase account measurement."
+}

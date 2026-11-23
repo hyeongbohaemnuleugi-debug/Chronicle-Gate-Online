@@ -341,7 +341,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 100_000,
 });
 const PORT = Number(process.env.PORT || 3000);
-const APP_VERSION = '14.0.0';
+const APP_VERSION = '15.0.0';
 const tabletop = attachTableService(io);
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;

@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-23T08:27:56.436Z",
-  "method": "Bounded exact-rule state exploration, four fixed characters; includes successful/mixed/failed/critical checks, reading/skipping details and available revival attempts. Counts are tested state variants, not unique written endings. Maximum 35,000 states per campaign.",
+  "generatedAt": "2026-11-23T08:47:44.084Z",
+  "method": "Bounded exact-rule state exploration, four fixed campaign-specific characters; combats are resolved through two representative real-rule routes (all player critical/enemy miss, or player miss/enemy hit), not every tactical or dice combination; includes successful/mixed/failed/critical checks, reading/skipping details and available revival attempts. Counts are tested state variants, not unique written endings. Maximum 35,000 states per campaign.",
   "scenarios": [
     {
       "id": "last-train",
       "title": "막차의 일곱 번째 승객",
       "statesExplored": 35000,
-      "transitionVariants": 62,
-      "endingStateVariants": 23299,
+      "transitionVariants": 72,
+      "endingStateVariants": 23221,
       "endingsReached": [
         "__all_dead__",
         "ending-home",
@@ -15,7 +15,7 @@
         "ending-shift"
       ],
       "normalEndingCount": 3,
-      "visitedSceneCount": 14,
+      "visitedSceneCount": 15,
       "deathObserved": true,
       "revivalObserved": true,
       "exhaustive": false
@@ -24,8 +24,8 @@
       "id": "glass-hotel",
       "title": "유리 호텔의 도난당한 새벽",
       "statesExplored": 35000,
-      "transitionVariants": 66,
-      "endingStateVariants": 25273,
+      "transitionVariants": 81,
+      "endingStateVariants": 25258,
       "endingsReached": [
         "__all_dead__",
         "ending-break",
@@ -33,7 +33,7 @@
         "ending-settlement"
       ],
       "normalEndingCount": 3,
-      "visitedSceneCount": 13,
+      "visitedSceneCount": 15,
       "deathObserved": true,
       "revivalObserved": true,
       "exhaustive": false
@@ -42,8 +42,8 @@
       "id": "moon-market",
       "title": "달을 파는 야시장",
       "statesExplored": 35000,
-      "transitionVariants": 65,
-      "endingStateVariants": 22725,
+      "transitionVariants": 68,
+      "endingStateVariants": 22790,
       "endingsReached": [
         "__all_dead__",
         "ending-landing",
@@ -60,8 +60,8 @@
       "id": "deep-sea",
       "title": "해저 기지의 마지막 방송",
       "statesExplored": 35000,
-      "transitionVariants": 95,
-      "endingStateVariants": 17524,
+      "transitionVariants": 97,
+      "endingStateVariants": 17499,
       "endingsReached": [
         "__all_dead__",
         "ending-common",
@@ -78,8 +78,8 @@
       "id": "dragon-banquet",
       "title": "용의 마지막 만찬",
       "statesExplored": 35000,
-      "transitionVariants": 68,
-      "endingStateVariants": 23564,
+      "transitionVariants": 83,
+      "endingStateVariants": 23378,
       "endingsReached": [
         "__all_dead__",
         "ending-caravan",
@@ -87,7 +87,7 @@
         "ending-transition"
       ],
       "normalEndingCount": 3,
-      "visitedSceneCount": 14,
+      "visitedSceneCount": 16,
       "deathObserved": true,
       "revivalObserved": true,
       "exhaustive": false
@@ -96,8 +96,8 @@
       "id": "clock-city",
       "title": "13분 뒤에 사라지는 도시",
       "statesExplored": 35000,
-      "transitionVariants": 97,
-      "endingStateVariants": 21098,
+      "transitionVariants": 99,
+      "endingStateVariants": 21099,
       "endingsReached": [
         "__all_dead__",
         "ending-common",
@@ -114,8 +114,8 @@
       "id": "snow-radio",
       "title": "설원에서 온 내 목소리",
       "statesExplored": 35000,
-      "transitionVariants": 88,
-      "endingStateVariants": 22070,
+      "transitionVariants": 86,
+      "endingStateVariants": 22085,
       "endingsReached": [
         "__all_dead__",
         "ending-beacon",

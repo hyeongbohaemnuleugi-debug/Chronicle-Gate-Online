@@ -1,22 +1,22 @@
 {
   "name": "chronicle-gate-online",
-  "version": "14.0.0",
+  "version": "15.0.0",
   "private": true,
   "type": "module",
-  "description": "Seven original branching Korean TRPG stories with 1–4 player online or shared-device offline play, contextual D20 checks, chapter artwork and adaptive original audio.",
+  "description": "Seven branching Korean TRPG stories, 28 campaign-specific professions, contextual turn-based combat, online/local play for 1–4 players.",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node scripts/qa-v14.mjs",
-    "test": "node --test tests-v14/core.test.mjs tests-v14/scenarios.test.mjs",
+    "check": "node scripts/qa-v15.mjs",
+    "test": "node --test tests-v15/core.test.mjs tests-v15/scenarios.test.mjs tests-v15/combat.test.mjs",
     "verify": "npm run check && npm test",
     "test:legacy": "node --test tests/*.test.mjs",
     "offline": "node scripts/offline-server.mjs",
-    "test:integration": "node tests-v14/network.integration.mjs && node tests-v14/deployment.integration.mjs",
+    "test:integration": "node tests-v15/network.integration.mjs && node tests-v15/combat-network.integration.mjs && node tests-v15/deployment.integration.mjs",
     "test:legacy-release": "node --test tests-release/*.test.mjs",
     "check:legacy": "node scripts/qa.mjs",
     "build:offline": "node scripts/build-offline.mjs",
-    "test:ui": "node --test tests-v14/ui.test.mjs",
+    "test:ui": "node --test tests-v15/ui.test.mjs",
     "test:all": "npm run verify && npm run test:ui && npm run test:integration"
   },
   "dependencies": {

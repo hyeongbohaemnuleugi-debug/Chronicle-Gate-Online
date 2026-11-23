@@ -18,7 +18,7 @@ function withCombat(source) {
   return { ...source, classes, nodes, flags: { ...source.flags, [encounter.victoryFlag]: encounter.victoryFlagLabel } };
 }
 export const CAMPAIGNS = [lastTrain, glassHotel, moonMarket, deepSea, dragonBanquet, clockCity, snowRadio].map(withCombat);
-export const CATALOG = CAMPAIGNS.map(({ nodes, clues, flags, roles, ...meta }) => ({
+export const CATALOG = CAMPAIGNS.map(({ nodes, clues, flags, roles, items, ...meta }) => ({
   ...meta, sceneCount: Object.values(nodes).filter(n => !n.ending).length,
   endingCount: Object.values(nodes).filter(n => n.ending).length,
   combatCount: Object.values(nodes).filter(n => n.encounter).length,

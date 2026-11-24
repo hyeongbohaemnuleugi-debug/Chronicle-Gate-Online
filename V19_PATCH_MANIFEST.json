@@ -1,0 +1,628 @@
+{
+  "version": "19.0.0",
+  "baselineKind": "previous-release-directory",
+  "baselineVersion": "18.1.0",
+  "baselineFilename": "chronicle-v18_1",
+  "baselineSha256": "34e2170ee30456fe1ce823cca3343a6538236cd012785161ec69c94d73971f35",
+  "baselineHashMethod": "sha256 of sorted relative paths and file hashes, excluding dependencies, runtime state and secrets",
+  "createdAt": "2026-11-24T09:05:19.290966+00:00",
+  "entryPoints": {
+    "online": "npm start (after overlay on the stated baseline)",
+    "legacy": "npm run start:legacy (explicit opt-in)",
+    "offline": "PLAY_OFFLINE.html after overlay",
+    "offlineHttp": "node scripts/offline-server.mjs after overlay"
+  },
+  "cleanup": "npm run clean:media removes only unchanged old WAVs with verified MP3 replacements; cloud data is never deleted.",
+  "note": "Only added or changed files relative to the stated baseline are included. Apply paths at repository root. This is not a standalone full repository. Runtime saves and environment secrets are excluded.",
+  "files": [
+    {
+      "path": ".env.example",
+      "status": "replace",
+      "bytes": 1007,
+      "sha256": "d6166925d3843c3c4966d1b554fcbefefb3f0bc45736f79e91d73cf64c07991f",
+      "baselineSha256": "5e8f71b4442e7ca2a4cac8433ecf84eddb186020b9e469823804e573932a533a"
+    },
+    {
+      "path": ".gitignore",
+      "status": "replace",
+      "bytes": 232,
+      "sha256": "d32b52bcf8749c82f97210d5f7af587dc59b35842145522203cffa9e2d20c4b7",
+      "baselineSha256": "4080713f3ea86c5b6fb30957270c28e5758f0485fc813c6287cb725dc36428e0"
+    },
+    {
+      "path": "COPYPASTE/index.html.txt",
+      "status": "replace",
+      "bytes": 3119,
+      "sha256": "e4826779098788627fb389470284948bc7a91c5656ecd9dfe2fd7fab8868cadf",
+      "baselineSha256": "bc966217ea19095f48a57ccda13634c85d25e2793f8dcc3c626c05291724ab1c"
+    },
+    {
+      "path": "MUSIC_GUIDE_V19.md",
+      "status": "add",
+      "bytes": 7468,
+      "sha256": "db91f7676918ef4b2fe5e7422c7754c677f2fe7c56247bf7c1d6758886a8274c",
+      "baselineSha256": null
+    },
+    {
+      "path": "NARRATIVE_REACHABILITY_V19.json",
+      "status": "add",
+      "bytes": 1263563,
+      "sha256": "db9cc56655c42c3d14a2ee711e76a6d72f1ad383ce77f92f054f2d7fb7d03ed3",
+      "baselineSha256": null
+    },
+    {
+      "path": "OPENING_GUIDE_V19.md",
+      "status": "add",
+      "bytes": 5755,
+      "sha256": "7a2c0d9bca3d6a95844e802be70e2c0f690f9ff44aeef25ce667a076b2ce7491",
+      "baselineSha256": null
+    },
+    {
+      "path": "PATCH_NOTES_V19.md",
+      "status": "add",
+      "bytes": 11482,
+      "sha256": "376d2252a833e4462ec513a9dc34822a39914981bbc9db1e99b3f0dddad1af9d",
+      "baselineSha256": null
+    },
+    {
+      "path": "RESOURCE_REPORT_V19.json",
+      "status": "add",
+      "bytes": 508,
+      "sha256": "2f1ddab54575d27b58a30e963134aaf8a2d06e88ef94db39ec6671177d3322aa",
+      "baselineSha256": null
+    },
+    {
+      "path": "VALIDATION_V19.md",
+      "status": "add",
+      "bytes": 8039,
+      "sha256": "19c274a695f464915fc8c823662f05105edb869ec3c59e451b1ca18369ec4442",
+      "baselineSha256": null
+    },
+    {
+      "path": "game-server/http-service.js",
+      "status": "replace",
+      "bytes": 16240,
+      "sha256": "ad9f2d24f804cd38256b605716ff9c93920e9bf9ff679ee5fb421755508ab2b0",
+      "baselineSha256": "8c16b80a957c15a4250fde38708092164ead1093c8d484f03bbcb171aad6f498"
+    },
+    {
+      "path": "game-server/table-service.js",
+      "status": "replace",
+      "bytes": 29300,
+      "sha256": "4d2b33c044f2a748224d0c02580aaf818a29a8175d013c3aef6920aabd37b56f",
+      "baselineSha256": "2e0ae7e591ba4da680497415032be3f8626fdee83fdf60bd599112a6fac2c18e"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "replace",
+      "bytes": 73416,
+      "sha256": "f380ea03780931d4f2791e50cfbc8bba644c0f5d6d211e8000eace96a5106133",
+      "baselineSha256": "e45c7b92517c178bc53c6b386f8640384d0b25610f377eccf80e81e3af3da288"
+    },
+    {
+      "path": "package.json",
+      "status": "replace",
+      "bytes": 2532,
+      "sha256": "4e32c11da2b1086fc4ee7ed2de68be202bffb44a001d22061d7e172de752ba31",
+      "baselineSha256": "912133a236df2ec92a2df4ee78ee06ad8ab9ba9c4afdd76cd2fa067bb3052a4f"
+    },
+    {
+      "path": "public/game/app.js",
+      "status": "replace",
+      "bytes": 98928,
+      "sha256": "b7685e7771370c11aa455412cc3c29707077f8ed0e4174243d255dd432c6ff01",
+      "baselineSha256": "b9577e6403fdf8d308465c7b3cdbe1879b70885d3572801f09f10ce4a63a44bc"
+    },
+    {
+      "path": "public/game/audio.js",
+      "status": "replace",
+      "bytes": 9305,
+      "sha256": "356cf9549b29ea1eb00ddf6f02232c1163167feca59b9c670ea5889b94f247b7",
+      "baselineSha256": "eda552f157a473403fb5b5dfd78e723c98403f4422ff91df04a3b11ef36c6fbf"
+    },
+    {
+      "path": "public/game/audio/clock-city-calm.mp3",
+      "status": "replace",
+      "bytes": 289052,
+      "sha256": "a0198aed86bb8f37769b9a89ec00500eca6b90cd33ee0f2e054a296c97392401",
+      "baselineSha256": "8993c51f8d8ee3c7a6f9caf42edcb2f0b5623cec199cfe1b7356f4e5d25bc13d"
+    },
+    {
+      "path": "public/game/audio/clock-city-danger.mp3",
+      "status": "replace",
+      "bytes": 301148,
+      "sha256": "1059c667f934f6eb4435edd3bcaa4181c02b326bbed59b175650978a4c5f3186",
+      "baselineSha256": "2122b93c56d3e4e2b7b6ac753287be431be275aef390a92781e19e8558c8290d"
+    },
+    {
+      "path": "public/game/audio/clock-city-grief.mp3",
+      "status": "add",
+      "bytes": 361196,
+      "sha256": "3ae92df578953dada2b016adbc33ea5d7833dedfbedebbba2b2a4da43737227a",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/clock-city-hope.mp3",
+      "status": "replace",
+      "bytes": 289052,
+      "sha256": "dcc75df845512baf64a55e7dee83b0ced14d28b2e8e09fc5a2c45183fdc0fa6a",
+      "baselineSha256": "703ad3a4f8bf81ae41746fab146aba3a1325d1f1ba978dce9ca3fb8271af0264"
+    },
+    {
+      "path": "public/game/audio/clock-city-mystery.mp3",
+      "status": "replace",
+      "bytes": 295100,
+      "sha256": "350252b7234674df592c62e9f9112f0b3edcfa8e645c7dac6f88cc783bb8a8d7",
+      "baselineSha256": "3dd6e3e9107f37e649b3000cd774a3fd413bfaa61e4c03d21141b68e08c088ac"
+    },
+    {
+      "path": "public/game/audio/clock-city-tension.mp3",
+      "status": "replace",
+      "bytes": 314108,
+      "sha256": "7b40a8dd0bd391cc33e1f04256904a26c5ade36c7cd22ed5fc3f9e6a03bda0c6",
+      "baselineSha256": "8a6150b321357216558da188af29e3b0c7094d88241cb15a9468764345d0d5fd"
+    },
+    {
+      "path": "public/game/audio/death.mp3",
+      "status": "add",
+      "bytes": 44108,
+      "sha256": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/deep-sea-calm.mp3",
+      "status": "replace",
+      "bytes": 304172,
+      "sha256": "7b64a785a5b9a3ec2bdc35750dc9ecf707a864b8c910ba379259d2f40707a91b",
+      "baselineSha256": "c9cdfae6f867d30f6313d6e161316240a08ed37f9d6157934d7433fad254cf6b"
+    },
+    {
+      "path": "public/game/audio/deep-sea-danger.mp3",
+      "status": "replace",
+      "bytes": 312380,
+      "sha256": "35e8fa5f6044380aabcb313073d86ee1478508d3952bcdf579f20dd844ab3a09",
+      "baselineSha256": "78a67a713710279117e7224d4b123ccae6d9b10cee6628d1cb0bcbd804cb00c0"
+    },
+    {
+      "path": "public/game/audio/deep-sea-grief.mp3",
+      "status": "add",
+      "bytes": 372860,
+      "sha256": "82cbbefe5907a5ac6da00507e2deecd98f90f4d6b9829c41876f00892c6ac32b",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/deep-sea-hope.mp3",
+      "status": "replace",
+      "bytes": 304172,
+      "sha256": "0d703efcc423670e0cb54f37654e63e5e0d25b865d1f05689406f6a8e8a2dd05",
+      "baselineSha256": "118cccd7b7a19b793e00c104e939e15b33dc14c160c61a5c929f925467135310"
+    },
+    {
+      "path": "public/game/audio/deep-sea-mystery.mp3",
+      "status": "replace",
+      "bytes": 321020,
+      "sha256": "ee70287d35c3fd046a1331818a4331aa0ac3134cc850ff70ad3c153e0b24cd0e",
+      "baselineSha256": "8f87dd7b5a9ddfb9550d10f6feb1fe5372a8c24bcb541b38862fd02f5a9fbc89"
+    },
+    {
+      "path": "public/game/audio/deep-sea-tension.mp3",
+      "status": "replace",
+      "bytes": 340028,
+      "sha256": "7e120d6a063518cbe06e385c0bf07664c256adcac008df5f97e5b417bc117470",
+      "baselineSha256": "a4bdd8fb751187c53f012dbcc07e4762795723b554e629951421e450a26bc472"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-calm.mp3",
+      "status": "replace",
+      "bytes": 289052,
+      "sha256": "301642b9da6ad83d8bf019ea33b37d068290819c9e35b7db42fd371373779688",
+      "baselineSha256": "5c52ae78bf5a831c8d0534693ecfcadc825128fa835928b802bd9ad1af561f5f"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-danger.mp3",
+      "status": "replace",
+      "bytes": 296396,
+      "sha256": "1c15fadf9fca2565b8539af676c0f1003d40ae8bec69c3b556aff412a5e69331",
+      "baselineSha256": "8bb7e7037986c14d2f26a312d9e89f03377ea68da01dd9b4958c098d58872d74"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-grief.mp3",
+      "status": "add",
+      "bytes": 350396,
+      "sha256": "0dd5030806bf311dc5c89f73a53eba49c5d99233beab245cc789c152a2d58191",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-hope.mp3",
+      "status": "replace",
+      "bytes": 289052,
+      "sha256": "9a84d0d8bff587a9133951f5220a8ef66333b53126352f09513efac02f26dddf",
+      "baselineSha256": "4e525cb7e1fe9342dfd70336e7822c5c2ebc3df339f947d7c67d215137b3964d"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-mystery.mp3",
+      "status": "replace",
+      "bytes": 296396,
+      "sha256": "5978d86d62121eff38f0c8d4161de2a036eeeba0e4b1aaa6d118907833522078",
+      "baselineSha256": "503d4474c19d0a041f287322e7c9979d0cb2dff3c2a50fcd534dd4396e80ddd7"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-tension.mp3",
+      "status": "replace",
+      "bytes": 308492,
+      "sha256": "cf1a42c9275aadf019d2c76110e3ae7fddd9aae423e440695ee345d62d4d187e",
+      "baselineSha256": "44b3f621ff74c87d7538fab6519c877a101a928d79dce07da79c76119d1cfbf8"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-calm.mp3",
+      "status": "replace",
+      "bytes": 298988,
+      "sha256": "7d2ddfe3ad8294e4572694905107e4f144381326a14b3db2fd12af2f5b5b72b2",
+      "baselineSha256": "f88c5116e66a9d4439377f4e104a011db02d3509f84a5ec062773ca188bc8b2e"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-danger.mp3",
+      "status": "replace",
+      "bytes": 298988,
+      "sha256": "dc8b703cff24a45bb82b704e73b3f242e38921f6bd06f16183f2e5d0ccb19676",
+      "baselineSha256": "14923aea9fb6b42cc3d832e4395e837ac5edbad2b4396cfbb1e3d43acebff82e"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-grief.mp3",
+      "status": "add",
+      "bytes": 361196,
+      "sha256": "be18c5ce37e71eec6a35332d610279c7f51165dc2adf988e3780f588a1c3ef62",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/glass-hotel-hope.mp3",
+      "status": "replace",
+      "bytes": 298988,
+      "sha256": "f712c4bf364acf7959e0043b692cbd58f767742242bf4a7ba1fced804d4b9721",
+      "baselineSha256": "0ddebb630252abb9005f802051c137ba1980b9828998e2ad38cbe223e5010c7f"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-mystery.mp3",
+      "status": "replace",
+      "bytes": 309788,
+      "sha256": "907bc6a9c71d72304d2f8cd60ac64c2f432560ad9a2a4b957694be1ace95bf7b",
+      "baselineSha256": "7b4bde54f6bbcc23bd51218ea38c3a53d2d150d091cd1914d50d614f2ef52be9"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-tension.mp3",
+      "status": "replace",
+      "bytes": 321020,
+      "sha256": "a5d791ff6e8c598838042168913bb99c498de7491d705a4cf706da83539238c7",
+      "baselineSha256": "ebcc8bf281c6750b431436af93162655ba82a9417476a25f3d7d9f203f3c58ac"
+    },
+    {
+      "path": "public/game/audio/last-train-calm.mp3",
+      "status": "replace",
+      "bytes": 296396,
+      "sha256": "d4427f77ff6609d50b777311f49fb096fc62c9cb6f5fefdf6dc4d929a9af7fad",
+      "baselineSha256": "37b80ae207686c7d74c030a195c0d5dfb1ecfd7d50fc347deeb5f044081c79f0"
+    },
+    {
+      "path": "public/game/audio/last-train-danger.mp3",
+      "status": "replace",
+      "bytes": 304172,
+      "sha256": "5f6cb77d5e5ff947c4655f9afe975088ebdaddbeaba5fd7609e01b22bca56798",
+      "baselineSha256": "74ee67831256890f205ab96824029317b89c9cf18f7bc68408786de30a68663a"
+    },
+    {
+      "path": "public/game/audio/last-train-grief.mp3",
+      "status": "add",
+      "bytes": 361196,
+      "sha256": "8f4ba35953066e32d52022f9c8d2dd57ee50772e4209dc4e099ddb5430e1fbb8",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/last-train-hope.mp3",
+      "status": "replace",
+      "bytes": 296396,
+      "sha256": "a98a6a0819ba661dd4dabc96e1e1b384256bccc370a6b7b01865ddf9a6d2ae11",
+      "baselineSha256": "d718454e11dbaeb58b518279e9fd26cd00ddaaaec4271b48b66f8859c9ccddcc"
+    },
+    {
+      "path": "public/game/audio/last-train-mystery.mp3",
+      "status": "replace",
+      "bytes": 304172,
+      "sha256": "3c99161a45c6ac1c5bf6444235f6a5ae86a19c942ad536eb164067e22956d1b2",
+      "baselineSha256": "82b46a1b371e93cd7416d5a26087c2700d4b60f2a84c701b2fc93cac03460e1c"
+    },
+    {
+      "path": "public/game/audio/last-train-tension.mp3",
+      "status": "replace",
+      "bytes": 316700,
+      "sha256": "5b05d3d675069b855a2ef17ccb0b967b8e0e8ce7152b9c7c5fc589638fcf28db",
+      "baselineSha256": "b02dfca29fe89f0dc137bd35168b04635ed6f35ee81efd918d5004d13d0f14f2"
+    },
+    {
+      "path": "public/game/audio/manifest.json",
+      "status": "replace",
+      "bytes": 109002,
+      "sha256": "cb603647cd84851430f06f61a5e44567ef740400254e188e09e90f91e82b4e53",
+      "baselineSha256": "5cbd762e3a1704d8631c511a2436376881684f166b92c07fab198a9404897471"
+    },
+    {
+      "path": "public/game/audio/moon-market-calm.mp3",
+      "status": "replace",
+      "bytes": 298988,
+      "sha256": "e0289b776a65bc304dbc0e07bc362a09167f72e08935ff55f6edbf82e5bd5614",
+      "baselineSha256": "11a1a2560787b715db3d3cc195e2e9891c730e0b1c4c8a0aae5d5104e6521d2d"
+    },
+    {
+      "path": "public/game/audio/moon-market-danger.mp3",
+      "status": "replace",
+      "bytes": 298988,
+      "sha256": "8b2ebcb7d10ca7592221b2da8a04b647d6c0655b9756e504a182762770a37a0b",
+      "baselineSha256": "708129fd6559c9df6c4d9ca7e84cfaf9bc8d77c359d550f7faa060c3afb244ca"
+    },
+    {
+      "path": "public/game/audio/moon-market-grief.mp3",
+      "status": "add",
+      "bytes": 353852,
+      "sha256": "cebe33e00d0836c06b6a513752a56b2846c6cf902cfc19b242daea8af148e703",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/moon-market-hope.mp3",
+      "status": "replace",
+      "bytes": 289052,
+      "sha256": "17e5ce86fa5d120a32e50bdb3044823dfc525cda6d86890e6ef4b9fcc96bcf67",
+      "baselineSha256": "f4cd06d285ec058d4e8bf043eb4543d9ef0ccf165911ef477b729c12bfbda0eb"
+    },
+    {
+      "path": "public/game/audio/moon-market-mystery.mp3",
+      "status": "replace",
+      "bytes": 304172,
+      "sha256": "66ed85b024a2cc7199eb89643eda2d54cd89b3f19ef58632840ec69adeb93962",
+      "baselineSha256": "7c7a71c4576b7bf780815bb3a41c7b5c7f712657744ad126174a6b4d8187b5ac"
+    },
+    {
+      "path": "public/game/audio/moon-market-tension.mp3",
+      "status": "replace",
+      "bytes": 309788,
+      "sha256": "e706fb27da9e9334a7898e1081f9890bac6f706cf53e233313fa3b3ceacb2f49",
+      "baselineSha256": "b3e4f82e64220ddd19878eaf85a320b326203920cf0447c498afa5d9e9340619"
+    },
+    {
+      "path": "public/game/audio/revive.mp3",
+      "status": "add",
+      "bytes": 46700,
+      "sha256": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/snow-radio-calm.mp3",
+      "status": "replace",
+      "bytes": 304172,
+      "sha256": "c7b14b8bb0d550e047dacc8adb34be016c30264f79d80e34a301f5eabdf89ff5",
+      "baselineSha256": "74479e021fdc096f1253ac5ec69fd7dd0e726f2af8e35eb4bddfbc829ebef833"
+    },
+    {
+      "path": "public/game/audio/snow-radio-danger.mp3",
+      "status": "replace",
+      "bytes": 316700,
+      "sha256": "acd65f709ebc637fb65530330cbd9390f35b498c6e30cc51c49d740b9e67f2d4",
+      "baselineSha256": "813edb95d83a2d49e79d2adab86377a8764c31ed02f4d363b5576c7009c99bfc"
+    },
+    {
+      "path": "public/game/audio/snow-radio-grief.mp3",
+      "status": "add",
+      "bytes": 372860,
+      "sha256": "752d3d29cfe89ffd876452fbc091c4bd8b3aca6aa361bedf3b122c4b24af4bfa",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/audio/snow-radio-hope.mp3",
+      "status": "replace",
+      "bytes": 296396,
+      "sha256": "c8363e0738916b1f9e0d5396472fb29edfe55a2a0a05a9365c9bbf5b5c5e898a",
+      "baselineSha256": "136712f8a5cb56b0e04c24bffd2426c5977b4bb20d93b51a23303dbe37db3647"
+    },
+    {
+      "path": "public/game/audio/snow-radio-mystery.mp3",
+      "status": "replace",
+      "bytes": 312380,
+      "sha256": "26400c0d8b72576dd599e0e00bb6fe9203d4d693097000e88ad971ed68dad5de",
+      "baselineSha256": "d84b8a75c56e1c34585fad1df4eccd9e8d7085bfd6f59c1d5dba0cd697d1a3e7"
+    },
+    {
+      "path": "public/game/audio/snow-radio-tension.mp3",
+      "status": "replace",
+      "bytes": 330092,
+      "sha256": "053c9f17ff13de985a006d05811ed21c6d4556117bf84074f250b1d0f30a416f",
+      "baselineSha256": "6802322c8fb69af190b5ed6426b4e65b7f41e2cf02279463729b4504ae7e8257"
+    },
+    {
+      "path": "public/game/campaigns/openings-a.js",
+      "status": "add",
+      "bytes": 153590,
+      "sha256": "f98a99d395faec29b3e94f6bc08c9970eb4f4261aa354db91323ddd6bdb3d5e9",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/campaigns/openings-b.js",
+      "status": "add",
+      "bytes": 117869,
+      "sha256": "f535897c2d0dba9b69b396f8bbc076ba0bbbe7b9ab0542fa14320b5440b4c4c7",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/client.js",
+      "status": "replace",
+      "bytes": 15607,
+      "sha256": "04d8be1ac692e8a7c6386ff8ce32f848aee2d65d6cf096b07a4a24174ea2da36",
+      "baselineSha256": "7618495c26fe86b65916c4beb8eb7c3f22890886105fb3d7239310fb412849e7"
+    },
+    {
+      "path": "public/game/engine.js",
+      "status": "replace",
+      "bytes": 44749,
+      "sha256": "c48d78537446a1dfba7f15d41cbe57cc40f7d7d26ed1fb5c8c7599449d4337e4",
+      "baselineSha256": "1129d214d69313e046fdc2ac19d0a64bbc54fd865156358618e2dc46f5056013"
+    },
+    {
+      "path": "public/game/music-director.js",
+      "status": "add",
+      "bytes": 5536,
+      "sha256": "1fa861f8cfe23fb7c83a55fed431e4255ad84896ec83ee217a5e84c4dcb81923",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/narrative.js",
+      "status": "replace",
+      "bytes": 5331,
+      "sha256": "7a7ef1ef3bfad0b7e8ebf31541049e5afe7d64d47abd561194333fcb325ded69",
+      "baselineSha256": "b9483ecab68c4bd46ee13e57c2f1ee4d31a83b409b2ea7fa735ca6c270266875"
+    },
+    {
+      "path": "public/game/opening.js",
+      "status": "add",
+      "bytes": 17077,
+      "sha256": "1c5a19be4f3639476ade40244f44d53d6a321f3b45d3b4a88d5fa02fa92e8d7c",
+      "baselineSha256": null
+    },
+    {
+      "path": "public/game/styles.css",
+      "status": "replace",
+      "bytes": 93725,
+      "sha256": "96a44552d7fd6fc7e040de653d6c9cb7a0604eb10f3b5b57cff278ec346248f7",
+      "baselineSha256": "7000903eeb102a0c7e784dea9ae941b57102bf8f4d41874592f299c36b810f1d"
+    },
+    {
+      "path": "public/index.html",
+      "status": "replace",
+      "bytes": 3119,
+      "sha256": "e4826779098788627fb389470284948bc7a91c5656ecd9dfe2fd7fab8868cadf",
+      "baselineSha256": "bc966217ea19095f48a57ccda13634c85d25e2793f8dcc3c626c05291724ab1c"
+    },
+    {
+      "path": "public/offline.html",
+      "status": "replace",
+      "bytes": 2444510,
+      "sha256": "ae4009479f84e6435c685feaaf7adaf22ffc39d9a2028f88291b3777cefac084",
+      "baselineSha256": "3ce609968fd2ea327741c4a43a1f4aa39504b79552f439d55b1771d68fc30210"
+    },
+    {
+      "path": "scripts/build-score-v19.py",
+      "status": "add",
+      "bytes": 52886,
+      "sha256": "fa4a77bc9d2d86c099398822db365704e04360c975df5cbb8e97825a9a619854",
+      "baselineSha256": null
+    },
+    {
+      "path": "scripts/cleanup-v17.mjs",
+      "status": "replace",
+      "bytes": 2431,
+      "sha256": "af55dc237ddcece544984a486fbfcb6189ed2aadb43e7dad8a2666008c8e0a07",
+      "baselineSha256": "967290c519ba979855c940be9a600a582704273e48485d0153030ab05fb44c5a"
+    },
+    {
+      "path": "scripts/explore-scenarios.mjs",
+      "status": "replace",
+      "bytes": 8952,
+      "sha256": "c22fb856dc8810f40e638facc0f2d24e297129af2ae039a58adac1f5c5e42127",
+      "baselineSha256": "7929dc0d159850afc7ea5e4d1f7f073d0186b557df4040bae018c38f1f33b684"
+    },
+    {
+      "path": "scripts/package-patch.py",
+      "status": "replace",
+      "bytes": 6101,
+      "sha256": "23bc77d4a95ebf82785197137a3663c2f39ebd121175d02b76840fefedb8fbd4",
+      "baselineSha256": "cc5dc3c253a306d12a860d43ffc11600833116859ff31d4483dc369e7d6b3e0a"
+    },
+    {
+      "path": "scripts/score-v19.json",
+      "status": "add",
+      "bytes": 1154823,
+      "sha256": "9ed3130a98189135eb543700b5efc448ac831dc68e6d6710c228b0c291d5e17f",
+      "baselineSha256": null
+    },
+    {
+      "path": "server.js",
+      "status": "replace",
+      "bytes": 1651,
+      "sha256": "1eaec51b1202b3ab22cee94bad21e9117da31d937e36b83cdb8e4089aab521d0",
+      "baselineSha256": "c1095aa643b45d3020f8787c5c2660da65df952a098799df5d0d7fa5e3e3b251"
+    },
+    {
+      "path": "tests-v18/combat-network.integration.mjs",
+      "status": "replace",
+      "bytes": 18443,
+      "sha256": "f97d58c4c53ebec6f70974730c1e227e3306c34bdb497aee869a8781ac526d8d",
+      "baselineSha256": "c5d8316d5ad0432fdd0c3e826494cf435a7b467c998eafcd4e2948877e023640"
+    },
+    {
+      "path": "tests-v18/deployment.integration.mjs",
+      "status": "replace",
+      "bytes": 19492,
+      "sha256": "dc91391520366914d8e68368c15bfdbb472b1056a520f9a2d7bb754ab78f1f2e",
+      "baselineSha256": "0176489a535ebc4842427d80325b3c920e6c8555d47b02fad2c9f1f73a245ffe"
+    },
+    {
+      "path": "tests-v18/network.integration.mjs",
+      "status": "replace",
+      "bytes": 13030,
+      "sha256": "76058462c036b7a16b120c7e8a59df0fe96c3e8be19b8997242f6c7383d47900",
+      "baselineSha256": "a0c43982c7f96733835f25ad105462c902c2c8c1550b59393c654322f2041f33"
+    },
+    {
+      "path": "tests-v18/resource-budget.test.mjs",
+      "status": "replace",
+      "bytes": 16716,
+      "sha256": "c5f0222a891a87f35909cc15dd41a212df24a926036941c31a7a2038aa0e8ecb",
+      "baselineSha256": "01963e9c018ea77175d83f95a9772c1a030df7c5ffb686d753b3cb533cc6c74d"
+    },
+    {
+      "path": "tests-v18/server.integration.mjs",
+      "status": "replace",
+      "bytes": 26097,
+      "sha256": "522df1abedb8164d25c7c09ce2b2ae8716e3c94b97fe82443ea9a8f25256f9e0",
+      "baselineSha256": "a4a04822aaf5f005106ffbb48f4946fde1b60dde4f5bccbd64f1d2056f13b2fc"
+    },
+    {
+      "path": "tests-v18/ui.test.mjs",
+      "status": "replace",
+      "bytes": 73621,
+      "sha256": "97a43afa16fa041631f2e487bf89a7c894f37e72b18fef70acac346362fb3d66",
+      "baselineSha256": "c9d807922ec09e7dea338f7c15a6456ffac810d8af04351763050a656536194f"
+    },
+    {
+      "path": "tests-v19/music.test.mjs",
+      "status": "add",
+      "bytes": 19404,
+      "sha256": "8cb12305f42b0ed5ea3598c28c44a4a70626e6a890dfc2ae1503bfe6f42204ec",
+      "baselineSha256": null
+    },
+    {
+      "path": "tests-v19/opening-network.integration.mjs",
+      "status": "add",
+      "bytes": 11458,
+      "sha256": "b583394400f68f405f95a89736c6c1d393eb85665ed126c635040e1ea05803ff",
+      "baselineSha256": null
+    },
+    {
+      "path": "tests-v19/opening.test.mjs",
+      "status": "add",
+      "bytes": 18808,
+      "sha256": "81136063374c4e5da544e951725ecb66a0e1562c64165ceb6ad4dd936c15996b",
+      "baselineSha256": null
+    },
+    {
+      "path": "tests-v19/openings-a.test.mjs",
+      "status": "add",
+      "bytes": 6700,
+      "sha256": "dbee4245cbe99a2a2040c93d03b9a7729005e55b77419ce6065de0b146b18ee2",
+      "baselineSha256": null
+    },
+    {
+      "path": "tests-v19/ui.test.mjs",
+      "status": "add",
+      "bytes": 27386,
+      "sha256": "2bd81fdafe11f5fc275c25f76935ea92114a269a0675742e1cc57e1a98174801",
+      "baselineSha256": null
+    }
+  ]
+}

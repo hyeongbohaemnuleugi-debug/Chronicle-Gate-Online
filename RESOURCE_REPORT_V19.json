@@ -1,0 +1,22 @@
+{
+  "version": "19.0.0",
+  "baseline": "18.1.0",
+  "publicGameBytes": 16753035,
+  "publicGameFiles": 88,
+  "baselineGameBytes": 13034867,
+  "audioMp3Bytes": 13417157,
+  "audioDirectoryBytes": 13526159,
+  "audioFiles": 55,
+  "musicFiles": 42,
+  "oldEffectsUnchanged": true,
+  "imageAtlasesUnchanged": true,
+  "mainCampaignFilesUnchanged": true,
+  "scriptHashMatches": true,
+  "scoreHashMatches": true,
+  "musicSecondsRange": [
+    24.0,
+    30.96775
+  ],
+  "offlineBytes": 2444510,
+  "indexCopyExact": true
+}

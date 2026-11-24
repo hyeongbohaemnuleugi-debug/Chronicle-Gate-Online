@@ -15,7 +15,7 @@ const allParagraphs=new Map();
 for(const c of CAMPAIGNS){
  const nodes=Object.values(c.nodes),playable=nodes.filter(n=>!n.ending),ends=nodes.filter(n=>n.ending);
  check(Object.keys(c.items||{}).length>=3,`${c.id}: at least three usable items`);
- check(playable.length>=12,`${c.id}: too few playable scenes`);check(ends.length>=3,`${c.id}: at least three normal endings`);
+ check(playable.length>=16,`${c.id}: too few playable scenes`);check(ends.length===5,`${c.id}: five normal endings`);
  check(c.deathEnding?.text?.length>=2,`${c.id}: death ending missing`);
  check(c.classes?.length===4,`${c.id}: four campaign-specific professions required`);
  check(playable.filter(n=>n.encounter).length>=1,`${c.id}: contextual combat missing`);
@@ -82,6 +82,6 @@ check(html.includes('/game/app.js'),'New frontend missing');
 check(!html.includes('dice3d'),'New frontend should not load cosmetic dice engine');
 check(fs.existsSync(path.join(root,'public/legacy.html')),'Original entry page not preserved');
 check(fs.existsSync(path.join(root,'public/offline.html')),'Build offline entry before shipping');
-if(errors.length){console.error(`v18 content QA failed (${errors.length})`);errors.forEach(e=>console.error(' - '+e));process.exit(1);}
+if(errors.length){console.error(`v21 content QA failed (${errors.length})`);errors.forEach(e=>console.error(' - '+e));process.exit(1);}
 console.table(rows);
-console.log(`v18 Content QA OK: ${rows.reduce((s,r)=>s+r.playable,0)} playable scenes, ${rows.reduce((s,r)=>s+r.endings,0)} ending templates (including 7 early party-death endings).`);
+console.log(`v21 Content QA OK: ${rows.reduce((s,r)=>s+r.playable,0)} playable scenes, ${rows.reduce((s,r)=>s+r.endings,0)} ending templates (including 7 early party-death endings).`);

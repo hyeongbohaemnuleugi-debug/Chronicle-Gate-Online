@@ -19,11 +19,12 @@ const AUDIO = path.join(GAME, 'audio');
 const ART = path.join(GAME, 'art');
 const manifest = JSON.parse(fs.readFileSync(path.join(AUDIO, 'manifest.json'), 'utf8'));
 const THEMES = ['last-train', 'glass-hotel', 'moon-market', 'deep-sea', 'dragon-banquet', 'clock-city', 'snow-radio'];
-const MOODS = ['calm', 'danger', 'hope', 'mystery', 'tension'];
-const EFFECTS = ['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory'];
-// v18 adds authored solo/group and low-health prose; all media bytes stay unchanged.
-const BUDGET = 13_100_000;
-const BASELINE_V15_AUDIO = 36_967_594;
+const MOODS = ['calm', 'danger', 'hope', 'mystery', 'tension', 'grief'];
+const EFFECTS = ['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive'];
+// v19 adds 28 profession openings and replaces the scores, including seven grief cues.
+// Budgets apply to measured delivered files; no WAV masters or runtime synthesis are shipped.
+const BUDGET = 18_000_000;
+const AUDIO_BUDGET = 14_500_000;
 const relative = file => path.relative(ROOT, file).split(path.sep).join('/');
 function files(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
@@ -79,22 +80,21 @@ function inspectMp3(buffer) {
   return { ...first, frames, seconds, maxKbps };
 }
 
-test('all public game resources fit the explicit 13.1 MB release budget', t => {
+test('all public game resources fit the explicit 18 MB release budget', t => {
   const total = allFiles.reduce((sum, file) => sum + fileBytes(file), 0);
   const audioTotal = files(AUDIO).reduce((sum, file) => sum + fileBytes(file), 0);
   const artTotal = files(ART).reduce((sum, file) => sum + fileBytes(file), 0);
   assert.ok(total <= BUDGET, `public/game is ${total.toLocaleString()} bytes, exceeding ${BUDGET.toLocaleString()}; largest: ${allFiles.sort((a, b) => fileBytes(b) - fileBytes(a)).slice(0, 4).map(f => `${relative(f)}=${fileBytes(f)}`).join(', ')}`);
-  assert.ok(audioTotal <= 11_000_000, `audio directory exceeds its 11 MB delivery budget: ${audioTotal}`);
-  assert.ok(audioTotal <= BASELINE_V15_AUDIO * .3, `audio bytes ${audioTotal} do not reach the planned 70% reduction from measured v15 baseline ${BASELINE_V15_AUDIO}`);
+  assert.ok(audioTotal <= AUDIO_BUDGET, `audio directory exceeds its 14.5 MB delivery budget: ${audioTotal}`);
   assert.ok(!allFiles.some(file => /\.(?:wav|flac|aiff|aif)$/i.test(file)), 'uncompressed masters must not be shipped in public/game');
-  t.diagnostic(`public/game=${total} bytes; audio=${audioTotal}; art=${artTotal}; audio reduction=${((1 - audioTotal / BASELINE_V15_AUDIO) * 100).toFixed(1)}% versus v15`);
+  t.diagnostic(`public/game=${total} bytes; audio=${audioTotal}; art=${artTotal}; music=42, effects=13`);
 });
 
-test('all 35 moods and 11 effects are unique, valid mono MP3 files with honest duration metadata', () => {
-  assert.equal(Number.parseInt(String(manifest.version), 10), 17);
-  assert.equal(manifest.files.length, 46);
+test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with honest duration metadata', () => {
+  assert.equal(Number.parseInt(String(manifest.version), 10), 19);
+  assert.equal(manifest.files.length, 55);
   const names = manifest.files.map(entry => entry.file);
-  assert.equal(new Set(names).size, 46);
+  assert.equal(new Set(names).size, 55);
   assert.deepEqual(names.slice().sort(), [
     ...THEMES.flatMap(theme => MOODS.map(mood => `${theme}-${mood}.mp3`)),
     ...EFFECTS.map(effect => `${effect}.mp3`),
@@ -143,7 +143,7 @@ function audioHarness(saved = {}) {
   const store = new Map([['cg-v14-audio', JSON.stringify(saved)]]);
   Object.defineProperty(globalThis, 'Audio', { configurable: true, writable: true, value: RecordedAudio });
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, writable: true, value: { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, value) } });
-  Object.defineProperty(globalThis, 'requestAnimationFrame', { configurable: true, writable: true, value: fn => { queueMicrotask(() => fn(performance.now() + 1000)); return 1; } });
+  Object.defineProperty(globalThis, 'requestAnimationFrame', { configurable: true, writable: true, value: fn => { queueMicrotask(() => fn(performance.now() + 10000)); return 1; } });
   const mixer = createAudio();
   return { mixer, media, restore() { mixer.destroy(); for (const name of names) { const descriptor = old.get(name); if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name]; } } };
 }
@@ -158,14 +158,14 @@ test('audio requests start only with consent and nonzero volume; repeated scene 
     h.mixer.setVolumes(0, 0); await h.mixer.enable(); h.mixer.effect('attack'); await settle();
     assert.equal(h.media.length, 0, 'enabled but zero-volume music/effects must not request media');
     h.mixer.setVolumes(.35, .55); h.mixer.scene('last-train', 'mystery'); await settle();
-    assert.equal(h.media.length, 1); assert.equal(h.media[0].initialSrc, '/game/audio/last-train-mystery.mp3?v=17000');
+    assert.equal(h.media.length, 1); assert.equal(h.media[0].initialSrc, '/game/audio/last-train-mystery.mp3?v=19000');
     h.media[0].currentTime = 9.5;
     for (let i = 0; i < 10; i++) h.mixer.scene('last-train', 'mystery');
     await settle();
     assert.equal(h.media.length, 1, 'room updates must not construct a new Audio for the same scene');
     assert.equal(h.media[0].currentTime, 9.5, 'room updates must not rewind already playing music');
     h.mixer.scene('last-train', 'danger'); await settle();
-    assert.equal(h.media.length, 2); assert.equal(h.media[1].initialSrc, '/game/audio/last-train-danger.mp3?v=17000');
+    assert.equal(h.media.length, 2); assert.equal(h.media[1].initialSrc, '/game/audio/last-train-danger.mp3?v=19000');
     h.mixer.disable();
     h.mixer.scene('glass-hotel', 'hope'); h.mixer.effect('victory'); await settle();
     assert.equal(h.media.length, 2, 'disabled audio must not fetch the next theme or effects');

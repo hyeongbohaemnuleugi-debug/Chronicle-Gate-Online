@@ -182,7 +182,7 @@ try {
   success(await ack(sockets[helperIndex], 'table:assist', { revision: state.game.revision }));
   state = await sync(sockets[0]);
   const portable = success(await ack(sockets[0], 'table:export')).save;
-  assert.equal(portable.format, 'chronicle-gate-v18'); assert.equal(portable.game.schema, 17);
+  assert.equal(portable.format, 'chronicle-gate-v19'); assert.equal(portable.game.schema, 17);
   assert.deepEqual(portable.game.assists, [credentials[helperIndex].playerId]);
   noCredentials(portable);
   assert.equal((await ack(sockets[1], 'table:export')).ok, false);

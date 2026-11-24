@@ -94,7 +94,7 @@ async function localTable(app,count=2,{start=true}={}){
   assert.equal(app.doc.querySelectorAll('.lobby-person').length,count);
   assert.equal(query(app,'#entry-dialog').open,false);
   if(!start)return;
-  await click(app,'[data-action="start"]');
+  await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
   assert.equal(query(app,'#game-view').hidden,false);
   assert.equal(query(app,'#scene-title').textContent,campaign.nodes[campaign.start].title);
 }
@@ -150,7 +150,7 @@ test('solo and group introductions follow chosen seats, keep private cards priva
       assert.equal(lobbyNote.dataset.playMode,mode);
       assert.equal(lobbyNote.querySelector('p').textContent,campaign.playModes[mode]);
       for(const role of campaign.roles)assert.ok(!app.doc.body.textContent.includes(role.secret),'An introduction must not reveal a private role card.');
-      await click(app,'[data-action="start"]');
+      await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
       const game=stored(app).game,view=viewGame(game,campaign,game.players[0].id);
       assert.equal(view.storyMode,mode);assert.equal(view.partySize,count);
       rendered[mode]=[...query(app,'.prose-main').querySelectorAll(':scope>p')].map(p=>p.textContent);
@@ -358,7 +358,7 @@ test('campaign switching remaps all chosen class slots and exposes only that sto
     for(const select of app.doc.querySelectorAll('[data-local-class]'))assert.deepEqual([...select.options].map(o=>o.value),newJobs.map(c=>c.id));
     assert.ok(query(app,'.lobby-people .profession-detail').textContent.includes(newJobs[0].basic.name));
     assert.ok(query(app,'.lobby-people .profession-detail').textContent.includes(newJobs[0].ability.name));
-    await click(app,'[data-action="start"]');
+    await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
     assert.equal(stored(app).game.campaignId,target.id);
     assert.ok(query(app,'.party-profession').textContent.includes(newJobs[0].basic.name));
     assert.ok(query(app,'.party-profession').textContent.includes(newJobs[0].ability.name));
@@ -570,9 +570,9 @@ test('v18 home presents the chronicle masthead and factual story, class and enco
       assert.equal(card.querySelector('[data-art]').dataset.artPriority,'defer');
     }
     assert.equal(app.doc.querySelectorAll('.chronicle-promise>div').length,3);
-    assert.ok(query(app,'.site-footer').textContent.includes('v18'));
-    assert.match(html,/styles\.css\?v=18100/);
-    assert.match(html,/app\.js\?v=18100/);
+    assert.ok(query(app,'.site-footer').textContent.includes('v19'));
+    assert.match(html,/styles\.css\?v=19000/);
+    assert.match(html,/app\.js\?v=19000/);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });
@@ -1007,7 +1007,7 @@ test('the chronicle reads real choices forward and downloads a public TXT distin
     assert.equal(query(app,'.full-journal').open,false);
     assert.ok(query(app,'.full-journal').textContent.includes(observation));
     await click(app,'.session-actions [data-action="export-chronicle"]');
-    const txt=app.downloads.at(-1);assert.match(txt.name,/^chronicle-gate-v18-.*\.txt$/);
+    const txt=app.downloads.at(-1);assert.match(txt.name,/^chronicle-gate-v19-.*\.txt$/);
     assert.equal(txt.blob.type,'text/plain;charset=utf-8');
     const text=await blobText(app,txt.blob);
     assert.equal(text,chronicleText(view));
@@ -1017,7 +1017,7 @@ test('the chronicle reads real choices forward and downloads a public TXT distin
     for(const role of campaign.roles)assert.ok(!text.includes(role.secret),'TXT must not expose unopened private role secrets.');
     assert.ok(!/"(?:resumeToken|hostToken|secret)"\s*:/.test(text));
     await click(app,'.session-actions [data-action="export"]');
-    const json=app.downloads.at(-1);assert.match(json.name,/^chronicle-gate-v18-.*\.json$/);
+    const json=app.downloads.at(-1);assert.match(json.name,/^chronicle-gate-v19-.*\.json$/);
     assert.equal(json.blob.type,'application/json');
     const progress=JSON.parse(await blobText(app,json.blob));
     assert.equal(progress.game.nodeId,g.nodeId);
@@ -1185,7 +1185,7 @@ test('known names do not turn quoted player input or HTML chat into attributes o
     assert.equal(query(app,'[data-local-row]:first-child input').value,name);
     assert.equal(query(app,'[data-local-row]:first-child input').hasAttribute('autofocus'),false);
     input(app,'[data-local-row]:nth-child(2) input','우');
-    await submit(app,'#entry-form');await click(app,'[data-action="start"]');
+    await submit(app,'#entry-form');await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
     assert.ok(emphasizedNames(query(app,'.compact-party')).includes(name));
     const sameName=query(app,'.party-member:nth-child(2) .character-name');
     assert.equal(sameName.textContent,'우');assert.equal(sameName.hasAttribute('title'),false,'An NPC/player collision must not assign the NPC role to the player.');

@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 
 const gzipAsync = promisify(gzip);
 const PUBLIC_ROOT = fileURLToPath(new URL('../public/', import.meta.url));
-const VERSION = '20.0.0';
+const VERSION = '21.0.0';
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',

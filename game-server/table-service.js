@@ -21,7 +21,7 @@ export function attachTableService(io, options = {}) {
   const rooms = new Map(), diskFiles = new Map(), persistedHashes = new Map();
   const broadcastKeys = new Map(), checkpointKeys = new Map(), timers = new Set();
   const clock = typeof options.now === 'function' ? options.now : Date.now;
-  const configured = options.storageDir ?? process.env.CHRONICLE_V20_DATA_DIR ?? process.env.CHRONICLE_V19_DATA_DIR ?? process.env.CHRONICLE_V18_DATA_DIR ?? process.env.CHRONICLE_V17_DATA_DIR ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
+  const configured = options.storageDir ?? process.env.CHRONICLE_V21_DATA_DIR ?? process.env.CHRONICLE_V20_DATA_DIR ?? process.env.CHRONICLE_V19_DATA_DIR ?? process.env.CHRONICLE_V18_DATA_DIR ?? process.env.CHRONICLE_V17_DATA_DIR ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
   const storageDir = configured || (process.env.NODE_ENV === 'production' ? '' : path.resolve('.chronicle-v14'));
   const roll = options.roll || (() => crypto.randomInt(1, 21));
   const maxRooms = bounded(options.maxRooms ?? process.env.CHRONICLE_MAX_ROOMS, 32, 1, 128);
@@ -190,7 +190,7 @@ export function attachTableService(io, options = {}) {
       canStart: room.hostId === meId && !room.game && room.players.length >= 1 && room.players.every(player => player.connected),
     };
   }
-  const portableSave = room => ({ format: 'chronicle-gate-v20', savedAt: new Date(clock()).toISOString(), game: room.game });
+  const portableSave = room => ({ format: 'chronicle-gate-v21', savedAt: new Date(clock()).toISOString(), game: room.game });
   function checkpoint(room) {
     if (!room.game) return;
     const host = room.players.find(player => player.id === room.hostId && player.connected);

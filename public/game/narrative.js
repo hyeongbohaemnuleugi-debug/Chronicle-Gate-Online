@@ -2,7 +2,7 @@
 export const CHRONICLE_LIMIT = 40;
 const TEXT_LIMIT = 700;
 const grades = new Set(['automatic','critical','success','failure','fumble','mixed']);
-const kinds = new Set(['choice','revival','combat']);
+const kinds = new Set(['choice','revival','combat','opening','meeting']);
 const plain = value => typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f<>]/g,'').trim() : '';
 const short = (value, limit) => plain(value).slice(0,limit);
 
@@ -10,6 +10,8 @@ function eventKind(entry) {
   if (!entry || typeof entry !== 'object') return null;
   if (entry.combat === true) return ['victory','defeat'].includes(entry.combatEvent) || entry.deaths?.length ? 'combat' : null;
   if (!grades.has(entry.grade)) return null;
+  if (entry.meeting === true) return 'meeting';
+  if (entry.opening === true) return 'opening';
   if (entry.revivedId || /부활\s*·/.test(entry.action || '')) return 'revival';
   return 'choice';
 }
@@ -61,10 +63,15 @@ export function chronicleText(view) {
   if(view.chroniclePartial)lines.push('일부 기록은 남아 있지 않습니다. 아래에는 실제로 남은 선택만 담았습니다.','');
   const prologue=paragraphs(view.chroniclePrologue);
   if(entries.length&&prologue.length)lines.push('첫 장',...prologue.flatMap(text=>[text,'']));
+  const firstShared=view.opening?.meeting?.startScene;
+  const sharedIntroduction=firstShared&&scene.id!==firstShared.id?paragraphs(firstShared.text):[];
+  const insertSharedIntroduction=()=>lines.push(`함께 시작한 장면 · ${short(firstShared?.title,120)}`,...sharedIntroduction.flatMap(text=>[text,'']));
+  if(sharedIntroduction.length&&!entries.some(entry=>entry.kind==='meeting'))insertSharedIntroduction();
   for(const [index,entry] of entries.entries()){
     lines.push(`${String(index+1).padStart(2,'0')} · ${entry.sceneTitle||'지나온 장면'}`);
     if(entry.actor||entry.action)lines.push([entry.actor&&`${entry.actor}의 선택`,entry.action].filter(Boolean).join(' · '));
     lines.push(entry.text,'');
+    if(entry.kind==='meeting'&&sharedIntroduction.length)insertSharedIntroduction();
   }
   lines.push(`${view.ending||view.phase==='ended'?'마지막 장':'아직 이어지는 이야기'} · ${short(scene.title,120)}`);
   const finalParagraphs=reading?[...paragraphs(reading.paragraphs),...paragraphs(reading.echoes),...paragraphs(reading.personal),...paragraphs(reading.fate)]:paragraphs(scene.text);

@@ -1,4 +1,4 @@
-/* CHRONICLE GATE v17 — midnight ink, engraved gold, readable pages.
+/* CHRONICLE GATE v19 — midnight ink, engraved gold, readable pages.
    System fonts and code-native ornament only. All dimensions are responsive;
    functional text stays at least 12px, main Korean narrative at 17–18px. */
 :root {
@@ -695,6 +695,93 @@ button::-moz-focus-inner { border: 0; }
 @keyframes loader-turn { to { transform: rotate(360deg); } }
 .noscript { padding: 35px; text-align: center; color: #e3c59a; background: #172338; }
 /* Adapt layout before shrinking type. */
+/* Personal first chapters keep the same readable book, with a public margin. */
+.opening-mode-picker { margin: 24px 0; padding: 0; border: 0; min-width: 0; }
+.opening-mode-picker legend { padding: 0; margin-bottom: 12px; font-size: 17px; font-weight: 700; color: var(--gold-bright); }
+.opening-mode-picker label { display: flex; align-items: flex-start; gap: 12px; padding: 15px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.opening-mode-picker input[type=radio] { flex: 0 0 20px; width: 20px; height: 20px; min-height: 20px; margin: 4px 0 0; padding: 0; accent-color: var(--gold); }
+.opening-mode-picker label span { display: grid; gap: 3px; min-width: 0; }
+.opening-mode-picker b { font-size: 17px; }
+.opening-mode-picker small { color: var(--muted); font-size: 14px; line-height: 1.8; word-break: keep-all; }
+.opening-job-warning { margin: 0 0 18px; color: var(--danger); font-size: 15px; line-height: 1.85; }
+.opening-layout { display: grid; grid-template-columns: minmax(0,1fr) 310px; gap: 28px; align-items: start; max-width: 1300px; padding: 28px 36px 80px; margin: 0 auto; }
+.opening-progress { padding: 26px; }
+.opening-progress .panel-heading { align-items: start; }
+.opening-progress .panel-heading h2 { font-size: 19px; }
+.opening-progress .panel-heading>span { flex-shrink: 0; }
+.opening-destination { color: var(--gold-bright); font-family: var(--serif); font-size: 18px; margin: 15px 0 19px; }
+.opening-progress ol { list-style: none; padding: 0; margin: 0; }
+.opening-progress li { border-top: 1px solid var(--line); padding: 15px 0; }
+.opening-progress li>div { display: grid; gap: 2px; }
+.opening-progress li b { font-size: 16px; overflow-wrap: anywhere; }
+.opening-progress li b small { font-weight: 400; color: var(--gold); margin-left: 7px; font-size: 13px; }
+.opening-progress li span,.opening-progress li>p { color: var(--muted); font-size: 14px; line-height: 1.8; }
+.opening-progress li>p { margin-top: 7px; }
+.opening-progress .text-button { min-height: 44px; text-align: left; font-size: 14px; white-space: normal; }
+.opening-privacy-note { border-top: 1px solid var(--line); padding-top: 17px; color: var(--muted); font-size: 14px; line-height: 1.85; }
+.opening-handoff { min-height: 460px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--gold-line); border-radius: 8px; }
+.opening-envelope { font-size: 47px; line-height: 1.3; color: var(--paper-gold); margin-bottom: 18px; }
+.opening-handoff h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(26px,3vw,36px); line-height: 1.55; margin: 15px 0; }
+.opening-handoff>p { font-size: 17px; line-height: 1.95; }
+.opening-handoff .button { margin-top: 28px; white-space: normal; }
+.opening-identity { color: var(--paper-gold); font-size: 15px; line-height: 1.85; margin-bottom: 22px; }
+.opening-objective { color: var(--paper-muted); border-top: 1px solid var(--paper-line); padding-top: 18px; margin-top: 24px; font-size: 15px; line-height: 1.85; }
+.opening-ready { border-top: 1px solid var(--paper-line); margin-top: 27px; padding-top: 24px; font-size: 16px; line-height: 1.95; }
+.opening-ready .button { margin-top: 25px; }
+.opening-preparation { margin-top: 18px; color: var(--paper-gold); font-size: 16px; }
+.opening-preparation>span { display: block; color: var(--paper-muted); font-size: 14px; margin-top: 3px; }
+.opening-bonus-note { font-size: 15px; color: var(--paper-gold); line-height: 1.9; margin-top: 24px; }
+.opening-private-tools { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--paper-line); }
+.opening-private-tools>details { margin-top: 15px; }
+.opening-private-tools summary { color: var(--paper-gold); font-size: 15px; min-height: 44px; padding: 10px 0; cursor: pointer; }
+.opening-private-tools article { padding: 20px 0; border-top: 1px solid var(--paper-line); }
+.opening-private-tools h3 { font-family: var(--serif); font-size: 18px; }
+.opening-private-tools small { color: var(--paper-muted); font-size: 14px; }
+.opening-private-tools article p { font-family: var(--serif); font-size: 17px; line-height: 2.05; margin-top: 12px; }
+.meeting-story { max-width: 900px; margin: 28px auto 70px; }
+.meeting-story h1 { font-family: var(--serif); font-size: clamp(28px,4vw,38px); line-height: 1.55; margin: 18px 0 24px; }
+.meeting-location { color: var(--paper-gold); font-size: 15px; margin-bottom: 24px; }
+.meeting-accounts { font-family: var(--serif); font-size: 18px; line-height: 2.1; word-break: keep-all; overflow-wrap: anywhere; }
+.meeting-accounts p+p { margin-top: 22px; }
+.meeting-account { padding-left: 20px; border-left: 2px solid var(--paper-line); }
+.meeting-start-scene { margin-top: 32px; padding-top: 26px; border-top: 1px solid var(--paper-line); }
+.meeting-start-scene h2 { font-family: var(--serif); font-size: 25px; line-height: 1.55; margin: 12px 0 6px; }
+.meeting-start-location { color: var(--paper-muted); font-size: 14px; line-height: 1.8; }
+.meeting-start-prose { margin-top: 19px; font-family: var(--serif); font-size: 18px; line-height: 2.1; word-break: keep-all; overflow-wrap: anywhere; }
+.meeting-start-prose p+p { margin-top: 22px; }
+.meeting-next { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--paper-line); }
+.meeting-next .button { white-space: normal; }
+.meeting-notebook { margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.meeting-notebook summary { color: var(--gold-bright); font-size: 15px; min-height: 44px; cursor: pointer; }
+.meeting-notebook .meeting-accounts { padding-top: 15px; font-size: 16px; line-height: 1.95; }
+.meeting-notebook .meeting-account { padding-left: 14px; border-color: var(--gold-line); }
+.meeting-notebook .meeting-start-scene { margin-top: 23px; padding-top: 20px; border-color: var(--line); }
+.meeting-notebook .meeting-start-scene h2 { font-size: 20px; }
+.meeting-notebook .meeting-start-location { color: var(--muted); }
+.meeting-notebook .meeting-start-prose { font-size: 16px; line-height: 1.95; }
+.personal-opening-history { margin: 24px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.personal-opening-history summary { min-height: 48px; padding: 12px 0; color: var(--gold-bright); font-size: 16px; cursor: pointer; }
+.personal-opening-history article { padding: 18px 0; border-top: 1px solid var(--line); }
+.personal-opening-history h3 { font-family: var(--serif); font-size: 20px; }
+.personal-opening-history small { display: block; color: var(--muted); font-size: 14px; line-height: 1.8; margin-top: 7px; }
+.personal-opening-history p { font-family: var(--serif); font-size: 17px; line-height: 2; margin-top: 15px; }
+@media (max-width:960px) {
+  .opening-layout { grid-template-columns: 1fr; max-width: 850px; padding: 24px 28px 65px; }
+  .opening-progress ol { display: grid; grid-template-columns: 1fr 1fr; gap: 0 25px; }
+  .meeting-story { margin: 24px 28px 65px; }
+}
+@media (max-width:700px) {
+  .opening-layout { padding: 21px 20px 50px; gap: 22px; }
+  .opening-progress { padding: 23px; }
+  .opening-progress ol { grid-template-columns: 1fr; }
+  .opening-handoff { min-height: 420px; }
+  .opening-handoff h1 { font-size: 27px; }
+  .meeting-story { margin: 21px 20px 50px; }
+  .meeting-accounts { font-size: 17px; line-height: 2; }
+  .meeting-start-prose { font-size: 17px; line-height: 2; }
+  .meeting-account { padding-left: 14px; }
+  .meeting-next .button,.opening-handoff .button,.opening-ready .button { width: 100%; }
+}
 @media (min-width:1600px) {
   .hero { padding-left: 110px; padding-right: 110px; }
 }

@@ -1,75 +1,252 @@
-/* Compact original MP3 assets. A silent page creates no audio requests. */
-const clamp = (v, fallback = .5) => Number.isFinite(Number(v)) ? Math.min(1, Math.max(0, Number(v))) : fallback;
-const MOODS = new Set(['mystery','calm','tension','danger','hope']);
-const SFX = new Set(['dice','success','mixed','failure','clue','reveal','transition','attack','ability','enemy','victory']);
-export function createAudio(onChange = () => {}) {
+/* Same-origin, pre-rendered music. A quiet page creates no audio requests. */
+const clamp = (value, fallback = .5) => Number.isFinite(Number(value)) ? Math.min(1, Math.max(0, Number(value))) : fallback;
+const MOODS = new Set(['mystery', 'calm', 'tension', 'danger', 'hope', 'grief']);
+const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive']);
+const PRIORITY_EFFECTS = new Set(['death', 'revive']);
+const FADE_MS = 1250;
+const START_TIMEOUT_MS = 8000;
+const EFFECT_TIMEOUT_MS = 10000;
+
+/** Runtime overrides make playback ownership and cleanup testable without speakers. */
+export function createAudio(onChange = () => {}, runtime = {}) {
+  const Media = runtime.Audio || globalThis.Audio;
+  const now = runtime.now || (() => performance.now());
+  const requestFrame = runtime.requestFrame || (callback => requestAnimationFrame(callback));
+  const cancelFrame = runtime.cancelFrame || (id => globalThis.cancelAnimationFrame?.(id));
+  const setTimer = runtime.setTimer || ((callback, duration) => setTimeout(callback, duration));
+  const clearTimer = runtime.clearTimer || (id => clearTimeout(id));
+  let storage = runtime.storage;
+  if (storage === undefined) { try { storage = globalThis.localStorage; } catch {} }
   let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('cg-v14-audio') || '{}'); } catch {}
-  // Every visit starts quiet. The saved volume is retained without surprise playback.
-  const prefs = { enabled:false, music:clamp(saved.music ?? .35), effects:clamp(saved.effects ?? .55) };
-  let current = null, previous = null, desired = null, transition = 0;
-  let isPaused = false;
-  const activeEffects = new Set();
-  const persist = () => { try { localStorage.setItem('cg-v14-audio', JSON.stringify(prefs)); } catch {} onChange({...prefs}); };
-  const dispose = el => { if (!el) return; el.pause(); el.removeAttribute('src'); el.load(); };
-  function crossfade(next, old, token) {
-    const start = performance.now(), duration = 650;
-    function frame(now) {
-      if (token !== transition) return;
-      const progress = Math.min(1, (now-start)/duration);
-      next.volume = prefs.enabled && !isPaused ? prefs.music * progress : 0;
-      if (old) old.volume = prefs.music * (1-progress);
-      if (progress < 1) requestAnimationFrame(frame);
-      else { dispose(old); if(previous === old) previous = null; }
-    }
-    requestAnimationFrame(frame);
+  try { saved = JSON.parse(storage?.getItem('cg-v14-audio') || '{}'); } catch {}
+  const prefs = { enabled: false, music: clamp(saved?.music ?? .25), effects: clamp(saved?.effects ?? .45) };
+  let current = null, previous = null, desired = null, blockedDesired = null;
+  let transition = 0, frameId = null, startTimer = null, pending = null, fade = null;
+  let isPaused = false, destroyed = false;
+  const activeEffects = new Map();
+  const disposed = new WeakSet();
+  const musicListeners = new WeakSet();
+  const level = () => prefs.enabled && !isPaused && !destroyed ? prefs.music : 0;
+  const persist = () => {
+    try { storage?.setItem('cg-v14-audio', JSON.stringify(prefs)); } catch {}
+    onChange({ ...prefs });
+  };
+  const dispose = element => {
+    if (!element || disposed.has(element)) return;
+    disposed.add(element);
+    element.pause();
+    element.removeAttribute('src');
+    element.load();
+  };
+  const clearStartTimer = () => {
+    if (startTimer !== null) clearTimer(startTimer);
+    startTimer = null;
+  };
+  const stopFrame = () => {
+    if (frameId !== null) cancelFrame(frameId);
+    frameId = null;
+    fade = null;
+  };
+  function cancelPending() {
+    clearStartTimer();
+    if (!pending) return;
+    const request = pending;
+    pending = null;
+    current = request.resume ? request.next : request.old;
+    previous = null;
+    if (request.resume) request.next.pause();
+    else dispose(request.next);
   }
-  async function playDesired() {
-    if (!prefs.enabled || isPaused || !desired || prefs.music === 0) return;
-    if (current?.dataset.key === desired) { current.volume=prefs.music; if(current.paused){try{await current.play();}catch{}} return; }
-    const token = ++transition;
-    if (previous) dispose(previous);
-    const old=current, next=new Audio(`/game/audio/${desired}.mp3?v=17000`);
-    next.dataset.key=desired; next.loop=true; next.volume=0; next.preload='none';
-    current=next; previous=old;
-    next.addEventListener('error',()=>{ if(current===next){current=null;dispose(old);} },{once:true});
-    try {
-      await next.play();
-      if(token!==transition){dispose(next);return;}
-      crossfade(next,old,token);
-    } catch {
-      if(current===next) current=old;
-      previous=null; dispose(next);
+  function settleMusic(normalize = true) {
+    ++transition;
+    cancelPending();
+    stopFrame();
+    dispose(previous);
+    previous = null;
+    if (current && normalize) current.volume = level();
+  }
+  function stopEffects() {
+    for (const [element, timer] of activeEffects) {
+      clearTimer(timer);
+      dispose(element);
     }
+    activeEffects.clear();
+  }
+  function updateFade(time) {
+    if (!fade) return;
+    const progress = Math.min(1, Math.max(0, (time - fade.start) / FADE_MS));
+    const smooth = progress * progress * (3 - 2 * progress);
+    fade.next.volume = level() * smooth;
+    if (fade.old) fade.old.volume = level() * fade.oldRatio * (1 - smooth);
+    if (progress === 1) {
+      const old = fade.old;
+      fade = null;
+      dispose(old);
+      if (previous === old) previous = null;
+    }
+  }
+  function crossfade(next, old, token) {
+    const oldRatio = old && prefs.music > 0 ? clamp(old.volume / prefs.music, 1) : 0;
+    fade = { next, old, start: now(), oldRatio };
+    function step(time) {
+      if (token !== transition || !fade || destroyed) return;
+      frameId = null;
+      updateFade(time);
+      if (fade) frameId = requestFrame(step);
+    }
+    frameId = requestFrame(step);
+  }
+  function failStart(request) {
+    if (request.token !== transition || pending !== request) return;
+    clearStartTimer();
+    pending = null;
+    ++transition;
+    current = request.resume ? null : request.old;
+    previous = null;
+    blockedDesired = desired;
+    dispose(request.next);
+    if (current) current.volume = level();
+  }
+  function startPlayback(next, old, resume = false) {
+    const request = { next, old, resume, token: ++transition };
+    pending = request;
+    current = next;
+    previous = resume ? null : old;
+    next.volume = 0;
+    startTimer = setTimer(() => failStart(request), START_TIMEOUT_MS);
+    if (!musicListeners.has(next)) {
+      musicListeners.add(next);
+      next.addEventListener('error', () => {
+        if (pending?.next === next) failStart(pending);
+        else if (current === next) {
+          ++transition;
+          stopFrame();
+          const fallback = previous;
+          previous = null;
+          current = fallback;
+          dispose(next);
+          if (current) current.volume = level();
+          blockedDesired = desired;
+        }
+      }, { once: true });
+    }
+    let attempt;
+    try { attempt = next.play(); } catch { failStart(request); return; }
+    Promise.resolve(attempt).then(() => {
+      if (request.token !== transition || pending !== request) return;
+      clearStartTimer();
+      pending = null;
+      crossfade(next, resume ? null : old, request.token);
+    }, () => failStart(request));
+  }
+  function playDesired() {
+    if (!prefs.enabled || isPaused || destroyed || !desired || prefs.music === 0 || !Media) return;
+    if (pending?.next.dataset.key === desired) return;
+    if (current?.dataset.key === desired && !current.paused) {
+      // A receipt redraw must not jump to full volume halfway through a fade.
+      if (!fade) current.volume = level();
+      return;
+    }
+    if (blockedDesired === desired) return;
+    settleMusic(false);
+    if (current?.dataset.key === desired) {
+      startPlayback(current, null, true);
+      return;
+    }
+    const old = current;
+    const next = new Media(`/game/audio/${desired}.mp3?v=19000`);
+    next.dataset.key = desired;
+    next.loop = true;
+    next.preload = 'none';
+    startPlayback(next, old);
   }
   return {
-    get preferences(){return {...prefs};},
-    async enable(){prefs.enabled=true;persist();await playDesired();return prefs.enabled;},
-    disable(){prefs.enabled=false;++transition;dispose(previous);previous=null;if(current)current.pause();for(const e of activeEffects)dispose(e);activeEffects.clear();persist();},
-    async toggle(){if(prefs.enabled)this.disable();else await this.enable();return prefs.enabled;},
-    setVolumes(music,effects){
-      prefs.music=clamp(music,prefs.music);prefs.effects=clamp(effects,prefs.effects);
-      if(current)current.volume=prefs.enabled&&!isPaused?prefs.music:0;
-      if(prefs.music===0){++transition;dispose(previous);previous=null;current?.pause();}
-      if(prefs.effects===0){for(const e of activeEffects)dispose(e);activeEffects.clear();}
-      persist();if(prefs.music>0)void playDesired();
+    get preferences() { return { ...prefs }; },
+    async enable() {
+      if (destroyed) return false;
+      prefs.enabled = true;
+      blockedDesired = null;
+      persist();
+      playDesired();
+      // Do not hold the settings dialog open for a stalled media promise.
+      return true;
     },
-    scene(campaignId,mood='mystery'){
-      if(!/^[a-z0-9-]+$/.test(campaignId||''))return;
-      desired=`${campaignId}-${MOODS.has(mood)?mood:'mystery'}`;
-      void playDesired();
+    disable() {
+      prefs.enabled = false;
+      settleMusic();
+      if (current) { current.pause(); current.volume = 0; }
+      stopEffects();
+      persist();
     },
-    effect(name){
-      if(!prefs.enabled||isPaused||prefs.effects===0||!SFX.has(name))return;
-      // Avoid a pile-up of simultaneous one-shots on reconnection.
-      if(activeEffects.size>=4)return;
-      const el=new Audio(`/game/audio/${name}.mp3?v=17000`);el.preload='none';el.volume=prefs.effects;activeEffects.add(el);
-      const cleanup=()=>{activeEffects.delete(el);dispose(el);};
-      el.addEventListener('ended',cleanup,{once:true});el.addEventListener('error',cleanup,{once:true});
-      el.play().catch(cleanup);
+    async toggle() {
+      if (prefs.enabled) this.disable(); else await this.enable();
+      return prefs.enabled;
     },
-    pause(){isPaused=true;if(current)current.pause();if(previous)previous.pause();for(const el of activeEffects)dispose(el);activeEffects.clear();},
-    resume(){isPaused=false;void playDesired();},
-    destroy(){++transition;dispose(current);dispose(previous);for(const el of activeEffects)dispose(el);activeEffects.clear();}
+    setVolumes(music, effects) {
+      if (destroyed) return;
+      prefs.music = clamp(music, prefs.music);
+      prefs.effects = clamp(effects, prefs.effects);
+      if (prefs.music === 0) {
+        settleMusic();
+        if (current) { current.pause(); current.volume = 0; }
+      } else if (fade) updateFade(now());
+      else if (current && !pending) current.volume = level();
+      if (prefs.effects === 0) stopEffects();
+      else for (const element of activeEffects.keys()) element.volume = prefs.effects;
+      persist();
+      if (prefs.music > 0) playDesired();
+    },
+    scene(campaignId, mood = 'mystery') {
+      if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || '')) return;
+      const next = `${campaignId}-${MOODS.has(mood) ? mood : 'mystery'}`;
+      if (desired !== next) blockedDesired = null;
+      desired = next;
+      playDesired();
+    },
+    effect(name) {
+      if (!prefs.enabled || isPaused || destroyed || prefs.effects === 0 || !SFX.has(name) || !Media) return false;
+      // A new death or revival takes ownership of the one-shot mix immediately.
+      if (PRIORITY_EFFECTS.has(name)) stopEffects();
+      if (activeEffects.size >= 4) return false;
+      const version = PRIORITY_EFFECTS.has(name) ? '19000' : '17000';
+      const element = new Media(`/game/audio/${name}.mp3?v=${version}`);
+      element.preload = 'none';
+      element.loop = false;
+      element.volume = prefs.effects;
+      const cleanup = () => {
+        if (!activeEffects.has(element)) return;
+        clearTimer(activeEffects.get(element));
+        activeEffects.delete(element);
+        dispose(element);
+      };
+      activeEffects.set(element, setTimer(cleanup, EFFECT_TIMEOUT_MS));
+      element.addEventListener('ended', cleanup, { once: true });
+      element.addEventListener('error', cleanup, { once: true });
+      try { Promise.resolve(element.play()).catch(cleanup); } catch { cleanup(); }
+      return true;
+    },
+    pause() {
+      if (destroyed) return;
+      isPaused = true;
+      settleMusic();
+      if (current) { current.pause(); current.volume = 0; }
+      stopEffects();
+    },
+    resume() {
+      if (destroyed) return;
+      isPaused = false;
+      blockedDesired = null;
+      playDesired();
+    },
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      prefs.enabled = false;
+      settleMusic();
+      dispose(current);
+      current = null;
+      desired = null;
+      stopEffects();
+    },
   };
 }

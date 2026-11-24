@@ -7,6 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
 import {once} from 'node:events';
 import {JSDOM,VirtualConsole} from 'jsdom';
 import {build} from 'esbuild';
@@ -156,10 +158,10 @@ test('music stays neutral before a local handoff; an actual death selects grief 
     await lobby(app,2);await click(app,'[data-action="start"]');
     assert.deepEqual(app.audioRequests,[],'A quiet page does not request music.');
     await click(app,'#sound-toggle');
-    assert.deepEqual(app.audioRequests,[`/game/audio/${story.id}-calm.mp3?v=19000`]);
+    assert.deepEqual(app.audioRequests,[`/game/audio/${story.id}-calm.mp3?v=20000`]);
     await click(app,'[data-action="opening-receive"]');
     const current=stored(app).game,scene=viewGame(current,story,current.players[0].id).scene;
-    assert.ok(app.audioRequests.includes(`/game/audio/${story.id}-${scene.mood}.mp3?v=19000`));
+    assert.ok(app.audioRequests.includes(`/game/audio/${story.id}-${scene.mood}.mp3?v=20000`));
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
   const g=createGame(story,people());g.players[0].health=1;
@@ -170,7 +172,7 @@ test('music stays neutral before a local handoff; an actual death selects grief 
     await choose(app,'group-hold-door');
     assert.equal(stored(app).game.players[0].life,'dead');
     const requests=app.audioRequests.slice(before);
-    assert.ok(requests.includes(`/game/audio/${story.id}-grief.mp3?v=19000`));
+    assert.ok(requests.includes(`/game/audio/${story.id}-grief.mp3?v=20000`));
     assert.equal(requests.filter(src=>src.includes('/death.mp3')).length,1);
     assert.ok(!requests.some(src=>/\/(success|failure|victory)\.mp3/.test(src)),'Death owns the result cue even when the roll has a grade.');
     const afterDeath=app.audioRequests.length;
@@ -248,11 +250,12 @@ test('solo opening receipts lead to the main scene and its first dice preview in
 const ack=(socket,event,payload={})=>new Promise((resolve,reject)=>socket.timeout(3500).emit(event,payload,(error,result)=>error?reject(error):resolve(result)));
 async function networkHarness(){
   const server=http.createServer((_request,response)=>response.end('test')),io=new Server(server,{serveClient:false}),sockets=[];let rolls=0;
-  const service=attachTableService(io,{storageDir:null,roll:()=>{rolls++;return 20;}});
+  const storageDir=fs.mkdtempSync(path.join(os.tmpdir(),'chronicle-v19-ui-'));
+  const service=attachTableService(io,{storageDir,roll:()=>{rolls++;return 20;}});
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
   const url=`http://127.0.0.1:${server.address().port}`;
   const socket=(namespace='/table',options={})=>{const client=connect(url+namespace,{...options,transports:['websocket'],forceNew:true,reconnection:false,autoConnect:false});sockets.push(client);return client;};
-  return {url,connect:socket,sockets,get rolls(){return rolls;},async peer(){const client=socket();client.connect();await once(client,'connect',{signal:AbortSignal.timeout(3500)});return client;},async close(){service.close();for(const client of sockets)client.disconnect();await new Promise(resolve=>io.close(resolve));if(server.listening)await new Promise(resolve=>server.close(resolve));}};
+  return {url,connect:socket,sockets,get rolls(){return rolls;},async peer(){const client=socket();client.connect();await once(client,'connect',{signal:AbortSignal.timeout(3500)});return client;},async close(){service.close();for(const client of sockets)client.disconnect();await new Promise(resolve=>io.close(resolve));if(server.listening)await new Promise(resolve=>server.close(resolve));fs.rmSync(storageDir,{recursive:true,force:true});}};
 }
 
 test('real online peer progress preserves my preview; the host sees only progress and explicitly defers a disconnected reader',async()=>{

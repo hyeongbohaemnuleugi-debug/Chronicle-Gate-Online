@@ -161,7 +161,7 @@ test('silent startup and zero volume make no media requests, with modest default
     h.mixer.setVolumes(0, 0); await h.mixer.enable(); h.mixer.effect('revive');
     assert.equal(h.media.length, 0);
     h.mixer.setVolumes(.25, .45); await flush();
-    assert.equal(h.media.length, 1); assert.equal(h.media[0].initialSrc, '/game/audio/clock-city-grief.mp3?v=19000');
+    assert.equal(h.media.length, 1); assert.equal(h.media[0].initialSrc, '/game/audio/clock-city-grief.mp3?v=20000');
   } finally { h.mixer.destroy(); }
   const defaults = audioHarness();
   assert.equal(defaults.mixer.preferences.music, .25); defaults.mixer.destroy();

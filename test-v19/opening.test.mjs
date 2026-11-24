@@ -65,7 +65,7 @@ test('every 1/2/3/4-person profession combination reaches an explicit meeting wi
     const view=viewGame(game,campaign,game.players[0].id);
     assert.equal(view.opening.active,false);assert.equal(view.opening.meeting.text.length,n+1);
     assert.deepEqual(view.scene.reading.paragraphs,OPENINGS[campaign.id].meeting.startText[n===1?'solo':'group']);
-    assert.deepEqual(view.opening.meeting.startScene,{id:campaign.start,title:campaign.nodes[campaign.start].title,location:campaign.nodes[campaign.start].location,text:view.scene.reading.paragraphs});
+    assert.deepEqual(view.opening.meeting.startScene,{id:campaign.start,title:campaign.nodes[campaign.start].title,location:campaign.nodes[campaign.start].location,mood:campaign.nodes[campaign.start].mood||'mystery',text:view.scene.reading.paragraphs});
     assert.deepEqual(view.opening.meeting.participants.map(p=>p.className),slots.map(slot=>campaign.classes[slot].name));
     assert.equal(view.canAct,true);assert.equal(view.scene.id,campaign.start);
     const copyText=chronicleText(view);

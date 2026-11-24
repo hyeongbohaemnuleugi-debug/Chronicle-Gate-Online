@@ -87,5 +87,5 @@ for(const campaign of CAMPAIGNS){
  report.scenarios.push(row);
  console.log(`${campaign.id}: ${row.endings.filter(r=>!r.error).length}/${row.endings.length} group endings, ${row.soloEndings.filter(r=>!r.error).length}/${row.soloEndings.length} solo endings, ${row.items.filter(r=>!r.error).length}/${row.items.length} item uses, ${row.partyBranches.filter(r=>!r.error).length}/${row.partyBranches.length} mode choices witnessed`);
 }
-if(process.argv.includes('--write'))fs.writeFileSync(new URL('../NARRATIVE_REACHABILITY_V19.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
+if(process.argv.includes('--write'))fs.writeFileSync(new URL('../NARRATIVE_REACHABILITY_V20.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 if(report.issues.length){console.error(report.issues.join('\n'));process.exitCode=1;}

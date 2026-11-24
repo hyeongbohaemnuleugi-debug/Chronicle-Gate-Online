@@ -9,15 +9,15 @@ from pathlib import Path
 from datetime import datetime,timezone
 root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text())['version']
-release='19'
+release='20'
 manifest_name=f'V{release}_PATCH_MANIFEST.json'
 listing_name=f'FILES_CHANGED_V{release}.txt'
 original=Path(sys.argv[1]).resolve();output=Path(sys.argv[2]).resolve()
 sha=lambda data:hashlib.sha256(data).hexdigest()
 base={}
-exclude_dirs={'node_modules','.git','.chronicle-data','.chronicle-v14','.chronicle-v15','.chronicle-v16','.chronicle-v17','.chronicle-v18','.chronicle-v19','.ui-qa','.uiqa','__pycache__','tests-v14','tests-v15','tests-v16','tests-v17'}
+exclude_dirs={'node_modules','.git','.chronicle-data','.chronicle-v14','.chronicle-v15','.chronicle-v16','.chronicle-v17','.chronicle-v18','.chronicle-v19','.chronicle-v20','.ui-qa','.uiqa','__pycache__','tests-v14','tests-v15','tests-v16','tests-v17'}
 exclude_names={'IMPLEMENTATION_CONTRACT.md','IMPLEMENTATION_V15.md','IMPLEMENTATION_V16.md','IMPLEMENTATION_V17.md','V14_PATCH_MANIFEST.json','FILES_CHANGED_V14.txt','V15_PATCH_MANIFEST.json','FILES_CHANGED_V15.txt','V16_PATCH_MANIFEST.json','FILES_CHANGED_V16.txt','V17_PATCH_MANIFEST.json','FILES_CHANGED_V17.txt','README_V14_KO.md','VALIDATION_V14.md','ASSET_AND_DESIGN_NOTES_V14.md','README_V15_KO.md','CLASS_GUIDE_V15.md','VALIDATION_V15.md','ASSET_AND_DESIGN_NOTES_V15.md','qa-v14.mjs','qa-v15.mjs','qa-v16.mjs','cleanup-v16.mjs','README_V16_KO.md','VALIDATION_V16.md','CLASS_GUIDE_V16.md','ASSET_AND_DESIGN_NOTES_V16.md','SERVER_AND_STORAGE_V16.md','RESOURCE_REPORT_V16.json','SCENARIO_REACHABILITY.json','.env'}
-exclude_names.update({'IMPLEMENTATION_V19.md','IMPLEMENTATION_V18.md','IMPLEMENTATION_V18_1.md',manifest_name,listing_name,'V18_1_PATCH_MANIFEST.json','FILES_CHANGED_V18_1.txt','V18_PATCH_MANIFEST.json','FILES_CHANGED_V18.txt','README_V17_KO.md','VALIDATION_V17.md','STORY_GUIDE_V17.md','CLASS_GUIDE_V17.md','ASSET_AND_DESIGN_NOTES_V17.md','SERVER_AND_STORAGE_V17.md','RESOURCE_REPORT_V17.json','NARRATIVE_REACHABILITY_V17.json','qa-v17.mjs','report-v17.mjs'})
+exclude_names.update({'IMPLEMENTATION_V20.md','IMPLEMENTATION_V19.md','V19_PATCH_MANIFEST.json','FILES_CHANGED_V19.txt','IMPLEMENTATION_V18.md','IMPLEMENTATION_V18_1.md',manifest_name,listing_name,'V18_1_PATCH_MANIFEST.json','FILES_CHANGED_V18_1.txt','V18_PATCH_MANIFEST.json','FILES_CHANGED_V18.txt','README_V17_KO.md','VALIDATION_V17.md','STORY_GUIDE_V17.md','CLASS_GUIDE_V17.md','ASSET_AND_DESIGN_NOTES_V17.md','SERVER_AND_STORAGE_V17.md','RESOURCE_REPORT_V17.json','NARRATIVE_REACHABILITY_V17.json','qa-v17.mjs','report-v17.mjs'})
 if original.is_dir():
  for directory,folders,names in os.walk(original,followlinks=False):
   folders[:]=[name for name in folders if name not in exclude_dirs and not (Path(directory)/name).is_symlink()]
@@ -48,7 +48,7 @@ for file in sorted(root.rglob('*')):
 changed.sort()
 manifest={'version':version,'baselineKind':baseline_kind,'baselineVersion':base_version,'baselineFilename':original.name,'baselineSha256':baseline_sha,'baselineHashMethod':'sha256 of sorted relative paths and file hashes, excluding dependencies, runtime state and secrets' if original.is_dir() else 'sha256 of uploaded archive bytes','createdAt':datetime.now(timezone.utc).isoformat(),'entryPoints':{'online':'npm start (after overlay on the stated baseline)','legacy':'npm run start:legacy (explicit opt-in)','offline':'PLAY_OFFLINE.html after overlay','offlineHttp':'node scripts/offline-server.mjs after overlay'},'cleanup':'npm run clean:media removes only unchanged old WAVs with verified MP3 replacements; cloud data is never deleted.','note':'Only added or changed files relative to the stated baseline are included. Apply paths at repository root. This is not a standalone full repository. Runtime saves and environment secrets are excluded.','files':[{'path':key,'status':'replace' if key in base else 'add','bytes':len(data),'sha256':sha(data),'baselineSha256':sha(base[key]) if key in base else None} for key,data in changed]}
 manifest_data=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
-listing=('Chronicle Gate v'+version+' changed files\nBaseline: '+original.name+'\nBaseline kind: '+baseline_kind+'\n\n'+'\n'.join(('REPLACE ' if key in base else 'ADD     ')+key for key,_ in changed)+'\n\nApply at repository root; read PATCH_NOTES_V19.md.\n').encode()
+listing=('Chronicle Gate v'+version+' changed files\nBaseline: '+original.name+'\nBaseline kind: '+baseline_kind+'\n\n'+'\n'.join(('REPLACE ' if key in base else 'ADD     ')+key for key,_ in changed)+'\n\nApply at repository root; read PATCH_NOTES_V20.md.\n').encode()
 (root/manifest_name).write_bytes(manifest_data);(root/listing_name).write_bytes(listing)
 output.parent.mkdir(parents=True,exist_ok=True)
 with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as archive:

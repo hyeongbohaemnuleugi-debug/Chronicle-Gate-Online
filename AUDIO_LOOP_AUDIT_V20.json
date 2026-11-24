@@ -1,0 +1,772 @@
+{
+  "version": 20,
+  "method": "Independent FFmpeg decode and NumPy inspection of all 42 delivered MP3 internal regions; original score boundary also measured after rotation. Source/mastering/render tests only, no claim of physical-browser gaplessness or human listening.",
+  "musicCount": 42,
+  "preservedEffects": 13,
+  "allEffectHashesMatchBaseline": true,
+  "mp3Bytes": 13923461,
+  "musicBytes": 13695816,
+  "newLoopMax100msRmsDifferenceDb": 0.10203914330249782,
+  "newLoopMaxJumpTo99thStepRatio": 0.05036447454738174,
+  "longestUnder55DbMs": 0,
+  "totalClippedSamples": 0,
+  "originalBoundaryNote": "The v19 musical downbeat is retained inside the cycle. Its 100 ms energy change is not called a codec silence or a click. In the mastering script originalScoreBoundaryBeforeEncoding is measured before the final constant loudness gain, so compare ratios rather than absolute dBFS across that field.",
+  "tracks": [
+    {
+      "file": "last-train-calm.mp3",
+      "frames": 819692,
+      "loopFrames": 787692,
+      "loopSeconds": 24.615375,
+      "phaseOffsetFrames": 8992,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.012803483711045423,
+        "edge100msRmsDifferenceDb": 0.004951684572541215
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.09134364292771428,
+        "edge100msRmsDifferenceDb": 11.643035537952219
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129"
+    },
+    {
+      "file": "last-train-mystery.mp3",
+      "frames": 840421,
+      "loopFrames": 808421,
+      "loopSeconds": 25.26315625,
+      "phaseOffsetFrames": 42136,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.007741424196490138,
+        "edge100msRmsDifferenceDb": 0.01379816831791396
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.12652828274449524,
+        "edge100msRmsDifferenceDb": 15.102053283449564
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d"
+    },
+    {
+      "file": "last-train-tension.mp3",
+      "frames": 873644,
+      "loopFrames": 841644,
+      "loopSeconds": 26.301375,
+      "phaseOffsetFrames": 10352,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0032693585676155704,
+        "edge100msRmsDifferenceDb": 0.0006975465952906079
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.17123970899453797,
+        "edge100msRmsDifferenceDb": 9.742925359824175
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14"
+    },
+    {
+      "file": "last-train-danger.mp3",
+      "frames": 840421,
+      "loopFrames": 808421,
+      "loopSeconds": 25.26315625,
+      "phaseOffsetFrames": 13888,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.015193146718459203,
+        "edge100msRmsDifferenceDb": 0.10203914330249782
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.06929633026001611,
+        "edge100msRmsDifferenceDb": 10.792150568020203
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9"
+    },
+    {
+      "file": "last-train-hope.mp3",
+      "frames": 819692,
+      "loopFrames": 787692,
+      "loopSeconds": 24.615375,
+      "phaseOffsetFrames": 46672,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.02973169504967461,
+        "edge100msRmsDifferenceDb": 0.023976405254195924
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.07363802106559426,
+        "edge100msRmsDifferenceDb": 12.766053391081238
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798"
+    },
+    {
+      "file": "last-train-grief.mp3",
+      "frames": 992000,
+      "loopFrames": 960000,
+      "loopSeconds": 30.0,
+      "phaseOffsetFrames": 35696,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.008040795759321005,
+        "edge100msRmsDifferenceDb": 0.008495947895845311
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.12398462565625405,
+        "edge100msRmsDifferenceDb": 11.915871412851292
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229"
+    },
+    {
+      "file": "glass-hotel-calm.mp3",
+      "frames": 826483,
+      "loopFrames": 794483,
+      "loopSeconds": 24.82759375,
+      "phaseOffsetFrames": 20440,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.02399662125833495,
+        "edge100msRmsDifferenceDb": 0.01729398004553898
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.4736071301914367,
+        "edge100msRmsDifferenceDb": 9.989908609315739
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809"
+    },
+    {
+      "file": "glass-hotel-mystery.mp3",
+      "frames": 854857,
+      "loopFrames": 822857,
+      "loopSeconds": 25.71428125,
+      "phaseOffsetFrames": 49336,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.03726029618081509,
+        "edge100msRmsDifferenceDb": 0.010084172931605082
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.0524329225610117,
+        "edge100msRmsDifferenceDb": 10.227304109735107
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1"
+    },
+    {
+      "file": "glass-hotel-tension.mp3",
+      "frames": 885333,
+      "loopFrames": 853333,
+      "loopSeconds": 26.66665625,
+      "phaseOffsetFrames": 27824,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.014240398430873439,
+        "edge100msRmsDifferenceDb": 0.00203252719079618
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.01783616408595033,
+        "edge100msRmsDifferenceDb": 3.9639691572530875
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d"
+    },
+    {
+      "file": "glass-hotel-danger.mp3",
+      "frames": 826483,
+      "loopFrames": 794483,
+      "loopSeconds": 24.82759375,
+      "phaseOffsetFrames": 9368,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.007798485499325324,
+        "edge100msRmsDifferenceDb": 0.01749317099086172
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.006988872135135173,
+        "edge100msRmsDifferenceDb": 4.374660227522114
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736"
+    },
+    {
+      "file": "glass-hotel-hope.mp3",
+      "frames": 826483,
+      "loopFrames": 794483,
+      "loopSeconds": 24.82759375,
+      "phaseOffsetFrames": 24064,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.005940614643316619,
+        "edge100msRmsDifferenceDb": 0.03588671758267545
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.20989911312838438,
+        "edge100msRmsDifferenceDb": 8.969765946408213
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a"
+    },
+    {
+      "file": "glass-hotel-grief.mp3",
+      "frames": 992000,
+      "loopFrames": 960000,
+      "loopSeconds": 30.0,
+      "phaseOffsetFrames": 34128,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.00939962383804172,
+        "edge100msRmsDifferenceDb": 0.0015368214237046474
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.7248235248888639,
+        "edge100msRmsDifferenceDb": 9.210360859027919
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f"
+    },
+    {
+      "file": "moon-market-calm.mp3",
+      "frames": 826483,
+      "loopFrames": 794483,
+      "loopSeconds": 24.82759375,
+      "phaseOffsetFrames": 15440,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.01855043997602999,
+        "edge100msRmsDifferenceDb": 0.0010966367447326469
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.031241067903897454,
+        "edge100msRmsDifferenceDb": 10.959661292695584
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0"
+    },
+    {
+      "file": "moon-market-mystery.mp3",
+      "frames": 840421,
+      "loopFrames": 808421,
+      "loopSeconds": 25.26315625,
+      "phaseOffsetFrames": 55856,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.01021027671348633,
+        "edge100msRmsDifferenceDb": 0.0036676737876328506
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.07592398289683873,
+        "edge100msRmsDifferenceDb": 10.702624974573707
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b"
+    },
+    {
+      "file": "moon-market-tension.mp3",
+      "frames": 854857,
+      "loopFrames": 822857,
+      "loopSeconds": 25.71428125,
+      "phaseOffsetFrames": 28856,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.03127804755504203,
+        "edge100msRmsDifferenceDb": 0.02424476178419832
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.22708196392838229,
+        "edge100msRmsDifferenceDb": 8.570111306138564
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35"
+    },
+    {
+      "file": "moon-market-danger.mp3",
+      "frames": 826483,
+      "loopFrames": 794483,
+      "loopSeconds": 24.82759375,
+      "phaseOffsetFrames": 19080,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.036532678657349237,
+        "edge100msRmsDifferenceDb": 0.0526403339256145
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.056123201224697855,
+        "edge100msRmsDifferenceDb": 9.855367334090058
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321"
+    },
+    {
+      "file": "moon-market-hope.mp3",
+      "frames": 800000,
+      "loopFrames": 768000,
+      "loopSeconds": 24.0,
+      "phaseOffsetFrames": 9968,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0049951635441049524,
+        "edge100msRmsDifferenceDb": 0.027844907988025195
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.04531834676587078,
+        "edge100msRmsDifferenceDb": 6.76682902155179
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5"
+    },
+    {
+      "file": "moon-market-grief.mp3",
+      "frames": 972408,
+      "loopFrames": 940408,
+      "loopSeconds": 29.38775,
+      "phaseOffsetFrames": 12216,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.05036447454738174,
+        "edge100msRmsDifferenceDb": 0.007666025283576759
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.08728554407902839,
+        "edge100msRmsDifferenceDb": 9.08100175743683
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d"
+    },
+    {
+      "file": "deep-sea-calm.mp3",
+      "frames": 840421,
+      "loopFrames": 808421,
+      "loopSeconds": 25.26315625,
+      "phaseOffsetFrames": 39856,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.002159631120843054,
+        "edge100msRmsDifferenceDb": 0.03096492021907952
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.07012040002505045,
+        "edge100msRmsDifferenceDb": 10.445288482703525
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a"
+    },
+    {
+      "file": "deep-sea-mystery.mp3",
+      "frames": 885333,
+      "loopFrames": 853333,
+      "loopSeconds": 26.66665625,
+      "phaseOffsetFrames": 41736,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0016720617564518394,
+        "edge100msRmsDifferenceDb": 0.005723993107779454
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.11627458834504847,
+        "edge100msRmsDifferenceDb": 9.90214933032168
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30"
+    },
+    {
+      "file": "deep-sea-tension.mp3",
+      "frames": 935529,
+      "loopFrames": 903529,
+      "loopSeconds": 28.23528125,
+      "phaseOffsetFrames": 13016,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0009145154500868699,
+        "edge100msRmsDifferenceDb": 0.013854716194367681
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.0036698195714425165,
+        "edge100msRmsDifferenceDb": 8.453828802018482
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e"
+    },
+    {
+      "file": "deep-sea-danger.mp3",
+      "frames": 862270,
+      "loopFrames": 830270,
+      "loopSeconds": 25.9459375,
+      "phaseOffsetFrames": 21480,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.019478985203057086,
+        "edge100msRmsDifferenceDb": 0.04397659173008493
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.4037934152756349,
+        "edge100msRmsDifferenceDb": 4.585329832032235
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61"
+    },
+    {
+      "file": "deep-sea-hope.mp3",
+      "frames": 840421,
+      "loopFrames": 808421,
+      "loopSeconds": 25.26315625,
+      "phaseOffsetFrames": 27008,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0006112162137806969,
+        "edge100msRmsDifferenceDb": 0.007942780989899482
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.07746878643487394,
+        "edge100msRmsDifferenceDb": 9.606173447849713
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297"
+    },
+    {
+      "file": "deep-sea-grief.mp3",
+      "frames": 1022968,
+      "loopFrames": 990968,
+      "loopSeconds": 30.96775,
+      "phaseOffsetFrames": 47616,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0016384252555609142,
+        "edge100msRmsDifferenceDb": 0.003170350630236994
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.06401189340414142,
+        "edge100msRmsDifferenceDb": 11.050105347484937
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51"
+    },
+    {
+      "file": "dragon-banquet-calm.mp3",
+      "frames": 800000,
+      "loopFrames": 768000,
+      "loopSeconds": 24.0,
+      "phaseOffsetFrames": 44144,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.00924082584090682,
+        "edge100msRmsDifferenceDb": 0.016775608201950253
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.050883819400926865,
+        "edge100msRmsDifferenceDb": 11.536112456421716
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5"
+    },
+    {
+      "file": "dragon-banquet-mystery.mp3",
+      "frames": 819692,
+      "loopFrames": 787692,
+      "loopSeconds": 24.615375,
+      "phaseOffsetFrames": 41808,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0033052953755492408,
+        "edge100msRmsDifferenceDb": 0.012594904061747207
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.0706806618375345,
+        "edge100msRmsDifferenceDb": 8.825732774258075
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81"
+    },
+    {
+      "file": "dragon-banquet-tension.mp3",
+      "frames": 851200,
+      "loopFrames": 819200,
+      "loopSeconds": 25.6,
+      "phaseOffsetFrames": 24912,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.00824379750392538,
+        "edge100msRmsDifferenceDb": 0.014596998764774903
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.05198017072647446,
+        "edge100msRmsDifferenceDb": 10.86642544108508
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c"
+    },
+    {
+      "file": "dragon-banquet-danger.mp3",
+      "frames": 819692,
+      "loopFrames": 787692,
+      "loopSeconds": 24.615375,
+      "phaseOffsetFrames": 17552,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.007860237344923398,
+        "edge100msRmsDifferenceDb": 0.01440884279272707
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.034064570653710644,
+        "edge100msRmsDifferenceDb": 10.068688095249112
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223"
+    },
+    {
+      "file": "dragon-banquet-hope.mp3",
+      "frames": 800000,
+      "loopFrames": 768000,
+      "loopSeconds": 24.0,
+      "phaseOffsetFrames": 33336,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.00111299107599704,
+        "edge100msRmsDifferenceDb": 0.026296876400323504
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.048294390962226215,
+        "edge100msRmsDifferenceDb": 6.207488228654377
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06"
+    },
+    {
+      "file": "dragon-banquet-grief.mp3",
+      "frames": 962909,
+      "loopFrames": 930909,
+      "loopSeconds": 29.09090625,
+      "phaseOffsetFrames": 31264,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.012726760345352023,
+        "edge100msRmsDifferenceDb": 0.031046824593277362
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.1023318862807385,
+        "edge100msRmsDifferenceDb": 11.801635179037275
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486"
+    },
+    {
+      "file": "clock-city-calm.mp3",
+      "frames": 800000,
+      "loopFrames": 768000,
+      "loopSeconds": 24.0,
+      "phaseOffsetFrames": 17008,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.01537289007779006,
+        "edge100msRmsDifferenceDb": 0.008386985698592019
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.26933092747689075,
+        "edge100msRmsDifferenceDb": 10.558637485585447
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d"
+    },
+    {
+      "file": "clock-city-mystery.mp3",
+      "frames": 815673,
+      "loopFrames": 783673,
+      "loopSeconds": 24.48978125,
+      "phaseOffsetFrames": 8160,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.035012604632620604,
+        "edge100msRmsDifferenceDb": 0.02517791959773944
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.027603562026668877,
+        "edge100msRmsDifferenceDb": 14.814165176831391
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d"
+    },
+    {
+      "file": "clock-city-tension.mp3",
+      "frames": 866783,
+      "loopFrames": 834783,
+      "loopSeconds": 26.08696875,
+      "phaseOffsetFrames": 10088,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.004064193285181981,
+        "edge100msRmsDifferenceDb": 0.10119544421941566
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.19023667240796366,
+        "edge100msRmsDifferenceDb": 9.697814955517044
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0"
+    },
+    {
+      "file": "clock-city-danger.mp3",
+      "frames": 832000,
+      "loopFrames": 800000,
+      "loopSeconds": 25.0,
+      "phaseOffsetFrames": 18168,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.00425760716786321,
+        "edge100msRmsDifferenceDb": 0.00134055314513071
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.055351646294502205,
+        "edge100msRmsDifferenceDb": 8.503071894037577
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20"
+    },
+    {
+      "file": "clock-city-hope.mp3",
+      "frames": 800000,
+      "loopFrames": 768000,
+      "loopSeconds": 24.0,
+      "phaseOffsetFrames": 16816,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.017617066507242922,
+        "edge100msRmsDifferenceDb": 0.018929350049599843
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.024949181757825102,
+        "edge100msRmsDifferenceDb": 9.048058921979024
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be"
+    },
+    {
+      "file": "clock-city-grief.mp3",
+      "frames": 992000,
+      "loopFrames": 960000,
+      "loopSeconds": 30.0,
+      "phaseOffsetFrames": 44928,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.00043251751772513614,
+        "edge100msRmsDifferenceDb": 0.007559703949095779
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.07943281197674015,
+        "edge100msRmsDifferenceDb": 14.788622422183355
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6"
+    },
+    {
+      "file": "snow-radio-calm.mp3",
+      "frames": 840421,
+      "loopFrames": 808421,
+      "loopSeconds": 25.26315625,
+      "phaseOffsetFrames": 8760,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0074307169187236765,
+        "edge100msRmsDifferenceDb": 0.025292015844340706
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.002968690430653951,
+        "edge100msRmsDifferenceDb": 8.971338124213052
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0"
+    },
+    {
+      "file": "snow-radio-mystery.mp3",
+      "frames": 862270,
+      "loopFrames": 830270,
+      "loopSeconds": 25.9459375,
+      "phaseOffsetFrames": 42344,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.0011134984322575608,
+        "edge100msRmsDifferenceDb": 0.00021632106992947438
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.018901909998236488,
+        "edge100msRmsDifferenceDb": 10.112932959127715
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1"
+    },
+    {
+      "file": "snow-radio-tension.mp3",
+      "frames": 909714,
+      "loopFrames": 877714,
+      "loopSeconds": 27.4285625,
+      "phaseOffsetFrames": 22000,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.002312693959776408,
+        "edge100msRmsDifferenceDb": 0.06625029510332865
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.03436531999784347,
+        "edge100msRmsDifferenceDb": 7.885024354453824
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88"
+    },
+    {
+      "file": "snow-radio-danger.mp3",
+      "frames": 873644,
+      "loopFrames": 841644,
+      "loopSeconds": 26.301375,
+      "phaseOffsetFrames": 11496,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.002644704947199265,
+        "edge100msRmsDifferenceDb": 0.012858759587816041
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.09524146855639617,
+        "edge100msRmsDifferenceDb": 6.5678688878718745
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604"
+    },
+    {
+      "file": "snow-radio-hope.mp3",
+      "frames": 819692,
+      "loopFrames": 787692,
+      "loopSeconds": 24.615375,
+      "phaseOffsetFrames": 9608,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.009753589642031187,
+        "edge100msRmsDifferenceDb": 0.0025837798444632667
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.08340240329358205,
+        "edge100msRmsDifferenceDb": 11.786739177617536
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c"
+    },
+    {
+      "file": "snow-radio-grief.mp3",
+      "frames": 1022968,
+      "loopFrames": 990968,
+      "loopSeconds": 30.96775,
+      "phaseOffsetFrames": 28408,
+      "newBoundary": {
+        "jumpTo99thStepRatio": 0.01135089973847464,
+        "edge100msRmsDifferenceDb": 0.0019941644583574255
+      },
+      "originalScoreBoundaryInsideLoop": {
+        "jumpTo99thStepRatio": 0.2094860792252714,
+        "edge100msRmsDifferenceDb": 11.30907098632189
+      },
+      "longestUnder55DbMs": 0,
+      "clippedSamples": 0,
+      "sha256": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29"
+    }
+  ]
+}

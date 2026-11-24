@@ -1,0 +1,48 @@
+{
+  "version": "20.0.0",
+  "baseline": "19.0.0",
+  "publicGameBytes": 17358785,
+  "publicGameFiles": 91,
+  "baselineGameBytes": 16753035,
+  "audioMp3Bytes": 13923461,
+  "baselineAudioMp3Bytes": 13417157,
+  "audioDirectoryBytes": 14086759,
+  "audioFiles": 55,
+  "musicFiles": 42,
+  "preservedEffects": 13,
+  "imageAtlases": 7,
+  "artBytes": 1635310,
+  "campaignDataFilesUnchanged": 12,
+  "effectHashesMatchBaseline": true,
+  "imageHashesMatchBaseline": true,
+  "campaignHashesMatchBaseline": true,
+  "manifestFileHashesMatch": true,
+  "scriptHashMatches": true,
+  "scoreHashMatches": true,
+  "loopIndexHashMatches": true,
+  "musicLoopSecondsRange": [
+    24.0,
+    30.96775
+  ],
+  "musicFileSecondsRange": [
+    25.0,
+    31.96775
+  ],
+  "decodedLufsRange": [
+    -21.95,
+    -21.93
+  ],
+  "decodedTruePeakDbtpRange": [
+    -9.13,
+    -6.04
+  ],
+  "loopBoundaryMax100msRmsDifferenceDb": 0.10203914330249782,
+  "loopBoundaryMaxJumpTo99thStepRatio": 0.05036447454738174,
+  "decodedClippedSamples": 0,
+  "offlineBytes": 2491947,
+  "diceModuleBytes": 12821,
+  "indexBytes": 3132,
+  "indexCopyExact": true,
+  "scope": "Measured delivered files in stated directories. Not total repository/git history, browser heap, external hosting usage or a physical listening assessment.",
+  "audioMp3IncreaseBytes": 506304
+}

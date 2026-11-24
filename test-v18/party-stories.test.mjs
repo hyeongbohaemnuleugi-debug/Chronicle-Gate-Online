@@ -141,6 +141,6 @@ for(const c of CAMPAIGNS){
       for(const choice of node.choices)for(const result of Object.values(choice.outcomes))walk(result.next,fought);
       stack.delete(id);
     }
-    walk(c.start);assert.equal(ends.size,3);
+    walk(c.start);assert.equal(ends.size,5);
   });
 }

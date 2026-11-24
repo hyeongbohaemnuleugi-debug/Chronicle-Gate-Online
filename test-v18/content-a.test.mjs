@@ -46,9 +46,10 @@ function traverse(campaign,count=4){
 for(const campaign of campaigns){
  const expected=EXPECTED[campaign.id],playable=Object.values(campaign.nodes).filter(n=>!n.ending);
  test(`${campaign.id}: every risky choice has four complete authored consequences`,()=>{
-  assert.deepEqual(playable.map(n=>n.id).sort(),expected.scenes.slice().sort(),'migration-stable scene IDs changed');
-  assert.equal(playable.reduce((sum,n)=>sum+n.choices.length,0),expected.choices+4);
-  assert.equal(playable.flatMap(n=>n.choices).filter(a=>!a.automatic).length,expected.risk+4);
+  assert.ok(expected.scenes.every(id=>playable.some(node=>node.id===id)),'all v20 scene IDs remain available for saves');
+  assert.equal(playable.length,expected.scenes.length+4,'v21 adds four playable scenes');
+  assert.ok(playable.reduce((sum,n)=>sum+n.choices.length,0)>=expected.choices+9,'new scenes and a real entry add choices');
+  assert.ok(playable.flatMap(n=>n.choices).filter(a=>!a.automatic).length>=expected.risk+4,'existing risky actions are retained');
   const checkItem=id=>assert.ok(campaign.items[id],`unknown item ${id}`);
   for(const node of playable){
    for(const field of ['summary','objective','stakes'])assert.ok(typeof node[field]==='string'&&node[field].length>=12,`${node.id}: missing plain ${field}`);
@@ -90,11 +91,11 @@ for(const campaign of campaigns){
    for(const action of node.choices)for(const outcome of Object.values(action.outcomes))visit(outcome.next,passedGate);
    stack.delete(id);
   }
-  visit(campaign.start,false);assert.equal(arrived.size,3);assert.ok(campaign.nodes[expected.gate].encounter);
+  visit(campaign.start,false);assert.equal(arrived.size,5);assert.ok(campaign.nodes[expected.gate].encounter);
   assert.ok(campaign.deathEnding.text.length>=2);
  });
  test(`${campaign.id}: every party item is earned and usable in an actual playthrough`,t=>{
-  const reached=traverse(campaign);assert.equal(reached.endings.size,3,'all three normal endings are reachable through actual rules');
+  const reached=traverse(campaign);assert.equal(reached.endings.size,5,'all five normal endings are reachable through actual rules');
   const items=Object.entries(campaign.items);assert.ok(items.length>=3);
   for(const [itemId,item] of items){
    const consumers=playable.flatMap(node=>node.choices.filter(action=>[...(action.useItems||[]),...(action.consumeItems||[])].includes(itemId)).map(action=>({node,action})));
@@ -129,6 +130,6 @@ for(const campaign of campaigns){
     resolved++;
    }
   }
-  assert.equal(resolved,(expected.risk+4)*4);
+  assert.equal(resolved,playable.flatMap(node=>node.choices).filter(choice=>!choice.automatic).length*4);
  });
 }

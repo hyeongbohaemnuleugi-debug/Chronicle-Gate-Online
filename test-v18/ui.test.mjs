@@ -570,9 +570,9 @@ test('v18 home presents the chronicle masthead and factual story, class and enco
       assert.equal(card.querySelector('[data-art]').dataset.artPriority,'defer');
     }
     assert.equal(app.doc.querySelectorAll('.chronicle-promise>div').length,3);
-    assert.ok(query(app,'.site-footer').textContent.includes('v20'));
-    assert.match(html,/styles\.css\?v=20000/);
-    assert.match(html,/app\.js\?v=20000/);
+    assert.ok(query(app,'.site-footer').textContent.includes('v21'));
+    assert.match(html,/styles\.css\?v=21000/);
+    assert.match(html,/app\.js\?v=21000/);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });
@@ -1007,7 +1007,7 @@ test('the chronicle reads real choices forward and downloads a public TXT distin
     assert.equal(query(app,'.full-journal').open,false);
     assert.ok(query(app,'.full-journal').textContent.includes(observation));
     await click(app,'.session-actions [data-action="export-chronicle"]');
-    const txt=app.downloads.at(-1);assert.match(txt.name,/^chronicle-gate-v20-.*\.txt$/);
+    const txt=app.downloads.at(-1);assert.match(txt.name,/^chronicle-gate-v21-.*\.txt$/);
     assert.equal(txt.blob.type,'text/plain;charset=utf-8');
     const text=await blobText(app,txt.blob);
     assert.equal(text,chronicleText(view));
@@ -1017,7 +1017,7 @@ test('the chronicle reads real choices forward and downloads a public TXT distin
     for(const role of campaign.roles)assert.ok(!text.includes(role.secret),'TXT must not expose unopened private role secrets.');
     assert.ok(!/"(?:resumeToken|hostToken|secret)"\s*:/.test(text));
     await click(app,'.session-actions [data-action="export"]');
-    const json=app.downloads.at(-1);assert.match(json.name,/^chronicle-gate-v20-.*\.json$/);
+    const json=app.downloads.at(-1);assert.match(json.name,/^chronicle-gate-v21-.*\.json$/);
     assert.equal(json.blob.type,'application/json');
     const progress=JSON.parse(await blobText(app,json.blob));
     assert.equal(progress.game.nodeId,g.nodeId);

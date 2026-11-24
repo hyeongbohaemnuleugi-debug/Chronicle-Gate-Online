@@ -21,7 +21,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(AUDIO, 'manifest.json'), '
 const THEMES = ['last-train', 'glass-hotel', 'moon-market', 'deep-sea', 'dragon-banquet', 'clock-city', 'snow-radio'];
 const MOODS = ['calm', 'danger', 'hope', 'mystery', 'tension', 'grief'];
 const EFFECTS = ['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive'];
-// v20 retains the v19 stories and themes; internal loop guards and a compact D20 renderer are added.
+// v21 expands authored stories while preserving the exact v20 media and D20 runtime.
 // Budgets apply to measured delivered files; no WAV masters or runtime synthesis are shipped.
 const BUDGET = 18_000_000;
 const AUDIO_BUDGET = 14_500_000;

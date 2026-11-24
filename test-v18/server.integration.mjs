@@ -85,7 +85,7 @@ await test('four-player default service never calls configured Supabase during p
     const start = () => startHttpService({ port: 0, host: '127.0.0.1', tableOptions: { storageDir: temporary, roll: () => { rolls++; return 12; } } });
     running = await start();
     const health = await (await fetch(running.url + '/health')).json();
-    assert.equal(health.ok, true); assert.equal(health.version, '20.0.0');
+    assert.equal(health.ok, true); assert.equal(health.version, '21.0.0');
     assert.deepEqual(health.supabase, { enabled: false, requests: 0 });
     const catalog = await (await fetch(running.url + '/api/table/catalog')).json();
     assert.equal(catalog.ok, true); assert.equal(catalog.campaigns.length, 7);
@@ -136,7 +136,7 @@ await test('four-player default service never calls configured Supabase during p
     assert.equal(checkpoints.length, 3, 'chat-only broadcasts must not upload/download another full saved game');
     assert.ok(checkpoints.every(event => event.index === 0), 'a non-host received the private saved game');
     for (const { checkpoint } of checkpoints) {
-      assert.equal(checkpoint.code, code); assert.equal(checkpoint.save.format, 'chronicle-gate-v20');
+      assert.equal(checkpoint.code, code); assert.equal(checkpoint.save.format, 'chronicle-gate-v21');
       noCredentials(checkpoint.save);
     }
     assert.equal((await ack(seats[1], 'table:export')).ok, false, 'private portable save remains host-only');
@@ -289,7 +289,7 @@ await test('actual createClient consumes private checkpoints without automatic e
     await api.start({openingMode:'together'});
     assert.equal(api.state.capabilities.checkpoints, true); assert.equal(api.state.catalog.length, 7, 'client should preserve its local catalog when server state omits it');
     assert.ok(backup()?.game, 'host never consumed its first checkpoint');
-    assert.equal(backup().format, 'chronicle-gate-v20'); assert.equal(backup().game.revision, api.state.game.revision);
+    assert.equal(backup().format, 'chronicle-gate-v21'); assert.equal(backup().game.revision, api.state.game.revision);
     const firstRevision = backup().game.revision;
     success(await ack(peer, 'table:assist', { revision: api.state.game.revision }));
     await tick();

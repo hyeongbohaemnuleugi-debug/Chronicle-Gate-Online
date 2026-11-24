@@ -132,10 +132,12 @@ async function mediaContract(base, pathname) {
   assert.equal(cached.status, 304); assert.equal((await cached.arrayBuffer()).byteLength, 0, 'cache revalidation should send zero media bytes');
   const dated = await get(base, pathname, { headers: { 'if-modified-since': full.headers.get('last-modified') } });
   assert.equal(dated.status, 304); await dated.arrayBuffer();
-  const versioned = await get(base, pathname + '?v=17000', { method: 'HEAD', headers: { 'accept-encoding': 'identity' } });
-  assert.match(versioned.headers.get('cache-control') || '', /max-age=31536000\b/);
-  assert.match(versioned.headers.get('cache-control') || '', /immutable/);
-  assert.equal(Number(versioned.headers.get('content-length')), expected.length);
+  for (const version of ['17000','19000','20000']) {
+    const versioned = await get(base, pathname + '?v=' + version, { method: 'HEAD', headers: { 'accept-encoding': 'identity' } });
+    assert.match(versioned.headers.get('cache-control') || '', /max-age=31536000\b/);
+    assert.match(versioned.headers.get('cache-control') || '', /immutable/);
+    assert.equal(Number(versioned.headers.get('content-length')), expected.length);
+  }
   const first = await get(base, pathname, { headers: { range: 'bytes=0-127' } });
   assert.equal(first.status, 206); assert.equal(first.headers.get('content-range'), `bytes 0-127/${expected.length}`);
   assert.equal(Number(first.headers.get('content-length')), 128); assert.deepEqual(Buffer.from(await first.arrayBuffer()), expected.subarray(0, 128));
@@ -192,18 +194,18 @@ await test('production entry has an isolated account-free surface and compact ca
     server = await spawnServer('server.js', { supabaseURL: `http://127.0.0.1:${fakeSupabase.address().port}` });
     await t.test('health exposes truthful runtime limits and seven-story catalog', async () => {
       const health = await (await get(server.base, '/health')).json();
-      assert.equal(health.ok, true); assert.equal(health.version, '19.0.0'); assert.equal(health.legacyEnabled, false);
+      assert.equal(health.ok, true); assert.equal(health.version, '20.0.0'); assert.equal(health.legacyEnabled, false);
       assert.deepEqual(health.supabase, { enabled: false, requests: 0 });
       assert.equal(health.limits.maxRooms, 32); assert.equal(health.limits.roomTtlMs, 24 * 60 * 60 * 1000);
       assert.equal(health.limits.chatTtlMs, 30 * 60 * 1000); assert.equal(health.limits.maxChatMessages, 30);
       assert.equal(health.limits.maxRoomBytes, 256 * 1024);
       const catalog = await (await get(server.base, '/api/table/catalog')).json();
-      assert.equal(catalog.ok, true); assert.equal(catalog.version, '19.0.0'); assert.equal(catalog.storage, 'disk');
+      assert.equal(catalog.ok, true); assert.equal(catalog.version, '20.0.0'); assert.equal(catalog.storage, 'disk');
       assert.equal(catalog.campaigns.length, 7); assert.equal(new Set(catalog.campaigns.map(story => story.id)).size, 7);
     });
     await t.test('homepage and Socket.IO client load under restrictive CSP', async () => {
       const response = await get(server.base, '/'); assert.equal(response.status, 200); checkCSP(response.headers.get('content-security-policy'));
-      assert.match(await response.text(), /\/game\/app\.js\?v=19000/);
+      assert.match(await response.text(), /\/game\/app\.js\?v=20000/);
       const localEntry = await get(server.base, '/offline.html', { redirect: 'manual' });
       assert.equal(localEntry.status, 302); assert.equal(localEntry.headers.get('location'), '/index.html?offline=1'); await localEntry.arrayBuffer();
       const socketClient = await get(server.base, '/socket.io/socket.io.js'); assert.equal(socketClient.status, 200);
@@ -242,7 +244,8 @@ await test('offline HTTP entry uses the same media contract without npm modules 
       assert.match(bundled, /<script>/); assert.doesNotMatch(bundled, /<script[^>]+(?:type="module"|src="\/game\/app\.js)/);
       assert.doesNotMatch(bundled, /<link[^>]+href="\/game\/styles\.css/);
       assert.ok(bundled.includes('./game/art/')); assert.ok(bundled.includes('./game/audio/'));
-      assert.ok(bundled.includes('.mp3?v=19000'));
+      assert.ok(/AUDIO_VERSION\s*=\s*["']20000["']/u.test(bundled), 'New background files have a new cache identity');
+      assert.ok(bundled.includes('.mp3?v=${AUDIO_VERSION}'), 'Both audio paths use the shared background version');
       assert.ok(/PRIORITY_EFFECTS\.has\(name\)\s*\?\s*["']19000["']\s*:\s*["']17000["']/u.test(bundled), 'Bundled effects preserve the old cache version while new death/revival use v19');
       assert.doesNotMatch(bundled, /\/game\/audio\/[^\s'"`]*\.wav/);
       // This is a bundle/HTTP check, not a claim that a real file:// browser ran.
@@ -273,7 +276,7 @@ await test('production loads a local env file while preserving host-provided set
     server = await spawnServer('server.js', { envFile, environment: { CHRONICLE_MAX_ROOMS: '5' } });
     // Readiness at the allocated parent PORT already proves .env PORT=0 did not win.
     const health = await (await get(server.base, '/health')).json();
-    assert.equal(health.ok, true); assert.equal(health.version, '19.0.0');
+    assert.equal(health.ok, true); assert.equal(health.version, '20.0.0');
     assert.equal(health.limits.maxRooms, 5, 'host environment must take precedence over the local file');
     assert.equal(health.limits.maxRoomBytes, 96 * 1024, 'setting absent from host environment should load from the local file');
     assert.equal(health.legacyEnabled, false); assert.deepEqual(health.supabase, { enabled: false, requests: 0 });

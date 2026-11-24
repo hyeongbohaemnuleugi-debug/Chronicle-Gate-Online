@@ -124,7 +124,7 @@ try {
 
   assert.equal((await ack(sockets[1],'table:export')).ok,false);
   const exported=succeeded(await ack(sockets[0],'table:export')).save;
-  assert.equal(exported.format,'chronicle-gate-v19');noCredentials(exported);
+  assert.equal(exported.format,'chronicle-gate-v20');noCredentials(exported);
   assert.equal(exported.game.players.length,4);
   for(const entry of credentials)assert.ok(!JSON.stringify(exported).includes(entry.token));
   mark('only the host can export; portable saves contain no reconnect tokens');

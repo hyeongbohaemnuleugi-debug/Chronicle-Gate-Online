@@ -21,7 +21,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(AUDIO, 'manifest.json'), '
 const THEMES = ['last-train', 'glass-hotel', 'moon-market', 'deep-sea', 'dragon-banquet', 'clock-city', 'snow-radio'];
 const MOODS = ['calm', 'danger', 'hope', 'mystery', 'tension', 'grief'];
 const EFFECTS = ['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive'];
-// v19 adds 28 profession openings and replaces the scores, including seven grief cues.
+// v20 retains the v19 stories and themes; internal loop guards and a compact D20 renderer are added.
 // Budgets apply to measured delivered files; no WAV masters or runtime synthesis are shipped.
 const BUDGET = 18_000_000;
 const AUDIO_BUDGET = 14_500_000;
@@ -91,7 +91,7 @@ test('all public game resources fit the explicit 18 MB release budget', t => {
 });
 
 test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with honest duration metadata', () => {
-  assert.equal(Number.parseInt(String(manifest.version), 10), 19);
+  assert.equal(Number.parseInt(String(manifest.version), 10), 20);
   assert.equal(manifest.files.length, 55);
   const names = manifest.files.map(entry => entry.file);
   assert.equal(new Set(names).size, 55);
@@ -158,14 +158,14 @@ test('audio requests start only with consent and nonzero volume; repeated scene 
     h.mixer.setVolumes(0, 0); await h.mixer.enable(); h.mixer.effect('attack'); await settle();
     assert.equal(h.media.length, 0, 'enabled but zero-volume music/effects must not request media');
     h.mixer.setVolumes(.35, .55); h.mixer.scene('last-train', 'mystery'); await settle();
-    assert.equal(h.media.length, 1); assert.equal(h.media[0].initialSrc, '/game/audio/last-train-mystery.mp3?v=19000');
+    assert.equal(h.media.length, 1); assert.equal(h.media[0].initialSrc, '/game/audio/last-train-mystery.mp3?v=20000');
     h.media[0].currentTime = 9.5;
     for (let i = 0; i < 10; i++) h.mixer.scene('last-train', 'mystery');
     await settle();
     assert.equal(h.media.length, 1, 'room updates must not construct a new Audio for the same scene');
     assert.equal(h.media[0].currentTime, 9.5, 'room updates must not rewind already playing music');
     h.mixer.scene('last-train', 'danger'); await settle();
-    assert.equal(h.media.length, 2); assert.equal(h.media[1].initialSrc, '/game/audio/last-train-danger.mp3?v=19000');
+    assert.equal(h.media.length, 2); assert.equal(h.media[1].initialSrc, '/game/audio/last-train-danger.mp3?v=20000');
     h.mixer.disable();
     h.mixer.scene('glass-hotel', 'hope'); h.mixer.effect('victory'); await settle();
     assert.equal(h.media.length, 2, 'disabled audio must not fetch the next theme or effects');

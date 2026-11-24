@@ -1,6 +1,9 @@
 /** Real sockets: authored actions and one shared consumable remain authoritative online. */
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {Server} from 'socket.io';
 import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
@@ -10,7 +13,8 @@ const campaign=CAMPAIGNS.find(c=>c.id==='clock-city');
 const server=http.createServer((_req,res)=>{res.writeHead(404);res.end();});
 const io=new Server(server,{serveClient:false});
 let rolls=0,die=12,serial=0;
-const service=attachTableService(io,{storageDir:null,roll:()=>{rolls++;return die;}});
+const storageDir=fs.mkdtempSync(path.join(os.tmpdir(),'chronicle-v18-story-network-'));
+const service=attachTableService(io,{storageDir,roll:()=>{rolls++;return die;}});
 const sockets=[];
 const ok=response=>{assert.equal(response?.ok,true,response?.error);return response;};
 const ack=(socket,event,payload={})=>new Promise((resolve,reject)=>socket.timeout(3500).emit(event,payload,(error,result)=>error?reject(error):resolve(result)));
@@ -92,4 +96,5 @@ finally{
  for(const socket of sockets)socket.disconnect();
  await new Promise(resolve=>io.close(resolve));service.close();
  if(server.listening)await new Promise(resolve=>server.close(resolve));
+ fs.rmSync(storageDir,{recursive:true,force:true});
 }

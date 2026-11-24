@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 
 const gzipAsync = promisify(gzip);
 const PUBLIC_ROOT = fileURLToPath(new URL('../public/', import.meta.url));
-const VERSION = '18.1.0';
+const VERSION = '19.0.0';
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
@@ -152,7 +152,7 @@ export function createStaticHandler({ root = PUBLIC_ROOT, offline = false } = {}
     if (!stat.isFile()) { empty(response, 404); return; }
     const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
     const media = MEDIA_EXTENSIONS.has(extension);
-    const cache = media ? (url.searchParams.get('v') === '17000' ? 'public, max-age=31536000, immutable' : 'public, max-age=3600, must-revalidate') : 'no-cache, must-revalidate';
+    const cache = media ? (['17000','19000'].includes(url.searchParams.get('v')) ? 'public, max-age=31536000, immutable' : 'public, max-age=3600, must-revalidate') : 'no-cache, must-revalidate';
     response.setHeader('Cache-Control', cache);
     response.setHeader('ETag', etag);
     response.setHeader('Last-Modified', stat.mtime.toUTCString());

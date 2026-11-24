@@ -3,7 +3,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CAMPAIGNS, CATALOG, getCampaign } from '../public/game/campaigns/index.js';
-import { createGame, viewGame, previewAction, applyAction, assist, revealSecret, passTurn, validateSave, getClasses, normalizeClassId, cleanText } from '../public/game/engine.js';
+import { createGame, viewGame, previewAction, applyAction, assist, revealSecret, passTurn, validateSave, getClasses, normalizeClassId, cleanText, actionRevision, deferOpening } from '../public/game/engine.js';
+import { remapOpeningPlayers } from '../public/game/opening.js';
 import { remapClassId } from '../public/game/professions.js';
 import { remapCombatPlayers } from '../public/game/combat.js';
 
@@ -20,7 +21,7 @@ export function attachTableService(io, options = {}) {
   const rooms = new Map(), diskFiles = new Map(), persistedHashes = new Map();
   const broadcastKeys = new Map(), checkpointKeys = new Map(), timers = new Set();
   const clock = typeof options.now === 'function' ? options.now : Date.now;
-  const configured = options.storageDir ?? process.env.CHRONICLE_V18_DATA_DIR ?? process.env.CHRONICLE_V17_DATA_DIR ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
+  const configured = options.storageDir ?? process.env.CHRONICLE_V19_DATA_DIR ?? process.env.CHRONICLE_V18_DATA_DIR ?? process.env.CHRONICLE_V17_DATA_DIR ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
   const storageDir = configured || (process.env.NODE_ENV === 'production' ? '' : path.resolve('.chronicle-v14'));
   const roll = options.roll || (() => crypto.randomInt(1, 21));
   const maxRooms = bounded(options.maxRooms ?? process.env.CHRONICLE_MAX_ROOMS, 32, 1, 128);
@@ -182,14 +183,14 @@ export function attachTableService(io, options = {}) {
     const people = room.game ? room.game.players : room.players;
     return {
       mode: 'online', code: room.code, meId, hostId: room.hostId, connected: true, campaignId: room.campaignId,
-      ...(includeCatalog ? { catalog: CATALOG } : {}), capabilities: { checkpoints: true },
+      ...(includeCatalog ? { catalog: CATALOG } : {}), capabilities: { checkpoints: true, parallelOpenings: true },
       players: people.map(({ id, name, classId, connected }) => ({ id, name, classId, connected })),
       game: room.game ? viewGame(room.game, getCampaign(room.campaignId), meId) : null,
       messages: room.messages, storage: storage(), historyTrimmed: room.historyTrimmed || 0,
       canStart: room.hostId === meId && !room.game && room.players.length >= 1 && room.players.every(player => player.connected),
     };
   }
-  const portableSave = room => ({ format: 'chronicle-gate-v18', savedAt: new Date(clock()).toISOString(), game: room.game });
+  const portableSave = room => ({ format: 'chronicle-gate-v19', savedAt: new Date(clock()).toISOString(), game: room.game });
   function checkpoint(room) {
     if (!room.game) return;
     const host = room.players.find(player => player.id === room.hostId && player.connected);
@@ -339,11 +340,11 @@ export function attachTableService(io, options = {}) {
       if (player.classId === payload.classId) return { ok: true };
       player.classId = payload.classId; persist(room); broadcast(room); return { ok: true };
     });
-    event('table:start', () => {
+    event('table:start', payload => {
       const { room, player } = authenticate(socket); hostOnly(room, player);
       if (room.game) throw new Error('이미 시작했습니다.');
       if (room.players.some(person => !person.connected)) throw new Error('모든 참가자가 연결된 뒤 시작해 주세요.');
-      commitGame(room, createGame(getCampaign(room.campaignId), room.players)); return { ok: true };
+      commitGame(room, createGame(getCampaign(room.campaignId), room.players, { openingMode:payload.openingMode ?? 'together' })); return { ok: true };
     });
     event('table:preview', payload => {
       const { room, player } = authenticate(socket); if (!room.game) throw new Error('이야기를 시작해 주세요.');
@@ -353,12 +354,19 @@ export function attachTableService(io, options = {}) {
       const { room, player } = authenticate(socket);
       const previous = typeof payload.requestId === 'string' ? room.handled?.[`${player.id}:${payload.requestId}`] : null;
       if (previous) { socket.emit('table:state', publicState(room, player.id)); return previous; }
-      ensureFresh(room, payload);
+      if (!room.game) throw new Error('아직 이야기를 시작하지 않았습니다.');
+      if (payload.revision !== actionRevision(room.game, player.id)) throw new Error('당신이 진행할 장면이 바뀌었습니다. 행동을 다시 확인해 주세요.');
       const result = applyAction(room.game, getCampaign(room.campaignId), player.id, payload, { roll });
       if (!result.ok) return result;
       commitGame(room, result.game);
       const response = { ok: true, revision: room.game.revision };
       remember(room, player.id, payload.requestId, response); return response;
+    });
+    event('table:opening-defer', payload => {
+      const { room, player } = authenticate(socket); hostOnly(room, player); ensureFresh(room, payload);
+      const result = deferOpening(room.game, getCampaign(room.campaignId), payload.playerId);
+      if (!result.ok) return result;
+      commitGame(room, result.game); return { ok:true };
     });
     for (const [name, action] of [['table:assist', assist], ['table:reveal', (game, id) => revealSecret(game, getCampaign(game.campaignId), id)], ['table:pass', passTurn]]) event(name, payload => {
       const { room, player } = authenticate(socket); ensureFresh(room, payload);
@@ -380,7 +388,9 @@ export function attachTableService(io, options = {}) {
       const revivedMap = {};
       game.players.forEach((person, index) => { for (const [key, value] of Object.entries(game.reviveAttempts || {})) { const suffix = `:${person.id}`; if (key.endsWith(suffix)) revivedMap[`${key.slice(0, -suffix.length)}:${room.players[index].id}`] = value; } });
       game.reviveAttempts = revivedMap;
-      remapCombatPlayers(game, Object.fromEntries(game.players.map((person, index) => [person.id, room.players[index].id])));
+      const playerIds = Object.fromEntries(game.players.map((person, index) => [person.id, room.players[index].id]));
+      remapCombatPlayers(game, playerIds);
+      remapOpeningPlayers(game, playerIds);
       game.players = game.players.map((person, index) => ({ ...person, id: room.players[index].id, name: room.players[index].name, connected: room.players[index].connected }));
       const players = room.players.map((person, index) => ({ ...person, classId: game.players[index].classId }));
       commitGame(room, game, { campaignId: campaign.id, players }); return { ok: true };

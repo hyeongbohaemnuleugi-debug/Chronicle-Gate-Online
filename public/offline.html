@@ -7,7 +7,7 @@
   <meta name="description" content="짧은 장면을 읽고 선택으로 써 내려가는 우리의 연대기. 혼자 또는 최대 4명이 일곱 세계, 스물여덟 직업의 이야기를 펼치는 CHRONICLE GATE.">
   <title>[로컬] CHRONICLE GATE · 우리의 선택이 연대기가 되는 곳</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <style>/* CHRONICLE GATE v19 — midnight ink, engraved gold, readable pages.
+  <style>/* CHRONICLE GATE v20 — midnight ink, engraved gold, readable pages.
    System fonts and code-native ornament only. All dimensions are responsive;
    functional text stays at least 12px, main Korean narrative at 17–18px. */
 :root {
@@ -1192,6 +1192,43 @@ button::-moz-focus-inner { border: 0; }
   .button,.choice,.combat-action,.modal,.panel { border: 1px solid ButtonText; }
   .life-meter i.filled { forced-color-adjust: none; }
 }
+
+/* One physical-looking D20, drawn from twenty real projected faces. */
+body.dice-presenting { overflow: hidden; }
+.dice-modal { width: min(600px,calc(100vw - 28px)); max-height: calc(100dvh - 36px); padding: 28px 30px 24px; color: #ede4d2; background: linear-gradient(150deg,#182332,#0c1420 72%); border: 1px solid #a58a59; box-shadow: 0 28px 100px #000b; }
+.dice-modal::backdrop { background: #060b14b3; backdrop-filter: blur(3px); }
+.dice-modal h2 { font-size: clamp(24px,4vw,30px); margin-bottom: 9px; }
+.dice-modal .eyebrow { font-size: 12px; color: #baa67f; letter-spacing: .18em; }
+.dice-actor { margin: 0 0 5px; font-size: 13px; color: #d2bb8c; }
+.dice-action { margin: 0 0 18px; font-size: 15px; line-height: 1.6; color: #d9e0e8; }
+.dice-tray { position: relative; overflow: hidden; border: 1px solid #76623f; border-radius: 18px; background: radial-gradient(ellipse at 48% 42%,#223332,#101c22 75%); box-shadow: inset 0 2px 14px #0008,0 2px 0 #8a704533; }
+.dice-tray::before { content: ''; position: absolute; inset: 9px; border: 1px solid #c1a06d3d; border-radius: 10px; pointer-events: none; }
+.dice-tray canvas { display: block; width: 100%; height: auto; aspect-ratio: 560 / 240; }
+.dice-tray-mark { position: absolute; right: 22px; bottom: 15px; color: #c9b8917f; font: 9px Georgia,serif; letter-spacing: 3px; pointer-events: none; }
+.dice-stage-caption { text-align: center; color: #a6b2bd; font-size: 12px; margin: 13px 0 16px; min-height: 18px; }
+.dice-final-equation { text-align: center; margin: 0 0 9px; color: #d0d9e4; font: 16px var(--sans); }
+.dice-final-equation strong { display: inline-block; color: #f4dc9e; font: 30px Georgia,serif; margin: 0 5px; }
+.dice-final-grade { display: block; text-align: center; color: #ddc48d; letter-spacing: .15em; font-size: 16px; }
+.dice-modal.grade-failure .dice-final-grade { color: #c1b8ab; }
+.dice-modal.grade-fumble .dice-final-grade { color: #d4a196; }
+.dice-modal.grade-critical .dice-final-grade { color: #f1d18c; text-shadow: 0 0 14px #e9c26f44; }
+.dice-final-story { padding: 15px 16px; border-left: 2px solid #8a754e; background: #050c141f; font: 16px/1.8 var(--serif); color: #e3e6e8; margin: 16px 0 20px; }
+.dice-control { min-height: 46px; }
+.dice-receipt .character-name { color: inherit; }
+.result-roll-stamp { display: inline-block; margin-right: 9px; padding-right: 9px; border-right: 1px solid currentColor; font: 12px Georgia,serif; opacity: .85; }
+.motion-field { display: flex; flex-direction: column; gap: 11px; margin: 25px 0; color: var(--ink); }
+.motion-field span { font-size: 14px; font-weight: 600; }
+.motion-field select { width: 100%; }
+@media (max-width:600px) {
+  .dice-modal { padding: 23px 18px 20px; }
+  .dice-action,.dice-final-story { font-size: 14px; }
+  .dice-final-equation { font-size: 14px; }
+  .dice-tray-mark { letter-spacing: 2px; font-size: 12px; bottom: 12px; }
+}
+@media (forced-colors:active) {
+  .dice-tray { forced-color-adjust: none; }
+  .dice-final-equation,.dice-final-grade,.dice-final-story { color: CanvasText; }
+}
 </style>
 </head>
 <body>
@@ -1201,7 +1238,7 @@ button::-moz-focus-inner { border: 0; }
     <nav class="header-actions" aria-label="게임 메뉴">
       <span id="connection" class="connection"></span>
       <button id="sound-toggle" class="icon-button" type="button" aria-label="소리 켜기" title="소리 켜기">♪ <span>소리 켜기</span></button>
-      <button data-action="audio-settings" class="icon-button settings-link" type="button" aria-label="음량 설정">음량</button>
+      <button data-action="audio-settings" class="icon-button settings-link" type="button" aria-label="소리와 주사위 설정">설정</button>
       <button data-action="help" class="icon-button" type="button">플레이 방법</button>
     </nav>
   </header>
@@ -1212,7 +1249,7 @@ button::-moz-focus-inner { border: 0; }
     <section id="lobby-view" class="page lobby-view" hidden></section>
     <section id="game-view" class="game-view" hidden></section>
   </main>
-  <footer id="site-footer" class="site-footer"><span class="footer-wordmark">CHRONICLE GATE<small>THE STORIES WE LEAVE BEHIND</small></span><span>7개의 세계 · 28개 직업 · 우리의 선택<small>STORY TABLE v19</small></span></footer>
+  <footer id="site-footer" class="site-footer"><span class="footer-wordmark">CHRONICLE GATE<small>THE STORIES WE LEAVE BEHIND</small></span><span>7개의 세계 · 28개 직업 · 우리의 선택<small>STORY TABLE v20</small></span></footer>
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <dialog id="entry-dialog" class="modal entry-dialog" aria-labelledby="entry-title"></dialog>
   <dialog id="preview-dialog" class="modal preview-dialog" aria-labelledby="preview-title"></dialog>
@@ -1239,14 +1276,14 @@ button::-moz-focus-inner { border: 0; }
   function eventKind(entry) {
     if (!entry || typeof entry !== "object") return null;
     if (entry.combat === true) return ["victory", "defeat"].includes(entry.combatEvent) || entry.deaths?.length ? "combat" : null;
-    if (!grades.has(entry.grade)) return null;
+    if (!grades2.has(entry.grade)) return null;
     if (entry.meeting === true) return "meeting";
     if (entry.opening === true) return "opening";
     if (entry.revivedId || /부활\s*·/.test(entry.action || "")) return "revival";
     return "choice";
   }
   function sanitize(entry, index = 0) {
-    if (!entry || typeof entry !== "object" || Array.isArray(entry) || !kinds.has(entry.kind) || !grades.has(entry.grade)) return null;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry) || !kinds.has(entry.kind) || !grades2.has(entry.grade)) return null;
     const text = plain(entry.text);
     if (!text || text.length > TEXT_LIMIT) return null;
     return { id: short(entry.id, 100) || `chapter-${index}`, kind: entry.kind, sceneTitle: short(entry.sceneTitle, 100), actor: short(entry.actor, 18), action: short(entry.action, 220), grade: entry.grade, text };
@@ -1316,12 +1353,12 @@ button::-moz-focus-inner { border: 0; }
     }
     return lines.join("\n").trim() + "\n";
   }
-  var CHRONICLE_LIMIT, TEXT_LIMIT, grades, kinds, plain, short, paragraphs;
+  var CHRONICLE_LIMIT, TEXT_LIMIT, grades2, kinds, plain, short, paragraphs;
   var init_narrative = __esm({
     "public/game/narrative.js"() {
       CHRONICLE_LIMIT = 40;
       TEXT_LIMIT = 700;
-      grades = /* @__PURE__ */ new Set(["automatic", "critical", "success", "failure", "fumble", "mixed"]);
+      grades2 = /* @__PURE__ */ new Set(["automatic", "critical", "success", "failure", "fumble", "mixed"]);
       kinds = /* @__PURE__ */ new Set(["choice", "revival", "combat", "opening", "meeting"]);
       plain = (value) => typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f<>]/g, "").trim() : "";
       short = (value, limit) => plain(value).slice(0, limit);
@@ -22467,14 +22504,14 @@ button::-moz-focus-inner { border: 0; }
       }
     } else startCombat(game2, campaign5);
   }
-  var copy, clamp2, integer, clean, living, failure, encounterFor, BASIC_DC, ABILITY_TYPES, rolledAbility, STAT_NAMES2;
+  var copy, clamp4, integer, clean, living, failure, encounterFor, BASIC_DC, ABILITY_TYPES, rolledAbility, STAT_NAMES2;
   var init_combat = __esm({
     "public/game/combat.js"() {
       init_professions();
       init_judgement();
       copy = (value) => JSON.parse(JSON.stringify(value));
-      clamp2 = (v, min, max) => Math.max(min, Math.min(max, v));
-      integer = (value, fallback, min, max) => Number.isInteger(value) ? clamp2(value, min, max) : fallback;
+      clamp4 = (v, min, max) => Math.max(min, Math.min(max, v));
+      integer = (value, fallback, min, max) => Number.isInteger(value) ? clamp4(value, min, max) : fallback;
       clean = (v, n = 220) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, n);
       living = (game2) => game2.players.filter((p) => p.life !== "dead");
       failure = (error) => ({ ok: false, error });
@@ -26449,7 +26486,7 @@ button::-moz-focus-inner { border: 0; }
       location: meeting.location,
       text: [intro, ...accounts],
       participants: participantsFor(game2, campaign5),
-      startScene: { id: start.id, title: start.title, location: start.location, text: copy2(meeting.startText[mode]) }
+      startScene: { id: start.id, title: start.title, location: start.location, mood: start.mood || "mystery", text: copy2(meeting.startText[mode]) }
     };
   }
   function openingStartParagraphs(game2, node) {
@@ -26495,16 +26532,16 @@ button::-moz-focus-inner { border: 0; }
       combat: null,
       ending: false,
       players: game2.players.map((person) => {
-        const job = getClass(campaign5, person.classId), own = person.id === viewerId;
+        const job = getClass(campaign5, person.classId), own2 = person.id === viewerId;
         return {
           ...person,
           className: job.name,
           stats: job.stats,
           basic: job.basic,
           ability: job.ability,
-          health: own ? person.health : null,
-          openingBonus: own ? person.openingBonus : null,
-          focus: own ? person.focus : null,
+          health: own2 ? person.health : null,
+          openingBonus: own2 ? person.openingBonus : null,
+          focus: own2 ? person.focus : null,
           assisting: false,
           revealedText: null
         };
@@ -27266,7 +27303,7 @@ button::-moz-focus-inner { border: 0; }
   function validateSave(data, campaigns) {
     const raw = data?.game ?? data;
     const campaign5 = campaigns.find((c) => c.id === raw?.campaignId);
-    if (!raw || ![14, 15, 17, 19].includes(raw.schema) || !campaign5 || !Object.hasOwn(campaign5.nodes, raw.nodeId) && raw.nodeId !== "__all_dead__") throw new Error("\uC9C0\uC6D0\uD558\uB294 \uC800\uC7A5 \uD30C\uC77C\uC774 \uC544\uB2C8\uAC70\uB098 \uC2DC\uB098\uB9AC\uC624\uAC00 \uB9DE\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. v14\u2013v19 \uAC8C\uC784 \uC800\uC7A5\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+    if (!raw || ![14, 15, 17, 19].includes(raw.schema) || !campaign5 || !Object.hasOwn(campaign5.nodes, raw.nodeId) && raw.nodeId !== "__all_dead__") throw new Error("\uC9C0\uC6D0\uD558\uB294 \uC800\uC7A5 \uD30C\uC77C\uC774 \uC544\uB2C8\uAC70\uB098 \uC2DC\uB098\uB9AC\uC624\uAC00 \uB9DE\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. v14\u2013v20 \uAC8C\uC784 \uC800\uC7A5\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
     if (!Array.isArray(raw.players) || raw.players.length < 1 || raw.players.length > 4) throw new Error("\uC800\uC7A5 \uD30C\uC77C\uC758 \uC778\uC6D0\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
     if (JSON.stringify(data).length > 2e6) throw new Error("\uC800\uC7A5 \uD30C\uC77C\uC774 \uB108\uBB34 \uD07D\uB2C8\uB2E4.");
     if (raw.players.some((p) => !p || typeof p.id !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(p.id) || ["__proto__", "constructor", "prototype"].includes(p.id))) throw new Error("\uC800\uC7A5 \uD30C\uC77C\uC758 \uD50C\uB808\uC774\uC5B4 ID\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
@@ -27379,7 +27416,7 @@ button::-moz-focus-inner { border: 0; }
       init_opening();
       init_judgement();
       init_professions();
-      VERSION = "19.0.0";
+      VERSION = "20.0.0";
       STAT_LABELS = Object.freeze({ might: "\uD798", agility: "\uBBFC\uCCA9", wit: "\uD1B5\uCC30", heart: "\uAD50\uC12D" });
       clone = (value) => JSON.parse(JSON.stringify(value));
       bound = (value, low, high) => Math.max(low, Math.min(high, value));
@@ -27750,7 +27787,7 @@ button::-moz-focus-inner { border: 0; }
       async exportSave() {
         if (local) {
           if (!local.game) throw new Error("\uC774\uC57C\uAE30\uB97C \uC2DC\uC791\uD55C \uB4A4 \uC800\uC7A5\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
-          return { format: "chronicle-gate-v19", savedAt: (/* @__PURE__ */ new Date()).toISOString(), game: local.game };
+          return { format: "chronicle-gate-v20", savedAt: (/* @__PURE__ */ new Date()).toISOString(), game: local.game };
         }
         return checked(await request("table:export")).save;
       },
@@ -27821,7 +27858,11 @@ button::-moz-focus-inner { border: 0; }
     }
   });
 
-  // public/game/audio.js
+  // public/game/audio-loops.js
+  var AUDIO_VERSION = "20000";
+  var AUDIO_LOOPS = Object.freeze({ "last-train-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "last-train-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "last-train-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 857644, "sourceFrames": 873644 }, "last-train-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "last-train-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "last-train-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "glass-hotel-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 838857, "sourceFrames": 854857 }, "glass-hotel-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 869333, "sourceFrames": 885333 }, "glass-hotel-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "moon-market-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "moon-market-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "moon-market-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 838857, "sourceFrames": 854857 }, "moon-market-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "moon-market-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "moon-market-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 956408, "sourceFrames": 972408 }, "deep-sea-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "deep-sea-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 869333, "sourceFrames": 885333 }, "deep-sea-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 919529, "sourceFrames": 935529 }, "deep-sea-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 846270, "sourceFrames": 862270 }, "deep-sea-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "deep-sea-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1006968, "sourceFrames": 1022968 }, "dragon-banquet-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "dragon-banquet-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "dragon-banquet-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 835200, "sourceFrames": 851200 }, "dragon-banquet-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "dragon-banquet-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "dragon-banquet-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 946909, "sourceFrames": 962909 }, "clock-city-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "clock-city-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 799673, "sourceFrames": 815673 }, "clock-city-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 850783, "sourceFrames": 866783 }, "clock-city-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 816e3, "sourceFrames": 832e3 }, "clock-city-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "clock-city-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "snow-radio-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "snow-radio-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 846270, "sourceFrames": 862270 }, "snow-radio-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 893714, "sourceFrames": 909714 }, "snow-radio-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 857644, "sourceFrames": 873644 }, "snow-radio-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "snow-radio-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1006968, "sourceFrames": 1022968 } });
+
+  // public/game/audio-fallback.js
   var clamp = (value, fallback = 0.5) => Number.isFinite(Number(value)) ? Math.min(1, Math.max(0, Number(value))) : fallback;
   var MOODS = /* @__PURE__ */ new Set(["mystery", "calm", "tension", "danger", "hope", "grief"]);
   var SFX = /* @__PURE__ */ new Set(["dice", "success", "mixed", "failure", "clue", "reveal", "transition", "attack", "ability", "enemy", "victory", "death", "revive"]);
@@ -27829,7 +27870,7 @@ button::-moz-focus-inner { border: 0; }
   var FADE_MS = 1250;
   var START_TIMEOUT_MS = 8e3;
   var EFFECT_TIMEOUT_MS = 1e4;
-  function createAudio(onChange = () => {
+  function createMediaAudio(onChange = () => {
   }, runtime = {}) {
     const Media = runtime.Audio || globalThis.Audio;
     const now = runtime.now || (() => performance.now());
@@ -27850,13 +27891,13 @@ button::-moz-focus-inner { border: 0; }
     } catch {
     }
     const prefs = { enabled: false, music: clamp(saved?.music ?? 0.25), effects: clamp(saved?.effects ?? 0.45) };
-    let current = null, previous = null, desired = null, blockedDesired = null;
+    let current = null, previous = null, desired = null, blockedDesired = null, loopSpare = null;
     let transition = 0, frameId = null, startTimer = null, pending2 = null, fade = null;
-    let isPaused = false, destroyed = false;
+    let isPaused = false, destroyed = false, ducked = false, duckLevel = 1, duckFrame = null;
     const activeEffects = /* @__PURE__ */ new Map();
     const disposed = /* @__PURE__ */ new WeakSet();
     const musicListeners = /* @__PURE__ */ new WeakSet();
-    const level = () => prefs.enabled && !isPaused && !destroyed ? prefs.music : 0;
+    const level = () => prefs.enabled && !isPaused && !destroyed ? prefs.music * duckLevel : 0;
     const persist = () => {
       try {
         storage?.setItem("cg-v14-audio", JSON.stringify(prefs));
@@ -27896,6 +27937,8 @@ button::-moz-focus-inner { border: 0; }
       stopFrame();
       dispose(previous);
       previous = null;
+      dispose(loopSpare);
+      loopSpare = null;
       if (current && normalize) current.volume = level();
     }
     function stopEffects() {
@@ -27907,7 +27950,7 @@ button::-moz-focus-inner { border: 0; }
     }
     function updateFade(time) {
       if (!fade) return;
-      const progress = Math.min(1, Math.max(0, (time - fade.start) / FADE_MS));
+      const progress = Math.min(1, Math.max(0, (time - fade.start) / fade.duration));
       const smooth = progress * progress * (3 - 2 * progress);
       fade.next.volume = level() * smooth;
       if (fade.old) fade.old.volume = level() * fade.oldRatio * (1 - smooth);
@@ -27918,9 +27961,9 @@ button::-moz-focus-inner { border: 0; }
         if (previous === old) previous = null;
       }
     }
-    function crossfade(next, old, token) {
-      const oldRatio = old && prefs.music > 0 ? clamp(old.volume / prefs.music, 1) : 0;
-      fade = { next, old, start: now(), oldRatio };
+    function crossfade(next, old, token, duration = FADE_MS) {
+      const oldRatio = old && level() > 0 ? clamp(old.volume / level(), 1) : 0;
+      fade = { next, old, start: now(), oldRatio, duration };
       function step(time) {
         if (token !== transition || !fade || destroyed) return;
         frameId = null;
@@ -27940,8 +27983,18 @@ button::-moz-focus-inner { border: 0; }
       dispose(request.next);
       if (current) current.volume = level();
     }
-    function startPlayback(next, old, resume = false) {
-      const request = { next, old, resume, token: ++transition };
+    function startPlayback(next, old, resume = false, loop = false) {
+      const points = AUDIO_LOOPS[next.dataset.key];
+      if (resume && points) {
+        const start = points.startFrame / points.sampleRate, end = points.endFrame / points.sampleRate;
+        if (next.currentTime >= end) {
+          try {
+            next.currentTime = start + (next.currentTime - end) % (end - start);
+          } catch {
+          }
+        }
+      }
+      const request = { next, old, resume, loop, token: ++transition };
       pending2 = request;
       current = next;
       previous = resume ? null : old;
@@ -27974,8 +28027,48 @@ button::-moz-focus-inner { border: 0; }
         if (request.token !== transition || pending2 !== request) return;
         clearStartTimer();
         pending2 = null;
-        crossfade(next, resume ? null : old, request.token);
+        if (loop && old) {
+          const points2 = AUDIO_LOOPS[next.dataset.key];
+          const linked = points2.startFrame / points2.sampleRate + old.currentTime - points2.endFrame / points2.sampleRate;
+          try {
+            next.currentTime = Math.max(0, Math.min(points2.endFrame / points2.sampleRate - 1e-3, linked));
+          } catch {
+          }
+        }
+        crossfade(next, resume ? null : old, request.token, loop ? 240 : FADE_MS);
       }, () => failStart(request));
+    }
+    function makeMusic(key, preload = "none") {
+      const element = new Media(`./game/audio/${key}.mp3?v=${AUDIO_VERSION}`);
+      element.dataset.key = key;
+      element.loop = true;
+      element.preload = preload;
+      const points = AUDIO_LOOPS[key];
+      if (points) {
+        const seek = () => {
+          try {
+            element.currentTime = points.startFrame / points.sampleRate;
+          } catch {
+          }
+        };
+        seek();
+        element.addEventListener("loadedmetadata", seek, { once: true });
+        element.addEventListener("timeupdate", () => {
+          if (current !== element || pending2 || fade || isPaused || !prefs.enabled || !level() || destroyed) return;
+          const remaining = points.endFrame / points.sampleRate - element.currentTime;
+          if (remaining > 2 || blockedDesired === desired) return;
+          if (!loopSpare) {
+            loopSpare = makeMusic(key, "auto");
+            loopSpare.volume = 0;
+            loopSpare.load();
+          }
+          if (remaining > 0.35) return;
+          const next = loopSpare;
+          loopSpare = null;
+          startPlayback(next, element, false, true);
+        });
+      }
+      return element;
     }
     function playDesired() {
       if (!prefs.enabled || isPaused || destroyed || !desired || prefs.music === 0 || !Media) return;
@@ -27991,13 +28084,13 @@ button::-moz-focus-inner { border: 0; }
         return;
       }
       const old = current;
-      const next = new Media(`./game/audio/${desired}.mp3?v=19000`);
-      next.dataset.key = desired;
-      next.loop = true;
-      next.preload = "none";
+      const next = makeMusic(desired);
       startPlayback(next, old);
     }
     return {
+      get backend() {
+        return "media";
+      },
       get preferences() {
         return { ...prefs };
       },
@@ -28011,6 +28104,9 @@ button::-moz-focus-inner { border: 0; }
       },
       disable() {
         prefs.enabled = false;
+        if (duckFrame !== null) cancelFrame(duckFrame);
+        duckFrame = null;
+        duckLevel = ducked ? 0.55 : 1;
         settleMusic();
         if (current) {
           current.pause();
@@ -28048,6 +28144,27 @@ button::-moz-focus-inner { border: 0; }
         desired = next;
         playDesired();
       },
+      duck(active) {
+        if (destroyed || ducked === Boolean(active)) return;
+        ducked = Boolean(active);
+        if (duckFrame !== null) cancelFrame(duckFrame);
+        const from = duckLevel, target = ducked ? 0.55 : 1, start = now(), duration = ducked ? 120 : 280;
+        if (!prefs.enabled || isPaused) {
+          duckLevel = target;
+          duckFrame = null;
+          return;
+        }
+        const step = (time) => {
+          duckFrame = null;
+          if (destroyed) return;
+          const progress = Math.min(1, Math.max(0, (time - start) / duration));
+          duckLevel = from + (target - from) * progress;
+          if (fade) updateFade(time);
+          else if (current && !pending2) current.volume = level();
+          if (progress < 1) duckFrame = requestFrame(step);
+        };
+        duckFrame = requestFrame(step);
+      },
       effect(name) {
         if (!prefs.enabled || isPaused || destroyed || prefs.effects === 0 || !SFX.has(name) || !Media) return false;
         if (PRIORITY_EFFECTS.has(name)) stopEffects();
@@ -28076,6 +28193,9 @@ button::-moz-focus-inner { border: 0; }
       pause() {
         if (destroyed) return;
         isPaused = true;
+        if (duckFrame !== null) cancelFrame(duckFrame);
+        duckFrame = null;
+        duckLevel = ducked ? 0.55 : 1;
         settleMusic();
         if (current) {
           current.pause();
@@ -28092,6 +28212,8 @@ button::-moz-focus-inner { border: 0; }
       destroy() {
         if (destroyed) return;
         destroyed = true;
+        if (duckFrame !== null) cancelFrame(duckFrame);
+        duckFrame = null;
         prefs.enabled = false;
         settleMusic();
         dispose(current);
@@ -28102,8 +28224,739 @@ button::-moz-focus-inner { border: 0; }
     };
   }
 
+  // public/game/audio.js
+  var MOODS2 = /* @__PURE__ */ new Set(["mystery", "calm", "tension", "danger", "hope", "grief"]);
+  var SFX2 = /* @__PURE__ */ new Set(["dice", "success", "mixed", "failure", "clue", "reveal", "transition", "attack", "ability", "enemy", "victory", "death", "revive"]);
+  var PRIORITY_EFFECTS2 = /* @__PURE__ */ new Set(["death", "revive"]);
+  var FADE_SECONDS = 1.25;
+  var LOAD_TIMEOUT_MS = 12e3;
+  var EFFECT_TIMEOUT_MS2 = 1e4;
+  var CACHE_LIMIT = 3;
+  var CACHE_BYTES = 16 * 1024 * 1024;
+  var clamp2 = (value, fallback = 0.5) => Number.isFinite(Number(value)) ? Math.min(1, Math.max(0, Number(value))) : fallback;
+  var own = (value, key, fallback) => Object.hasOwn(value, key) ? value[key] : fallback;
+  function createAudio(onChange = () => {
+  }, runtime = {}) {
+    const Context = own(runtime, "AudioContext", globalThis.AudioContext || globalThis.webkitAudioContext);
+    const fetcher = own(runtime, "fetch", globalThis.fetch?.bind(globalThis));
+    const protocol = own(runtime, "protocol", globalThis.location?.protocol || "https:");
+    if (!Context || !fetcher || protocol === "file:") return createMediaAudio(onChange, runtime);
+    const Media = runtime.Audio || globalThis.Audio;
+    const setTimer = runtime.setTimer || ((callback, duration) => setTimeout(callback, duration));
+    const clearTimer = runtime.clearTimer || ((id) => clearTimeout(id));
+    const loops = runtime.loops || AUDIO_LOOPS;
+    let storage = runtime.storage;
+    if (storage === void 0) {
+      try {
+        storage = globalThis.localStorage;
+      } catch {
+      }
+    }
+    let saved = {};
+    try {
+      saved = JSON.parse(storage?.getItem("cg-v14-audio") || "{}");
+    } catch {
+    }
+    const prefs = { enabled: false, music: clamp2(saved?.music ?? 0.25), effects: clamp2(saved?.effects ?? 0.45) };
+    let context = null, master = null, contextReady = Promise.resolve();
+    let desired = null, blockedDesired = null, isPaused = false, destroyed = false, ducked = false;
+    let pending2 = null, queued = null, requestSerial = 0, mixSerial = 0, mixTimer = null, mixEndsAt = 0;
+    let voices = [], masterEnvelope = null;
+    const cache2 = /* @__PURE__ */ new Map(), offsets = /* @__PURE__ */ new Map(), effects = /* @__PURE__ */ new Map(), disposedMedia = /* @__PURE__ */ new WeakSet();
+    const allowed = () => prefs.enabled && !isPaused && !destroyed && prefs.music > 0;
+    const masterLevel = () => allowed() ? prefs.music * (ducked ? 0.55 : 1) : 0;
+    const persist = () => {
+      try {
+        storage?.setItem("cg-v14-audio", JSON.stringify(prefs));
+      } catch {
+      }
+      onChange({ ...prefs });
+    };
+    const cacheSize = () => [...cache2.values()].reduce((sum, item) => sum + item.buffer.length * item.buffer.numberOfChannels * 4, 0);
+    function trimCache() {
+      while (cache2.size > CACHE_LIMIT || cacheSize() > CACHE_BYTES) {
+        const key = [...cache2.keys()].find((key2) => !voices.some((voice) => voice.key === key2));
+        if (key === void 0) break;
+        cache2.delete(key);
+      }
+    }
+    function cached(key) {
+      const item = cache2.get(key);
+      if (item) {
+        cache2.delete(key);
+        cache2.set(key, item);
+      }
+      return item;
+    }
+    const valueAt = (envelope, time, fallback = 0) => {
+      if (!envelope) return fallback;
+      const position2 = Math.max(0, Math.min(1, (time - envelope.start) / envelope.duration)) * (envelope.curve.length - 1);
+      const index = Math.floor(position2), fraction = position2 - index;
+      return envelope.curve[index] * (1 - fraction) + envelope.curve[Math.min(index + 1, envelope.curve.length - 1)] * fraction;
+    };
+    function automate(param, oldEnvelope, curve, seconds, time = context.currentTime) {
+      const held = valueAt(oldEnvelope, time, param.value || 0);
+      if (typeof param.cancelAndHoldAtTime === "function") param.cancelAndHoldAtTime(time);
+      else param.cancelScheduledValues(time);
+      param.setValueAtTime(held, time);
+      param.setValueCurveAtTime(curve, time, seconds);
+      return { curve, start: time, duration: seconds };
+    }
+    const curveBetween = (from, to, count = 33) => Float32Array.from({ length: count }, (_, index) => {
+      const t = index / (count - 1), smooth = t * t * (3 - 2 * t);
+      return from + (to - from) * smooth;
+    });
+    function updateMaster(seconds = 0.08) {
+      if (!master || !context) return;
+      const time = context.currentTime, from = valueAt(masterEnvelope, time, master.gain.value);
+      masterEnvelope = automate(master.gain, masterEnvelope, curveBetween(from, masterLevel()), seconds, time);
+    }
+    function wakeContext() {
+      if (!context) {
+        try {
+          context = new Context({ sampleRate: 32e3, latencyHint: "playback" });
+        } catch {
+          context = new Context();
+        }
+        master = context.createGain();
+        master.gain.value = 0;
+        master.connect(context.destination);
+      }
+      try {
+        contextReady = Promise.resolve(context.resume()).then(() => void 0);
+      } catch (error) {
+        contextReady = Promise.reject(error);
+      }
+      contextReady.catch(() => {
+      });
+      updateMaster();
+    }
+    function disposeVoice(voice) {
+      if (!voice || voice.disposed) return;
+      voice.disposed = true;
+      try {
+        voice.source.stop();
+      } catch {
+      }
+      try {
+        voice.source.disconnect();
+        voice.gain.disconnect();
+      } catch {
+      }
+    }
+    function cancelMix() {
+      ++mixSerial;
+      if (mixTimer !== null) clearTimer(mixTimer);
+      mixTimer = null;
+    }
+    function cancelLoad() {
+      ++requestSerial;
+      if (!pending2) return;
+      const request = pending2;
+      pending2 = null;
+      clearTimer(request.timer);
+      request.controller.abort();
+    }
+    function sourceOffset(voice) {
+      const length = voice.end - voice.start;
+      const elapsed = Math.max(0, context.currentTime - voice.startedAt);
+      return voice.start + ((voice.offset - voice.start + elapsed) % length + length) % length;
+    }
+    function stopMusic() {
+      cancelLoad();
+      cancelMix();
+      queued = null;
+      for (const voice of voices) {
+        offsets.set(voice.key, sourceOffset(voice));
+        disposeVoice(voice);
+      }
+      while (offsets.size > CACHE_LIMIT) offsets.delete(offsets.keys().next().value);
+      voices = [];
+      mixEndsAt = 0;
+      if (context) {
+        updateMaster(0.02);
+        try {
+          Promise.resolve(context.suspend()).catch(() => {
+          });
+        } catch {
+        }
+      }
+      trimCache();
+    }
+    function finishMix(token) {
+      if (token !== mixSerial || destroyed) return;
+      mixTimer = null;
+      if (context.currentTime < mixEndsAt - 1e-4) {
+        mixTimer = setTimer(() => finishMix(token), Math.max(100, (mixEndsAt - context.currentTime) * 1e3 + 5));
+        return;
+      }
+      const main = voices.at(-1);
+      for (const voice of voices) if (voice !== main) disposeVoice(voice);
+      voices = main ? [main] : [];
+      mixEndsAt = 0;
+      trimCache();
+      const next = queued;
+      queued = null;
+      if (next && next.key === desired && allowed()) activate(next);
+    }
+    function activate(item) {
+      if (!allowed() || item.key !== desired || !context) return;
+      const time = context.currentTime;
+      if (voices.length > 1 && time >= mixEndsAt) finishMix(mixSerial);
+      if (voices.at(-1)?.key === item.key) return;
+      let next = voices.find((voice) => voice.key === item.key);
+      if (!next && voices.length > 1) {
+        queued = item;
+        return;
+      }
+      queued = null;
+      cancelMix();
+      const old = voices.find((voice) => voice !== next) || null;
+      if (!next) {
+        const source = context.createBufferSource(), gain = context.createGain();
+        source.buffer = item.buffer;
+        source.loop = true;
+        source.loopStart = item.start;
+        source.loopEnd = item.end;
+        gain.gain.value = 0;
+        source.connect(gain);
+        gain.connect(master);
+        const savedOffset = offsets.get(item.key);
+        const offset = Number.isFinite(savedOffset) ? item.start + ((savedOffset - item.start) % (item.end - item.start) + item.end - item.start) % (item.end - item.start) : item.start;
+        source.start(time, offset);
+        offsets.delete(item.key);
+        next = { key: item.key, source, gain, start: item.start, end: item.end, startedAt: time, offset, envelope: null, disposed: false };
+      }
+      const nextFrom = valueAt(next.envelope, time, next.gain.gain.value);
+      const oldFrom = old ? valueAt(old.envelope, time, old.gain.gain.value) : 0;
+      const angle = old ? Math.atan2(nextFrom, oldFrom || 0) : 0;
+      const radius = old ? Math.hypot(nextFrom, oldFrom) : 0;
+      const nextCurve = new Float32Array(65), oldCurve = new Float32Array(65);
+      for (let i = 0; i < nextCurve.length; i++) {
+        const t = i / (nextCurve.length - 1), theta = angle + (Math.PI / 2 - angle) * t;
+        const energy = radius + (1 - radius) * t;
+        nextCurve[i] = old ? Math.sin(theta) * energy : nextFrom + (1 - nextFrom) * Math.sin(Math.PI * t / 2);
+        oldCurve[i] = old ? Math.cos(theta) * energy : 0;
+      }
+      nextCurve[nextCurve.length - 1] = 1;
+      oldCurve[oldCurve.length - 1] = 0;
+      next.envelope = automate(next.gain.gain, next.envelope, nextCurve, FADE_SECONDS, time);
+      if (old) old.envelope = automate(old.gain.gain, old.envelope, oldCurve, FADE_SECONDS, time);
+      voices = old ? [old, next] : [next];
+      mixEndsAt = time + FADE_SECONDS;
+      const token = mixSerial;
+      mixTimer = setTimer(() => finishMix(token), FADE_SECONDS * 1e3 + 5);
+      trimCache();
+    }
+    function validPoints(key, buffer) {
+      const points = loops[key];
+      if (!points || !Number.isFinite(points.sampleRate) || points.sampleRate <= 0) throw new Error("Missing authored loop region");
+      const start = points.startFrame / points.sampleRate, end = points.endFrame / points.sampleRate;
+      if (!(start >= 0 && end > start && end <= buffer.duration && buffer.numberOfChannels <= 2 && buffer.duration < 90)) throw new Error("Invalid decoded loop region");
+      return { key, buffer, start, end };
+    }
+    function playDesired() {
+      if (!allowed() || !desired || !context) return;
+      const playing = voices.find((voice) => voice.key === desired);
+      if (playing) {
+        if (voices.at(-1) !== playing) activate({ key: playing.key, buffer: playing.source.buffer, start: playing.start, end: playing.end });
+        return;
+      }
+      if (pending2?.key === desired || queued?.key === desired || blockedDesired === desired) return;
+      const existing = cached(desired);
+      if (existing) {
+        activate(existing);
+        return;
+      }
+      cancelLoad();
+      const request = { key: desired, token: requestSerial, controller: new AbortController(), timer: null };
+      pending2 = request;
+      const failed2 = () => {
+        if (pending2 !== request) return;
+        clearTimer(request.timer);
+        pending2 = null;
+        blockedDesired = request.key;
+        request.controller.abort();
+      };
+      request.timer = setTimer(failed2, LOAD_TIMEOUT_MS);
+      (async () => {
+        try {
+          const response = await fetcher(`./game/audio/${request.key}.mp3?v=${AUDIO_VERSION}`, { signal: request.controller.signal, cache: "force-cache", credentials: "same-origin" });
+          if (!response.ok) throw new Error("Music could not be loaded");
+          const bytes = await response.arrayBuffer();
+          if (pending2 !== request || !allowed() || desired !== request.key) return;
+          if (bytes.byteLength > 2 * 1024 * 1024) throw new Error("Music asset exceeds its budget");
+          const buffer = await context.decodeAudioData(bytes);
+          await contextReady;
+          if (pending2 !== request || !allowed() || desired !== request.key || destroyed) return;
+          const item = validPoints(request.key, buffer);
+          clearTimer(request.timer);
+          pending2 = null;
+          cache2.delete(item.key);
+          cache2.set(item.key, item);
+          trimCache();
+          activate(item);
+        } catch {
+          failed2();
+        }
+      })();
+    }
+    function disposeMedia(element) {
+      if (!element || disposedMedia.has(element)) return;
+      disposedMedia.add(element);
+      element.pause();
+      element.removeAttribute("src");
+      element.load();
+    }
+    function stopEffects() {
+      for (const [element, timer] of effects) {
+        clearTimer(timer);
+        disposeMedia(element);
+      }
+      effects.clear();
+    }
+    return {
+      get backend() {
+        return "buffer";
+      },
+      get preferences() {
+        return { ...prefs };
+      },
+      get diagnostics() {
+        return { cachedTracks: cache2.size, cachedBytes: cacheSize(), playingTracks: voices.length, pendingTrack: pending2?.key || null, queuedTrack: queued?.key || null };
+      },
+      async enable() {
+        if (destroyed) return false;
+        prefs.enabled = true;
+        blockedDesired = null;
+        persist();
+        try {
+          wakeContext();
+          playDesired();
+        } catch {
+          blockedDesired = desired;
+        }
+        return true;
+      },
+      disable() {
+        if (destroyed) return;
+        prefs.enabled = false;
+        stopMusic();
+        stopEffects();
+        persist();
+      },
+      async toggle() {
+        if (prefs.enabled) this.disable();
+        else await this.enable();
+        return prefs.enabled;
+      },
+      setVolumes(music, effectLevel) {
+        if (destroyed) return;
+        prefs.music = clamp2(music, prefs.music);
+        prefs.effects = clamp2(effectLevel, prefs.effects);
+        if (!prefs.music) stopMusic();
+        else {
+          if (prefs.enabled && !isPaused) {
+            try {
+              if (!context || context.state !== "running") wakeContext();
+            } catch {
+            }
+          }
+          updateMaster();
+          playDesired();
+        }
+        if (!prefs.effects) stopEffects();
+        else for (const element of effects.keys()) element.volume = prefs.effects;
+        persist();
+      },
+      scene(campaignId, mood = "mystery") {
+        if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || "")) return;
+        const key = `${campaignId}-${MOODS2.has(mood) ? mood : "mystery"}`;
+        if (key !== desired) {
+          desired = key;
+          blockedDesired = null;
+          queued = null;
+          cancelLoad();
+        }
+        playDesired();
+      },
+      duck(active) {
+        if (destroyed || ducked === Boolean(active)) return;
+        ducked = Boolean(active);
+        updateMaster(ducked ? 0.12 : 0.28);
+      },
+      effect(name) {
+        if (!prefs.enabled || isPaused || destroyed || prefs.effects <= 0 || !SFX2.has(name) || !Media) return false;
+        if (PRIORITY_EFFECTS2.has(name)) stopEffects();
+        if (effects.size >= 4) return false;
+        const version = PRIORITY_EFFECTS2.has(name) ? "19000" : "17000";
+        const element = new Media(`./game/audio/${name}.mp3?v=${version}`);
+        element.preload = "none";
+        element.loop = false;
+        element.volume = prefs.effects;
+        const cleanup = () => {
+          if (!effects.has(element)) return;
+          clearTimer(effects.get(element));
+          effects.delete(element);
+          disposeMedia(element);
+        };
+        effects.set(element, setTimer(cleanup, EFFECT_TIMEOUT_MS2));
+        element.addEventListener("ended", cleanup, { once: true });
+        element.addEventListener("error", cleanup, { once: true });
+        try {
+          Promise.resolve(element.play()).catch(cleanup);
+        } catch {
+          cleanup();
+        }
+        return true;
+      },
+      pause() {
+        if (destroyed) return;
+        isPaused = true;
+        stopMusic();
+        stopEffects();
+      },
+      resume() {
+        if (destroyed) return;
+        isPaused = false;
+        blockedDesired = null;
+        if (prefs.enabled) {
+          try {
+            wakeContext();
+            playDesired();
+          } catch {
+            blockedDesired = desired;
+          }
+        }
+      },
+      destroy() {
+        if (destroyed) return;
+        destroyed = true;
+        prefs.enabled = false;
+        stopMusic();
+        stopEffects();
+        cache2.clear();
+        offsets.clear();
+        if (context) {
+          try {
+            Promise.resolve(context.close()).catch(() => {
+            });
+          } catch {
+          }
+        }
+        desired = null;
+      }
+    };
+  }
+
+  // public/game/dice.js
+  var PHI = (1 + Math.sqrt(5)) / 2;
+  var add = (a, b) => a.map((v, i) => v + b[i]);
+  var sub = (a, b) => a.map((v, i) => v - b[i]);
+  var scale = (a, s) => a.map((v) => v * s);
+  var dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
+  var cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  var unit = (a) => scale(a, 1 / Math.hypot(...a));
+  var mean = (list) => scale(list.reduce(add, [0, 0, 0]), 1 / list.length);
+  var clamp3 = (t) => Math.max(0, Math.min(1, t));
+  var ROLL_DURATION = 1700;
+  var D20_VERTICES = Object.freeze([
+    [-1, PHI, 0],
+    [1, PHI, 0],
+    [-1, -PHI, 0],
+    [1, -PHI, 0],
+    [0, -1, PHI],
+    [0, 1, PHI],
+    [0, -1, -PHI],
+    [0, 1, -PHI],
+    [PHI, 0, -1],
+    [PHI, 0, 1],
+    [-PHI, 0, -1],
+    [-PHI, 0, 1]
+  ].map((v) => Object.freeze(unit(v))));
+  var indices = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+  var faces = indices.map((ids) => {
+    let points = ids.map((i) => D20_VERTICES[i]), center = mean(points), normal = unit(cross(sub(points[1], points[0]), sub(points[2], points[0])));
+    if (dot(center, normal) < 0) {
+      ids = [ids[0], ids[2], ids[1]];
+      points = ids.map((i) => D20_VERTICES[i]);
+      normal = scale(normal, -1);
+    }
+    return { vertices: ids, center, normal, up: unit(sub(points[0], center)), number: 0 };
+  });
+  var label = 1;
+  for (const face of faces) {
+    if (face.number) continue;
+    const opposite = faces.find((other) => dot(face.normal, other.normal) < -0.999999);
+    face.number = label;
+    opposite.number = 21 - label;
+    label++;
+  }
+  var D20_FACES = Object.freeze(faces.map((face) => Object.freeze({ ...face, vertices: Object.freeze(face.vertices), center: Object.freeze(face.center), normal: Object.freeze(face.normal), up: Object.freeze(face.up) })));
+  var validRoll = (roll) => Number.isInteger(roll) && roll >= 1 && roll <= 20;
+  function orientationFor(roll) {
+    if (!validRoll(roll)) throw new RangeError("A D20 face must be an integer from 1 to 20.");
+    const face = D20_FACES.find((f) => f.number === roll);
+    return [unit(cross(face.up, face.normal)), face.up, face.normal];
+  }
+  var orient = (p, m) => m.map((row) => dot(p, row));
+  function spin(p, angles) {
+    let [x, y, z] = p;
+    const [a, b, c] = angles;
+    [y, z] = [y * Math.cos(a) - z * Math.sin(a), y * Math.sin(a) + z * Math.cos(a)];
+    [x, z] = [x * Math.cos(b) + z * Math.sin(b), -x * Math.sin(b) + z * Math.cos(b)];
+    return [x * Math.cos(c) - y * Math.sin(c), x * Math.sin(c) + y * Math.cos(c), z];
+  }
+  function diceFrame(roll, progress = 1, { width = 560, height = 240 } = {}) {
+    const t = clamp3(progress), remaining = (1 - t) ** 2.5, basis = orientationFor(roll);
+    const angles = [remaining * (Math.PI * 5 + 0.08 * roll), remaining * (Math.PI * 4 + 0.12 * roll), remaining * (Math.PI * 2 + 0.03 * roll)];
+    const travel = 1 - (1 - t) ** 3;
+    const bounce = Math.abs(Math.sin(t * Math.PI * 4.1)) * (1 - t) ** 1.5 * 48;
+    const center = [width * (0.22 + 0.28 * travel), height * 0.51 - bounce], radius = Math.min(width * 0.16, height * 0.355);
+    const transform = (p) => spin(orient(p, basis), angles);
+    const project = (p) => {
+      const perspective = 4.8 / (4.8 - p[2]);
+      return [center[0] + p[0] * radius * perspective, center[1] - p[1] * radius * perspective];
+    };
+    const light = unit([-0.5, 0.8, 1.5]);
+    const drawn = D20_FACES.map((face) => {
+      const points = face.vertices.map((i) => transform(D20_VERTICES[i]));
+      const c = transform(face.center), n = transform(face.normal), facing = dot(n, sub([0, 0, 4.8], c));
+      const up = transform(face.up), right = unit(cross(up, n));
+      const p = project(c), px = project(add(c, scale(right, 0.34))), py = project(sub(c, scale(up, 0.34)));
+      const illumination = Math.max(0, dot(n, light));
+      const colors = [Math.round(20 + illumination * 24), Math.round(33 + illumination * 39), Math.round(52 + illumination * 49)];
+      return {
+        number: face.number,
+        points: points.map(project),
+        depth: c[2],
+        facing,
+        fill: `rgb(${colors.join(",")})`,
+        label: { point: p, x: sub(px, p), y: sub(py, p) },
+        opacity: Math.min(1, Math.max(0.2, facing / 2.5)),
+        normal: n
+      };
+    }).filter((face) => face.facing > 0.025).sort((a, b) => a.depth - b.depth);
+    return {
+      width,
+      height,
+      progress: t,
+      roll: t === 1 ? roll : null,
+      center,
+      radius,
+      bounce,
+      faces: drawn,
+      shadow: { x: center[0] + bounce * 0.17, y: height * 0.84, rx: radius * (0.9 - bounce / 220), ry: radius * 0.16, opacity: 0.35 - bounce / 220 },
+      frontFace: drawn.reduce((best, f) => !best || f.normal[2] > best.normal[2] ? f : best, null)?.number
+    };
+  }
+  function paint(ctx, frame) {
+    const { width, height, shadow, faces: faces2 } = frame;
+    ctx.clearRect(0, 0, width, height);
+    ctx.save();
+    ctx.fillStyle = `rgba(0,0,0,${shadow.opacity})`;
+    ctx.shadowColor = "rgba(0,0,0,.5)";
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.ellipse(shadow.x, shadow.y, shadow.rx, shadow.ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    for (const face of faces2) {
+      ctx.beginPath();
+      face.points.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p));
+      ctx.closePath();
+      ctx.fillStyle = face.fill;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(214,179,111,.7)";
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+      if (face.opacity < 0.38) continue;
+      ctx.save();
+      const { point, x, y } = face.label;
+      ctx.transform(x[0], x[1], y[0], y[1], point[0], point[1]);
+      ctx.fillStyle = `rgba(246,222,169,${face.opacity})`;
+      ctx.font = "600 1px Georgia, serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(face.number), 0, 0);
+      if (face.number === 6 || face.number === 9) {
+        ctx.beginPath();
+        ctx.moveTo(-0.23, 0.57);
+        ctx.lineTo(0.23, 0.57);
+        ctx.lineWidth = 0.035;
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  var MOTION_KEY = "cg-v20-dice-motion";
+  var grades = { critical: "\uB300\uC131\uACF5", success: "\uC131\uACF5", failure: "\uC2E4\uD328", fumble: "\uB300\uC2E4\uD328", mixed: "\uB300\uAC00 \uC788\uB294 \uC131\uACF5" };
+  function createDicePresenter({ document: doc = globalThis.document, window: win = globalThis.window, onSettled = () => {
+  }, onCancel = () => {
+  }, onRender = () => {
+  } } = {}) {
+    let mode = "auto";
+    try {
+      const saved = win.localStorage?.getItem(MOTION_KEY);
+      if (["auto", "full", "reduce"].includes(saved)) mode = saved;
+    } catch {
+    }
+    const motion = win.matchMedia?.("(prefers-reduced-motion: reduce)");
+    let dialog = null, canvas = null, context = null, active = null, raf = null, destroyed = false;
+    const reduced = () => mode === "reduce" || mode === "auto" && motion?.matches;
+    const supported = () => typeof win.CanvasRenderingContext2D === "function" && typeof win.requestAnimationFrame === "function";
+    const stopFrame = () => {
+      if (raf !== null) win.cancelAnimationFrame(raf);
+      raf = null;
+    };
+    function dismiss(cancelled = false) {
+      if (!active) return;
+      stopFrame();
+      const request = active;
+      active = null;
+      if (dialog?.open) dialog.close();
+      if (dialog) dialog.innerHTML = "";
+      canvas = null;
+      context = null;
+      doc.body.classList.remove("dice-presenting");
+      if (cancelled) onCancel();
+      request.resolve({ cancelled });
+    }
+    function reveal() {
+      if (!active || active.settled) return;
+      stopFrame();
+      active.settled = true;
+      paint(context, diceFrame(active.result.roll));
+      dialog.dataset.phase = "settled";
+      dialog.classList.add(`grade-${active.result.grade}`);
+      canvas.setAttribute("aria-label", `D20 ${active.result.roll}`);
+      const receipt = doc.createElement("div");
+      receipt.className = "dice-receipt";
+      receipt.setAttribute("aria-live", "polite");
+      const r = active.result, bonus = Number.isFinite(r.bonus) ? r.bonus : Number(r.total) - r.roll;
+      const equation = doc.createElement("p");
+      equation.className = "dice-final-equation";
+      const die = doc.createElement("strong");
+      die.textContent = String(r.roll);
+      equation.append("D20 ", die, ` ${bonus < 0 ? "\u2212" : "+"} ${Math.abs(bonus)} = ${r.total} \xB7 \uBAA9\uD45C ${r.dc}`);
+      const grade = doc.createElement("b");
+      grade.className = "dice-final-grade";
+      grade.textContent = grades[r.grade] || "\uD310\uC815 \uC644\uB8CC";
+      const prose = doc.createElement("p");
+      prose.className = "dice-final-story";
+      prose.textContent = r.narrativeText || r.text || "";
+      receipt.append(equation, grade, prose);
+      dialog.querySelector(".dice-receipt-slot").replaceChildren(receipt);
+      const button = dialog.querySelector("[data-dice-control]");
+      button.textContent = "\uC774\uC57C\uAE30 \uC774\uC5B4\uAC00\uAE30";
+      button.dataset.diceControl = "continue";
+      dialog.querySelector(".dice-stage-caption").textContent = "\uC774 \uC120\uD0DD\uC774 \uC5F0\uB300\uAE30\uC758 \uB2E4\uC74C \uBB38\uC7A5\uC774 \uB429\uB2C8\uB2E4.";
+      onRender(dialog);
+      onSettled(r, active.metadata);
+    }
+    function prepare() {
+      if (dialog) return;
+      dialog = doc.createElement("dialog");
+      dialog.id = "dice-dialog";
+      dialog.className = "modal dice-modal";
+      dialog.setAttribute("aria-labelledby", "dice-title");
+      doc.body.append(dialog);
+      dialog.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        if (active?.settled) dismiss();
+        else reveal();
+      });
+      dialog.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-dice-control]");
+        if (!button) return;
+        if (button.dataset.diceControl === "skip") reveal();
+        else if (button.dataset.diceControl === "continue") dismiss();
+      });
+    }
+    const motionChanged = () => {
+      if (active && reduced()) reveal();
+    };
+    motion?.addEventListener?.("change", motionChanged);
+    return {
+      get mode() {
+        return mode;
+      },
+      get active() {
+        return Boolean(active);
+      },
+      get canAnimate() {
+        return !destroyed && !reduced() && supported();
+      },
+      setMode(value) {
+        if (!["auto", "full", "reduce"].includes(value)) return;
+        mode = value;
+        try {
+          win.localStorage?.setItem(MOTION_KEY, value);
+        } catch {
+        }
+        motionChanged();
+      },
+      show(result, metadata = {}) {
+        if (!validRoll(result?.roll)) return Promise.reject(new RangeError("Only an authoritative D20 result may be presented."));
+        if (!this.canAnimate) return Promise.resolve({ cancelled: false, fallback: true });
+        dismiss(true);
+        prepare();
+        dialog.className = "modal dice-modal";
+        dialog.dataset.phase = "rolling";
+        dialog.innerHTML = '<div class="eyebrow">THE MOMENT OF CHANCE</div><h2 id="dice-title">\uC6B4\uBA85\uC774 \uAD74\uB7EC\uAC11\uB2C8\uB2E4</h2><p class="dice-actor"></p><p class="dice-action"></p><div class="dice-tray"><canvas width="560" height="240" aria-label="\uAD74\uB7EC\uAC00\uB294 20\uBA74\uCCB4 \uC8FC\uC0AC\uC704" role="img"></canvas><span class="dice-tray-mark" aria-hidden="true">CHRONICLE \xB7 D20</span></div><p class="dice-stage-caption" aria-live="off">\uC8FC\uC0AC\uC704\uAC00 \uBA48\uCD9C \uB54C\uAE4C\uC9C0\u2026</p><div class="dice-receipt-slot"></div><button class="button quiet full dice-control" type="button" data-dice-control="skip">\uC5F0\uCD9C \uAC74\uB108\uB6F0\uAE30</button>';
+        dialog.querySelector(".dice-actor").textContent = result.actor ? `${result.actor}\uC758 \uD589\uB3D9` : "";
+        dialog.querySelector(".dice-action").textContent = result.action || "\uC120\uD0DD\uD55C \uD589\uB3D9";
+        canvas = dialog.querySelector("canvas");
+        try {
+          context = canvas.getContext("2d");
+        } catch {
+          context = null;
+        }
+        if (!context) {
+          dialog.innerHTML = "";
+          return Promise.resolve({ cancelled: false, fallback: true });
+        }
+        const ratio = Math.min(2, Math.max(1, win.devicePixelRatio || 1));
+        canvas.width = 560 * ratio;
+        canvas.height = 240 * ratio;
+        context.scale(ratio, ratio);
+        const promise = new Promise((resolve) => {
+          active = { result: { ...result }, metadata, resolve, settled: false };
+        });
+        doc.body.classList.add("dice-presenting");
+        dialog.showModal();
+        onRender(dialog);
+        dialog.querySelector("[data-dice-control]").focus({ preventScroll: true });
+        const began = win.performance.now();
+        paint(context, diceFrame(result.roll, 0));
+        const tick = (time) => {
+          raf = null;
+          if (!active || active.settled) return;
+          const progress = clamp3((time - began) / ROLL_DURATION);
+          paint(context, diceFrame(result.roll, progress));
+          if (progress >= 1) reveal();
+          else raf = win.requestAnimationFrame(tick);
+        };
+        raf = win.requestAnimationFrame(tick);
+        return promise;
+      },
+      finish: reveal,
+      cancel() {
+        dismiss(true);
+      },
+      destroy() {
+        destroyed = true;
+        dismiss(true);
+        motion?.removeEventListener?.("change", motionChanged);
+        dialog?.remove();
+        dialog = null;
+      }
+    };
+  }
+
   // public/game/music-director.js
-  var MOODS2 = /* @__PURE__ */ new Set(["calm", "mystery", "tension", "danger", "hope", "grief"]);
+  var MOODS3 = /* @__PURE__ */ new Set(["calm", "mystery", "tension", "danger", "hope", "grief"]);
   var PASSIVE_GRADES = /* @__PURE__ */ new Set(["observe", "safe", "reveal", "assist", "presence", "pass"]);
   var ENDING_MOODS = Object.freeze({
     "last-train": Object.freeze({
@@ -28174,7 +29027,7 @@ button::-moz-focus-inner { border: 0; }
       if (someoneLost(view)) return "grief";
       return ENDING_MOODS[view.campaignId]?.[scene.id] || "calm";
     }
-    let mood = MOODS2.has(scene.mood) ? scene.mood : "mystery";
+    let mood = MOODS3.has(scene.mood) ? scene.mood : "mystery";
     const pressure = view?.pressure;
     const highPressure = Number.isFinite(pressure?.value) && Number.isFinite(pressure?.max) && pressure.max > 0 && pressure.value >= Math.ceil(pressure.max * 0.75);
     if (highPressure && mood !== "danger" && mood !== "grief") return "tension";
@@ -28397,7 +29250,7 @@ button::-moz-focus-inner { border: 0; }
     }
     if (name === "\uBC31" && /^\s/u.test(after)) {
       const next = after.trimStart().match(wordTail)?.[0] || "";
-      if (["\uB144", "\uB2EC", "\uAC1C\uC6D4", "\uC77C", "\uC2DC\uAC04", "\uBD84", "\uCD08", "\uBA85", "\uAC1C", "\uC6D0", "\uBC88", "\uC7A5", "\uB300"].some((unit) => next.startsWith(unit) && suffixes.has(next.slice(unit.length)))) return true;
+      if (["\uB144", "\uB2EC", "\uAC1C\uC6D4", "\uC77C", "\uC2DC\uAC04", "\uBD84", "\uCD08", "\uBA85", "\uAC1C", "\uC6D0", "\uBC88", "\uC7A5", "\uB300"].some((unit2) => next.startsWith(unit2) && suffixes.has(next.slice(unit2.length)))) return true;
     }
     if (name === "\uB2F4" && ["\uC740", "\uC544", "\uC744", "\uB294"].includes(tail) && /[\p{L}\p{N}]+(?:을|를|에)\s+$/u.test(before)) return true;
     return false;
@@ -28414,7 +29267,7 @@ button::-moz-focus-inner { border: 0; }
       const previous = labels.get(name);
       labels.set(name, { role: previous && !previous.player ? "" : previous?.role ?? "\uD50C\uB808\uC774\uC5B4 \uC778\uBB3C", player: true });
     }
-    for (const [name, label] of labels) label.suffixes = suffixesFor(name);
+    for (const [name, label2] of labels) label2.suffixes = suffixesFor(name);
     const names = [...labels.keys()].sort((a, b) => b.length - a.length || a.localeCompare(b));
     const result = { labels, pattern: names.length ? new RegExp(names.map(escapeRegExp).join("|"), "gu") : null };
     if (cache.size >= 16) cache.delete(cache.keys().next().value);
@@ -28429,10 +29282,10 @@ button::-moz-focus-inner { border: 0; }
       const start = match.index, end = start + match[0].length;
       if (start > 0 && wordCharacter.test(text[start - 1])) continue;
       const tail = text.slice(end).match(wordTail)?.[0] || "";
-      const label = labels.get(match[0]);
-      if (!label.suffixes.has(tail)) continue;
+      const label2 = labels.get(match[0]);
+      if (!label2.suffixes.has(tail)) continue;
       if (isOrdinaryWord(match[0], text, start, end, tail)) continue;
-      const role = label.role;
+      const role = label2.role;
       output += escapeHTML(text.slice(cursor, start)) + `<strong class="character-name"${role ? ` title="${escapeHTML(role)}"` : ""}>${escapeHTML(match[0])}</strong>`;
       cursor = end;
     }
@@ -28460,6 +29313,7 @@ button::-moz-focus-inner { border: 0; }
   var lastResultKey = "";
   var lastPerson = "";
   var combatTarget = null;
+  var showingRoll = null;
   var draft = { spark: false, preparation: false, chat: "" };
   var entryMode = "online";
   var entryKind = "create";
@@ -28488,8 +29342,24 @@ button::-moz-focus-inner { border: 0; }
     }
   }) : null;
   var sound = createAudio(updateSoundButton);
+  var dice = createDicePresenter({
+    onSettled(result, request) {
+      if (showingRoll !== request) return;
+      sound.duck?.(false);
+      const music = selectMusic(request.view);
+      sound.scene(request.view.campaignId, music.mood);
+      lastResultKey = request.key;
+      playResultCue(request.view, music, request.key);
+    },
+    onCancel() {
+      sound.duck?.(false);
+    },
+    onRender(dialog) {
+      highlightNames(dialog, showingRoll?.view?.campaignId, showingRoll?.snapshot?.game?.players || []);
+    }
+  });
   var position = (index) => ["0% 0%", "100% 0%", "0% 100%", "100% 100%"][Math.max(0, Math.min(3, Number(index) || 0))];
-  var art = (id, index = 0, classes = "", label = "\uC7A5\uBA74 \uADF8\uB9BC") => `<div class="art-frame ${classes}" data-art-priority="${/(?:hero|lobby|scene)-art/.test(classes) ? "high" : "defer"}" data-art="${slug(id)}" data-art-index="${Number(index) || 0}" style="--art-position:${position(index)}" role="img" aria-label="${esc(label)}"><span class="art-placeholder" aria-hidden="true">\u2726</span></div>`;
+  var art = (id, index = 0, classes = "", label2 = "\uC7A5\uBA74 \uADF8\uB9BC") => `<div class="art-frame ${classes}" data-art-priority="${/(?:hero|lobby|scene)-art/.test(classes) ? "high" : "defer"}" data-art="${slug(id)}" data-art-index="${Number(index) || 0}" style="--art-position:${position(index)}" role="img" aria-label="${esc(label2)}"><span class="art-placeholder" aria-hidden="true">\u2726</span></div>`;
   var classList = (campaign5 = selectedCampaign()) => Array.isArray(campaign5?.classes) ? campaign5.classes : [];
   var classFor = (id) => classList().find((c) => c.id === id) || catalog.flatMap((c) => c.classes || []).find((c) => c.id === id);
   var cname = (id) => classFor(id)?.name || "\uC9C1\uC5C5 \uC120\uD0DD \uC911";
@@ -28510,13 +29380,19 @@ button::-moz-focus-inner { border: 0; }
   function listeningView(view = game()) {
     const receipt = view?.opening?.mine?.history?.at(-1);
     const scene = receipt ? { id: receipt.sceneId || meetingReceiptScene?.id, title: receipt.sceneTitle, location: receipt.location || meetingReceiptScene?.location, mood: receipt.mood || meetingReceiptScene?.mood || "calm", ending: false } : null;
-    return meetingStep === "receipt" && receipt ? { ...view, scene, lastResult: receipt, combat: null, ending: false } : view;
+    const readingOnly = { combat: null, ending: false, players: [], journal: [], pressure: null };
+    if (meetingStep === "receipt" && receipt) return { ...view, ...readingOnly, scene, lastResult: receipt };
+    if (meetingStep === "meeting" && view?.opening?.meeting) {
+      const start = view.opening.meeting.startScene;
+      return { ...view, ...readingOnly, scene: { id: start?.id || "meeting", title: start?.title || view.opening.meeting.title, mood: start?.mood || "calm", ending: false }, lastResult: null };
+    }
+    return view;
   }
-  function resultEventKey(view) {
+  function resultEventKey(view, owner = state, personal = view?.opening?.active || meetingStep === "receipt") {
     const result = view?.lastResult;
     if (!result) return "";
-    const prefix = `${state?.code || ""}:${view.campaignId}:`;
-    if (view.opening?.active || meetingStep === "receipt") return `${prefix}opening:${state.meId}:${view.opening?.mine?.history?.length || 0}`;
+    const prefix = `${owner?.code || ""}:${view.campaignId}:`;
+    if (personal) return `${prefix}opening:${owner?.meId}:${view.opening?.mine?.history?.length || 0}`;
     const entry = [...view.journal || []].reverse().find((item) => item.actor === result.actor && item.action === result.action && item.text === result.text && item.grade === result.grade && (item.roll ?? null) === (result.roll ?? null));
     return entry?.id ? `${prefix}${entry.id}` : `${prefix}${JSON.stringify([result.actor, result.action, result.text, result.grade, result.roll ?? null, result.total ?? null])}`;
   }
@@ -28737,7 +29613,7 @@ button::-moz-focus-inner { border: 0; }
     $("site-footer").hidden = view === "game";
     document.body.dataset.view = view;
   }
-  function renderState(next) {
+  function applyState(next) {
     const old = state;
     state = next;
     if (next?.catalog?.length) catalog = next.catalog;
@@ -28794,17 +29670,103 @@ button::-moz-focus-inner { border: 0; }
     }
     renderGame(changed);
     lastScene = sceneKey;
-    const audible = listeningView(next.game), music = selectMusic(audible, { privateCover: privateOpeningCover(next.game) });
-    sound.scene(next.game.campaignId, music.mood);
-    const result = audible.lastResult;
-    const key = resultEventKey(audible), reconnected = old?.connected === false && next.connected !== false;
-    if (result && old?.game && !reconnected && key !== lastResultKey) {
-      if (music.effect) sound.effect(music.effect);
-      if (music.enemyEffect) setTimeout(() => {
-        if (lastResultKey === key && !privateOpeningCover() && selectMusic(listeningView()).enemyEffect) sound.effect("enemy");
-      }, 120);
-    }
+    const reconnected = old?.connected === false && next.connected !== false;
+    updateReadingAudio({ allowEffects: Boolean(old?.game) && !reconnected });
+  }
+  function updateReadingAudio({ allowEffects = false } = {}) {
+    const audible = listeningView(), music = selectMusic(audible, { privateCover: privateOpeningCover() });
+    if (!audible) return;
+    sound.scene(audible.campaignId, music.mood);
+    if (!audible.lastResult) return;
+    const key = resultEventKey(audible);
+    if (allowEffects && key !== lastResultKey) playResultCue(audible, music, key);
     lastResultKey = key;
+  }
+  function playResultCue(view, music, key) {
+    if (music.effect) sound.effect(music.effect);
+    if (music.enemyEffect) setTimeout(() => {
+      if (lastResultKey === key && !privateOpeningCover() && (!showingRoll || showingRoll.key === key) && selectMusic(view).enemyEffect) sound.effect("enemy");
+    }, 120);
+  }
+  function freshRoll(before, next) {
+    if (!before?.game || !next?.game || before.code !== next.code || before.mode !== next.mode || before.game.campaignId !== next.game.campaignId || before.connected === false || next.connected === false) return null;
+    const privateChapter = Boolean(before.game.opening?.active);
+    if (before.meId !== next.meId && (next.mode !== "local" || privateChapter)) return null;
+    if (privateChapter) {
+      if (next.mode === "local" && before.game.opening.total > 1 && localOpeningSeat !== before.meId) return null;
+      const history = next.game.opening?.mine?.history || [], oldHistory = before.game.opening?.mine?.history || [];
+      if (history.length <= oldHistory.length) return null;
+      const result2 = history.at(-1);
+      if (!Number.isInteger(result2?.roll) || result2.roll < 1 || result2.roll > 20 || !ROLLED_GRADES2.includes(result2.grade)) return null;
+      const scene = { ...before.game.scene, id: result2.sceneId || before.game.scene.id, title: result2.sceneTitle, location: result2.location, mood: result2.mood || before.game.scene.mood };
+      const view2 = { ...next.game, scene, lastResult: result2, combat: null, ending: false };
+      return { view: view2, key: resultEventKey(view2, next, true), result: result2, personal: true };
+    }
+    if (meetingStep || next.game.opening?.active) return null;
+    const view = next.game, result = view.lastResult, key = resultEventKey(view, next, false);
+    if (!Number.isInteger(result?.roll) || result.roll < 1 || result.roll > 20 || !ROLLED_GRADES2.includes(result.grade) || key === resultEventKey(before.game, before, false)) return null;
+    return { view, key, result, personal: false };
+  }
+  function renderState(next) {
+    if (showingRoll) {
+      const expected = showingRoll.snapshot;
+      if (!next?.game || next.code !== expected.code || next.mode !== expected.mode || next.meId !== expected.meId || next.game.campaignId !== expected.game.campaignId) {
+        showingRoll = null;
+        dice.cancel();
+        sound.duck?.(false);
+        applyState(next);
+      } else {
+        const candidate2 = freshRoll(showingRoll.latest, next);
+        if (!showingRoll.personal && candidate2 && !candidate2.personal && !showingRoll.seenKeys.has(candidate2.key)) {
+          showingRoll.queue.push({ candidate: candidate2, snapshot: next });
+          showingRoll.seenKeys.add(candidate2.key);
+        }
+        showingRoll.latest = next;
+      }
+      return;
+    }
+    const candidate = freshRoll(state, next);
+    if (!candidate || !dice.canAnimate) {
+      applyState(next);
+      return;
+    }
+    startRoll(candidate, next);
+  }
+  function startRoll(candidate, next, stream = null) {
+    const request = { ...candidate, snapshot: next, latest: stream?.latest || next, queue: stream?.queue || [], seenKeys: stream?.seenKeys || /* @__PURE__ */ new Set([candidate.key]) };
+    showingRoll = request;
+    clearPersonalDialogs();
+    sound.duck?.(true);
+    sound.effect("dice");
+    let presentation;
+    try {
+      presentation = dice.show(candidate.result, request);
+    } catch {
+      showingRoll = null;
+      dice.cancel();
+      sound.duck?.(false);
+      applyState(request.latest);
+      return;
+    }
+    void presentation.then(() => {
+      if (showingRoll !== request) return;
+      showingRoll = null;
+      sound.duck?.(false);
+      applyState(request.snapshot);
+      const queued = request.queue.shift();
+      if (queued && dice.canAnimate) {
+        startRoll(queued.candidate, queued.snapshot, request);
+        return;
+      }
+      if (request.latest !== request.snapshot) applyState(request.latest);
+      if (!showingRoll) $("scene-title")?.focus({ preventScroll: true });
+    }, () => {
+      if (showingRoll !== request) return;
+      showingRoll = null;
+      sound.duck?.(false);
+      dice.cancel();
+      applyState(request.latest);
+    });
   }
   function classOptions(value, campaign5 = selectedCampaign(), ownerId = state?.meId) {
     return classList(campaign5).map((c) => {
@@ -29001,7 +29963,7 @@ button::-moz-focus-inner { border: 0; }
   function renderOrientation(scene) {
     const rows = [["\uC9C0\uAE08 \uC0C1\uD669", scene.summary, "summary"], ["\uD574\uACB0\uD560 \uC77C", scene.objective, "objective"], ["\uC8FC\uC758\uD560 \uC810", scene.stakes, "stakes"]].filter(([, text]) => text);
     if (!rows.length) return "";
-    return `<details class="scene-orientation" data-fold="orientation" aria-label="\uC7A5\uBA74 \uC548\uB0B4"><summary>\uC7A5\uBA74 \uC815\uB9AC</summary><dl>${rows.map(([label, text, key]) => `<div data-context="${key}"><dt>${label}</dt><dd>${esc(text)}</dd></div>`).join("")}</dl></details>`;
+    return `<details class="scene-orientation" data-fold="orientation" aria-label="\uC7A5\uBA74 \uC548\uB0B4"><summary>\uC7A5\uBA74 \uC815\uB9AC</summary><dl>${rows.map(([label2, text, key]) => `<div data-context="${key}"><dt>${label2}</dt><dd>${esc(text)}</dd></div>`).join("")}</dl></details>`;
   }
   function renderReading(scene, { ended = false, combat = false } = {}) {
     const full = Array.isArray(scene.text) ? scene.text : [scene.text];
@@ -29080,7 +30042,7 @@ button::-moz-focus-inner { border: 0; }
   }
   function renderResult(r) {
     const hasRoll = Number.isFinite(r.roll), grade = GRADE[r.grade] || "\uD589\uB3D9\uC758 \uACB0\uACFC", narrative = r.narrativeText || r.text;
-    return `<section class="last-result grade-${esc(r.grade || "automatic")}" aria-label="\uC9C1\uC804 \uD589\uB3D9\uC758 \uACB0\uACFC"><div class="result-top"><small class="result-actor">${r.actor ? `${esc(r.actor)}\uC758 \uC120\uD0DD \xB7 ` : ""}${esc(r.action || "\uC774\uC57C\uAE30\uC5D0 \uB0A8\uC740 \uBCC0\uD654")}</small><span class="result-grade">${esc(grade)}</span></div><p>${esc(narrative)}</p><details class="result-details" data-fold="result-${esc(r.id || r.text)}"><summary>\uD310\uC815\uACFC \uBCC0\uD654</summary><div>${r.narrativeText && r.narrativeText !== r.text ? `<p class="result-receipt">${esc(r.text)}</p>` : ""}${hasRoll ? `<div class="result-dice"><span>D20</span><b>${r.roll}</b><small>+ ${(r.bonus ?? Number(r.total) - Number(r.roll)) || 0} = <strong>${r.total}</strong> / \uBAA9\uD45C ${r.dc}</small></div>` : '<p class="automatic-note">\uC8FC\uC0AC\uC704 \uC5C6\uC774 \uD655\uC778\uD55C \uBCC0\uD654\uC785\uB2C8\uB2E4.</p>'}${resultChanges(r)}${r.enemyRolls?.length ? `<details class="enemy-rolls"><summary>\uC801\uC758 \uC8FC\uC0AC\uC704 \uD310\uC815</summary>${r.enemyRolls.map((check) => `<p>${esc(game()?.players?.find((p) => p.id === check.targetId)?.name || "\uB300\uC0C1")} \xB7 D20 ${check.roll} \xB7 \uD53C\uD574 ${check.damage || 0}</p>`).join("")}</details>` : ""}${r.nextSceneTitle ? `<div class="result-next"><span>\uC774\uC5B4\uC9C0\uB294 \uC7A5\uBA74</span><b>${esc(r.nextSceneTitle)} <span aria-hidden="true">\u2192</span></b></div>` : ""}</div></details></section>`;
+    return `<section class="last-result grade-${esc(r.grade || "automatic")}" aria-label="\uC9C1\uC804 \uD589\uB3D9\uC758 \uACB0\uACFC"><div class="result-top"><small class="result-actor">${r.actor ? `${esc(r.actor)}\uC758 \uC120\uD0DD \xB7 ` : ""}${esc(r.action || "\uC774\uC57C\uAE30\uC5D0 \uB0A8\uC740 \uBCC0\uD654")}</small>${hasRoll ? `<small class="result-roll-stamp">D20 ${r.roll}</small>` : ""}<span class="result-grade">${esc(grade)}</span></div><p>${esc(narrative)}</p><details class="result-details" data-fold="result-${esc(r.id || r.text)}"><summary>\uD310\uC815\uACFC \uBCC0\uD654</summary><div>${r.narrativeText && r.narrativeText !== r.text ? `<p class="result-receipt">${esc(r.text)}</p>` : ""}${hasRoll ? `<div class="result-dice"><span>D20</span><b>${r.roll}</b><small>+ ${(r.bonus ?? Number(r.total) - Number(r.roll)) || 0} = <strong>${r.total}</strong> / \uBAA9\uD45C ${r.dc}</small></div>` : '<p class="automatic-note">\uC8FC\uC0AC\uC704 \uC5C6\uC774 \uD655\uC778\uD55C \uBCC0\uD654\uC785\uB2C8\uB2E4.</p>'}${resultChanges(r)}${r.enemyRolls?.length ? `<details class="enemy-rolls"><summary>\uC801\uC758 \uC8FC\uC0AC\uC704 \uD310\uC815</summary>${r.enemyRolls.map((check) => `<p>${esc(game()?.players?.find((p) => p.id === check.targetId)?.name || "\uB300\uC0C1")} \xB7 D20 ${check.roll} \xB7 \uD53C\uD574 ${check.damage || 0}</p>`).join("")}</details>` : ""}${r.nextSceneTitle ? `<div class="result-next"><span>\uC774\uC5B4\uC9C0\uB294 \uC7A5\uBA74</span><b>${esc(r.nextSceneTitle)} <span aria-hidden="true">\u2192</span></b></div>` : ""}</div></details></section>`;
   }
   function renderEnding(g) {
     const s = g.scene;
@@ -29186,7 +30148,7 @@ button::-moz-focus-inner { border: 0; }
   }
   function showAudio() {
     const p = sound.preferences;
-    openDialog("info-dialog", `${closeButton("info-dialog")}<div class="eyebrow">THE SOUND OF THE STORY</div><h2 id="info-title">\uC18C\uB9AC \uC124\uC815</h2><p class="modal-intro">\uC774\uC57C\uAE30\uC5D0 \uC5B4\uC6B8\uB9AC\uB294 \uBC30\uACBD\uC74C\uACFC \uC791\uC740 \uD6A8\uACFC\uC74C. \uD3B8\uC548\uD55C \uD06C\uAE30\uB85C \uC870\uC808\uD574 \uC8FC\uC138\uC694.</p><label class="volume-field"><span>\uBC30\uACBD\uC74C <output id="music-value">${Math.round(p.music * 100)}%</output></span><input id="music-volume" type="range" min="0" max="100" value="${Math.round(p.music * 100)}"></label><label class="volume-field"><span>\uD6A8\uACFC\uC74C <output id="effects-value">${Math.round(p.effects * 100)}%</output></span><input id="effects-volume" type="range" min="0" max="100" value="${Math.round(p.effects * 100)}"></label><button class="button primary full" data-action="toggle-audio" type="button">${p.enabled ? "\uBAA8\uB4E0 \uC18C\uB9AC \uB044\uAE30" : "\uC18C\uB9AC \uCF1C\uAE30"}</button><p class="small muted">\uCC98\uC74C\uC5D0\uB294 \uC870\uC6A9\uD788 \uC2DC\uC791\uD569\uB2C8\uB2E4. \uD0ED\uC774 \uBCF4\uC774\uC9C0 \uC54A\uB294 \uB3D9\uC548 \uC18C\uB9AC\uB97C \uBA48\uCDA5\uB2C8\uB2E4.</p>`);
+    openDialog("info-dialog", `${closeButton("info-dialog")}<div class="eyebrow">THE SOUND OF THE STORY</div><h2 id="info-title">\uC18C\uB9AC\uC640 \uC8FC\uC0AC\uC704</h2><p class="modal-intro">\uBC30\uACBD\uC74C\uACFC \uD6A8\uACFC\uC74C\uC758 \uD06C\uAE30, \uC8FC\uC0AC\uC704 \uC6C0\uC9C1\uC784\uC744 \uD3B8\uC548\uD558\uAC8C \uB9DE\uCDB0 \uC8FC\uC138\uC694.</p><label class="volume-field"><span>\uBC30\uACBD\uC74C <output id="music-value">${Math.round(p.music * 100)}%</output></span><input id="music-volume" type="range" min="0" max="100" value="${Math.round(p.music * 100)}"></label><label class="volume-field"><span>\uD6A8\uACFC\uC74C <output id="effects-value">${Math.round(p.effects * 100)}%</output></span><input id="effects-volume" type="range" min="0" max="100" value="${Math.round(p.effects * 100)}"></label><label class="motion-field"><span>\uC8FC\uC0AC\uC704 \uC6C0\uC9C1\uC784</span><select id="dice-motion"><option value="auto" ${dice.mode === "auto" ? "selected" : ""}>\uAE30\uAE30 \uC124\uC815 \uB530\uB974\uAE30</option><option value="full" ${dice.mode === "full" ? "selected" : ""}>\uC785\uCCB4 \uC8FC\uC0AC\uC704 \uAD74\uB9AC\uAE30</option><option value="reduce" ${dice.mode === "reduce" ? "selected" : ""}>\uC6C0\uC9C1\uC784 \uC904\uC774\uAE30 \xB7 \uACB0\uACFC \uBC14\uB85C \uBCF4\uAE30</option></select></label><button class="button primary full" data-action="toggle-audio" type="button">${p.enabled ? "\uBAA8\uB4E0 \uC18C\uB9AC \uB044\uAE30" : "\uC18C\uB9AC \uCF1C\uAE30"}</button><p class="small muted">\uCC98\uC74C\uC5D0\uB294 \uC870\uC6A9\uD788 \uC2DC\uC791\uD569\uB2C8\uB2E4. \uD0ED\uC774 \uBCF4\uC774\uC9C0 \uC54A\uB294 \uB3D9\uC548 \uC18C\uB9AC\uB97C \uBA48\uCDA5\uB2C8\uB2E4.</p>`);
   }
   function showResume() {
     const saved = client?.state || state || {};
@@ -29203,7 +30165,7 @@ button::-moz-focus-inner { border: 0; }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `chronicle-gate-v19-${slug(game()?.campaignId || selected)}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
+    a.download = `chronicle-gate-v20-${slug(game()?.campaignId || selected)}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
     toast("\uC800\uC7A5 \uD30C\uC77C\uC744 \uB0B4\uB824\uBC1B\uC558\uC2B5\uB2C8\uB2E4. \uB2E4\uB978 \uAE30\uAE30\uC5D0\uC11C\uB294 \u300C\uC800\uC7A5 \uD30C\uC77C \uC5F4\uAE30\u300D\uB85C \uC774\uC5B4\uAC08 \uC218 \uC788\uC5B4\uC694.");
@@ -29214,7 +30176,7 @@ button::-moz-focus-inner { border: 0; }
     const blob = new Blob([chronicleText(view)], { type: "text/plain;charset=utf-8" }), url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `chronicle-gate-v19-${slug(view.campaignId)}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.txt`;
+    anchor.download = `chronicle-gate-v20-${slug(view.campaignId)}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.txt`;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
     toast("\uC9C0\uAE08\uAE4C\uC9C0\uC758 \uC5F0\uB300\uAE30\uB97C \uAE00 \uD30C\uC77C\uB85C \uAC04\uC9C1\uD588\uC2B5\uB2C8\uB2E4. \uC9C4\uD589\uC744 \uC774\uC5B4 \uD558\uB824\uBA74 JSON \uC800\uC7A5 \uD30C\uC77C\uB3C4 \uB0B4\uB824\uBC1B\uC544 \uC8FC\uC138\uC694.");
@@ -29222,6 +30184,7 @@ button::-moz-focus-inner { border: 0; }
   document.addEventListener("click", (event) => {
     const el = event.target.closest("button");
     if (!el || el.disabled) return;
+    if (showingRoll && !el.closest("#dice-dialog")) return;
     if (el.dataset.close) {
       closeDialog(el.dataset.close);
       return;
@@ -29328,8 +30291,7 @@ button::-moz-focus-inner { border: 0; }
     if (action === "opening-receive") {
       localOpeningSeat = state.meId;
       renderGame(true);
-      sound.scene(game().campaignId, selectMusic(game()).mood);
-      lastResultKey = resultEventKey(game());
+      updateReadingAudio();
       return;
     }
     if (action === "opening-meeting") {
@@ -29337,8 +30299,7 @@ button::-moz-focus-inner { border: 0; }
       meetingStep = "meeting";
       meetingReceiptScene = null;
       renderGame(true);
-      sound.scene(game().campaignId, selectMusic(game()).mood);
-      lastResultKey = resultEventKey(game());
+      updateReadingAudio();
       return;
     }
     if (action === "pass" && state?.mode === "local" && (state?.players || []).length === 1) {
@@ -29362,6 +30323,7 @@ button::-moz-focus-inner { border: 0; }
         clearPersonalDialogs();
         if (state.mode === "local" && game()?.activePlayerId !== state.meId) await call("setLocalSeat", game().activePlayerId);
         else renderGame(true);
+        updateReadingAudio({ allowEffects: true });
       } else if (action === "opening-defer-confirm") {
         const result = await call("deferOpening", el.dataset.playerId);
         if (result) closeDialog("info-dialog");
@@ -29405,10 +30367,6 @@ button::-moz-focus-inner { border: 0; }
         prepared.committing = true;
         if (prepared.plan.spendSpark) draft.spark = false;
         if (prepared.plan.preparation) draft.preparation = false;
-        if (!prepared.plan.automatic && !prepared.payload.detailId) {
-          sound.effect("dice");
-          $("preview-dialog").classList.add("rolling");
-        }
         const result = await call("act", { ...prepared.payload, revision: prepared.revision });
         $("preview-dialog").classList.remove("rolling");
         if (result) {
@@ -29431,7 +30389,8 @@ button::-moz-focus-inner { border: 0; }
   });
   document.addEventListener("change", (event) => {
     const el = event.target;
-    if (el.id === "spend-spark") draft.spark = el.checked;
+    if (el.id === "dice-motion") dice.setMode(el.value);
+    else if (el.id === "spend-spark") draft.spark = el.checked;
     else if (el.name === "opening-mode") {
       openingMode = el.value === "together" ? "together" : "separate";
       renderLobby();
@@ -29458,6 +30417,10 @@ button::-moz-focus-inner { border: 0; }
     else if (el.id === "lobby-class") void guarded(() => call("setClass", el.value));
   });
   document.addEventListener("submit", (event) => {
+    if (showingRoll) {
+      event.preventDefault();
+      return;
+    }
     if (!["entry-form", "chat-form"].includes(event.target.id)) return;
     event.preventDefault();
     void guarded(async () => {
@@ -29513,6 +30476,10 @@ button::-moz-focus-inner { border: 0; }
     });
   }
   document.querySelector(".brand").addEventListener("click", (event) => {
+    if (showingRoll) {
+      event.preventDefault();
+      return;
+    }
     if (state?.mode && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       confirmLeave();
@@ -29529,9 +30496,22 @@ button::-moz-focus-inner { border: 0; }
       $("tab-" + activeTab)?.focus({ preventScroll: true });
     }
   });
-  document.addEventListener("visibilitychange", () => document.hidden ? sound.pause() : sound.resume());
-  window.addEventListener("pagehide", () => sound.pause());
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      dice.finish();
+      sound.pause();
+    } else sound.resume();
+  });
+  window.addEventListener("pagehide", () => {
+    dice.finish();
+    sound.pause();
+  });
   window.addEventListener("pageshow", () => sound.resume());
+  window.addEventListener("beforeunload", () => {
+    showingRoll = null;
+    dice.destroy();
+    sound.destroy();
+  });
   async function boot() {
     try {
       const { createClient: createClient2 } = await Promise.resolve().then(() => (init_client(), client_exports));

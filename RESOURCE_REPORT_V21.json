@@ -1,0 +1,322 @@
+{
+  "version": "21.0.0",
+  "baseline": "20.0.0",
+  "generatedAt": "2026-11-24T15:27:34.707Z",
+  "publicGameBytes": 17623782,
+  "publicGameFiles": 91,
+  "baselineGameBytes": 17358785,
+  "publicGameIncreaseBytes": 264997,
+  "publicGameBudgetBytes": 18000000,
+  "audioMp3Bytes": 13923461,
+  "audioDirectoryBytes": 14086759,
+  "audioFiles": 55,
+  "audioBudgetBytes": 14500000,
+  "musicFiles": 42,
+  "effectFiles": 13,
+  "imageAtlases": 7,
+  "artBytes": 1635310,
+  "preservedFileCount": 76,
+  "preservedFilesMatch": true,
+  "changedPreservedFiles": [],
+  "appBehaviorUnchangedApartFromDownloadVersion": true,
+  "offlineBytes": 2925844,
+  "baselineOfflineBytes": 2491947,
+  "diceModuleBytes": 12821,
+  "indexBytes": 3132,
+  "indexCopyExact": true,
+  "storyCount": 7,
+  "playableScenes": 115,
+  "ordinaryEndings": 35,
+  "partyDeathEndings": 7,
+  "items": 28,
+  "stories": [
+    {
+      "id": "last-train",
+      "title": "막차의 일곱 번째 승객",
+      "playableScenes": 16,
+      "ordinaryEndings": 5,
+      "items": 4,
+      "addedScenes": [
+        {
+          "id": "return-mail",
+          "title": "받는 사람에게 닿지 못한 말"
+        },
+        {
+          "id": "address-desk",
+          "title": "사라진 길에도 다음 주소가 있다"
+        },
+        {
+          "id": "reply-booth",
+          "title": "잘 지냈느냐고 묻는 대신"
+        },
+        {
+          "id": "last-announcement",
+          "title": "마지막 안내에서 남길 이름"
+        }
+      ],
+      "addedEndings": [
+        {
+          "id": "ending-letter-home",
+          "title": "늦게 도착한 안부"
+        },
+        {
+          "id": "ending-last-service",
+          "title": "마지막 운행을 마치는 밤"
+        }
+      ],
+      "addedItems": [
+        {
+          "id": "return-notices",
+          "name": "회송된 귀가 통지서 묶음"
+        }
+      ]
+    },
+    {
+      "id": "glass-hotel",
+      "title": "유리 호텔의 도난당한 새벽",
+      "playableScenes": 16,
+      "ordinaryEndings": 5,
+      "items": 4,
+      "addedScenes": [
+        {
+          "id": "service-lockers",
+          "title": "다음 교대는 오지 않았다"
+        },
+        {
+          "id": "spare-rooms",
+          "title": "침대가 비어 있는데도"
+        },
+        {
+          "id": "staff-breakfast",
+          "title": "여기서 쉬어도 근무가 될까요"
+        },
+        {
+          "id": "morning-switch",
+          "title": "아침 다음에 문을 열 사람"
+        }
+      ],
+      "addedEndings": [
+        {
+          "id": "ending-rest-house",
+          "title": "처음으로 잠든 객실"
+        },
+        {
+          "id": "ending-hotel-closed",
+          "title": "오늘부터 손님을 받지 않습니다"
+        }
+      ],
+      "addedItems": [
+        {
+          "id": "rest-room-key",
+          "name": "빈 객실 예비 열쇠"
+        }
+      ]
+    },
+    {
+      "id": "moon-market",
+      "title": "달을 파는 야시장",
+      "playableScenes": 16,
+      "ordinaryEndings": 5,
+      "items": 4,
+      "addedScenes": [
+        {
+          "id": "pledge-counter",
+          "title": "질문료로 빼앗긴 웃음"
+        },
+        {
+          "id": "echo-alley",
+          "title": "병 밖에서 알아보는 목소리"
+        },
+        {
+          "id": "unclaimed-shelf",
+          "title": "되찾고 싶다는 말도 기다려야 한다"
+        },
+        {
+          "id": "lantern-return",
+          "title": "등불이 실을 것은 소원이 아니라"
+        }
+      ],
+      "addedEndings": [
+        {
+          "id": "ending-return-lanterns",
+          "title": "웃음이 집으로 돌아가는 새벽"
+        },
+        {
+          "id": "ending-unopened-house",
+          "title": "열지 않은 병들이 쉬는 곳"
+        }
+      ],
+      "addedItems": [
+        {
+          "id": "pawn-receipts",
+          "name": "기억 담보표 묶음"
+        }
+      ]
+    },
+    {
+      "id": "deep-sea",
+      "title": "해저 기지의 마지막 방송",
+      "playableScenes": 17,
+      "ordinaryEndings": 5,
+      "items": 4,
+      "addedScenes": [
+        {
+          "id": "sea-listening-room",
+          "title": "누구의 목소리도 입히지 않고"
+        },
+        {
+          "id": "sea-outer-window",
+          "title": "유리 너머로 기울어진 빛"
+        },
+        {
+          "id": "sea-release-lock",
+          "title": "사람의 문과 바다의 문"
+        },
+        {
+          "id": "sea-last-signal",
+          "title": "다음 대답을 강요하지 않기"
+        }
+      ],
+      "addedEndings": [
+        {
+          "id": "ending-open-water",
+          "title": "열린 바다로"
+        },
+        {
+          "id": "ending-deep-watch",
+          "title": "깊은 곳의 당직"
+        }
+      ],
+      "addedItems": [
+        {
+          "id": "sea_water_relay",
+          "name": "독립 수중 중계기"
+        }
+      ]
+    },
+    {
+      "id": "dragon-banquet",
+      "title": "용의 마지막 만찬",
+      "playableScenes": 16,
+      "ordinaryEndings": 5,
+      "items": 4,
+      "addedScenes": [
+        {
+          "id": "winter-yard",
+          "title": "식탁 밖에 남은 사람들"
+        },
+        {
+          "id": "fuel-house",
+          "title": "왕의 장작은 누구의 것일까"
+        },
+        {
+          "id": "lower-hall",
+          "title": "방 안의 바람, 문밖의 바람"
+        },
+        {
+          "id": "winter-gate",
+          "title": "겨울이 들어올 문"
+        }
+      ],
+      "addedEndings": [
+        {
+          "id": "ending-winter-palace",
+          "title": "왕궁에 차린 겨울 마을"
+        },
+        {
+          "id": "ending-spring-return",
+          "title": "봄까지 맡겨 둔 집"
+        }
+      ],
+      "addedItems": [
+        {
+          "id": "winter-route-map",
+          "name": "왕실 제설 지도"
+        }
+      ]
+    },
+    {
+      "id": "clock-city",
+      "title": "13분 뒤에 사라지는 도시",
+      "playableScenes": 17,
+      "ordinaryEndings": 5,
+      "items": 4,
+      "addedScenes": [
+        {
+          "id": "return-desk",
+          "title": "배달할 집이 없는 편지"
+        },
+        {
+          "id": "still-platform",
+          "title": "나가는 길은 두 칸뿐"
+        },
+        {
+          "id": "address-shelves",
+          "title": "틀리지 않게 돌려줄 것"
+        },
+        {
+          "id": "last-dispatch",
+          "title": "닫기 전에 보내야 할 것"
+        }
+      ],
+      "addedEndings": [
+        {
+          "id": "ending-return-station",
+          "title": "정오가 머무는 역"
+        },
+        {
+          "id": "ending-last-delivery",
+          "title": "마지막 주소로 배달된 아침"
+        }
+      ],
+      "addedItems": [
+        {
+          "id": "clock_return_roll",
+          "name": "주소별 반환표"
+        }
+      ]
+    },
+    {
+      "id": "snow-radio",
+      "title": "설원에서 온 내 목소리",
+      "playableScenes": 17,
+      "ordinaryEndings": 5,
+      "items": 4,
+      "addedScenes": [
+        {
+          "id": "snow-post-room",
+          "title": "부치지 못한 봉투"
+        },
+        {
+          "id": "snow-listening-booth",
+          "title": "봉투를 닫기 전에"
+        },
+        {
+          "id": "snow-carry-room",
+          "title": "들고 갈 수 있는 만큼"
+        },
+        {
+          "id": "snow-morning-platform",
+          "title": "문은 답을 듣고 나서"
+        }
+      ],
+      "addedEndings": [
+        {
+          "id": "ending-carried-voices",
+          "title": "목소리를 싣고 걷는 길"
+        },
+        {
+          "id": "ending-kept-letters",
+          "title": "전하지 않은 말도 남는다"
+        }
+      ],
+      "addedItems": [
+        {
+          "id": "snow_carry_case",
+          "name": "보온 이동 보관함"
+        }
+      ]
+    }
+  ],
+  "scope": "Measured delivered game files, not repository history, dependencies, browser heap, hosting quotas or production traffic. Preservation compares frozen v20 SHA-256 hashes. Only two app download filename prefixes are normalized for that comparison. Ordinary endings exclude existing total-party-death endings and conditional epilogue combinations."
+}

@@ -1,4 +1,4 @@
-/** Default: v20 local-state online TRPG. Legacy Supabase-backed accounts are opt-in. */
+/** Default: v21 local-state online TRPG. Legacy Supabase-backed accounts are opt-in. */
 import process from 'node:process';
 // Node keeps already-set deployment variables ahead of values from the file.
 try { process.loadEnvFile(); } catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -9,7 +9,7 @@ if (process.env.CHRONICLE_LEGACY_MODE === '1' || process.argv.includes('--legacy
 } else {
   const { startHttpService } = await import('./game-server/http-service.js');
   const runtime = await startHttpService();
-  console.log(`Chronicle Gate v20 running at ${runtime.url} · storage=${runtime.service.storage} · Supabase disabled`);
+  console.log(`Chronicle Gate v21 running at ${runtime.url} · storage=${runtime.service.storage} · Supabase disabled`);
   let stopping = false;
   async function shutdown(reason, exitCode = 0) {
     if (stopping) return;

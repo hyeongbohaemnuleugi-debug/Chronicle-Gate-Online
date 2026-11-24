@@ -1,0 +1,56 @@
+Chronicle Gate v21.0.0 changed files
+Baseline: chronicle-v20
+Baseline kind: previous-release-directory
+
+REPLACE .env.example
+REPLACE .gitignore
+REPLACE COPYPASTE/index.html.txt
+ADD     NARRATIVE_REACHABILITY_V21.json
+ADD     PATCH_NOTES_V21.md
+REPLACE README.md
+ADD     RESOURCE_REPORT_V21.json
+ADD     STORY_EXPANSION_V21.md
+ADD     VALIDATION_V21.md
+REPLACE game-server/http-service.js
+REPLACE game-server/table-service.js
+REPLACE package-lock.json
+REPLACE package.json
+REPLACE public/game/app.js
+REPLACE public/game/campaigns/clock-city.js
+REPLACE public/game/campaigns/deep-sea.js
+REPLACE public/game/campaigns/dragon-banquet.js
+REPLACE public/game/campaigns/glass-hotel.js
+REPLACE public/game/campaigns/last-train.js
+REPLACE public/game/campaigns/loss-passages.js
+REPLACE public/game/campaigns/moon-market.js
+REPLACE public/game/campaigns/snow-radio.js
+REPLACE public/game/client.js
+REPLACE public/game/engine.js
+REPLACE public/game/music-director.js
+REPLACE public/index.html
+REPLACE public/offline.html
+REPLACE scripts/explore-scenarios.mjs
+REPLACE scripts/package-patch.py
+REPLACE scripts/qa-v18.mjs
+ADD     scripts/report-v21.mjs
+REPLACE server.js
+REPLACE tests-v18/combat-network.integration.mjs
+REPLACE tests-v18/content-a.test.mjs
+REPLACE tests-v18/deployment.integration.mjs
+REPLACE tests-v18/network.integration.mjs
+REPLACE tests-v18/party-stories.test.mjs
+REPLACE tests-v18/resource-budget.test.mjs
+REPLACE tests-v18/server.integration.mjs
+REPLACE tests-v18/ui.test.mjs
+REPLACE tests-v19/music.test.mjs
+REPLACE tests-v19/opening-network.integration.mjs
+ADD     tests-v21/expansion-a.test.mjs
+ADD     tests-v21/expansion-b.test.mjs
+ADD     tests-v21/expansion-c.test.mjs
+ADD     tests-v21/expansion-contract.test.mjs
+ADD     tests-v21/fixtures/v20-preserved-files.json
+ADD     tests-v21/fixtures/v20-saves.json
+ADD     tests-v21/fixtures/v20-story-contract.json
+ADD     tests-v21/preservation.test.mjs
+
+Apply at repository root; read PATCH_NOTES_V21.md.

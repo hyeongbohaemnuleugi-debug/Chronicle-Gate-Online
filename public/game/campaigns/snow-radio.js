@@ -1,4 +1,4 @@
-// v18.1: 이름과 역할, 대사와 기록의 표기를 다듬었습니다.
+// v21: authored side routes and earned endings; v20 paths preserved.
 export default {
   "id": "snow-radio",
   "title": "설원에서 온 내 목소리",
@@ -135,6 +135,14 @@ export default {
     "channel": {
       "title": "세 갈래 구조 채널",
       "text": "외부 구조 요청, 개별 귀환 승인, 중단 의사 기록을 분리하면 한 사람의 신호가 다른 사람의 대답을 덮지 않는다."
+    },
+    "snow_private_words": {
+      "title": "방송에 싣지 않을 말",
+      "text": "우편 기록에는 실제로 전달을 허락한 말과 쓰다 멈춘 말이 섞여 있다. 귀환 의사와 편지 전달 허락은 별개이며, 수신인 밖에는 내용을 공개하지 않기로 했다."
+    },
+    "snow_portable_anchor": {
+      "title": "움직이는 보관함의 한계",
+      "text": "이동 보관함은 의식 앵커의 온도와 연결만 지킨다. 몸을 만들거나 귀환을 시작하지 않으며, 본인이 이동에 동의한 번호만 원본에서 떼어 옮길 수 있다."
     }
   },
   "flags": {
@@ -155,7 +163,13 @@ export default {
     "snow_personal_question": "자기 목소리의 질문을 남겨 이안의 답과 구별했다",
     "snow_shared_call_sign": "자기 호출부호와 구별 방법을 동료에게 남겼다",
     "snow_personal_request": "자신의 귀환 의사를 녹음하고 안쪽 중단 손잡이를 고쳤다",
-    "snow_open_requests": "동료의 대답을 대신 채우지 않고 중단 손잡이를 고쳤다"
+    "snow_open_requests": "동료의 대답을 대신 채우지 않고 중단 손잡이를 고쳤다",
+    "snow_case_checked": "이동 보관함의 보온 상태와 원본 분리 표시를 대조했다",
+    "snow_move_permission": "자기 앵커의 이동을 허락한 목소리를 개별 번호로 확인했다",
+    "snow_letters_sealed": "전달을 허락한 사적인 말만 수신인별로 봉했다",
+    "snow_anchors_carried": "동의한 의식 앵커를 이동 보관함에 안전하게 옮겼다",
+    "snow_letters_packed": "의식 앵커를 남겨 두고 허락받은 편지만 배달 짐에 넣었다",
+    "snow_private_delivery": "공개 방송 대신 허락받은 수신인에게 편지를 전하기로 했다"
   },
   "nodes": {
     "hut": {
@@ -1761,6 +1775,18 @@ export default {
               "arrival": "더 묻기 전에 전력을 나눠야 해, 연결문을 열고 송신실 분배판으로 다가갔다."
             }
           }
+        },
+        {
+          "id": "check-post-room",
+          "label": "미배달 기록을 들고 옆 우편실을 확인한다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "기록실 서랍에서 수신인과 발신 번호가 남은 미배달 목록을 찾았다. 이안은 그 안에 딸에게 전하지 못한 말도 있다고 했다. 목록을 든 채 옆문의 우편실로 들어가, 꺼진 보관함과 발송 대장을 나란히 놓았다.",
+              "next": "snow-post-room"
+            }
+          }
         }
       ],
       "dialogue": {
@@ -2917,6 +2943,29 @@ export default {
             ]
           },
           "lockedHint": "이름별 귀환 의사를 확인하고, 실제로 작동하는 시작·중단 제어도 확보해야 한다."
+        },
+        {
+          "id": "private-handover",
+          "label": "청취 부스에서 받은 약속에 맞춰 별도의 인계 짐을 꾸린다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "공개 방송과 별도로 받은 허락을 소미에게 보여 주었다. 그녀는 출구 옆 작은 준비실을 열고 운반 거치대의 눈을 닦았다. 기록을 들고 그 방에 들어가, 실제로 가져갈 것과 여기 남길 것을 나눴다.",
+              "next": "snow-carry-room"
+            }
+          },
+          "requires": {
+            "any": [
+              {
+                "flag": "snow_move_permission"
+              },
+              {
+                "flag": "snow_letters_sealed"
+              }
+            ]
+          },
+          "lockedHint": "청취 부스에서 앵커 이동이나 사적인 편지 전달의 허락을 실제로 받아야 한다."
         }
       ],
       "dialogue": {
@@ -3028,6 +3077,38 @@ export default {
             "partyMin": 2
           },
           "text": "병동의 안쪽 손잡이에는 보온 테이프가 두껍게 감겨 있었다. 장갑을 낀 채로도 찾을 수 있었다. 수리 기록 한 줄보다, 그 감촉이 먼저 전해 주는 일이 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_case_checked"
+          },
+          "text": "보관함 시험표에는 온도가 오른 시각을 먼저 적었다. 그 옆의 인계 확인은 다른 칸이었다. 따뜻해졌다는 표시만으로 누가 돌아왔다고 쓰지는 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_letters_sealed"
+              },
+              {
+                "notFlag": "snow_private_delivery"
+              }
+            ]
+          },
+          "text": "전달을 허락받은 편지는 봉한 채 따로 보관했다. 아직 수신인에게 닿지 않았다는 표시가 남았고, 공개 구조 방송에서는 그 내용을 읽지 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_move_permission"
+              },
+              {
+                "notFlag": "snow_anchors_carried"
+              }
+            ]
+          },
+          "text": "옮겨도 좋다는 대답과 실제로 옮겼는지는 다른 칸에 남았다. 이동을 이루지 못한 앵커는 원래 보관함에서 기다렸다. 이안의 요청에는 아직 완료 표시를 하지 않았다."
         }
       ],
       "question": "누군가의 결정을 기다리기로 한 것은 책임을 미룬 일일까요, 책임을 지킨 일일까요?",
@@ -3109,6 +3190,38 @@ export default {
             "partyMin": 2
           },
           "text": "병동의 안쪽 손잡이에는 보온 테이프가 두껍게 감겨 있었다. 장갑을 낀 채로도 찾을 수 있었다. 수리 기록 한 줄보다, 그 감촉이 먼저 전해 주는 일이 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_case_checked"
+          },
+          "text": "보관함 시험표에는 온도가 오른 시각을 먼저 적었다. 그 옆의 인계 확인은 다른 칸이었다. 따뜻해졌다는 표시만으로 누가 돌아왔다고 쓰지는 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_letters_sealed"
+              },
+              {
+                "notFlag": "snow_private_delivery"
+              }
+            ]
+          },
+          "text": "전달을 허락받은 편지는 봉한 채 따로 보관했다. 아직 수신인에게 닿지 않았다는 표시가 남았고, 공개 구조 방송에서는 그 내용을 읽지 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_move_permission"
+              },
+              {
+                "notFlag": "snow_anchors_carried"
+              }
+            ]
+          },
+          "text": "옮겨도 좋다는 대답과 실제로 옮겼는지는 다른 칸에 남았다. 이동을 이루지 못한 앵커는 원래 보관함에서 기다렸다. 이안의 요청에는 아직 완료 표시를 하지 않았다."
         }
       ],
       "question": "사람을 되돌릴 기술이 있다면, 기술보다 먼저 준비해야 할 것은 무엇일까요?",
@@ -3190,9 +3303,783 @@ export default {
             "partyMin": 2
           },
           "text": "병동의 안쪽 손잡이에는 보온 테이프가 두껍게 감겨 있었다. 장갑을 낀 채로도 찾을 수 있었다. 수리 기록 한 줄보다, 그 감촉이 먼저 전해 주는 일이 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_case_checked"
+          },
+          "text": "보관함 시험표에는 온도가 오른 시각을 먼저 적었다. 그 옆의 인계 확인은 다른 칸이었다. 따뜻해졌다는 표시만으로 누가 돌아왔다고 쓰지는 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_letters_sealed"
+              },
+              {
+                "notFlag": "snow_private_delivery"
+              }
+            ]
+          },
+          "text": "전달을 허락받은 편지는 봉한 채 따로 보관했다. 아직 수신인에게 닿지 않았다는 표시가 남았고, 공개 구조 방송에서는 그 내용을 읽지 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_move_permission"
+              },
+              {
+                "notFlag": "snow_anchors_carried"
+              }
+            ]
+          },
+          "text": "옮겨도 좋다는 대답과 실제로 옮겼는지는 다른 칸에 남았다. 이동을 이루지 못한 앵커는 원래 보관함에서 기다렸다. 이안의 요청에는 아직 완료 표시를 하지 않았다."
         }
       ],
       "question": "오늘 여러분은 상대가 듣고 싶은 답을 받았나요, 상대가 고른 답을 들었나요?",
+      "choices": []
+    },
+    "snow-post-room": {
+      "id": "snow-post-room",
+      "title": "부치지 못한 봉투",
+      "chapter": 2,
+      "location": "기록실 옆 · 우편실",
+      "art": 2,
+      "mood": "mystery",
+      "text": [
+        "봉투 앞면에는 주소가 있었지만 발송 허락 칸은 제각각이었다. 몇 장은 문장 중간에서 멈춰 있었다. 빈 서랍 아래 보관함에는 이동 중에도 의식 앵커의 온도를 지킨다는 설명이 붙어 있었다.",
+        "몸을 되살리는 장치는 아니었다. 꺼진 보온판을 고쳐도 누구를 옮길지는 다시 물어야 했다. 벽 너머 작은 청취 부스에서 이안의 표시등이 켜졌다. “편지를 쓴 것과 보내 달라는 건 다르잖아.”"
+      ],
+      "summary": "미배달 편지와 이동 보관함을 찾았다. 발송과 앵커 이동에는 각각 허락이 필요하다.",
+      "objective": "보관함을 수리하거나 편지의 주인들에게 먼저 물으러 간다.",
+      "stakes": "수리 중 전류가 역류할 수 있다. 장비를 얻지 못해도 편지 전달에 관한 대화는 이어진다.",
+      "entities": [],
+      "choices": [
+        {
+          "id": "repair-case",
+          "label": "보온판을 수리하고 빈 보관함의 온도를 확인한다",
+          "intent": "investigate",
+          "stat": "wit",
+          "dc": 11,
+          "risk": "얼어붙은 접점을 잘못 건드리면 전류가 역류하거나 보온판이 타 버린다.",
+          "outcomes": {
+            "critical": {
+              "text": "보온판을 고친 뒤 원본과 빈 함의 번호를 따로 맞췄다. 불이 켜져도 앵커가 저절로 옮겨지지 않는 것을 확인했다. 따뜻해진 빈 보관함을 들고 옆문을 열어, 이안이 기다리는 청취 부스로 갔다.",
+              "next": "snow-listening-booth",
+              "gainItems": [
+                "snow_carry_case"
+              ],
+              "set": [
+                "snow_case_checked"
+              ],
+              "clues": [
+                "snow_portable_anchor"
+              ],
+              "pressure": -1
+            },
+            "success": {
+              "text": "절연 덮개를 다시 끼우자 보온판이 천천히 데워졌다. 아무것도 들어 있지 않은 함의 온도를 확인하고 설명표를 붙였다. 보관함을 챙겨 벽 너머 청취 부스로 들어가, 누구를 옮겨도 될지 물을 자리에 놓았다.",
+              "next": "snow-listening-booth",
+              "gainItems": [
+                "snow_carry_case"
+              ],
+              "clues": [
+                "snow_portable_anchor"
+              ]
+            },
+            "failure": {
+              "text": "접점을 이었지만 보온판의 온도가 오르지 않았다. 의식 앵커를 넣기에는 불안정해 빈 함을 그대로 뒀다. 장비 없이 미배달 목록만 들고, 옆문 너머 청취 부스에서 편지의 주인들을 부르기로 했다.",
+              "next": "snow-listening-booth",
+              "clues": [
+                "snow_portable_anchor"
+              ],
+              "pressure": 1
+            },
+            "fumble": {
+              "text": "덮개 밑의 전류가 손목으로 튀며 보온판이 타 버렸다. 전원을 빼고 상처를 감싼 뒤 꺼진 함은 우편실에 남겼다. 편지마저 놓치지 않으려고 목록을 챙겨, 벽 너머 청취 부스로 몸을 옮겼다.",
+              "next": "snow-listening-booth",
+              "harm": 1,
+              "pressure": 2,
+              "clues": [
+                "snow_portable_anchor"
+              ],
+              "lossText": "우편실에서 보관함의 역전류가 마지막 온기를 앗아 갔다. 꺼진 보온판 옆에 미배달 목록이 떨어졌고, 그 위로 뻗은 손은 멎었다.",
+              "survivorArrival": "남은 동료는 우편실 전원을 끊고 떨어진 목록을 챙겨, 벽 너머 청취 부스로 옮겼다."
+            }
+          }
+        },
+        {
+          "id": "leave-case",
+          "label": "보관함은 두고 편지의 주인에게 직접 묻는다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "빈 보관함을 열어 둔 채 미배달 목록부터 챙겼다. 누군가를 옮길 장비는 없어도 전할 말을 물을 수는 있었다. 우편실 옆문을 지나 청취 부스에 들어가, 첫 발신 번호를 불렀다.",
+              "next": "snow-listening-booth"
+            }
+          }
+        }
+      ],
+      "partyText": {
+        "solo": [
+          "봉투의 주소와 발송 허락을 번갈아 읽자 손이 자꾸 같은 칸으로 돌아왔다. 한쪽 목록을 책상에 고정하고 확인한 번호부터 밑줄을 그었다. 서랍 아래에는 꺼진 이동 보관함이 있었다.",
+          "보관함은 몸을 되살리지 않고 앵커의 온도만 지켰다. 혼자 운반할 수 있는 손잡이도 달려 있었다. 벽 너머 청취 부스에서 이안이 물었다. “함에 넣기 전에, 어디로 가는지 말해 줄래?”"
+        ],
+        "group": [
+          "봉투의 주소와 발신 번호가 서로 다른 장부에 흩어져 있었다. 책상 양쪽에 펼치면 확인한 줄을 다음 사람이 다시 볼 수 있었다. 서랍 아래에는 두 손잡이가 달린 이동 보관함이 있었다.",
+          "손잡이를 나눠 잡아도 누구를 옮길지 대신 정할 수는 없었다. 발송 허락 칸에는 아직 빈자리가 많았다. 벽 너머 청취 부스에서 이안이 물었다. “그 빈칸은 내가 말할 때까지 남겨 줄래?”"
+        ]
+      },
+      "details": [
+        {
+          "id": "delivery-columns",
+          "label": "봉투의 작성과 발송 허락 칸을 구별한다",
+          "text": "작성 시각은 있어도 발송 허락이 비어 있는 편지가 있었다. 봉투를 발견했다는 이유만으로 누군가에게 건네서는 안 됐다. 수신인과 지금의 허락을 다시 물을 번호가 옆에 적혀 있었다."
+        }
+      ]
+    },
+    "snow-listening-booth": {
+      "id": "snow-listening-booth",
+      "title": "봉투를 닫기 전에",
+      "chapter": 2,
+      "location": "우편실 옆 · 개별 청취 부스",
+      "art": 2,
+      "mood": "calm",
+      "text": [
+        "작은 부스 안에는 귀 하나만 덮는 수화기가 있었다. 이안은 딸에게 남길 말을 낮게 읽다가 멈췄다. “이건 방송에는 내보내지 마.” 발신 번호 옆에 공개와 전달이라는 칸이 따로 보였다.",
+        "다른 번호에서도 차례로 질문이 왔다. 여기 남을 수 있는지 묻는 목소리와 따뜻한 곳으로 갈 방법을 묻는 목소리가 섞였다. 아무 말이 없는 칸에는 커서만 남았다. 복도 안쪽 송신실의 경보가 다시 울렸다."
+      ],
+      "summary": "귀환과 이동, 편지 전달은 서로 다른 요청이다. 들은 대답만 각각 적을 수 있다.",
+      "objective": "이동 보관함을 보여 주고 동의를 묻거나 편지의 전달 범위만 확인한다.",
+      "stakes": "답을 재촉하면 허락을 확인할 기회를 놓친다. 침묵한 채널은 동의 목록에 넣을 수 없다.",
+      "entities": [],
+      "choices": [
+        {
+          "id": "ask-before-carry",
+          "label": "보관함의 목적지를 설명하고 이동과 편지 전달을 따로 묻는다",
+          "intent": "talk",
+          "stat": "heart",
+          "dc": 11,
+          "risk": "한꺼번에 답을 받으려 하면 어느 번호의 허락인지 확인하지 못한다.",
+          "outcomes": {
+            "critical": {
+              "text": "번호마다 이동과 편지 허락을 따로 되읽었다. 이안은 몸을 깨우지는 말고 딸과 연락할 곳으로 옮겨 달라고 했다. 편지는 봉하고 원본은 남긴 채, 별도 기록기의 요청 사본을 들고 부스 밖 연결문으로 송신실에 들어갔다.",
+              "next": "transmitter",
+              "set": [
+                "snow_move_permission",
+                "snow_letters_sealed",
+                "voices_consulted",
+                "records_saved",
+                "names_separated"
+              ],
+              "clues": [
+                "snow_private_words",
+                "consent"
+              ],
+              "gainItems": [
+                "snow_requests"
+              ],
+              "pressure": -1
+            },
+            "success": {
+              "text": "보관함이 몸을 깨우지 않는다고 설명하자 이안이 이동을 허락했다. 다른 번호에도 각각 물어 답한 이들만 적고 편지를 봉했다. 원본은 남기고 별도 기록기에 사본을 저장한 뒤, 빈 보관함을 들고 복도 안쪽 송신실로 갔다.",
+              "next": "transmitter",
+              "set": [
+                "snow_move_permission",
+                "snow_letters_sealed",
+                "voices_consulted",
+                "records_saved"
+              ],
+              "clues": [
+                "snow_private_words",
+                "consent"
+              ],
+              "gainItems": [
+                "snow_requests"
+              ]
+            },
+            "failure": {
+              "text": "설명 끝에 잡음이 끼어 어느 질문의 답인지 가릴 수 없었다. 이동도 발송도 승인된 것으로 적지 않고 질문을 보관했다. 빈 함을 닫고 부스 밖 연결문으로 나가, 채널을 나눌 송신실을 찾았다.",
+              "next": "transmitter",
+              "set": [
+                "anchors_protected"
+              ],
+              "pressure": 1
+            },
+            "fumble": {
+              "text": "여러 번호를 이어 부르자 말들이 겹쳐 연결이 끊겼다. 섞인 소리를 허락으로 쓰지 않고 원래 채널들을 대기로 돌렸다. 빈 보관함을 챙겨 부스를 나선 뒤, 경보가 울리는 송신실로 들어갔다.",
+              "next": "transmitter",
+              "set": [
+                "anchors_protected"
+              ],
+              "pressure": 2
+            }
+          },
+          "useItems": [
+            "snow_carry_case"
+          ],
+          "lockedHint": "우편실에서 보온 이동 보관함을 수리해야 실제 장비와 목적지를 보여 주며 이동 허락을 구할 수 있다."
+        },
+        {
+          "id": "seal-letters",
+          "label": "옮기겠다는 약속 없이, 전해도 될 말과 수신인만 확인한다",
+          "intent": "talk",
+          "stat": "heart",
+          "dc": 10,
+          "risk": "수신인과 허락을 잘못 짝지으면 편지를 봉할 수 없다.",
+          "outcomes": {
+            "critical": {
+              "text": "편지마다 마지막 문장과 받을 사람을 다시 읽어 주었다. 이안이 고친 한 단어까지 반영하자 봉해 달라는 답이 왔다. 허락 시각은 원본에 남기고 별도 기록기에 사본을 저장한 뒤, 부스 밖 연결문으로 송신실에 들어갔다.",
+              "next": "transmitter",
+              "set": [
+                "snow_letters_sealed",
+                "records_saved",
+                "anchors_protected",
+                "heard_reply"
+              ],
+              "clues": [
+                "snow_private_words",
+                "ledger"
+              ],
+              "gainItems": [
+                "snow_requests"
+              ],
+              "pressure": -1
+            },
+            "success": {
+              "text": "받을 사람을 하나씩 물어 허락한 편지만 봉했다. 이안의 앵커는 남기고 딸에게 전할 말만 가져가기로 했다. 원본은 두고 별도 기록기에 요청 사본을 저장한 뒤, 봉투를 들고 복도로 나가 안쪽 송신실의 문을 열었다.",
+              "next": "transmitter",
+              "set": [
+                "snow_letters_sealed",
+                "records_saved",
+                "anchors_protected"
+              ],
+              "clues": [
+                "snow_private_words",
+                "ledger"
+              ],
+              "gainItems": [
+                "snow_requests"
+              ]
+            },
+            "failure": {
+              "text": "주소를 읽어 주는 동안 회신이 끊겨 발송 허락을 받지 못했다. 봉투는 열린 채 원래 칸에 돌려놓고 아직 못 물은 번호만 적었다. 부스에서 나와 연결문을 지나, 다시 연락할 송신실로 향했다.",
+              "next": "transmitter",
+              "set": [
+                "anchors_protected"
+              ],
+              "pressure": 1
+            },
+            "fumble": {
+              "text": "끊기는 회신을 따라가다 주소와 발신 번호가 뒤섞였다. 잘못 전하지 않으려고 모든 봉투를 원래 자리로 돌려놓았다. 늦어진 시간을 확인하고 부스를 나가, 전력부터 나눌 송신실에 들어갔다.",
+              "next": "transmitter",
+              "set": [
+                "anchors_protected"
+              ],
+              "pressure": 2
+            }
+          }
+        },
+        {
+          "id": "leave-unanswered",
+          "label": "답을 받지 못한 것은 남겨 두고 송신실로 간다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "빈 허락 칸은 그대로 두고 수화기를 내려놓았다. 기다리는 목소리가 지워지지 않게 개별 채널만 대기로 돌렸다. 청취 부스를 나와 복도 안쪽 연결문을 열자 송신실의 세 표시등이 한꺼번에 깜빡였다.",
+              "next": "transmitter",
+              "set": [
+                "anchors_protected"
+              ]
+            }
+          }
+        }
+      ],
+      "callbacks": [
+        {
+          "when": {
+            "flag": "snow_case_checked"
+          },
+          "text": "보관함의 분리 표시가 꺼져 있었다. 이안에게 그 표시를 설명하자, 대답하기 전에는 자기 앵커가 움직이지 않는다는 것을 확인할 수 있었다."
+        }
+      ],
+      "details": [
+        {
+          "id": "separate-requests",
+          "label": "단말기의 서로 다른 세 요청 칸을 읽는다",
+          "text": "귀환, 앵커 이동, 편지 전달은 따로 저장되었다. 함을 옮겨도 좋다는 말은 새 몸으로 깨워 달라는 말이 아니었고, 편지를 보내라는 말도 모든 방송에 싣겠다는 허락은 아니었다."
+        }
+      ]
+    },
+    "snow-carry-room": {
+      "id": "snow-carry-room",
+      "title": "들고 갈 수 있는 만큼",
+      "chapter": 3,
+      "location": "출구 옆 · 인계 준비실",
+      "art": 2,
+      "mood": "tension",
+      "text": [
+        "관리 책임자 소미가 운반 거치대를 벽에 붙였다. 이동에 동의한 번호와 편지만 보내 달라는 번호를 다른 종이에 적을 자리가 생겼다. 소미는 아직 답을 못 받은 번호의 줄을 비워 두었다.",
+        "앵커를 옮기려면 원래 함과 휴대함의 연결을 한 번씩 맞춰야 했다. 편지만 가져간다면 원래 보관 전원은 그대로 남는다. 방풍문 너머 대기실에서 현재의 구조 호출이 낮게 들렸다."
+      ],
+      "summary": "지금 옮길 앵커와 여기 남길 앵커를 구분할 마지막 준비실이다.",
+      "objective": "허락받은 앵커를 옮기거나 봉한 편지만 짐에 넣는다.",
+      "stakes": "앵커 연결이 불안정하면 옮길 수 없다. 원래 보관함은 끊지 않은 채 시험한다.",
+      "entities": [],
+      "choices": [
+        {
+          "id": "move-anchors",
+          "label": "이동을 허락한 번호만 휴대 보관함에 하나씩 연결한다",
+          "intent": "investigate",
+          "stat": "wit",
+          "dc": 12,
+          "risk": "원본을 먼저 끊으면 안 된다. 접점이 흔들리면 원래 함에 남겨야 한다.",
+          "outcomes": {
+            "critical": {
+              "text": "빈 함의 온도를 맞추고 각 번호가 자기 이름을 답할 때만 연결을 옮겼다. 이안은 아직 몸을 깨우지 않는다는 설명을 다시 들었다. 두 표시를 대조한 뒤 보관함을 들고 옆 방풍문을 지나 대기실 거치대에 놓았다.",
+              "next": "snow-morning-platform",
+              "set": [
+                "snow_anchors_carried",
+                "snow_case_checked",
+                "anchors_protected"
+              ],
+              "clues": [
+                "snow_portable_anchor"
+              ],
+              "pressure": -1
+            },
+            "success": {
+              "text": "허락된 번호가 휴대함에서 답하는 것을 듣고 그때마다 원래 연결을 분리했다. 답하지 않은 앵커는 원래 자리에 남았다. 소미에게 두 목록을 건네고 보관함을 들고 옆 방풍문 너머 대기실로 옮겼다.",
+              "next": "snow-morning-platform",
+              "set": [
+                "snow_anchors_carried",
+                "anchors_protected"
+              ],
+              "clues": [
+                "snow_portable_anchor"
+              ]
+            },
+            "failure": {
+              "text": "휴대함의 온도가 흔들려 원본 연결을 떼지 않았다. 앵커들은 따뜻한 원래 함에 남기고 이동 실패 시각만 적었다. 소미와 빈 보관함을 정리한 뒤, 옆 방풍문을 지나 구조를 기다리는 대기실로 갔다.",
+              "next": "snow-morning-platform",
+              "set": [
+                "anchors_protected"
+              ],
+              "pressure": 1
+            },
+            "fumble": {
+              "text": "시험 접점에서 전류가 튀어 팔을 저리게 했다. 원본을 끊지 않아 앵커는 지켰지만 휴대 연결은 포기해야 했다. 소미가 전원을 정리하는 동안 상처를 감싸고, 옆 방풍문 너머 대기실로 물러났다.",
+              "next": "snow-morning-platform",
+              "harm": 1,
+              "pressure": 2,
+              "set": [
+                "anchors_protected"
+              ],
+              "lossText": "인계 준비실의 시험 접점에서 튄 전류가 마지막 기력을 앗아 갔다. 원래 보관함의 불은 켜져 있었지만, 휴대함을 받친 손은 더 움직이지 않았다.",
+              "survivorArrival": "남은 동료는 소미에게 원본 연결을 확인받고, 인계 준비실 옆 방풍문을 지나 대기실로 옮겼다."
+            }
+          },
+          "useItems": [
+            "snow_carry_case"
+          ],
+          "requires": {
+            "flag": "snow_move_permission"
+          },
+          "lockedHint": "보온 이동 보관함과 청취 부스에서 확인한 개별 이동 허락이 모두 있어야 한다."
+        },
+        {
+          "id": "pack-letters",
+          "label": "의식 앵커는 남겨 두고 허락받은 편지만 꾸린다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "봉투의 수신인과 허락 시각을 맞추고 소미에게 남겨 둘 앵커 목록을 건넸다. 보관 전원은 계속 켜 두었다. 편지만 방수 주머니에 넣어 들고 옆 방풍문을 지나, 구조대가 올 때까지 기다릴 대기실로 갔다.",
+              "next": "snow-morning-platform",
+              "set": [
+                "snow_letters_packed",
+                "anchors_protected"
+              ]
+            }
+          },
+          "requires": {
+            "flag": "snow_letters_sealed"
+          },
+          "lockedHint": "청취 부스에서 수신인과 전달 허락을 확인해 봉한 편지가 있어야 한다."
+        },
+        {
+          "id": "leave-in-care",
+          "label": "추가 운반을 멈추고 원래 보관함을 안전한 대기로 둔다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "준비실의 운반 연결을 풀고 의식 앵커는 원래 보관함의 독립 전원에 남겼다. 소미와 출구 제어실로 돌아가 광역 자동 귀환 레버를 내렸다. 현재의 구조 무전만 켜 두고 문 안쪽 난방 곁으로 옮겨 실제 회신을 기다렸다.",
+              "next": "ending-silence",
+              "set": [
+                "anchors_protected"
+              ]
+            }
+          }
+        }
+      ],
+      "callbacks": [
+        {
+          "when": {
+            "flag": "snow_move_permission"
+          },
+          "text": "이안의 이동 요청 옆에는 몸의 귀환에 대해서는 아직 결정하지 않았다는 문장이 따로 남아 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_letters_sealed"
+          },
+          "text": "봉한 편지의 수신인은 공개 구조 명단에 적지 않았다. 소미에게는 배달할 봉투가 있다는 사실만 알려 주었다."
+        }
+      ],
+      "details": [
+        {
+          "id": "handover-indicator",
+          "label": "원본 연결을 끊는 순서가 적힌 표를 읽는다",
+          "text": "원래 함의 전원은 휴대함에서 같은 번호가 실제로 답한 뒤에만 분리하도록 되어 있었다. 온도 불안정이나 무응답이면 시험을 멈추고 원래 연결을 유지해야 했다."
+        }
+      ]
+    },
+    "snow-morning-platform": {
+      "id": "snow-morning-platform",
+      "title": "문은 답을 듣고 나서",
+      "chapter": 3,
+      "location": "출구 안쪽 · 방풍 대기실",
+      "art": 3,
+      "mood": "calm",
+      "text": [
+        "유리문 밖의 눈은 길과 하늘을 같은 색으로 가렸다. 소미는 손잡이에 손을 얹고도 열지 않았다. “지금 보인다고 바로 나가면 안 돼요.” 벽의 무전기가 실제 접근 확인을 기다리고 있었다.",
+        "거치대에는 인계할 짐의 목록이 놓였다. 의식이 든 함인지 봉한 편지인지, 받아 갈 사람이 알아야 했다. 이름과 목적을 분명히 전한 뒤 나갈 수도, 이곳의 온기 안에 그대로 남겨 둘 수도 있었다."
+      ],
+      "summary": "출구 안쪽에서 구조대의 실제 접근 확인을 기다린다. 짐의 인계 범위를 정해야 한다.",
+      "objective": "이동에 동의한 앵커를 함께 데려가거나 허락받은 편지를 조용히 배달한다.",
+      "stakes": "눈보라 속으로 바로 나가지 않는다. 실제 구조가 도착할 때까지 문 안쪽에서 기다린다.",
+      "entities": [],
+      "choices": [
+        {
+          "id": "escort-voices",
+          "label": "허락받은 앵커를 싣고, 깨우지 않은 상태로 함께 구조된다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "현재 위치와 살아남은 인원을 보내고 의식 보관함은 별도 짐이라고 설명했다. 실제 구조대가 도착한 뒤에야 문을 열었다. 보호 전원을 확인하며 보관함을 수송기 안쪽 거치대에 옮기고, 깨어날 결정은 아직 하지 않았다는 기록을 붙였다.",
+              "next": "ending-carried-voices"
+            }
+          },
+          "requires": {
+            "flag": "snow_anchors_carried"
+          },
+          "useItems": [
+            "snow_carry_case"
+          ],
+          "lockedHint": "인계 준비실에서 이동에 동의한 앵커를 보온 이동 보관함에 안전하게 옮겨야 한다."
+        },
+        {
+          "id": "deliver-letters",
+          "label": "편지는 공개하지 않고 허락받은 수신인에게 직접 전한다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "구조대에는 봉투의 내용 대신 인계할 사람과 허락 범위만 알렸다. 실제 도착 신호를 확인한 뒤 소미에게 보관을 맡긴 앵커 목록을 남겼다. 방수 주머니를 품고 문을 나서 수송기에 올라, 산 아래에서 이어 갈 배달을 준비했다.",
+              "next": "ending-kept-letters",
+              "set": [
+                "snow_private_delivery"
+              ]
+            }
+          },
+          "requires": {
+            "flag": "snow_letters_packed"
+          },
+          "lockedHint": "인계 준비실에서 의식 앵커는 남겨 두고 허락받은 편지만 배달 짐에 넣어야 한다."
+        },
+        {
+          "id": "wait-in-warmth",
+          "label": "운반을 보류하고 모든 앵커를 이곳의 온기에 남긴다",
+          "intent": "choose",
+          "automatic": true,
+          "outcomes": {
+            "success": {
+              "text": "가져온 짐을 난방 거치대에 두고 소미와 목록을 다시 맞췄다. 옮긴 앵커가 있다면 독립 보관 전원으로 되돌리고, 광역 자동 귀환은 껐다. 문 안쪽에 돌아와 현재의 구조 호출만 들으며 실제 구조대가 올 때까지 기다렸다.",
+              "next": "ending-silence",
+              "set": [
+                "anchors_protected"
+              ],
+              "unset": [
+                "snow_anchors_carried",
+                "snow_letters_packed"
+              ]
+            }
+          }
+        }
+      ],
+      "callbacks": [
+        {
+          "when": {
+            "flag": "snow_anchors_carried"
+          },
+          "text": "휴대함에서 이안이 자기 번호를 불렀다. 아직 새 몸을 얻은 것은 아니었다. 흔들려도 꺼지지 않는 불빛 하나가 이번에는 실제 짐 속에 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_letters_packed"
+          },
+          "text": "방수 주머니에는 봉투만 들었다. 의식 앵커는 준비실의 보관 전원에 남아 있었다. 편지를 들고 나가는 일이 누군가를 다시 살리겠다는 약속은 아니었다."
+        },
+        {
+          "when": {
+            "flag": "pickup_window"
+          },
+          "text": "먼저 확인한 접근 시각이 무전기 옆에 적혀 있었다. 소미는 그 시각만 믿고 문을 열지 않고, 바로 앞까지 왔다는 두 번째 회신을 기다렸다."
+        },
+        {
+          "when": {
+            "notFlag": "rescue_sent"
+          },
+          "text": "아직 외부에서 좌표를 되읽은 적이 없었다. 소미는 표식등을 켜 두고 현재의 이름과 위치부터 다시 불렀다."
+        }
+      ],
+      "details": [
+        {
+          "id": "arrival-procedure",
+          "label": "방풍문 옆 구조 인계 절차를 확인한다",
+          "text": "약속한 시각이 되어도 현장 도착 회신을 다시 받아야 했다. 살아 있는 인원과 의식 보관함은 따로 세고, 사적인 편지의 내용은 구조 방송으로 읽지 않도록 적혀 있었다."
+        }
+      ]
+    },
+    "ending-carried-voices": {
+      "id": "ending-carried-voices",
+      "title": "목소리를 싣고 걷는 길",
+      "chapter": 4,
+      "location": "에필로그",
+      "art": 3,
+      "mood": "hope",
+      "ending": true,
+      "text": [
+        "수송기가 산등성이를 넘을 때 보관함에서 이안의 목소리가 났다. “이 진동은, 정말 움직이고 있어서 나는 거야?” 소미가 잠깐 창밖을 설명했다. 누구도 그 질문에 새 몸으로 돌아왔다고 답하지 않았다.",
+        "산 아래 진료소에서 이안은 딸과 통화할 순서를 기다렸다. 다른 앵커들도 각자 허락한 자리로 옮겨졌다. 기다림은 계속됐지만 이제 창문 밖에 사람이 다녔다. 다음 결정을 물을 사람이 같은 방에 있었다."
+      ],
+      "epilogues": [
+        {
+          "when": {
+            "flag": "records_saved"
+          },
+          "text": "여러 장치에 나눠 둔 기록 덕분에 보관함 하나의 고장으로 사람의 마지막 요청이 사라지지는 않는다."
+        },
+        {
+          "when": {
+            "flag": "garam_safe"
+          },
+          "text": "가람은 새 구조 지도에 대피소와 귀환 거부 절차를 모두 넣는다. 구조는 같은 방향으로 데려오는 일만이 아니었다."
+        },
+        {
+          "when": {
+            "flag": "warmth_ready"
+          },
+          "text": "오두막에 남겨 둔 보온 전력은 뒤늦게 도착한 구조 인력도 지켜 준다. 첫 선택의 온기가 오래 남는다."
+        },
+        {
+          "when": {
+            "flag": "garam_safe"
+          },
+          "text": "가람은 구조된 뒤 자신을 구할 때 무엇을 포기했고 무엇을 지켰는지 수색 보고서에 적는다. 그녀의 현재 목소리는 저장된 녹음과 구별돼 남는다."
+        },
+        {
+          "when": {
+            "notFlag": "garam_safe"
+          },
+          "text": "가람의 좌표는 별도 수색대에 전달된다. 아직 구조 확인을 받지 못했으므로 그녀의 이름 옆은 완료가 아니라 수색 중으로 남는다."
+        },
+        {
+          "when": {
+            "flag": "snow_personal_question",
+            "partyMax": 1
+          },
+          "text": "첫 질문 파일에는 말이 멎은 뒤의 숨소리까지 남았다. 다음 파일에서 이안의 답이 시작됐다. 같은 목소리였지만 두 녹음을 이어 붙이지는 않았다."
+        },
+        {
+          "when": {
+            "flag": "snow_shared_call_sign",
+            "partyMin": 2
+          },
+          "text": "구조 기록의 표지에 처음 쓴 호출부호 표가 붙었다. 성급히 그은 숫자를 알아보기 좋게 다시 적은 흔적이 남았다. 그날 누구를 불렀는지 찾을 때마다 그 표지를 펼쳤다."
+        },
+        {
+          "when": {
+            "flag": "snow_personal_request",
+            "partyMax": 1
+          },
+          "text": "개인 기록의 첫머리에 “눈뜨면 이름부터 물어봐 줘”라는 인사가 남았다. 그 이름의 이후 기록을 읽기 전에, 먼저 그날의 목소리를 들을 수 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_open_requests",
+            "partyMin": 2
+          },
+          "text": "병동의 안쪽 손잡이에는 보온 테이프가 두껍게 감겨 있었다. 장갑을 낀 채로도 찾을 수 있었다. 수리 기록 한 줄보다, 그 감촉이 먼저 전해 주는 일이 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_case_checked"
+          },
+          "text": "보관함 시험표에는 온도가 오른 시각을 먼저 적었다. 그 옆의 인계 확인은 다른 칸이었다. 따뜻해졌다는 표시만으로 누가 돌아왔다고 쓰지는 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_letters_sealed"
+              },
+              {
+                "notFlag": "snow_private_delivery"
+              }
+            ]
+          },
+          "text": "전달을 허락받은 편지는 봉한 채 따로 보관했다. 아직 수신인에게 닿지 않았다는 표시가 남았고, 공개 구조 방송에서는 그 내용을 읽지 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_move_permission"
+              },
+              {
+                "notFlag": "snow_anchors_carried"
+              }
+            ]
+          },
+          "text": "옮겨도 좋다는 대답과 실제로 옮겼는지는 다른 칸에 남았다. 이동을 이루지 못한 앵커는 원래 보관함에서 기다렸다. 이안의 요청에는 아직 완료 표시를 하지 않았다."
+        },
+        {
+          "when": {
+            "flag": "snow_anchors_carried"
+          },
+          "text": "비어 있는 원래 연결함에는 이동 시각과 새 보관 위치를 남겼다. 산 아래 보관함이 켜진 것을 확인받은 뒤에만 인계 완료라는 작은 도장을 찍었다."
+        }
+      ],
+      "question": "누군가를 살리는 일과, 그가 다음 선택을 할 자리까지 데려가는 일은 어떻게 달랐나요?",
+      "choices": []
+    },
+    "ending-kept-letters": {
+      "id": "ending-kept-letters",
+      "title": "전하지 않은 말도 남는다",
+      "chapter": 4,
+      "location": "에필로그",
+      "art": 3,
+      "mood": "calm",
+      "ending": true,
+      "text": [
+        "산 아래에서 건넨 봉투는 생각보다 가벼웠다. 이안의 딸은 받는 이의 이름을 읽고 한참 뒤에 뜯었다. 돌아오겠다는 약속도 당장 잊어 달라는 부탁도 아니었다. 아버지가 끝까지 고른 짧은 문장들이었다.",
+        "받기를 거절한 봉투는 뜯지 않은 채 돌아왔다. 전하지 못한 것을 실패한 편지라고 쓰지는 않았다. 산의 앵커는 보관함에서 기다렸고, 배달 공책에는 누구에게 무엇을 허락받았는지 마지막 줄까지 남았다."
+      ],
+      "epilogues": [
+        {
+          "when": {
+            "flag": "records_saved"
+          },
+          "text": "여러 장치에 나눠 둔 기록 덕분에 보관함 하나의 고장으로 사람의 마지막 요청이 사라지지는 않는다."
+        },
+        {
+          "when": {
+            "flag": "garam_safe"
+          },
+          "text": "가람은 새 구조 지도에 대피소와 귀환 거부 절차를 모두 넣는다. 구조는 같은 방향으로 데려오는 일만이 아니었다."
+        },
+        {
+          "when": {
+            "flag": "warmth_ready"
+          },
+          "text": "오두막에 남겨 둔 보온 전력은 뒤늦게 도착한 구조 인력도 지켜 준다. 첫 선택의 온기가 오래 남는다."
+        },
+        {
+          "when": {
+            "flag": "garam_safe"
+          },
+          "text": "가람은 구조된 뒤 자신을 구할 때 무엇을 포기했고 무엇을 지켰는지 수색 보고서에 적는다. 그녀의 현재 목소리는 저장된 녹음과 구별돼 남는다."
+        },
+        {
+          "when": {
+            "notFlag": "garam_safe"
+          },
+          "text": "가람의 좌표는 별도 수색대에 전달된다. 아직 구조 확인을 받지 못했으므로 그녀의 이름 옆은 완료가 아니라 수색 중으로 남는다."
+        },
+        {
+          "when": {
+            "flag": "snow_personal_question",
+            "partyMax": 1
+          },
+          "text": "첫 질문 파일에는 말이 멎은 뒤의 숨소리까지 남았다. 다음 파일에서 이안의 답이 시작됐다. 같은 목소리였지만 두 녹음을 이어 붙이지는 않았다."
+        },
+        {
+          "when": {
+            "flag": "snow_shared_call_sign",
+            "partyMin": 2
+          },
+          "text": "구조 기록의 표지에 처음 쓴 호출부호 표가 붙었다. 성급히 그은 숫자를 알아보기 좋게 다시 적은 흔적이 남았다. 그날 누구를 불렀는지 찾을 때마다 그 표지를 펼쳤다."
+        },
+        {
+          "when": {
+            "flag": "snow_personal_request",
+            "partyMax": 1
+          },
+          "text": "개인 기록의 첫머리에 “눈뜨면 이름부터 물어봐 줘”라는 인사가 남았다. 그 이름의 이후 기록을 읽기 전에, 먼저 그날의 목소리를 들을 수 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_open_requests",
+            "partyMin": 2
+          },
+          "text": "병동의 안쪽 손잡이에는 보온 테이프가 두껍게 감겨 있었다. 장갑을 낀 채로도 찾을 수 있었다. 수리 기록 한 줄보다, 그 감촉이 먼저 전해 주는 일이 있었다."
+        },
+        {
+          "when": {
+            "flag": "snow_case_checked"
+          },
+          "text": "보관함 시험표에는 온도가 오른 시각을 먼저 적었다. 그 옆의 인계 확인은 다른 칸이었다. 따뜻해졌다는 표시만으로 누가 돌아왔다고 쓰지는 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_letters_sealed"
+              },
+              {
+                "notFlag": "snow_private_delivery"
+              }
+            ]
+          },
+          "text": "전달을 허락받은 편지는 봉한 채 따로 보관했다. 아직 수신인에게 닿지 않았다는 표시가 남았고, 공개 구조 방송에서는 그 내용을 읽지 않았다."
+        },
+        {
+          "when": {
+            "all": [
+              {
+                "flag": "snow_move_permission"
+              },
+              {
+                "notFlag": "snow_anchors_carried"
+              }
+            ]
+          },
+          "text": "옮겨도 좋다는 대답과 실제로 옮겼는지는 다른 칸에 남았다. 이동을 이루지 못한 앵커는 원래 보관함에서 기다렸다. 이안의 요청에는 아직 완료 표시를 하지 않았다."
+        },
+        {
+          "when": {
+            "flag": "snow_private_delivery"
+          },
+          "text": "구조 보고서에는 배달 날짜만 남겼다. 이안이 딸에게 고쳐 쓴 단어는 그 보고서에 옮기지 않았다. 허락은 편지의 수신인에게까지였기 때문이었다."
+        }
+      ],
+      "question": "누군가의 마지막 말을 전할 때, 끝내 열지 않은 봉투도 지켜야 할 약속이었나요?",
       "choices": []
     }
   },
@@ -3227,6 +4114,12 @@ export default {
       "legacyFlags": [
         "records_saved"
       ]
+    },
+    "snow_carry_case": {
+      "name": "보온 이동 보관함",
+      "description": "기록실 옆 우편실에서 수리한 휴대 보관함. 살아 있는 의식 앵커를 낮은 출력으로 보존한다. 몸을 복원하는 기능은 없다.",
+      "useHint": "청취 부스에서 실제 이동 의사를 물은 뒤, 출구의 인계 준비실에서 동의한 앵커만 옮긴다. 없는 대답을 동의로 바꾸지는 못한다.",
+      "consumable": false
     }
   },
   "playModes": {

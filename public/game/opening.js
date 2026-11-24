@@ -90,7 +90,7 @@ export function meetingPassages(game, campaign) {
   // Keep the common introduction readable even if a faster reader has already
   // moved the table onward. Reconstruct from authored data, never saved prose.
   return { title: meeting.title, location: meeting.location, text: [intro, ...accounts], participants: participantsFor(game, campaign),
-    startScene: { id: start.id, title: start.title, location: start.location, text: copy(meeting.startText[mode]) } };
+    startScene: { id: start.id, title: start.title, location: start.location, mood: start.mood || 'mystery', text: copy(meeting.startText[mode]) } };
 }
 
 export function openingStartParagraphs(game, node) {

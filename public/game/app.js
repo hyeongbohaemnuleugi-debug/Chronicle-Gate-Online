@@ -1,4 +1,5 @@
 import { createAudio } from './audio.js';
+import { createDicePresenter } from './dice.js';
 import { selectMusic } from './music-director.js';
 import { chronicleText } from './narrative.js';
 import { formatCharacters } from './characters.js';
@@ -12,7 +13,7 @@ const GRADE = {critical:'대성공',success:'성공',failure:'실패',fumble:'�
 const ROLLED_GRADES=['critical','success','failure','fumble'];
 let client=null, state=null, catalog=[], selected='last-train', busy=false, pending=null;
 let activeTab='journal', secretOpen=false, toastTimer=null, lastScene='',lastResultKey='', lastPerson='';
-let combatTarget=null;
+let combatTarget=null, showingRoll=null;
 let draft={spark:false,preparation:false,chat:''}, entryMode='online', entryKind='create', localCount=2;
 let openingMode='separate',localOpeningSeat=null,meetingStep=null,meetingViewed=false,meetingReceiptScene=null;
 const loadedArt=new Map(),artDimensions=new Map(),waitingArt=new Set();
@@ -26,6 +27,18 @@ const lazyArtObserver=typeof IntersectionObserver==='function'?new IntersectionO
 },{rootMargin:'120px 0px',threshold:0.01}):null;
 const artObserver=typeof ResizeObserver==='function'?new ResizeObserver(entries=>{for(const entry of entries){const dimensions=artDimensions.get(entry.target.dataset.art);if(dimensions)sizeArt(entry.target,dimensions);}}):null;
 const sound=createAudio(updateSoundButton);
+const dice=createDicePresenter({
+  onSettled(result,request){
+    if(showingRoll!==request)return;
+    sound.duck?.(false);
+    const music=selectMusic(request.view);
+    sound.scene(request.view.campaignId,music.mood);
+    lastResultKey=request.key;
+    playResultCue(request.view,music,request.key);
+  },
+  onCancel(){sound.duck?.(false);},
+  onRender(dialog){highlightNames(dialog,showingRoll?.view?.campaignId,showingRoll?.snapshot?.game?.players||[]);},
+});
 const position = index => ['0% 0%','100% 0%','0% 100%','100% 100%'][Math.max(0,Math.min(3,Number(index)||0))];
 const art = (id,index=0,classes='',label='장면 그림') => `<div class="art-frame ${classes}" data-art-priority="${/(?:hero|lobby|scene)-art/.test(classes)?'high':'defer'}" data-art="${slug(id)}" data-art-index="${Number(index)||0}" style="--art-position:${position(index)}" role="img" aria-label="${esc(label)}"><span class="art-placeholder" aria-hidden="true">✦</span></div>`;
 const classList = (campaign=selectedCampaign()) => Array.isArray(campaign?.classes)?campaign.classes:[];
@@ -41,12 +54,20 @@ const privateOpeningCover = (view=game()) => state?.mode==='local'&&view?.openin
 function listeningView(view=game()){
   const receipt=view?.opening?.mine?.history?.at(-1);
   const scene=receipt?{id:receipt.sceneId||meetingReceiptScene?.id,title:receipt.sceneTitle,location:receipt.location||meetingReceiptScene?.location,mood:receipt.mood||meetingReceiptScene?.mood||'calm',ending:false}:null;
-  return meetingStep==='receipt'&&receipt?{...view,scene,lastResult:receipt,combat:null,ending:false}:view;
+  // This reading surface can lag behind the shared table. Current casualties,
+  // pressure, combat or journal entries must not sound ahead of its prose.
+  const readingOnly={combat:null,ending:false,players:[],journal:[],pressure:null};
+  if(meetingStep==='receipt'&&receipt)return {...view,...readingOnly,scene,lastResult:receipt};
+  if(meetingStep==='meeting'&&view?.opening?.meeting){
+    const start=view.opening.meeting.startScene;
+    return {...view,...readingOnly,scene:{id:start?.id||'meeting',title:start?.title||view.opening.meeting.title,mood:start?.mood||'calm',ending:false},lastResult:null};
+  }
+  return view;
 }
-function resultEventKey(view){
+function resultEventKey(view,owner=state,personal=view?.opening?.active||meetingStep==='receipt'){
   const result=view?.lastResult;if(!result)return '';
-  const prefix=`${state?.code||''}:${view.campaignId}:`;
-  if(view.opening?.active||meetingStep==='receipt')return `${prefix}opening:${state.meId}:${view.opening?.mine?.history?.length||0}`;
+  const prefix=`${owner?.code||''}:${view.campaignId}:`;
+  if(personal)return `${prefix}opening:${owner?.meId}:${view.opening?.mine?.history?.length||0}`;
   // Reveal/assist/pass can keep the previous receipt. Its matching journal ID,
   // rather than a presence revision, identifies an actual new action.
   const entry=[...(view.journal||[])].reverse().find(item=>item.actor===result.actor&&item.action===result.action&&item.text===result.text&&item.grade===result.grade&&(item.roll??null)===(result.roll??null));
@@ -195,7 +216,7 @@ function showView(view){
   for(const name of ['home','lobby','game'])$(name+'-view').hidden=name!==view;
   $('site-footer').hidden=view==='game';document.body.dataset.view=view;
 }
-function renderState(next){
+function applyState(next){
   const old=state;state=next;
   if(next?.catalog?.length)catalog=next.catalog;
   if(next?.campaignId)selected=next.campaignId;
@@ -219,16 +240,89 @@ function renderState(next){
   if(changed){combatTarget=null;draft.spark=false;draft.preparation=false;secretOpen=false;}
   if(pending&&(actionVersion(next.game)!==pending.revision||pending.actorId!==person||pending.sceneId!==next.game.scene.id)&&!pending.committing){closeDialog('preview-dialog');toast('당신의 장면이 바뀌었습니다. 행동을 다시 선택해 주세요.');}
   renderGame(changed);lastScene=sceneKey;
-  const audible=listeningView(next.game),music=selectMusic(audible,{privateCover:privateOpeningCover(next.game)});
-  sound.scene(next.game.campaignId,music.mood);
-  const result=audible.lastResult;
-  const key=resultEventKey(audible),reconnected=old?.connected===false&&next.connected!==false;
-  // Only sound a new outcome, never a reconnect or a teammate's unchanged state.
-  if(result&&old?.game&&!reconnected&&key!==lastResultKey){
-    if(music.effect)sound.effect(music.effect);
-    if(music.enemyEffect)setTimeout(()=>{if(lastResultKey===key&&!privateOpeningCover()&&selectMusic(listeningView()).enemyEffect)sound.effect('enemy');},120);
-  }
+  const reconnected=old?.connected===false&&next.connected!==false;
+  updateReadingAudio({allowEffects:Boolean(old?.game)&&!reconnected});
+}
+function updateReadingAudio({allowEffects=false}={}){
+  const audible=listeningView(),music=selectMusic(audible,{privateCover:privateOpeningCover()});
+  if(!audible)return;
+  sound.scene(audible.campaignId,music.mood);
+  // A meeting has no new receipt. In particular, do not mark a main-story
+  // result as consumed before the reader has reached that story surface.
+  if(!audible.lastResult)return;
+  const key=resultEventKey(audible);
+  if(allowEffects&&key!==lastResultKey)playResultCue(audible,music,key);
   lastResultKey=key;
+}
+function playResultCue(view,music,key){
+  if(music.effect)sound.effect(music.effect);
+  if(music.enemyEffect)setTimeout(()=>{
+    if(lastResultKey===key&&!privateOpeningCover()&&(!showingRoll||showingRoll.key===key)&&selectMusic(view).enemyEffect)sound.effect('enemy');
+  },120);
+}
+function freshRoll(before,next){
+  if(!before?.game||!next?.game||before.code!==next.code||before.mode!==next.mode||before.game.campaignId!==next.game.campaignId||before.connected===false||next.connected===false)return null;
+  const privateChapter=Boolean(before.game.opening?.active);
+  if(before.meId!==next.meId&&(next.mode!=='local'||privateChapter))return null;
+  if(privateChapter){
+    if(next.mode==='local'&&before.game.opening.total>1&&localOpeningSeat!==before.meId)return null;
+    const history=next.game.opening?.mine?.history||[],oldHistory=before.game.opening?.mine?.history||[];
+    if(history.length<=oldHistory.length)return null;
+    const result=history.at(-1);
+    if(!Number.isInteger(result?.roll)||result.roll<1||result.roll>20||!ROLLED_GRADES.includes(result.grade))return null;
+    const scene={...before.game.scene,id:result.sceneId||before.game.scene.id,title:result.sceneTitle,location:result.location,mood:result.mood||before.game.scene.mood};
+    const view={...next.game,scene,lastResult:result,combat:null,ending:false};
+    return {view,key:resultEventKey(view,next,true),result,personal:true};
+  }
+  if(meetingStep||next.game.opening?.active)return null;
+  const view=next.game,result=view.lastResult,key=resultEventKey(view,next,false);
+  if(!Number.isInteger(result?.roll)||result.roll<1||result.roll>20||!ROLLED_GRADES.includes(result.grade)||key===resultEventKey(before.game,before,false))return null;
+  return {view,key,result,personal:false};
+}
+function renderState(next){
+  if(showingRoll){
+    const expected=showingRoll.snapshot;
+    if(!next?.game||next.code!==expected.code||next.mode!==expected.mode||next.meId!==expected.meId||next.game.campaignId!==expected.game.campaignId){
+      showingRoll=null;dice.cancel();sound.duck?.(false);applyState(next);
+    }else{
+      const candidate=freshRoll(showingRoll.latest,next);
+      // Several companions can act while this reader is watching one die.
+      // Keep each new shared receipt, while presence/reveal updates only refresh
+      // the final state. A personal receipt still leads to its own meeting first.
+      if(!showingRoll.personal&&candidate&&!candidate.personal&&!showingRoll.seenKeys.has(candidate.key)){
+        showingRoll.queue.push({candidate,snapshot:next});showingRoll.seenKeys.add(candidate.key);
+      }
+      showingRoll.latest=next;
+    }
+    return;
+  }
+  const candidate=freshRoll(state,next);
+  if(!candidate||!dice.canAnimate){applyState(next);return;}
+  startRoll(candidate,next);
+}
+function startRoll(candidate,next,stream=null){
+  const request={...candidate,snapshot:next,latest:stream?.latest||next,queue:stream?.queue||[],seenKeys:stream?.seenKeys||new Set([candidate.key])};showingRoll=request;
+  // The server has already committed the action. Hold its prose only while the
+  // reader watches the die; later state is retained without a second action.
+  clearPersonalDialogs();
+  sound.duck?.(true);sound.effect('dice');
+  let presentation;
+  try{presentation=dice.show(candidate.result,request);}
+  catch{showingRoll=null;dice.cancel();sound.duck?.(false);applyState(request.latest);return;}
+  void presentation.then(()=>{
+    if(showingRoll!==request)return;
+    showingRoll=null;sound.duck?.(false);
+    applyState(request.snapshot);
+    const queued=request.queue.shift();
+    if(queued&&dice.canAnimate){startRoll(queued.candidate,queued.snapshot,request);return;}
+    // Every live result was considered on arrival. Apply this last snapshot
+    // directly so a reconnect/sync cannot turn an older result into a new roll.
+    if(request.latest!==request.snapshot)applyState(request.latest);
+    if(!showingRoll)$('scene-title')?.focus({preventScroll:true});
+  },()=>{
+    if(showingRoll!==request)return;
+    showingRoll=null;sound.duck?.(false);dice.cancel();applyState(request.latest);
+  });
 }
 function classOptions(value,campaign=selectedCampaign(),ownerId=state?.meId){
   return classList(campaign).map(c=>{const others=!state?.game?(state?.players||[]).filter(p=>p.id!==ownerId&&p.classId===c.id):[];
@@ -474,7 +568,7 @@ function resultChanges(result){
 }
 function renderResult(r){
   const hasRoll=Number.isFinite(r.roll),grade=GRADE[r.grade]||'행동의 결과',narrative=r.narrativeText||r.text;
-  return `<section class="last-result grade-${esc(r.grade||'automatic')}" aria-label="직전 행동의 결과"><div class="result-top"><small class="result-actor">${r.actor?`${esc(r.actor)}의 선택 · `:''}${esc(r.action||'이야기에 남은 변화')}</small><span class="result-grade">${esc(grade)}</span></div><p>${esc(narrative)}</p><details class="result-details" data-fold="result-${esc(r.id||r.text)}"><summary>판정과 변화</summary><div>${r.narrativeText&&r.narrativeText!==r.text?`<p class="result-receipt">${esc(r.text)}</p>`:''}${hasRoll?`<div class="result-dice"><span>D20</span><b>${r.roll}</b><small>+ ${(r.bonus??(Number(r.total)-Number(r.roll)))||0} = <strong>${r.total}</strong> / 목표 ${r.dc}</small></div>`:'<p class="automatic-note">주사위 없이 확인한 변화입니다.</p>'}${resultChanges(r)}${r.enemyRolls?.length?`<details class="enemy-rolls"><summary>적의 주사위 판정</summary>${r.enemyRolls.map(check=>`<p>${esc(game()?.players?.find(p=>p.id===check.targetId)?.name||'대상')} · D20 ${check.roll} · 피해 ${check.damage||0}</p>`).join('')}</details>`:''}${r.nextSceneTitle?`<div class="result-next"><span>이어지는 장면</span><b>${esc(r.nextSceneTitle)} <span aria-hidden="true">→</span></b></div>`:''}</div></details></section>`;
+  return `<section class="last-result grade-${esc(r.grade||'automatic')}" aria-label="직전 행동의 결과"><div class="result-top"><small class="result-actor">${r.actor?`${esc(r.actor)}의 선택 · `:''}${esc(r.action||'이야기에 남은 변화')}</small>${hasRoll?`<small class="result-roll-stamp">D20 ${r.roll}</small>`:''}<span class="result-grade">${esc(grade)}</span></div><p>${esc(narrative)}</p><details class="result-details" data-fold="result-${esc(r.id||r.text)}"><summary>판정과 변화</summary><div>${r.narrativeText&&r.narrativeText!==r.text?`<p class="result-receipt">${esc(r.text)}</p>`:''}${hasRoll?`<div class="result-dice"><span>D20</span><b>${r.roll}</b><small>+ ${(r.bonus??(Number(r.total)-Number(r.roll)))||0} = <strong>${r.total}</strong> / 목표 ${r.dc}</small></div>`:'<p class="automatic-note">주사위 없이 확인한 변화입니다.</p>'}${resultChanges(r)}${r.enemyRolls?.length?`<details class="enemy-rolls"><summary>적의 주사위 판정</summary>${r.enemyRolls.map(check=>`<p>${esc(game()?.players?.find(p=>p.id===check.targetId)?.name||'대상')} · D20 ${check.roll} · 피해 ${check.damage||0}</p>`).join('')}</details>`:''}${r.nextSceneTitle?`<div class="result-next"><span>이어지는 장면</span><b>${esc(r.nextSceneTitle)} <span aria-hidden="true">→</span></b></div>`:''}</div></details></section>`;
 }
 function renderEnding(g){
   const s=g.scene;
@@ -555,7 +649,7 @@ function updateSoundButton(){
   $('sound-toggle').setAttribute('aria-label',p.enabled?'소리 끄기':'소리 켜기');
   $('sound-toggle').setAttribute('aria-pressed',String(p.enabled));
 }
-function showAudio(){const p=sound.preferences;openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">THE SOUND OF THE STORY</div><h2 id="info-title">소리 설정</h2><p class="modal-intro">이야기에 어울리는 배경음과 작은 효과음. 편안한 크기로 조절해 주세요.</p><label class="volume-field"><span>배경음 <output id="music-value">${Math.round(p.music*100)}%</output></span><input id="music-volume" type="range" min="0" max="100" value="${Math.round(p.music*100)}"></label><label class="volume-field"><span>효과음 <output id="effects-value">${Math.round(p.effects*100)}%</output></span><input id="effects-volume" type="range" min="0" max="100" value="${Math.round(p.effects*100)}"></label><button class="button primary full" data-action="toggle-audio" type="button">${p.enabled?'모든 소리 끄기':'소리 켜기'}</button><p class="small muted">처음에는 조용히 시작합니다. 탭이 보이지 않는 동안 소리를 멈춥니다.</p>`);}
+function showAudio(){const p=sound.preferences;openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">THE SOUND OF THE STORY</div><h2 id="info-title">소리와 주사위</h2><p class="modal-intro">배경음과 효과음의 크기, 주사위 움직임을 편안하게 맞춰 주세요.</p><label class="volume-field"><span>배경음 <output id="music-value">${Math.round(p.music*100)}%</output></span><input id="music-volume" type="range" min="0" max="100" value="${Math.round(p.music*100)}"></label><label class="volume-field"><span>효과음 <output id="effects-value">${Math.round(p.effects*100)}%</output></span><input id="effects-volume" type="range" min="0" max="100" value="${Math.round(p.effects*100)}"></label><label class="motion-field"><span>주사위 움직임</span><select id="dice-motion"><option value="auto" ${dice.mode==='auto'?'selected':''}>기기 설정 따르기</option><option value="full" ${dice.mode==='full'?'selected':''}>입체 주사위 굴리기</option><option value="reduce" ${dice.mode==='reduce'?'selected':''}>움직임 줄이기 · 결과 바로 보기</option></select></label><button class="button primary full" data-action="toggle-audio" type="button">${p.enabled?'모든 소리 끄기':'소리 켜기'}</button><p class="small muted">처음에는 조용히 시작합니다. 탭이 보이지 않는 동안 소리를 멈춥니다.</p>`);}
 function showResume(){
   const saved=client?.state||state||{};
   openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">THE STORY CONTINUES</div><h2 id="info-title">어느 탁자로 돌아갈까요?</h2><p class="modal-intro">이 브라우저에 남은 자리나 저장된 이야기를 선택해 주세요.</p><div class="resume-options"><button class="button quiet full" data-action="resume-online" type="button" ${!saved.hasOnlineSave?'disabled':''}>온라인 방에 다시 연결</button><button class="button quiet full" data-action="resume-local" type="button" ${!saved.hasLocalSave?'disabled':''}>한 기기로 함께 · 자동 저장</button><button class="button quiet full" data-action="resume-backup" type="button" ${!saved.hasBackup?'disabled':''}>온라인 자동 백업을 로컬로 열기</button><button class="button primary full" data-action="import" type="button">내려받은 저장 파일 열기</button></div><p class="small muted">온라인 서버가 재시작되어 방이 사라진 경우, 방장 브라우저의 자동 백업으로 같은 이야기를 로컬에서 이어갈 수 있습니다.</p>`);
@@ -567,18 +661,19 @@ async function exportSave(){
   const result=await call('exportSave');if(!result)return;
   const data=result.save||result;
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`chronicle-gate-v19-${slug(game()?.campaignId||selected)}-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('저장 파일을 내려받았습니다. 다른 기기에서는 「저장 파일 열기」로 이어갈 수 있어요.');
+  const a=document.createElement('a');a.href=url;a.download=`chronicle-gate-v20-${slug(game()?.campaignId||selected)}-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('저장 파일을 내려받았습니다. 다른 기기에서는 「저장 파일 열기」로 이어갈 수 있어요.');
 }
 
 function exportChronicle(){
   const view=game();if(!view)return;
   const blob=new Blob([chronicleText(view)],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob);
-  const anchor=document.createElement('a');anchor.href=url;anchor.download=`chronicle-gate-v19-${slug(view.campaignId)}-${new Date().toISOString().slice(0,10)}.txt`;
+  const anchor=document.createElement('a');anchor.href=url;anchor.download=`chronicle-gate-v20-${slug(view.campaignId)}-${new Date().toISOString().slice(0,10)}.txt`;
   anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('지금까지의 연대기를 글 파일로 간직했습니다. 진행을 이어 하려면 JSON 저장 파일도 내려받아 주세요.');
 }
 
 document.addEventListener('click',event=>{
   const el=event.target.closest('button');if(!el||el.disabled)return;
+  if(showingRoll&&!el.closest('#dice-dialog'))return;
   if(el.dataset.close){closeDialog(el.dataset.close);return;}
   if(el.dataset.campaign){selected=el.dataset.campaign;renderHome();openEntry('create');return;}
   if(el.dataset.mode){const values=entryValues();entryMode=el.dataset.mode;openEntry(entryKind,values);return;}
@@ -601,8 +696,8 @@ document.addEventListener('click',event=>{
   if(action==='secret'){secretOpen=false;showSecret();return;}
   if(action==='open-secret'){secretOpen=true;showSecret();return;}
   if(action==='leave'){confirmLeave();return;}
-  if(action==='opening-receive'){localOpeningSeat=state.meId;renderGame(true);sound.scene(game().campaignId,selectMusic(game()).mood);lastResultKey=resultEventKey(game());return;}
-  if(action==='opening-meeting'){clearPersonalDialogs();meetingStep='meeting';meetingReceiptScene=null;renderGame(true);sound.scene(game().campaignId,selectMusic(game()).mood);lastResultKey=resultEventKey(game());return;}
+  if(action==='opening-receive'){localOpeningSeat=state.meId;renderGame(true);updateReadingAudio();return;}
+  if(action==='opening-meeting'){clearPersonalDialogs();meetingStep='meeting';meetingReceiptScene=null;renderGame(true);updateReadingAudio();return;}
   if(action==='pass'&&state?.mode==='local'&&(state?.players||[]).length===1){toast('지금은 혼자 플레이하고 있어요. 행동을 선택해 이야기를 이어 주세요.');return;}
   void guarded(async()=>{
     if(action==='start'){await call('start',{openingMode});}
@@ -614,6 +709,7 @@ document.addEventListener('click',event=>{
       meetingStep=null;meetingViewed=true;meetingReceiptScene=null;clearPersonalDialogs();
       if(state.mode==='local'&&game()?.activePlayerId!==state.meId)await call('setLocalSeat',game().activePlayerId);
       else renderGame(true);
+      updateReadingAudio({allowEffects:true});
     }
     else if(action==='opening-defer-confirm'){const result=await call('deferOpening',el.dataset.playerId);if(result)closeDialog('info-dialog');}
     else if(action==='resume-online'||action==='resume-local'||action==='resume-backup'){localOpeningSeat=null;clearPersonalDialogs();const result=action==='resume-backup'?await call('recoverBackup'):await call('resume',action==='resume-local'?'local':undefined);if(result)closeDialog('info-dialog');}
@@ -630,7 +726,7 @@ document.addEventListener('click',event=>{
       if(actionVersion()!==pending.revision||state.meId!==pending.actorId||game()?.scene.id!==pending.sceneId){closeDialog('preview-dialog');toast('당신의 장면이 바뀌었습니다. 행동을 다시 선택해 주세요.');return;}
       const prepared=pending;prepared.committing=true;
       if(prepared.plan.spendSpark)draft.spark=false;if(prepared.plan.preparation)draft.preparation=false;
-      if(!prepared.plan.automatic&&!prepared.payload.detailId){sound.effect('dice');$('preview-dialog').classList.add('rolling');}
+      // Wait for the authoritative receipt before starting the presentation.
       const result=await call('act',{...prepared.payload,revision:prepared.revision});
       $('preview-dialog').classList.remove('rolling');
       if(result){closeDialog('preview-dialog');if((prepared.payload.detailId||prepared.plan.type==='detail')&&selectMusic(listeningView()).mood!=='grief')sound.effect('clue');}
@@ -649,7 +745,8 @@ document.addEventListener('input',event=>{
 });
 document.addEventListener('change',event=>{
   const el=event.target;
-  if(el.id==='spend-spark')draft.spark=el.checked;
+  if(el.id==='dice-motion')dice.setMode(el.value);
+  else if(el.id==='spend-spark')draft.spark=el.checked;
   else if(el.name==='opening-mode'){openingMode=el.value==='together'?'together':'separate';renderLobby();document.querySelector(`[name="opening-mode"][value="${openingMode}"]`)?.focus({preventScroll:true});}
   else if(el.id==='use-preparation')draft.preparation=el.checked;
   else if(el.id==='combat-target')combatTarget=el.value;
@@ -660,6 +757,7 @@ document.addEventListener('change',event=>{
   else if(el.id==='lobby-class')void guarded(()=>call('setClass',el.value));
 });
 document.addEventListener('submit',event=>{
+  if(showingRoll){event.preventDefault();return;}
   if(!['entry-form','chat-form'].includes(event.target.id))return;
   event.preventDefault();
   void guarded(async()=>{
@@ -681,11 +779,12 @@ for(const dialog of document.querySelectorAll('dialog')){
   dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)closeDialog(dialog.id);});
   dialog.addEventListener('cancel',()=>{if(dialog.id==='preview-dialog')pending=null;if(dialog.id==='info-dialog')secretOpen=false;});
 }
-document.querySelector('.brand').addEventListener('click',event=>{if(state?.mode&&!event.ctrlKey&&!event.metaKey){event.preventDefault();confirmLeave();}});
+document.querySelector('.brand').addEventListener('click',event=>{if(showingRoll){event.preventDefault();return;}if(state?.mode&&!event.ctrlKey&&!event.metaKey){event.preventDefault();confirmLeave();}});
 document.addEventListener('keydown',event=>{if(event.target?.dataset?.tab&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const tabs=['clues','journal','chat'];let index=tabs.indexOf(activeTab);index=event.key==='Home'?0:event.key==='End'?2:(index+(event.key==='ArrowRight'?1:2))%3;activeTab=tabs[index];renderGame(false);$('tab-'+activeTab)?.focus({preventScroll:true});}});
-document.addEventListener('visibilitychange',()=>document.hidden?sound.pause():sound.resume());
-window.addEventListener('pagehide',()=>sound.pause());
+document.addEventListener('visibilitychange',()=>{if(document.hidden){dice.finish();sound.pause();}else sound.resume();});
+window.addEventListener('pagehide',()=>{dice.finish();sound.pause();});
 window.addEventListener('pageshow',()=>sound.resume());
+window.addEventListener('beforeunload',()=>{showingRoll=null;dice.destroy();sound.destroy();});
 
 async function boot(){
   try{

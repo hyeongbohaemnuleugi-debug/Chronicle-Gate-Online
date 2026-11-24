@@ -1,4 +1,4 @@
-/* CHRONICLE GATE v19 — midnight ink, engraved gold, readable pages.
+/* CHRONICLE GATE v20 — midnight ink, engraved gold, readable pages.
    System fonts and code-native ornament only. All dimensions are responsive;
    functional text stays at least 12px, main Korean narrative at 17–18px. */
 :root {
@@ -1182,4 +1182,41 @@ button::-moz-focus-inner { border: 0; }
   .art-frame { forced-color-adjust: none; }
   .button,.choice,.combat-action,.modal,.panel { border: 1px solid ButtonText; }
   .life-meter i.filled { forced-color-adjust: none; }
+}
+
+/* One physical-looking D20, drawn from twenty real projected faces. */
+body.dice-presenting { overflow: hidden; }
+.dice-modal { width: min(600px,calc(100vw - 28px)); max-height: calc(100dvh - 36px); padding: 28px 30px 24px; color: #ede4d2; background: linear-gradient(150deg,#182332,#0c1420 72%); border: 1px solid #a58a59; box-shadow: 0 28px 100px #000b; }
+.dice-modal::backdrop { background: #060b14b3; backdrop-filter: blur(3px); }
+.dice-modal h2 { font-size: clamp(24px,4vw,30px); margin-bottom: 9px; }
+.dice-modal .eyebrow { font-size: 12px; color: #baa67f; letter-spacing: .18em; }
+.dice-actor { margin: 0 0 5px; font-size: 13px; color: #d2bb8c; }
+.dice-action { margin: 0 0 18px; font-size: 15px; line-height: 1.6; color: #d9e0e8; }
+.dice-tray { position: relative; overflow: hidden; border: 1px solid #76623f; border-radius: 18px; background: radial-gradient(ellipse at 48% 42%,#223332,#101c22 75%); box-shadow: inset 0 2px 14px #0008,0 2px 0 #8a704533; }
+.dice-tray::before { content: ''; position: absolute; inset: 9px; border: 1px solid #c1a06d3d; border-radius: 10px; pointer-events: none; }
+.dice-tray canvas { display: block; width: 100%; height: auto; aspect-ratio: 560 / 240; }
+.dice-tray-mark { position: absolute; right: 22px; bottom: 15px; color: #c9b8917f; font: 9px Georgia,serif; letter-spacing: 3px; pointer-events: none; }
+.dice-stage-caption { text-align: center; color: #a6b2bd; font-size: 12px; margin: 13px 0 16px; min-height: 18px; }
+.dice-final-equation { text-align: center; margin: 0 0 9px; color: #d0d9e4; font: 16px var(--sans); }
+.dice-final-equation strong { display: inline-block; color: #f4dc9e; font: 30px Georgia,serif; margin: 0 5px; }
+.dice-final-grade { display: block; text-align: center; color: #ddc48d; letter-spacing: .15em; font-size: 16px; }
+.dice-modal.grade-failure .dice-final-grade { color: #c1b8ab; }
+.dice-modal.grade-fumble .dice-final-grade { color: #d4a196; }
+.dice-modal.grade-critical .dice-final-grade { color: #f1d18c; text-shadow: 0 0 14px #e9c26f44; }
+.dice-final-story { padding: 15px 16px; border-left: 2px solid #8a754e; background: #050c141f; font: 16px/1.8 var(--serif); color: #e3e6e8; margin: 16px 0 20px; }
+.dice-control { min-height: 46px; }
+.dice-receipt .character-name { color: inherit; }
+.result-roll-stamp { display: inline-block; margin-right: 9px; padding-right: 9px; border-right: 1px solid currentColor; font: 12px Georgia,serif; opacity: .85; }
+.motion-field { display: flex; flex-direction: column; gap: 11px; margin: 25px 0; color: var(--ink); }
+.motion-field span { font-size: 14px; font-weight: 600; }
+.motion-field select { width: 100%; }
+@media (max-width:600px) {
+  .dice-modal { padding: 23px 18px 20px; }
+  .dice-action,.dice-final-story { font-size: 14px; }
+  .dice-final-equation { font-size: 14px; }
+  .dice-tray-mark { letter-spacing: 2px; font-size: 12px; bottom: 12px; }
+}
+@media (forced-colors:active) {
+  .dice-tray { forced-color-adjust: none; }
+  .dice-final-equation,.dice-final-grade,.dice-final-story { color: CanvasText; }
 }

@@ -64,7 +64,7 @@ function witness(campaign,target,count=4){
  return {statesTried:seen.size,error:queue.length?'Search budget reached':'No route found'};
 }
 
-const report={version:VERSION,generatedAt:new Date().toISOString(),method:'Concrete target-directed routes through the actual engine. Each normal ending is witnessed with one and four players; item uses with four; each authored solo/group choice with its matching party size. All safe observations are read; story checks try representative rolls for each reachable grade; combat uses player natural 20 and enemy natural 1. Each search is capped at 12,000 states. The separate trace retains each actual event while search-only log copies are cleared to bound memory. A witness is one valid route, not exhaustive proof of prose quality, tactics or every death/revival combination. Death, revival, low-health narration and mode callbacks are separately tested by tests-v18.',scenarios:[],issues:[]};
+const report={version:VERSION,generatedAt:new Date().toISOString(),method:'Concrete target-directed routes through the actual engine. Each normal ending is witnessed with one and four players; item uses with four; each authored solo/group choice with its matching party size. All safe observations are read; story checks try representative rolls for each reachable grade; combat uses player natural 20 and enemy natural 1. Each search is capped at 12,000 states. The separate trace retains each actual event while search-only log copies are cleared to bound memory. A witness is one valid route, not exhaustive proof of prose quality, tactics or every death/revival combination. Death, revival, low-health narration and mode callbacks are separately tested by tests-v18. Profession-specific opening paths, combinations and parallel actions are separately covered by tests-v19; these witnesses begin at the shared main story.',scenarios:[],issues:[]};
 for(const campaign of CAMPAIGNS){
  const row={id:campaign.id,title:campaign.title,endings:[],soloEndings:[],items:[],partyBranches:[]};
  for(const node of Object.values(campaign.nodes).filter(n=>n.ending)){
@@ -87,5 +87,5 @@ for(const campaign of CAMPAIGNS){
  report.scenarios.push(row);
  console.log(`${campaign.id}: ${row.endings.filter(r=>!r.error).length}/${row.endings.length} group endings, ${row.soloEndings.filter(r=>!r.error).length}/${row.soloEndings.length} solo endings, ${row.items.filter(r=>!r.error).length}/${row.items.length} item uses, ${row.partyBranches.filter(r=>!r.error).length}/${row.partyBranches.length} mode choices witnessed`);
 }
-if(process.argv.includes('--write'))fs.writeFileSync(new URL('../NARRATIVE_REACHABILITY_V18_1.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
+if(process.argv.includes('--write'))fs.writeFileSync(new URL('../NARRATIVE_REACHABILITY_V19.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 if(report.issues.length){console.error(report.issues.join('\n'));process.exitCode=1;}

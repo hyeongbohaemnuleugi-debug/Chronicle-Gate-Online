@@ -13,7 +13,7 @@ const death = { action: '끊어진 다리를 건넌다', actor: 'A', grade: 'suc
 const observation = { action: '문서를 읽는다', actor: 'B', grade: 'observe', text: '아직 남은 글을 확인했다.', changes: [] };
 const revival = { action: 'A 부활 · 반환 서랍', actor: 'B', grade: 'critical', revivedId: 'A', text: 'A의 숨이 돌아온다.', changes: ['A 생명 3로 귀환'] };
 
-test('all 21 ordinary endings have deliberate tones, with explicit loss and recovery endings', () => {
+test('all 35 ordinary endings have deliberate tones, with explicit loss and recovery endings', () => {
   let checked = 0;
   for (const campaign of CAMPAIGNS) {
     const endings = Object.values(campaign.nodes).filter(node => node.ending);
@@ -25,7 +25,7 @@ test('all 21 ordinary endings have deliberate tones, with explicit loss and reco
       checked++;
     }
   }
-  assert.equal(checked, 21);
+  assert.equal(checked, 35);
   assert.equal(ENDING_MOODS['clock-city']['ending-newtown'], 'grief');
   assert.equal(ENDING_MOODS['glass-hotel']['ending-break'], 'grief');
   assert.equal(ENDING_MOODS['deep-sea']['ending-harbor'], 'calm');

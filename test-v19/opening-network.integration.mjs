@@ -76,7 +76,7 @@ test('four online clients act from concurrent private previews; replay, stale an
     assert.deepEqual(joined[0].game.opening.meeting,joined[3].game.opening.meeting);
     const file=path.join(dir,`${code}.json`);assert.ok(fs.statSync(file).size<32*1024,'Opening state must remain small on disk');
     assert.equal((await ack(clients[1],'table:export')).ok,false);
-    const save=ok(await ack(clients[0],'table:export')).save;assert.equal(save.format,'chronicle-gate-v20');
+    const save=ok(await ack(clients[0],'table:export')).save;assert.equal(save.format,'chronicle-gate-v21');
     for(const credential of credentials)assert.ok(!JSON.stringify(save).includes(credential.token));
     const actual=h.service.rooms.get(code).game;assert.equal(actual.opening.states.every(state=>state.records.length===2),true);
   }finally{await h.close();fs.rmSync(dir,{recursive:true,force:true});}

@@ -661,13 +661,13 @@ async function exportSave(){
   const result=await call('exportSave');if(!result)return;
   const data=result.save||result;
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`chronicle-gate-v20-${slug(game()?.campaignId||selected)}-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('저장 파일을 내려받았습니다. 다른 기기에서는 「저장 파일 열기」로 이어갈 수 있어요.');
+  const a=document.createElement('a');a.href=url;a.download=`chronicle-gate-v21-${slug(game()?.campaignId||selected)}-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('저장 파일을 내려받았습니다. 다른 기기에서는 「저장 파일 열기」로 이어갈 수 있어요.');
 }
 
 function exportChronicle(){
   const view=game();if(!view)return;
   const blob=new Blob([chronicleText(view)],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob);
-  const anchor=document.createElement('a');anchor.href=url;anchor.download=`chronicle-gate-v20-${slug(view.campaignId)}-${new Date().toISOString().slice(0,10)}.txt`;
+  const anchor=document.createElement('a');anchor.href=url;anchor.download=`chronicle-gate-v21-${slug(view.campaignId)}-${new Date().toISOString().slice(0,10)}.txt`;
   anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('지금까지의 연대기를 글 파일로 간직했습니다. 진행을 이어 하려면 JSON 저장 파일도 내려받아 주세요.');
 }
 

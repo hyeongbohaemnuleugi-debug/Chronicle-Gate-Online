@@ -6,25 +6,53 @@ const PASSIVE_GRADES = new Set(['observe', 'safe', 'reveal', 'assist', 'presence
 // undoing a loss; they should not inherit the old universal "hope" setting.
 export const ENDING_MOODS = Object.freeze({
   'last-train': Object.freeze({
-    'ending-new-stop': 'hope', 'ending-home': 'calm', 'ending-shift': 'calm',
+    "ending-new-stop": "hope",
+    "ending-home": "calm",
+    "ending-shift": "calm",
+    "ending-letter-home": "hope",
+    "ending-last-service": "grief"
   }),
   'glass-hotel': Object.freeze({
-    'ending-return': 'hope', 'ending-settlement': 'calm', 'ending-break': 'grief',
+    "ending-return": "hope",
+    "ending-settlement": "calm",
+    "ending-break": "grief",
+    "ending-rest-house": "hope",
+    "ending-hotel-closed": "calm"
   }),
   'moon-market': Object.freeze({
-    'ending-landing': 'calm', 'ending-travel': 'hope', 'ending-sky': 'calm',
+    "ending-landing": "calm",
+    "ending-travel": "hope",
+    "ending-sky": "calm",
+    "ending-return-lanterns": "hope",
+    "ending-unopened-house": "calm"
   }),
   'deep-sea': Object.freeze({
-    'ending-witness': 'hope', 'ending-harbor': 'calm', 'ending-common': 'hope',
+    "ending-witness": "hope",
+    "ending-harbor": "calm",
+    "ending-common": "hope",
+    "ending-open-water": "hope",
+    "ending-deep-watch": "calm"
   }),
   'dragon-banquet': Object.freeze({
-    'ending-hearth': 'hope', 'ending-caravan': 'hope', 'ending-transition': 'calm',
+    "ending-hearth": "hope",
+    "ending-caravan": "hope",
+    "ending-transition": "calm",
+    "ending-winter-palace": "hope",
+    "ending-spring-return": "grief"
   }),
   'clock-city': Object.freeze({
-    'ending-slow': 'calm', 'ending-newtown': 'grief', 'ending-common': 'hope',
+    "ending-slow": "calm",
+    "ending-newtown": "grief",
+    "ending-common": "hope",
+    "ending-return-station": "hope",
+    "ending-last-delivery": "grief"
   }),
   'snow-radio': Object.freeze({
-    'ending-silence': 'calm', 'ending-beacon': 'hope', 'ending-choice': 'hope',
+    "ending-silence": "calm",
+    "ending-beacon": "hope",
+    "ending-choice": "hope",
+    "ending-carried-voices": "hope",
+    "ending-kept-letters": "calm"
   }),
 });
 

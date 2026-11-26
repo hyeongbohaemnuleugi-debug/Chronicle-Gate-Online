@@ -1,0 +1,27 @@
+{
+  "version": 22,
+  "createdDate": "2026-11-26",
+  "method": "Built-in image generation with explicit style reference to the existing game illustrations; generated raster assets, not human drawings.",
+  "assets": [
+    {
+      "file": "hollow-apartment.webp",
+      "styleReference": "glass-hotel.webp",
+      "source": "exec-969ebf21-0135-4561-be4c-16b106616415.png"
+    },
+    {
+      "file": "drowned-broadcast.webp",
+      "styleReference": "snow-radio.webp",
+      "source": "exec-aa42b24f-370c-4656-9b69-466ea0574884.png"
+    }
+  ],
+  "prompts": [
+    {
+      "key": "apartment",
+      "prompt": "Use case: style-transfer. Image 1 is the EXISTING GAME ART STYLE reference. Image 2 is the new apartment scene atlas to revise. The user explicitly needs continuity with image 1: make image 2 look like it belongs to exactly the same game and was drawn by the same pixel illustrator. Match image 1's handcrafted low resolution pixel clusters, stepped angular contours, flat discrete shaded color regions, limited dusty lavender/navy/gray palette, tiny warm amber lights, simple readable architectural shapes. Remove the realistic grain, dirty watercolor photography appearance and extremely detailed textures of image 2. No paper texture, no airbrushing, no glossy light. Preserve the four scenes and precise 2x2 grid from image 2: top left old Korean apartment rain entrance with management booth; top right narrow apartment corridor with cracked open door and subtle wrong shadow; bottom left flooded basement with old hanging doorframes and empty coat; bottom right rooftop water tank/standing doorframe at gray dawn. Overall atlas aspect ratio 16:9, four equal widescreen panels filling quadrants, no gutters or borders. Like reference game art, horror should come from composition and emptiness, not overt monsters or gore. No text, numerals, labels or UI. Do not copy the hotel subjects; only match its drawing style."
+    },
+    {
+      "key": "broadcast",
+      "prompt": "Use case: style-transfer. Image 1 is the EXISTING GAME ART STYLE reference. Image 2 is the new abandoned radio station atlas to revise. Match the SAME hand-crafted pixel illustrator and pixel cluster scale of image 1 exactly: stepped contours, discrete flat shades, restrained dusty blue/lavender/teal palette with small amber/red lamps, simplified broad shapes and readable objects, warm bookish retro adventure atmosphere. Remove image 2's gritty photographic watercolor, realistic grain and excessive detail. No film grain, no rough paper, no airbrushing or high resolution painterly textures. Preserve these scenes in precise 2x2 quadrants: top left derelict hilltop radio station at rainy night with tiny red antenna beacon and reception window; top right soundproof hallway and glass studio, empty chair and microphone; bottom left flooded transmitter room with tape reel racks and indistinct shadow behind frostedglass; bottom right rooftop antenna cable walkway above sleepingcity at dawn. Overall atlas widescreen 16:9 with four equal widescreen panels, no gutters, border or captions. No text or logo. Same game style as reference but no snow because this story is rainy. Horror conveyed through quiet spaces, no gore."
+    }
+  ]
+}

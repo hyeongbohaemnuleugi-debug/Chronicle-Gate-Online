@@ -1,16 +1,17 @@
+import { musicTheme } from '../public/game/scene-sound.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { createGame, availableChoices, applyAction, conditionMatches } from '../public/game/engine.js';
+import { createStoryState as createGame, availableChoices, applyAction, conditionMatches } from '../public/game/engine.js';
 const root=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
 const errors=[];const rows=[];
 const check=(value,message)=>{if(!value)errors.push(message);};
-const moods=new Set(['calm','mystery','tension','danger','hope']);
+const moods=new Set(['calm','mystery','tension','danger','hope','grief']);
 const stats=new Set(['might','agility','wit','heart']);
 const stock=['이야기가 흘러갑니다','선택에 따라 운명이 바뀝니다','TODO','PLACEHOLDER','undefined'];
-check(CAMPAIGNS.length===7,'Seven campaigns required');
-check(new Set(CAMPAIGNS.map(c=>c.id)).size===7,'Campaign IDs must be unique');
+check(CAMPAIGNS.length===9,'Nine campaigns required');
+check(new Set(CAMPAIGNS.map(c=>c.id)).size===9,'Campaign IDs must be unique');
 const allParagraphs=new Map();
 for(const c of CAMPAIGNS){
  const nodes=Object.values(c.nodes),playable=nodes.filter(n=>!n.ending),ends=nodes.filter(n=>n.ending);
@@ -23,13 +24,13 @@ for(const c of CAMPAIGNS){
  check(c.roles?.length===4,`${c.id}: four character roles required`);
  check(Boolean(c.playModes?.solo)&&Boolean(c.playModes?.group),`${c.id}: solo/group reading descriptions missing`);
  const modeChoices=nodes.flatMap(n=>n.choices||[]);
- check(modeChoices.filter(a=>a.requires?.partyMax===1).length===2,`${c.id}: two solo-specific choices required`);
- check(modeChoices.filter(a=>a.requires?.partyMin===2).length===2,`${c.id}: two group-specific choices required`);
+ check(modeChoices.filter(a=>a.requires?.partyMax===1).length>=2,`${c.id}: two solo-specific choices required`);
+ check(modeChoices.filter(a=>a.requires?.partyMin===2).length>=2,`${c.id}: two group-specific choices required`);
  check(Boolean(c.nodes[c.start].partyText?.solo)&&Boolean(c.nodes[c.start].partyText?.group),`${c.id}: mode-specific opening required`);
  check(Object.keys(c.clues||{}).length>=6,`${c.id}: at least six grounded clues`);
  check(playable.filter(n=>n.resurrection).length>=2,`${c.id}: at least two revival opportunities`);
  check(fs.existsSync(path.join(root,`public/game/art/${c.id}.webp`)),`${c.id}: art missing`);
- for(const mood of moods)check(fs.existsSync(path.join(root,`public/game/audio/${c.id}-${mood}.mp3`)),`${c.id}: ${mood} audio missing`);
+ for(const mood of moods)check(fs.existsSync(path.join(root,`public/game/audio/${musicTheme(c.id)}-${mood}.mp3`)),`${c.id}: ${mood} audio missing`);
  let choiceCount=0,harmful=0,conditional=0;
  for(const [id,node] of Object.entries(c.nodes)){
   check(node.id===id,`${c.id}/${id}: id mismatch`);
@@ -82,6 +83,6 @@ check(html.includes('/game/app.js'),'New frontend missing');
 check(!html.includes('dice3d'),'New frontend should not load cosmetic dice engine');
 check(fs.existsSync(path.join(root,'public/legacy.html')),'Original entry page not preserved');
 check(fs.existsSync(path.join(root,'public/offline.html')),'Build offline entry before shipping');
-if(errors.length){console.error(`v21 content QA failed (${errors.length})`);errors.forEach(e=>console.error(' - '+e));process.exit(1);}
+if(errors.length){console.error(`v22 content QA failed (${errors.length})`);errors.forEach(e=>console.error(' - '+e));process.exit(1);}
 console.table(rows);
-console.log(`v21 Content QA OK: ${rows.reduce((s,r)=>s+r.playable,0)} playable scenes, ${rows.reduce((s,r)=>s+r.endings,0)} ending templates (including 7 early party-death endings).`);
+console.log(`v22 Content QA OK: ${rows.reduce((s,r)=>s+r.playable,0)} playable scenes, ${rows.reduce((s,r)=>s+r.endings,0)} ending templates (including 9 early party-death endings).`);

@@ -1,7 +1,7 @@
 /** Concrete ending and item-use witnesses through the real engine; not exhaustive enumeration. */
 import fs from 'node:fs';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
-import {VERSION,createGame,previewAction,applyAction,availableChoices} from '../public/game/engine.js';
+import {CAMPAIGNS,getCampaign} from '../public/game/campaigns/index.js';
+import {VERSION,createStoryState as createGame,previewAction,applyAction,availableChoices} from '../public/game/engine.js';
 
 class Heap{
  values=[];
@@ -129,8 +129,8 @@ function witness(campaign,target,count=4){
 }
 
 const report={version:VERSION,generatedAt:new Date().toISOString(),method:'Concrete target-directed routes through the actual engine. Every normal ending is witnessed separately with one, two, three and four players; item uses with four; each authored solo/group choice with its matching party size. All safe observations are read; story checks try representative rolls for each reachable grade; combat uses player natural 20 and enemy natural 1. Each search is capped at 12,000 states. Before queueing, an optimistic fixed-point reachability check unions all possible future gains from reachable observations, outcomes and combat victories, requiring only potentially attainable positive prerequisites and fixed party sizes. Negative conditions, consumption, pressure and injury are ignored by this pruning; it proves only that some branches cannot reach the target, never that a route succeeds. Actual successful witnesses still require applyAction for every event. The separate trace retains each actual event while search-only log copies are cleared to bound memory. A witness is one valid route, not exhaustive proof of prose quality, tactics or every death/revival combination. Death, revival, low-health narration and mode callbacks are separately tested by tests-v18. Profession-specific opening paths, combinations and parallel actions are separately covered by tests-v19; these witnesses begin at the shared main story.',scenarios:[],issues:[]};
-for(const campaign of CAMPAIGNS){
- const row={id:campaign.id,title:campaign.title,endings:[],soloEndings:[],twoPlayerEndings:[],threePlayerEndings:[],items:[],partyBranches:[]};
+for(const campaign of CAMPAIGNS.flatMap(base=>[base,getCampaign(base.id,'epic')])){
+ const row={id:campaign.id,storyLength:campaign.lengthMode||'basic',title:campaign.title,endings:[],soloEndings:[],twoPlayerEndings:[],threePlayerEndings:[],items:[],partyBranches:[]};
  for(const node of Object.values(campaign.nodes).filter(n=>n.ending)){
   for(const [partySize,field] of [[1,'soloEndings'],[2,'twoPlayerEndings'],[3,'threePlayerEndings'],[4,'endings']]){
    const result=witness(campaign,{ending:node.id},partySize);row[field].push({id:node.id,title:node.title,partySize,...result});
@@ -149,7 +149,7 @@ for(const campaign of CAMPAIGNS){
  }
  report.scenarios.push(row);
  const routes=[...row.soloEndings,...row.twoPlayerEndings,...row.threePlayerEndings,...row.endings];
- console.log(`${campaign.id}: ${routes.filter(r=>!r.error).length}/${routes.length} ending routes across 1–4 players, ${row.items.filter(r=>!r.error).length}/${row.items.length} item uses, ${row.partyBranches.filter(r=>!r.error).length}/${row.partyBranches.length} mode choices witnessed`);
+ console.log(`${campaign.id}/${campaign.lengthMode||'basic'}: ${routes.filter(r=>!r.error).length}/${routes.length} ending routes across 1–4 players, ${row.items.filter(r=>!r.error).length}/${row.items.length} item uses, ${row.partyBranches.filter(r=>!r.error).length}/${row.partyBranches.length} mode choices witnessed`);
 }
-if(process.argv.includes('--write'))fs.writeFileSync(new URL('../NARRATIVE_REACHABILITY_V21.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
+if(process.argv.includes('--write'))fs.writeFileSync(new URL('../NARRATIVE_REACHABILITY_V22.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 if(report.issues.length){console.error(report.issues.join('\n'));process.exitCode=1;}

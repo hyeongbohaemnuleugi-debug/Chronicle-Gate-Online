@@ -1,0 +1,91 @@
+{
+  "version": 22,
+  "source": "Original deterministic synthesis; no sampled human voice or third-party audio.",
+  "sampleRate": 44100,
+  "files": {
+    "knock": {
+      "seconds": 2.4,
+      "bytes": 14702,
+      "sha256": "b3ad169346c17e6db2352e75a25904846e830164f15a632f0a4179d559d6cf89",
+      "peak": 0.62,
+      "rms": 0.0408
+    },
+    "door-creak": {
+      "seconds": 3.6,
+      "bytes": 29772,
+      "sha256": "ef468311c2059ddedf41fb4d01fa11831be33e24afec84a68f3cd8249b8f3657",
+      "peak": 0.62,
+      "rms": 0.1853
+    },
+    "scream": {
+      "seconds": 3.2,
+      "bytes": 27870,
+      "sha256": "91e91b90867c35ca78e046b88cb4b8d494b27978ebc399ee4e1777519b8e9e95",
+      "peak": 0.48,
+      "rms": 0.1239
+    },
+    "murmur": {
+      "seconds": 6.5,
+      "bytes": 43830,
+      "sha256": "da05a990b765356f8ab8378763b88947c78bfe922ba5d2dcc211930b7300fc09",
+      "peak": 0.62,
+      "rms": 0.0987
+    },
+    "footsteps": {
+      "seconds": 3.5,
+      "bytes": 23277,
+      "sha256": "969c525bd0706706d7dcc1e50cdde6dc49ce186b2a79f80cced0fb8e265c954b",
+      "peak": 0.62,
+      "rms": 0.0615
+    },
+    "glass": {
+      "seconds": 2.7,
+      "bytes": 14796,
+      "sha256": "5c896a86e75360815a241f27ab6c25c77972a97252f2424b5726041181daeb72",
+      "peak": 0.62,
+      "rms": 0.0648
+    },
+    "metal": {
+      "seconds": 3.1,
+      "bytes": 13228,
+      "sha256": "d5bf03bed3447148c75a66da736f3d363208638d38e03e2b33409394d7500778",
+      "peak": 0.62,
+      "rms": 0.0889
+    },
+    "water": {
+      "seconds": 4.6,
+      "bytes": 37072,
+      "sha256": "bea6e84ba49b3c485b214fe8b6cb36b717c87e7f25b528c79eb33d075e5ea9ae",
+      "peak": 0.62,
+      "rms": 0.1134
+    },
+    "wind": {
+      "seconds": 5.8,
+      "bytes": 45209,
+      "sha256": "bf279704a5c972b02956a8c70d1c052b4c9dbfd9029ca711a3360475a6ccf8f3",
+      "peak": 0.62,
+      "rms": 0.1066
+    },
+    "radio-static": {
+      "seconds": 3.6,
+      "bytes": 54089,
+      "sha256": "7511fff45a9dcb3de7757941a1c02c799cec8af1dd58e6de4573ed77b24fec71",
+      "peak": 0.62,
+      "rms": 0.0806
+    },
+    "heartbeat": {
+      "seconds": 4.4,
+      "bytes": 18766,
+      "sha256": "1a754d791a88ceededa752ba9290e471d6904616ffaa338e8c1516291168825e",
+      "peak": 0.62,
+      "rms": 0.0854
+    },
+    "chime": {
+      "seconds": 3.8,
+      "bytes": 16140,
+      "sha256": "52e081ea83b364a659e76ad7d46279a4e65d442edb64a07faae4cf5c9cc41375",
+      "peak": 0.62,
+      "rms": 0.1297
+    }
+  }
+}

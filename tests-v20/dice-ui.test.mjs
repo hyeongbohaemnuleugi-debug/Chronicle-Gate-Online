@@ -1,3 +1,4 @@
+import {finishNetworkOpenings} from '../tests-v22/helpers.mjs';
 /** Real app/client/engine with deterministic canvas time; this is not browser visual QA. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,8 +12,8 @@ import {build} from 'esbuild';
 import {Server} from 'socket.io';
 import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
-import {createGame,applyAction,previewAction,viewGame} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {createStoryState as createGame,applyAction,previewAction,viewGame} from '../public/game/engine.js';
 import {OPENINGS} from '../public/game/opening.js';
 import {startCombat} from '../public/game/combat.js';
 
@@ -46,7 +47,7 @@ async function openApp({save=null,network=null,die=14,canvas=true,motion='auto',
   w.Audio=class extends w.EventTarget{constructor(src){super();this.src=src;this.dataset={};this.paused=true;this.volume=0;this.currentTime=0;this.duration=30;audioRequests.push(src);}play(){this.paused=false;if(!this.loop)w.queueMicrotask(()=>this.dispatchEvent(new w.Event('ended')));return Promise.resolve();}pause(){this.paused=true;}load(){}removeAttribute(name){if(name==='src')this.src='';}};
   w.URL.createObjectURL=()=> 'blob:download';w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){};
   if(network)w.io=network.connect;if(save)w.localStorage.setItem(saveKey,JSON.stringify(save));w.localStorage.setItem('cg-v20-dice-motion',motion);
-  w.eval(code);await until(()=>w.document.querySelectorAll('.campaign-card').length===7,'catalog');assert.deepEqual(errors,[]);
+  w.eval(code);await until(()=>w.document.querySelectorAll('.campaign-card').length===9,'catalog');assert.deepEqual(errors,[]);
   return {w,doc:w.document,errors,audioRequests,frames,get entropy(){return entropy;},
     step(ms){time+=ms;for(const [key,fn] of [...frames])if(frames.delete(key))fn(time);},
     close(){w.dispatchEvent(new w.Event('beforeunload'));w.close();}};
@@ -158,7 +159,10 @@ test('four online players preserve three shared rolls in order, ignore reveal re
     const second=await net.peer();ok(await ack(second,'table:join',{code:a.code,name:'다음 동료',classId:story.classes[1].id}));
     const third=await net.peer();ok(await ack(third,'table:join',{code:a.code,name:'세 번째 동료',classId:story.classes[2].id}));
     app=await openApp({network:net});await click(app,'[data-action="join"]');input(app,'#join-code',a.code);input(app,'#player-name','주사위를 보는 동료');await submit(app);
-    ok(await ack(first,'table:start',{openingMode:'together'}));await until(()=>app.doc.querySelector('.prose-main'),'shared scene');
+    ok(await ack(first,'table:start',{storyLength:'basic'}));await finishNetworkOpenings(net.sockets,ack);
+    await until(()=>app.doc.querySelector('[data-action="opening-meeting"], [data-action="opening-main"]'),'private receipt or shared meeting');
+    if(app.doc.querySelector('[data-action="opening-meeting"]'))await click(app,'[data-action="opening-meeting"]');
+    await click(app,'[data-action="opening-main"]');
     await click(app,'#sound-toggle');
     const initial=ok(await ack(first,'table:sync')).state;
     ok(await ack(first,'table:act',{choiceId:'question',revision:initial.game.actionRevision,requestId:'first-roll'}));

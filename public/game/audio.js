@@ -1,9 +1,10 @@
+import { SCENE_SOUNDS, SOUND_LEVELS, musicTheme } from './scene-sound.js';
 /* Buffered music runs on the audio clock. Rendering a page never restarts it. */
 import { AUDIO_LOOPS, AUDIO_VERSION } from './audio-loops.js';
 import { createMediaAudio } from './audio-fallback.js';
 
 const MOODS = new Set(['mystery', 'calm', 'tension', 'danger', 'hope', 'grief']);
-const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive']);
+const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive', ...SCENE_SOUNDS]);
 const PRIORITY_EFFECTS = new Set(['death', 'revive']);
 const FADE_SECONDS = 1.25;
 const LOAD_TIMEOUT_MS = 12000;
@@ -20,6 +21,7 @@ export function createAudio(onChange = () => {}, runtime = {}) {
   const protocol = own(runtime, 'protocol', globalThis.location?.protocol || 'https:');
   if (!Context || !fetcher || protocol === 'file:') return createMediaAudio(onChange, runtime);
 
+  const effectNames = new WeakMap();
   const Media = runtime.Audio || globalThis.Audio;
   const setTimer = runtime.setTimer || ((callback, duration) => setTimeout(callback, duration));
   const clearTimer = runtime.clearTimer || (id => clearTimeout(id));
@@ -250,10 +252,11 @@ export function createAudio(onChange = () => {}, runtime = {}) {
         if (prefs.enabled && !isPaused) { try { if (!context || context.state !== 'running') wakeContext(); } catch {} }
         updateMaster(); playDesired();
       }
-      if (!prefs.effects) stopEffects(); else for (const element of effects.keys()) element.volume = prefs.effects;
+      if (!prefs.effects) stopEffects(); else for (const element of effects.keys()) element.volume = prefs.effects * (SOUND_LEVELS[effectNames.get(element)] ?? 1);
       persist();
     },
     scene(campaignId, mood = 'mystery') {
+      campaignId=musicTheme(campaignId);
       if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || '')) return;
       const key = `${campaignId}-${MOODS.has(mood) ? mood : 'mystery'}`;
       if (key !== desired) { desired = key; blockedDesired = null; queued = null; cancelLoad(); }
@@ -263,13 +266,16 @@ export function createAudio(onChange = () => {}, runtime = {}) {
       if (destroyed || ducked === Boolean(active)) return;
       ducked = Boolean(active); updateMaster(ducked ? .12 : .28);
     },
+    stopSceneEffects(){for(const [element,timer] of effects){if(SCENE_SOUNDS.includes(effectNames.get(element))){clearTimer(timer);effects.delete(element);disposeMedia(element);}}},
     effect(name) {
       if (!prefs.enabled || isPaused || destroyed || prefs.effects <= 0 || !SFX.has(name) || !Media) return false;
       if (PRIORITY_EFFECTS.has(name)) stopEffects();
+      else if(SCENE_SOUNDS.includes(name)) for(const [other,timer] of effects){if(SCENE_SOUNDS.includes(effectNames.get(other))){clearTimer(timer);effects.delete(other);disposeMedia(other);}}
       if (effects.size >= 4) return false;
-      const version = PRIORITY_EFFECTS.has(name) ? '19000' : '17000';
+      const version = SCENE_SOUNDS.includes(name) ? '22000' : PRIORITY_EFFECTS.has(name) ? '19000' : '17000';
       const element = new Media(`/game/audio/${name}.mp3?v=${version}`);
-      element.preload = 'none'; element.loop = false; element.volume = prefs.effects;
+      effectNames.set(element,name);
+      element.preload = 'none'; element.loop = false; element.volume = prefs.effects * (SOUND_LEVELS[effectNames.get(element)] ?? 1);
       const cleanup = () => { if (!effects.has(element)) return; clearTimer(effects.get(element)); effects.delete(element); disposeMedia(element); };
       effects.set(element, setTimer(cleanup, EFFECT_TIMEOUT_MS));
       element.addEventListener('ended', cleanup, { once: true }); element.addEventListener('error', cleanup, { once: true });

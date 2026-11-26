@@ -1,7 +1,9 @@
+import { HORROR_CAST } from './campaigns/horror-data.js';
 /** Reading-only name emphasis. Story data, saves and TXT remain plain text. */
 const cast = entries => Object.freeze(entries.map(([name,role,aliases=[]])=>Object.freeze({name,role,aliases:Object.freeze(aliases)})));
 
 export const CHARACTERS = Object.freeze({
+  ...Object.fromEntries(Object.entries(HORROR_CAST).map(([id,entries])=>[id,cast(entries)])),
   'last-train':cast([
     ['윤','차장'],['백','철도 정비원'],
   ]),

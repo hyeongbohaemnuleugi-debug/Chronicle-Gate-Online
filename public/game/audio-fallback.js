@@ -1,10 +1,11 @@
+import { SCENE_SOUNDS, SOUND_LEVELS, musicTheme } from './scene-sound.js';
 /* Media-element compatibility path for file:// and browsers without Web Audio.
  * Guarded regions are overlapped before the file boundary. This is deliberately
  * best effort: precise loops belong to the AudioBuffer path in audio.js. */
 import { AUDIO_LOOPS, AUDIO_VERSION } from './audio-loops.js';
 const clamp = (value, fallback = .5) => Number.isFinite(Number(value)) ? Math.min(1, Math.max(0, Number(value))) : fallback;
 const MOODS = new Set(['mystery', 'calm', 'tension', 'danger', 'hope', 'grief']);
-const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive']);
+const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive', ...SCENE_SOUNDS]);
 const PRIORITY_EFFECTS = new Set(['death', 'revive']);
 const FADE_MS = 1250;
 const START_TIMEOUT_MS = 8000;
@@ -12,6 +13,7 @@ const EFFECT_TIMEOUT_MS = 10000;
 
 /** Runtime overrides make playback ownership and cleanup testable without speakers. */
 export function createMediaAudio(onChange = () => {}, runtime = {}) {
+  const effectNames = new WeakMap();
   const Media = runtime.Audio || globalThis.Audio;
   const now = runtime.now || (() => performance.now());
   const requestFrame = runtime.requestFrame || (callback => requestAnimationFrame(callback));
@@ -229,11 +231,12 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
       } else if (fade) updateFade(now());
       else if (current && !pending) current.volume = level();
       if (prefs.effects === 0) stopEffects();
-      else for (const element of activeEffects.keys()) element.volume = prefs.effects;
+      else for (const element of activeEffects.keys()) element.volume = prefs.effects * (SOUND_LEVELS[effectNames.get(element)] ?? 1);
       persist();
       if (prefs.music > 0) playDesired();
     },
     scene(campaignId, mood = 'mystery') {
+      campaignId=musicTheme(campaignId);
       if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || '')) return;
       const next = `${campaignId}-${MOODS.has(mood) ? mood : 'mystery'}`;
       if (desired !== next) blockedDesired = null;
@@ -256,16 +259,19 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
       };
       duckFrame = requestFrame(step);
     },
+    stopSceneEffects(){for(const [element,timer] of activeEffects){if(SCENE_SOUNDS.includes(effectNames.get(element))){clearTimer(timer);activeEffects.delete(element);dispose(element);}}},
     effect(name) {
       if (!prefs.enabled || isPaused || destroyed || prefs.effects === 0 || !SFX.has(name) || !Media) return false;
       // A new death or revival takes ownership of the one-shot mix immediately.
       if (PRIORITY_EFFECTS.has(name)) stopEffects();
+      else if(SCENE_SOUNDS.includes(name)) for(const [other,timer] of activeEffects){if(SCENE_SOUNDS.includes(effectNames.get(other))){clearTimer(timer);activeEffects.delete(other);dispose(other);}}
       if (activeEffects.size >= 4) return false;
-      const version = PRIORITY_EFFECTS.has(name) ? '19000' : '17000';
+      const version = SCENE_SOUNDS.includes(name) ? '22000' : PRIORITY_EFFECTS.has(name) ? '19000' : '17000';
       const element = new Media(`/game/audio/${name}.mp3?v=${version}`);
+      effectNames.set(element,name);
       element.preload = 'none';
       element.loop = false;
-      element.volume = prefs.effects;
+      element.volume = prefs.effects * (SOUND_LEVELS[effectNames.get(element)] ?? 1);
       const cleanup = () => {
         if (!activeEffects.has(element)) return;
         clearTimer(activeEffects.get(element));

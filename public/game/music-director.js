@@ -1,3 +1,4 @@
+import { HORROR_ENDING_MOODS } from './campaigns/horror-data.js';
 /* Music follows the event being read, not a redraw or the die's success label. */
 const MOODS = new Set(['calm', 'mystery', 'tension', 'danger', 'hope', 'grief']);
 const PASSIVE_GRADES = new Set(['observe', 'safe', 'reveal', 'assist', 'presence', 'pass']);
@@ -5,6 +6,7 @@ const PASSIVE_GRADES = new Set(['observe', 'safe', 'reveal', 'assist', 'presence
 // These are authored ending tones. Several endings recover something without
 // undoing a loss; they should not inherit the old universal "hope" setting.
 export const ENDING_MOODS = Object.freeze({
+  ...HORROR_ENDING_MOODS,
   'last-train': Object.freeze({
     "ending-new-stop": "hope",
     "ending-home": "calm",

@@ -1,3 +1,4 @@
+import { validStoryLength } from './campaigns/epic-tools.js';
 import { CAMPAIGNS, CATALOG, getCampaign } from './campaigns/index.js';
 import { createGame, viewGame, previewAction, applyAction, assist as applyAssist, revealSecret, passTurn, validateSave, getClasses, normalizeClassId, cleanText } from './engine.js';
 import { remapClassId } from './professions.js';
@@ -38,12 +39,12 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
   function localState(){
     const meId=localSeat||local.players[0].id;
     return {mode:'local',code:'LOCAL',meId,hostId:local.players[0].id,connected:true,players:local.game?local.game.players:local.players,
-      campaignId:local.campaignId,catalog:CATALOG,game:local.game?viewGame(local.game,getCampaign(local.campaignId),meId):null,
+      campaignId:local.campaignId,storyLength:local.game?.storyLength || local.storyLength || 'basic',catalog:CATALOG,game:local.game?viewGame(local.game,getCampaign(local.campaignId),meId):null,
       messages:local.messages||[],storage:'local',canStart:!local.game};
   }
-  function localChanged({followTurn=false}={}){
+  function localChanged({followTurn=false,restored=false}={}){
     if(followTurn&&local.game&&local.game.phase!=='opening')localSeat=local.game.players[local.game.activeIndex].id;
-    write(localStorage,LOCAL_KEY,{schema:local.game?.schema||17,...local});deliver(localState());
+    write(localStorage,LOCAL_KEY,{schema:local.game?.schema||22,...local});deliver({...localState(),restored});
   }
   async function connect(){
     if(offlineOnly)throw new Error('로컬 실행 중입니다. 온라인 방은 배포된 사이트에서 열어 주세요.');
@@ -114,7 +115,7 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
         if(people.length<1||people.length>4)throw new Error('플레이어를 1~4명으로 정해 주세요.');
         if(people.some(p=>!cleanText(p.name,18)))throw new Error('모든 플레이어의 이름을 입력해 주세요.');
         if(people.some(p=>p.classId&&!getClasses(getCampaign(campaignId)).some(c=>c.id===p.classId)))throw new Error('이 이야기에서 선택할 수 없는 직업입니다. 직업을 다시 골라 주세요.');
-        local={campaignId,players:people.map((p,i)=>({id:randomId(),name:cleanText(p.name,18),classId:normalizeClassId(getCampaign(campaignId),p.classId,i),connected:true})),game:null,messages:[]};
+        local={campaignId,storyLength:'basic',players:people.map((p,i)=>({id:randomId(),name:cleanText(p.name,18),classId:normalizeClassId(getCampaign(campaignId),p.classId,i),connected:true})),game:null,messages:[]};
         localSeat=local.players[0].id;planned=null;localChanged();return {ok:true};
       }
       await connect();return joinResult(await request('table:create',{name,classId,campaignId}));
@@ -128,8 +129,8 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
       const saved=kind==='backup'?saveRead(localStorage,BACKUP_KEY):saveRead(localStorage,LOCAL_KEY);
       if(!saved)throw new Error('이어할 저장 데이터가 없습니다. 저장 파일을 불러와 주세요.');
       if(saved.game)return api.importSave(saved);
-      if([14,15,17,19].includes(saved.schema)&&getCampaign(saved.campaignId)&&Array.isArray(saved.players)&&saved.players.length<=4){
-        local={campaignId:saved.campaignId,players:saved.players.map((p,i)=>({id:randomId(),name:cleanText(p.name,18)||`모험가 ${i+1}`,classId:normalizeClassId(getCampaign(saved.campaignId),p.classId,i),connected:true})),game:null,messages:[]};
+      if([14,15,17,19,22].includes(saved.schema)&&getCampaign(saved.campaignId)&&Array.isArray(saved.players)&&saved.players.length<=4){
+        local={campaignId:saved.campaignId,storyLength:validStoryLength(saved.storyLength)?saved.storyLength:'basic',players:saved.players.map((p,i)=>({id:randomId(),name:cleanText(p.name,18)||`모험가 ${i+1}`,classId:normalizeClassId(getCampaign(saved.campaignId),p.classId,i),connected:true})),game:null,messages:[]};
         localSeat=local.players[0].id;localChanged();return {ok:true};
       }
       throw new Error('저장 데이터가 손상되었습니다. 저장 파일을 불러와 주세요.');
@@ -141,15 +142,20 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
       }
       local=null;localSeat=null;planned=null;lastBackupRevision=-1;backupCode=null;deliver(initial());return {ok:true};
     },
-    async start({openingMode='separate'}={}){
-      if(!['separate','together'].includes(openingMode))throw new Error('이야기의 시작 방식을 선택해 주세요.');
+    async start({storyLength=current?.storyLength || 'basic'}={}){
+      if(!validStoryLength(storyLength))throw new Error('기본 또는 서사시를 선택해 주세요.');
       if(local){
         if(local.game)throw new Error('이미 이야기를 시작했습니다.');
-        local.game=createGame(getCampaign(local.campaignId),local.players,{openingMode});
-        localChanged({followTurn:true});return {ok:true};
+        local.game=createGame(getCampaign(local.campaignId),local.players,{storyLength});
+        local.storyLength=storyLength;localChanged({followTurn:true});return {ok:true};
       }
-      if(openingMode==='separate'&&!current?.capabilities?.parallelOpenings)throw new Error('이 서버는 아직 각자의 첫 장을 지원하지 않습니다. v19 서버 파일을 업데이트한 뒤 다시 시작해 주세요.');
-      return checked(await request('table:start',{openingMode}));
+      if(!current?.capabilities?.storyLengths)throw new Error('이야기 길이를 선택하려면 서버도 v22 파일로 업데이트한 뒤 다시 시작해 주세요.');
+      return checked(await request('table:start',{storyLength}));
+    },
+    async setStoryLength(storyLength){
+      if(!validStoryLength(storyLength))throw new Error('기본 또는 서사시를 선택해 주세요.');
+      if(local){if(local.game)throw new Error('이야기 길이는 시작 전에 정해 주세요.');local.storyLength=storyLength;localChanged();return {ok:true};}
+      return checked(await request('table:length',{storyLength}));
     },
     async selectCampaign(campaignId){if(local){if(local.game)throw new Error('진행 중에는 바꿀 수 없습니다.');if(!getCampaign(campaignId))throw new Error('없는 시나리오입니다.');local.players.forEach((p,i)=>{p.classId=remapClassId(getCampaign(local.campaignId),getCampaign(campaignId),p.classId,i);});local.campaignId=campaignId;localChanged();return {ok:true};}return checked(await request('table:campaign',{campaignId}));},
     async setClass(classId){if(local){if(local.game)throw new Error('시작 전에 선택해 주세요.');if(!getClasses(getCampaign(local.campaignId)).some(c=>c.id===classId))throw new Error('직업을 선택해 주세요.');local.players.find(p=>p.id===localSeat).classId=classId;localChanged();return {ok:true};}return checked(await request('table:class',{classId}));},
@@ -164,14 +170,14 @@ export async function createClient(onState=()=>{},onNotice=()=>{}){
     async reveal(){if(local)return localApply(game=>revealSecret(game,getCampaign(local.campaignId),localSeat));return checked(await request('table:reveal',{revision:current.game.revision}));},
     async pass(){if(local){const result=passTurn(local.game,localSeat,{campaign:getCampaign(local.campaignId),roll:secureDie});checked(result);local.game=result.game;localChanged({followTurn:true});return {ok:true};}return checked(await request('table:pass',{revision:current.game.revision}));},
     async deferOpening(playerId){if(local)throw new Error('한 기기로 함께할 때는 화면을 넘겨 각자의 첫 장을 진행해 주세요.');return checked(await request('table:opening-defer',{playerId,revision:current?.game?.revision}));},
-    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v21',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
+    async exportSave(){if(local){if(!local.game)throw new Error('이야기를 시작한 뒤 저장할 수 있습니다.');return {format:'chronicle-gate-v22',savedAt:new Date().toISOString(),game:local.game};}return checked(await request('table:export')).save;},
     async importSave(save){
       if(current?.mode==='online')return checked(await request('table:import',{save}));
       const {game,campaign}=validateSave(save,CAMPAIGNS);game.players.forEach(p=>{p.connected=true;});
-      local={campaignId:campaign.id,players:game.players.map(({id,name,classId})=>({id,name,classId,connected:true})),game,messages:[]};
+      local={campaignId:campaign.id,storyLength:game.storyLength,players:game.players.map(({id,name,classId})=>({id,name,classId,connected:true})),game,messages:[]};
       const opening=game.phase==='opening'?viewGame(game,campaign,game.players[0].id).opening:null;
       localSeat=opening?opening.participants.find(person=>!person.ready)?.id||game.players[0].id:game.players[game.activeIndex].id;
-      planned=null;localChanged();return {ok:true};
+      planned=null;localChanged({restored:true});return {ok:true};
     },
     async chat(text){if(local){const who=local.players.find(p=>p.id===localSeat);const safe=cleanText(text,400);if(safe)local.messages.push({id:randomId(),name:who.name,text:safe});local.messages=local.messages.slice(-50);localChanged();return {ok:true};}return checked(await request('table:chat',{text}));},
     setLocalSeat(playerId){if(local?.players.some(p=>p.id===playerId)){localSeat=playerId;planned=null;deliver(localState());}},

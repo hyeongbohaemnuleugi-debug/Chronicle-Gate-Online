@@ -1,5 +1,7 @@
 /** A short, factual chronicle of choices already made. No remote generation. */
 export const CHRONICLE_LIMIT = 40;
+export const EPIC_CHRONICLE_LIMIT = 96;
+const historyLimit = value => value?.storyLength === 'epic' ? EPIC_CHRONICLE_LIMIT : CHRONICLE_LIMIT;
 const TEXT_LIMIT = 700;
 const grades = new Set(['automatic','critical','success','failure','fumble','mixed']);
 const kinds = new Set(['choice','revival','combat','opening','meeting']);
@@ -32,10 +34,12 @@ export function appendChronicle(game, event) {
   if(!entry){game.chroniclePartial=true;return;}
   if(game.chronicle.some(previous=>previous.id===entry.id))return;
   game.chronicle.push(entry);
-  if(game.chronicle.length>CHRONICLE_LIMIT){game.chronicle=game.chronicle.slice(-CHRONICLE_LIMIT);game.chroniclePartial=true;}
+  const limit=historyLimit(game);
+  if(game.chronicle.length>limit){game.chronicle=game.chronicle.slice(-limit);game.chroniclePartial=true;}
 }
 
 export function restoreChronicle(raw, journal, {turn=0,startTitle=''}={}) {
+  const limit=historyLimit(raw);
   const existing=Array.isArray(raw?.chronicle);
   const source=existing?raw.chronicle:(journal||[]).map((entry,index)=>({...entry,text:entry.narrativeText||entry.text,id:entry.id||`legacy-${index}`,kind:eventKind(entry)})).filter(entry=>entry.kind);
   const sanitized=[],seen=new Set();let partial=raw?.chroniclePartial===true;
@@ -44,10 +48,10 @@ export function restoreChronicle(raw, journal, {turn=0,startTitle=''}={}) {
     if(!entry||seen.has(entry.id)){partial=true;continue;}
     seen.add(entry.id);sanitized.push(entry);
   }
-  if(sanitized.length>CHRONICLE_LIMIT)partial=true;
+  if(sanitized.length>limit)partial=true;
   if(!existing&&turn>0&&(!source.length||(journal||[]).length>=200||(startTitle&&journal?.[0]?.sceneTitle!==startTitle)))partial=true;
   if(existing&&turn>0&&!sanitized.length)partial=true;
-  return {chronicle:sanitized.slice(-CHRONICLE_LIMIT),chroniclePartial:partial};
+  return {chronicle:sanitized.slice(-limit),chroniclePartial:partial};
 }
 
 const paragraphs = value => (Array.isArray(value)?value:[value]).map(plain).filter(Boolean);

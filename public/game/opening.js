@@ -1,10 +1,12 @@
+import { OPENINGS_HORROR } from './campaigns/openings-horror.js';
+import { safeSound } from './scene-sound.js';
 /** Authored, private first chapters. Choices run independently until the meeting. */
 import { OPENINGS_A } from './campaigns/openings-a.js';
 import { OPENINGS_B } from './campaigns/openings-b.js';
 import { getClass } from './professions.js';
 import { gradeRoll, gradeChances, GRADE_LABELS, ROLLED_GRADES } from './judgement.js';
 
-export const OPENINGS = Object.freeze({ ...OPENINGS_A, ...OPENINGS_B });
+export const OPENINGS = Object.freeze({ ...OPENINGS_A, ...OPENINGS_B, ...OPENINGS_HORROR });
 const copy = value => JSON.parse(JSON.stringify(value));
 const failed = error => ({ ok: false, error });
 const statLabels = { might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' };
@@ -24,10 +26,10 @@ export function actionRevision(game, playerId) {
 
 export function initializeOpening(game, campaign) {
   if (new Set(game.players.map(player => player.classId)).size !== game.players.length) {
-    throw new Error('각자의 첫 장에서는 서로 다른 직업을 골라 주세요. 같은 직업으로 하려면 함께 바로 시작을 선택할 수 있습니다.');
+    throw new Error('각자의 첫 장에서는 서로 다른 직업을 골라 주세요.');
   }
   if (!OPENINGS[campaign.id] || game.players.some(player => !definition(game, player))) throw new Error('이 직업의 첫 장을 찾을 수 없습니다.');
-  game.schema = 19;
+  game.schema = 22;
   game.phase = 'opening';
   game.opening = { schema: 1, startNodeId: campaign.start, joined: false, states: game.players.map(player => ({ playerId: player.id, revision: 1, records: [], deferred: false, bonusSpent: false })) };
   game.players.forEach(player => { player.openingBonus = 0; });
@@ -41,7 +43,7 @@ function recordResult(game, campaign, player, record) {
   const outcome = choice.outcomes[grade === 'automatic' ? 'success' : grade];
   return {
     sceneId: `opening:${player.classId}:${stage.id}`, sceneTitle: stage.title, location: stage.location, mood: stage.mood,
-    actor: player.name, action: choice.label, text: outcome.text, report: outcome.report,
+    actor: player.name, action: choice.label, text: outcome.text, sound:safeSound(outcome.sound), report: outcome.report,
     grade, roll: record.roll, total: choice.automatic ? null : record.roll + classBonus,
     dc: choice.automatic ? 0 : choice.dc, bonus: choice.automatic ? 0 : classBonus,
     preparation: outcome.bonus || 0, harm: outcome.harm || 0,
@@ -128,7 +130,7 @@ export function openingView(game, campaign, viewerId) {
     }),
     scene: {
       id: stage ? `opening:${player.classId}:${stage.id}` : 'opening:waiting', title: stage?.title || meeting.title,
-      chapter: 0, location: stage?.location || meeting.location, art: stage?.art || 0, mood: stage?.mood || 'calm',
+      sound:safeSound(stage?.sound), chapter: 0, location: stage?.location || meeting.location, art: stage?.art || 0, mood: stage?.mood || 'calm',
       summary: stage?.objective || '각자의 첫 장을 마치고 합류를 기다립니다.', stakes: '직업에 맞는 선택을 두 번 마치면 일행과 만납니다.',
       arrival: null, text: copy(paragraphs), reading: { paragraphs: copy(paragraphs), echoes: [], personal: [], fate: '' },
       dialogue: null, objective: stage?.objective || '다른 참가자들의 도착을 기다린다.', entities: [], details: [], lockedChoices: [], resurrection: null, ending: false, question: '',
@@ -157,7 +159,7 @@ export function previewOpening(game, campaign, playerId, payload) {
   const dc = automatic ? 0 : choice.dc, chances = automatic ? null : gradeChances(bonus, dc);
   const outcomes = (automatic ? ['automatic'] : ROLLED_GRADES).map(grade => {
     const outcome = choice.outcomes[grade === 'automatic' ? 'success' : grade];
-    return { grade, label: automatic ? '선택대로 진행' : GRADE_LABELS[grade], chance: automatic ? 100 : chances[grade], text: outcome.text,
+    return { grade, label: automatic ? '선택대로 진행' : GRADE_LABELS[grade], chance: automatic ? 100 : chances[grade], text: outcome.text, sound:safeSound(outcome.sound),
       changes: [ ...(outcome.bonus ? [`본편 첫 이야기 판정 준비 +${outcome.bonus} (누적 최대 2)`] : []), ...(outcome.harm ? [`생명 −${outcome.harm}`] : []) ] };
   });
   return { ok: true, plan: { type: 'opening', choiceId: choice.id, label: choice.label, automatic,
@@ -207,10 +209,10 @@ export function remapOpeningPlayers(game, ids) {
 
 /** Rebuild prose and benefits from validated authored choices and actual die values. */
 export function restoreOpening(game, campaign, raw) {
-  if (!raw.opening && raw.schema !== 19) return;
+  if (!raw.opening && raw.schema !== 19 && raw.phase !== 'opening') return;
   const source = raw.opening;
   const invalid = () => { throw new Error('직업별 첫 장의 저장 기록이 올바르지 않습니다. 원본 저장 파일을 확인해 주세요.'); };
-  if (raw.schema !== 19 || !source || source.schema !== 1 || !Array.isArray(source.states) || source.states.length !== game.players.length) invalid();
+  if (![19,22].includes(raw.schema) || !source || source.schema !== 1 || !Array.isArray(source.states) || source.states.length !== game.players.length) invalid();
   if (new Set(game.players.map(player => player.classId)).size !== game.players.length) invalid();
   const states = game.players.map(player => {
     const matches = source.states.filter(state => state?.playerId === player.id), origin = definition(game, player);
@@ -228,7 +230,7 @@ export function restoreOpening(game, campaign, raw) {
   });
   const joined = states.every(ready);
   if (source.joined !== joined || (!joined && (game.nodeId !== campaign.start || raw.phase !== 'opening' || states.some(state => state.bonusSpent)))) invalid();
-  game.schema = 19;
+  game.schema = 22;
   game.opening = { schema: 1, startNodeId: campaign.start, joined, states };
   for (const player of game.players) {
     const state = personalState(game, player.id), history = historyFor(game, campaign, player);

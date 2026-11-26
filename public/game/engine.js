@@ -1,3 +1,5 @@
+import { sceneSound, safeSound } from './scene-sound.js';
+import { campaignForLength, validStoryLength } from './campaigns/epic-tools.js';
 /** Chronicle Gate 18: a concise story shaped by the party's actual choices. */
 import { CLASSES, LEGACY_CLASS_IDS, getClasses, getClass, normalizeClassId } from './professions.js';
 import { startCombat, combatView, previewCombat, applyCombatAction, skipCombatTurn, restoreCombat } from './combat.js';
@@ -7,7 +9,7 @@ import { initializeOpening, openingRole, openingView, openingStartParagraphs, ac
 export { actionRevision } from './opening.js';
 export { gradeRoll } from './judgement.js';
 export { CLASSES, getClasses, getClass, normalizeClassId } from './professions.js';
-export const VERSION = '21.0.0';
+export const VERSION = '22.0.0';
 export const STAT_LABELS = Object.freeze({ might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' });
 const clone = value => JSON.parse(JSON.stringify(value));
 const bound = (value, low, high) => Math.max(low, Math.min(high, value));
@@ -45,6 +47,7 @@ export function conditionMatches(condition, game) {
   return true;
 }
 export function availableChoices(game, campaign) {
+  campaign = campaignForLength(campaign, game?.storyLength || 'basic');
   if (game.combat || game.phase === 'opening') return [];
   return (nodeFor(game, campaign)?.choices ?? []).filter(c => conditionMatches(c.requires, game) && [...(c.useItems||[]),...(c.consumeItems||[])].every(id=>(game.inventory||[]).includes(id)));
 }
@@ -104,13 +107,16 @@ function outcomePreviews(choice,game,campaign,actorId,bonus,dc) {
   });
 }
 
-export function createGame(campaign, players, { openingMode = 'together' } = {}) {
+// Shared-state constructor for save migration and isolated story verification.
+// New player sessions must use createGame, which always begins privately.
+export function createStoryState(campaign, players, { openingMode = 'together', storyLength = campaign?.lengthMode || 'basic' } = {}) {
+  campaign = campaignForLength(campaign, storyLength);
   if (!campaign?.nodes?.[campaign.start]) throw new Error('시나리오의 시작 장면이 없습니다.');
   if (!Array.isArray(players) || players.length < 1 || players.length > 4) throw new Error('플레이어는 1~4명이어야 합니다.');
   if (new Set(players.map(p => p.id)).size !== players.length) throw new Error('플레이어 ID가 중복되었습니다.');
   if (!['together','separate'].includes(openingMode)) throw new Error('이야기의 시작 방식을 선택해 주세요.');
   const game = {
-    schema: 17, version: VERSION, campaignId: campaign.id, nodeId: campaign.start,
+    schema: 22, version: VERSION, campaignId: campaign.id, storyLength, nodeId: campaign.start,
     phase: 'playing', revision: 1, turn: 0, activeIndex: 0, pressure: 0, sparks: 2,
     flags: {}, clues: [], inventory: [], spentItems: [], visited: [campaign.start], detailsRead: {}, assists: [], reviveAttempts: {},
     players: players.map((p, i) => ({ id: cleanText(p.id, 80), name: cleanText(p.name, 18) || `모험가 ${i + 1}`,
@@ -124,7 +130,12 @@ export function createGame(campaign, players, { openingMode = 'together' } = {})
   return game;
 }
 
+export function createGame(campaign, players, { storyLength = campaign?.lengthMode || 'basic' } = {}) {
+  return createStoryState(campaign, players, {storyLength, openingMode:'separate'});
+}
+
 export function viewGame(game, campaign, viewerId) {
+  campaign = campaignForLength(campaign, game?.storyLength || 'basic');
   const node = nodeFor(game, campaign);
   const me = game.players.find(p => p.id === viewerId);
   const role = me ? openingRole(game, campaign, me) : null;
@@ -151,11 +162,11 @@ export function viewGame(game, campaign, viewerId) {
   }
   return {
     campaignId: campaign.id, title: campaign.title, revision: game.revision, actionRevision: actionRevision(game, viewerId), phase: game.phase,
-    storyMode:storyMode(game),partySize:game.players.length,
+    storyMode:storyMode(game),storyLength:game.storyLength || 'basic',estimatedMinutes:campaign.estimatedMinutes,partySize:game.players.length,
     modeDescription:campaign.playModes?.[storyMode(game)]||'',
     scene: {
       id: node.id || game.nodeId, title: node.title, chapter: node.chapter || 1,
-      location: node.location || campaign.title, art: Number(node.art) || 0,
+      location: node.location || campaign.title, art: Number(node.art) || 0, sound:combat?null:sceneSound(campaign.id,node),
       summary: combat ? `일행의 앞을 ${combat.enemy.name}이 가로막았습니다. 적의 다음 공격과 대상을 확인하고 차례대로 행동하세요.` : node.summary || (node.text||[])[0] || campaign.description,
       stakes: combat ? '기본 공격은 계속 쓸 수 있고, 고유 기술은 전투당 한 번입니다. 생명이 0이 되면 사망합니다.' : node.stakes || '',
       arrival: game.arrival?.toSceneId===game.nodeId ? clone(game.arrival) : null,
@@ -196,6 +207,7 @@ export function viewGame(game, campaign, viewerId) {
 }
 
 export function previewAction(game, campaign, playerId, payload = {}) {
+  campaign = campaignForLength(campaign, game?.storyLength || 'basic');
   if(!payload||typeof payload!=='object'||Array.isArray(payload))return fail('현재 화면의 행동 버튼을 선택해 주세요.');
   if(Object.hasOwn(payload,'text')||Object.hasOwn(payload,'flashback'))return fail('직접 입력하는 행동은 사용하지 않습니다. 현재 장면의 선택지를 골라 주세요.');
   if (!game || game.campaignId !== campaign.id) return fail('현재 시나리오와 저장 데이터가 맞지 않습니다.');
@@ -288,6 +300,7 @@ function advanceSeat(game) {
 }
 
 export function applyAction(game, campaign, playerId, payload = {}, { roll } = {}) {
+  campaign = campaignForLength(campaign, game?.storyLength || 'basic');
   if (game?.phase === 'opening') {
     const preview = previewAction(game, campaign, playerId, payload);
     if (!preview.ok) return preview;
@@ -369,7 +382,7 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
   const allDead=next.players.every(p=>p.life==='dead');
   if(died.length)changes.push(`사망: ${died.join(', ')}`);
   next.lastResult = { action: choice.label,
-    text: storyPassage(outcome,died,allDead), deaths:died, actor: actor.name, grade, roll: die, total, dc: plan.dc, bonus: plan.bonus,
+    text: storyPassage(outcome,died,allDead), sound:safeSound(outcome.sound), deaths:died, actor: actor.name, grade, roll: die, total, dc: plan.dc, bonus: plan.bonus,
     stat: plan.stat, assistance: plan.assistance, spentSpark: plan.spendSpark,
     preparation: plan.preparation, gainedSpark: grade === 'critical', fromSceneId: next.nodeId,
     ...items,usedItems:validItems(campaign,[...(choice.useItems||[]),...(choice.consumeItems||[])]).map(id=>({id,name:campaign.items[id].name})),changes };
@@ -401,6 +414,7 @@ export function assist(game, playerId) {
   return { ok: true, game: next };
 }
 export function revealSecret(game, campaign, playerId) {
+  campaign = campaignForLength(campaign, game?.storyLength || 'basic');
   if (game.phase === 'opening') return fail('비밀은 일행과 만난 뒤에 털어놓을 수 있습니다.');
   const actor = game.players.find(p => p.id === playerId);
   if (!actor) return fail('참가자가 아닙니다.');
@@ -415,6 +429,7 @@ export function revealSecret(game, campaign, playerId) {
   return { ok: true, game: next };
 }
 export function passTurn(game, playerId, { allowDisconnected = false, campaign, roll } = {}) {
+  if(campaign) campaign = campaignForLength(campaign, game?.storyLength || 'basic');
   if (game.phase === 'opening') return fail('첫 장에서는 자신의 행동을 고르세요. 다른 사람의 차례를 기다리지 않아도 됩니다.');
   if (game.phase !== 'playing') return fail('이미 끝난 이야기입니다.');
   if (currentPlayer(game)?.id !== playerId && !(allowDisconnected && currentPlayer(game)?.connected === false)) return fail('현재 차례인 플레이어만 양보할 수 있습니다.');
@@ -432,12 +447,14 @@ export function passTurn(game, playerId, { allowDisconnected = false, campaign, 
 /** Import validates allow-listed data; tokens, sockets and arbitrary object keys never survive. */
 export function validateSave(data, campaigns) {
   const raw = data?.game ?? data;
-  const campaign = campaigns.find(c => c.id === raw?.campaignId);
-  if (!raw || ![14,15,17,19].includes(raw.schema) || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('지원하는 저장 파일이 아니거나 시나리오가 맞지 않습니다. v14–v21 게임 저장을 선택해 주세요.');
+  const storyLength = raw?.storyLength ?? 'basic';
+  if (!validStoryLength(storyLength)) throw new Error('저장 파일의 이야기 길이가 올바르지 않습니다.');
+  const campaign = campaignForLength(campaigns.find(c => c.id === raw?.campaignId),storyLength);
+  if (!raw || ![14,15,17,19,22].includes(raw.schema) || !campaign || (!Object.hasOwn(campaign.nodes,raw.nodeId) && raw.nodeId!=='__all_dead__')) throw new Error('지원하는 저장 파일이 아니거나 시나리오가 맞지 않습니다. v14–v22 게임 저장을 선택해 주세요.');
   if (!Array.isArray(raw.players) || raw.players.length < 1 || raw.players.length > 4) throw new Error('저장 파일의 인원이 올바르지 않습니다.');
   if (JSON.stringify(data).length > 2000000) throw new Error('저장 파일이 너무 큽니다.');
   if(raw.players.some(p=>!p || typeof p.id!=='string' || !/^[A-Za-z0-9_-]{1,80}$/.test(p.id) || ['__proto__','constructor','prototype'].includes(p.id)))throw new Error('저장 파일의 플레이어 ID가 올바르지 않습니다.');
-  const game = createGame(campaign, raw.players);
+  const game = createStoryState(campaign, raw.players, {storyLength});
   if(raw.players.some(p=>!getClasses(campaign).some(c=>c.id===p.classId) && !(raw.schema===14 && LEGACY_CLASS_IDS.includes(p.classId))))throw new Error('저장 파일의 직업이 이 시나리오에 맞지 않습니다.');
   game.nodeId = raw.nodeId;
   game.phase = raw.nodeId==='__all_dead__' || campaign.nodes[raw.nodeId].ending ? 'ended' : 'playing';
@@ -451,7 +468,7 @@ export function validateSave(data, campaigns) {
   for (const node of Object.values(campaign.nodes)) for (const choice of node.choices || []) for (const outcome of Object.values(choice.outcomes || {})) for (const f of outcome.set || []) allowedFlags.add(f);
   for (const f of allowedFlags) if (raw.flags?.[f] === true && !['__proto__','constructor','prototype'].includes(f)) game.flags[f] = true;
   game.clues = [...new Set(Array.isArray(raw.clues) ? raw.clues.filter(c => Object.hasOwn(campaign.clues || {}, c)) : [])];
-  if(raw.schema===17 || raw.schema===19){
+  if([17,19,22].includes(raw.schema)){
     game.inventory=validItems(campaign,raw.inventory);
     game.spentItems=validItems(campaign,raw.spentItems).filter(id=>!game.inventory.includes(id));
   }else{
@@ -466,7 +483,7 @@ export function validateSave(data, campaigns) {
   game.players.forEach((p,i) => { p.roleIndex = i; p.focus = raw.players[i].focus !== false; p.revealed = raw.players[i].revealed === true; p.health=bound(Math.floor(Number(raw.players[i].health??3)),0,3);if(!Number.isFinite(p.health))p.health=3;p.life=p.health===0?'dead':'alive';p.revivals=bound(Math.floor(Number(raw.players[i].revivals)||0),0,1);p.echoUsed=raw.players[i].echoUsed===true; });
   game.journal = Array.isArray(raw.journal) ? raw.journal.slice(-200).filter(e => e && typeof e === 'object').map((e,i) => ({
     id: `restored:${i}`, sceneTitle: cleanText(e.sceneTitle, 100), actor: cleanText(e.actor, 18),
-    action: cleanText(e.action, 220), text: cleanText(e.text, 1800), narrativeText:cleanText(e.narrativeText,700), grade: cleanText(e.grade, 20),
+    action: cleanText(e.action, 220), sound:safeSound(e.sound), text: cleanText(e.text, 1800), narrativeText:cleanText(e.narrativeText,700), grade: cleanText(e.grade, 20),
     roll: Number.isInteger(e.roll) && e.roll >= 1 && e.roll <= 20 ? e.roll : null,
     total: Number.isFinite(e.total) ? e.total : null, dc: Number.isFinite(e.dc) ? e.dc : null,
     bonus: Number.isFinite(e.bonus) ? e.bonus : 0,
@@ -516,6 +533,7 @@ function recordMeeting(game, campaign) {
 }
 
 export function deferOpening(game, campaign, playerId) {
+  campaign = campaignForLength(campaign, game?.storyLength || 'basic');
   const result = deferOpeningPlayer(game, campaign, playerId);
   if (result.ok && result.joined) recordMeeting(result.game, campaign);
   return result;

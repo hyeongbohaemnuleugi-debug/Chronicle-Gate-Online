@@ -1,9 +1,9 @@
 {
   "name": "chronicle-gate-online",
-  "version": "21.0.0",
+  "version": "22.0.0",
   "private": true,
   "type": "module",
-  "description": "Chronicle Gate: seven concise branching chronicles, solo and group story choices, four D20 outcomes, 28 professions, 1–4 players.",
+  "description": "Chronicle Gate: nine authored chronicles, Basic and Epic, private profession openings, contextual sound and 1\u20134 players.",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
@@ -17,7 +17,7 @@
     "check:legacy": "node scripts/qa.mjs",
     "build:offline": "node scripts/build-offline.mjs",
     "test:ui": "node --test tests-v18/ui.test.mjs tests-v19/ui.test.mjs",
-    "test:all": "npm run verify && npm run test:opening && npm run test:expansion && npm run test:music && npm run test:dice && npm run test:ui && npm run test:integration && npm run test:routes",
+    "test:all": "npm run verify && npm run test:opening && npm run test:expansion && npm run test:music && npm run test:dice && npm run test:ui && npm run test:integration && npm run test:routes && npm run test:immersion",
     "clean:media": "node scripts/cleanup-v17.mjs --apply",
     "clean:media:preview": "node scripts/cleanup-v17.mjs",
     "start:legacy": "node server.js --legacy",
@@ -27,7 +27,9 @@
     "test:opening": "node --test tests-v19/opening.test.mjs tests-v19/openings-a.test.mjs",
     "test:music": "node --test tests-v19/music.test.mjs tests-v20/audio.test.mjs",
     "test:dice": "node --test tests-v20/dice*.test.mjs",
-    "test:expansion": "node --test tests-v21/*.test.mjs"
+    "test:expansion": "node --test tests-v21/*.test.mjs",
+    "test:immersion": "node --test tests-v22/*.test.mjs",
+    "build:foley": "python scripts/build-foley-v22.py"
   },
   "dependencies": {
     "express": "5.2.1",

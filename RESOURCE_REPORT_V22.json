@@ -1,0 +1,2498 @@
+{
+  "version": "22.0.0",
+  "baseline": "21.0.0",
+  "generatedAt": "2026-11-26T14:34:49.230Z",
+  "command": "node scripts/report-v22.mjs",
+  "definitions": {
+    "playableScenes": "각 모드 데이터에 있는 일반 장면 노드 수. 대체 갈래와 복귀 장면을 포함하며 한 번의 플레이에서 모두 방문하는 수가 아니다. 개인 도입·관찰·전투 턴·결말은 제외한다.",
+    "ordinaryEndings": "명시적으로 작성한 일반 결말 노드 수. 기본과 서사시가 공유하는 결말을 합쳐 새로운 결말 수로 세지 않는다. 조건별 후일담과 생존·사망 조합도 별개 결말로 부풀리지 않는다.",
+    "partyDeathEndings": "전원 사망 전용 결말 템플릿 수. 일반 결말과 별도로 센다.",
+    "choices": "모든 일반 장면의 선택지 정의 수. 조건부로 잠기는 선택지도 포함하며 네 판정 결과는 outcomePassages에서 따로 센다.",
+    "openingStages": "이야기별 네 직업에 작성된 개인 도입 장면의 합계. 1인 플레이에서 다른 세 직업 도입까지 보는 것은 아니다.",
+    "minimumAddedScenes": "모든 결과 간선에서 계산한 구조상 하한. 추가 본문 장면만 세고 복귀 장면·개인 도입·관찰·전투 턴은 제외한다. 조건을 무시한 더 짧은 그래프에서도 24 이상인지 확인한다.",
+    "bytes": "현재 파일의 원시 바이트 수. public/game은 하위 전체, audio/art는 각 하위 디렉터리 전체이며 서로 포함 관계이므로 더해서 합계를 만들지 않는다.",
+    "playTime": "제작자가 의도한 읽기·토론·조사 분량에 대한 예상 범위. 사람 대상 시간 측정 결과나 1시간 강제 보장이 아니다."
+  },
+  "totals": {
+    "stories": 9,
+    "newHorrorStories": 2,
+    "basic": {
+      "playableScenes": 153,
+      "ordinaryEndings": 45,
+      "partyDeathEndings": 9,
+      "choices": 421,
+      "riskyChoices": 224,
+      "outcomePassages": 1093,
+      "clues": 100,
+      "items": 38,
+      "flags": 210,
+      "professions": 36,
+      "combatScenes": 9,
+      "resurrectionSceneBindings": 25,
+      "sceneSoundBindings": 48,
+      "outcomeSoundBindings": 5
+    },
+    "epic": {
+      "playableScenes": 404,
+      "ordinaryEndings": 45,
+      "partyDeathEndings": 9,
+      "choices": 906,
+      "riskyChoices": 312,
+      "outcomePassages": 1842,
+      "clues": 131,
+      "items": 49,
+      "flags": 462,
+      "professions": 36,
+      "combatScenes": 9,
+      "resurrectionSceneBindings": 31,
+      "sceneSoundBindings": 95,
+      "outcomeSoundBindings": 5
+    },
+    "distinctOrdinaryEndingTemplates": 45,
+    "distinctPartyDeathTemplates": 9,
+    "openingProfessions": 36,
+    "openingStages": 72,
+    "openingChoices": 144,
+    "authoredEpicScenes": 234,
+    "returnScenes": 17,
+    "addedEpicItems": 11,
+    "minimumAddedScenesAcrossAllOrdinaryEndings": 24,
+    "epicEndingEpiloguePassages": 103
+  },
+  "stories": [
+    {
+      "id": "last-train",
+      "title": "막차의 일곱 번째 승객",
+      "newInV22": false,
+      "description": "막차의 단체 표에는 일곱 명이 적혔지만 눈앞의 승객은 여섯이다. 빈자리에서 수저 소리가 나고, 오래전에 사라진 동네가 차창에 비친다. 보이지 않는 승객을 찾아 오늘의 손님들을 집으로 보내야 한다. 기다리던 사람들에게도 내릴 자리를 만들어 줄 수 있을까?",
+      "basic": {
+        "estimatedMinutes": "35–60",
+        "playableScenes": 16,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 45,
+        "riskyChoices": 23,
+        "outcomePassages": 114,
+        "clues": 11,
+        "items": 4,
+        "flags": 17,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 4,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "70–110",
+        "playableScenes": 44,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 99,
+        "riskyChoices": 27,
+        "outcomePassages": 180,
+        "clues": 13,
+        "items": 5,
+        "flags": 50,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 4,
+        "sceneSoundBindings": 9,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "train-track-rescuer",
+          "name": "선로 구조대원",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "교대 뒤에도 흔들리는 가방",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "난간 끝에 걸린 안전띠",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "train-night-courier",
+          "name": "심야 퀵배달원",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "끝나지 않은 마지막 동선",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "닫힌 셔터 옆의 화살표",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "train-signal-fitter",
+          "name": "신호 정비사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "퇴근 전에 남은 잡음",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "방향만 알려 주는 안내등",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "train-night-announcer",
+          "name": "야간 안내원",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "마감 안내를 삼킨 스피커",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "서로 다른 화살표 앞에서",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "ending-new-stop": 24,
+        "ending-home": 24,
+        "ending-shift": 24,
+        "ending-letter-home": 24,
+        "ending-last-service": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "ledger",
+          "title": "괴담의 결재란",
+          "entry": {
+            "label": "차장실 뒤에서 반복되는 대피 방송을 윤과 확인한다",
+            "text": "장부를 보던 중 뒷문 너머에서 아이의 질문이 들린다. 윤이 예비 방송기에 남은 기록이라고 설명한다. 제동실이나 신호실을 고르기 전에 이 기다림이 어디서 시작됐는지 확인하려고 차장실 뒤 연결 통로로 나선다."
+          },
+          "sceneCount": 13,
+          "first": "et1-01",
+          "firstTitle": "장부 뒤에서 들리는 방송",
+          "last": "et1-12",
+          "lastTitle": "다시 같은 문 앞에서",
+          "return": "et1-return"
+        },
+        {
+          "at": "switch",
+          "title": "0번선은 손으로 움직인다",
+          "entry": {
+            "label": "분기 작업 전 다가오는 점검차를 별도 선로에 세운다",
+            "text": "레버에 손을 대기 직전 백의 무전이 온다. 뒤편 점검차를 세워야 작업할 수 있다는 말이다. 윤이 막차를 붙들고 있는 동안 난간 옆 정비 보행로로 나가 별도 정지 신호를 보내기로 한다. 분기 레버와 릴레이는 그대로 두고 돌아올 길을 확인한다."
+          },
+          "sceneCount": 13,
+          "first": "et2-01",
+          "firstTitle": "뒤에서 오는 불빛",
+          "last": "et2-12",
+          "lastTitle": "약속 다음의 손잡이",
+          "return": "et2-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "et1-04",
+          "title": "양쪽에 남은 같은 밤",
+          "destinations": [
+            "et1-05a",
+            "et1-05b"
+          ]
+        },
+        {
+          "id": "et2-04",
+          "title": "종을 칠까, 등을 들까",
+          "destinations": [
+            "et2-05a",
+            "et2-05b"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "epic-train-child-map",
+          "name": "아이의 동네 지도",
+          "description": "과자 봉지 뒷면에 그린 모래역 지도. 강가 계단의 굽이가 크게 표시돼 있다. 보호 봉투에 넣어 보관한다.",
+          "useHint": "서사시 후반의 옛 계단 안내판에서 실제 길과 맞춰 볼 수 있다.",
+          "consumable": false
+        }
+      ],
+      "epicEndingEpiloguePassages": 15,
+      "musicTheme": "last-train",
+      "artwork": "public/game/art/last-train.webp"
+    },
+    {
+      "id": "glass-hotel",
+      "title": "유리 호텔의 도난당한 새벽",
+      "newInV22": false,
+      "description": "유리 호텔의 손님들이 웃던 모습 그대로 멈췄다. 직원들은 끝나지 않는 연회를 치우고, 밖에서 찾아온 일행에게 도움을 청한다. 아침을 여는 원석을 쫓다 보면 손님이 산 행복한 한 시간에 직원의 야근 열 시간이 쓰였음을 알게 된다. 원석을 되찾은 뒤 그 시간을 어디로 돌려줄지는 일행에게 달렸다.",
+      "basic": {
+        "estimatedMinutes": "35–60",
+        "playableScenes": 16,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 45,
+        "riskyChoices": 27,
+        "outcomePassages": 126,
+        "clues": 11,
+        "items": 4,
+        "flags": 17,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 4,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "70–110",
+        "playableScenes": 44,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 99,
+        "riskyChoices": 31,
+        "outcomePassages": 192,
+        "clues": 14,
+        "items": 5,
+        "flags": 53,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 4,
+        "sceneSoundBindings": 7,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "hotel-baggage-warden",
+          "name": "수하물 호위사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "끝이 안 맞는 짐끈",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "비탈에 놓인 빈 수레",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "hotel-stage-escape",
+          "name": "무대 탈출사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "막을 내린 뒤의 리본",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "바람에 들리는 안내 천",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "hotel-hour-appraiser",
+          "name": "시간 감정사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "렌즈를 맞출 짧은 시간",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "움직이는 초침을 남겨 두고",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "hotel-banquet-host",
+          "name": "연회 사회자",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "다시 써야 할 첫 인사",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "입구를 잘못 찾은 질문",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "ending-return": 24,
+        "ending-settlement": 24,
+        "ending-break": 24,
+        "ending-rest-house": 24,
+        "ending-hotel-closed": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "archive",
+          "title": "누군가의 한 시간은 누구의 것인가",
+          "entry": {
+            "label": "장부에서 새어 나오는 소리를 따라 직원들의 저녁을 확인한다",
+            "text": "기록실 문을 두드린 민이 장부에 남은 저녁의 소리를 설명한다. 도면은 안전히 덮어 두고 바로 옆 직원 구역을 살펴보기로 한다. 설계 작업은 원래 책상에 돌아온 뒤 계속할 수 있다."
+          },
+          "sceneCount": 13,
+          "first": "eh1-01",
+          "firstTitle": "장부에서 빠져나온 한 소절",
+          "last": "eh1-12",
+          "lastTitle": "다시 도면 앞에 앉다",
+          "return": "eh1-return"
+        },
+        {
+          "at": "vault",
+          "title": "가장 비싼 것은 평범한 오후",
+          "entry": {
+            "label": "잠금축을 열기 전에 금고 안쪽의 흔들리는 이름표를 정리한다",
+            "text": "잠금축 옆 검사 회랑에서 유리가 부딪친다. 소라가 바깥 전원을 고정하고 있는 동안 저장된 시간이 서로 섞이지 않았는지 확인하기로 한다. 닫힌 축은 그대로 둔 채 금고 안쪽 검사 회랑으로 들어선다."
+          },
+          "sceneCount": 13,
+          "first": "eh2-01",
+          "firstTitle": "반환 전에 흘러나오는 저녁",
+          "last": "eh2-12",
+          "lastTitle": "이름이 먼저 보이는 금고",
+          "return": "eh2-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "eh1-04",
+          "title": "두 방에 남은 저녁",
+          "destinations": [
+            "eh1-05a",
+            "eh1-05b"
+          ]
+        },
+        {
+          "id": "eh2-04",
+          "title": "이름과 얼굴 사이",
+          "destinations": [
+            "eh2-05a",
+            "eh2-05b"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "epic-hotel-pocket-clock",
+          "name": "민의 태엽시계",
+          "description": "호텔 중앙 시계와 연결되지 않은 작은 시계. 태엽을 감아 실제 흐름을 비교할 수 있다. 민에게 빌린 물건이다.",
+          "useHint": "서사시 후반 금고 검사 탁자에서 반복되는 장면과 현재를 구분하는 데 쓴다.",
+          "consumable": false
+        }
+      ],
+      "epicEndingEpiloguePassages": 15,
+      "musicTheme": "glass-hotel",
+      "artwork": "public/game/art/glass-hotel.webp"
+    },
+    {
+      "id": "moon-market",
+      "title": "달을 파는 야시장",
+      "newInV22": false,
+      "description": "동전 대신 작은 기억으로 값을 치르는 야시장. 오늘의 마지막 경매품은 달이고, 낙찰자는 강물과 나룻배가 다닐 길까지 차지한다. 정작 달은 팔리는 대신 잠을 자고 싶다고 한다. 달의 부탁과 강가 마을의 편지를 들고, 경매가 끝나기 전에 길을 찾아야 한다.",
+      "basic": {
+        "estimatedMinutes": "35–60",
+        "playableScenes": 16,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 46,
+        "riskyChoices": 24,
+        "outcomePassages": 118,
+        "clues": 11,
+        "items": 4,
+        "flags": 18,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 5,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "70–110",
+        "playableScenes": 44,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 100,
+        "riskyChoices": 28,
+        "outcomePassages": 184,
+        "clues": 12,
+        "items": 5,
+        "flags": 56,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 9,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "market-lantern-porter",
+          "name": "등불 짐꾼",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "물 위로 돌아가는 주소",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "물가에 걸친 긴 장대",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "market-shadow-acrobat",
+          "name": "달그림자 곡예사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "박수 뒤에 남은 한 발",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "발밑에서 먼저 도착한 그림자",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "market-memory-mender",
+          "name": "기억 바느질꾼",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "접힌 곳으로 숨은 글씨",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "길 이름을 잊은 이정표",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "market-wish-broker",
+          "name": "소원 흥정꾼",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "값을 적기 전에 묻는 말",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "가리키는 손보다 가까운 길",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "ending-landing": 24,
+        "ending-travel": 24,
+        "ending-sky": 24,
+        "ending-return-lanterns": 24,
+        "ending-unopened-house": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "auction",
+          "title": "자기 이름으로 입찰할 수 없는 물건",
+          "entry": {
+            "label": "경매 휴회 동안 달에게 겹친 소원 끈의 무게를 살핀다",
+            "text": "무대 가장자리의 등불이 꺼지고 보조 끈이 당겨진다. 일구는 발판 점검을 위해 망치를 내려놓는다. 달이 무대에서 기다리는 동안 나비와 경매장 옆 통로로 나가 끈이 이어진 노점 구역을 살펴보기로 한다."
+          },
+          "sceneCount": 13,
+          "first": "em1-01",
+          "firstTitle": "값을 부르기 전에 꺼진 등",
+          "last": "em1-12",
+          "lastTitle": "기다리던 작은 달",
+          "return": "em1-return"
+        },
+        {
+          "at": "crane",
+          "title": "하늘을 매단 밧줄",
+          "entry": {
+            "label": "큰 물레를 돌리기 전에 아래 발판의 보조 매듭을 정리한다",
+            "text": "나비가 큰 줄 아래 얽힌 완료 표식을 발견한다. 주된 끈을 잠금 고리에 고정해 두고 보조 줄만 먼저 살펴보기로 한다. 담이 붙인 발판으로 내려가 아래 작업대에 선다. 큰 물레의 해제는 이곳으로 돌아온 뒤에 결정한다."
+          },
+          "sceneCount": 13,
+          "first": "em2-01",
+          "firstTitle": "주된 줄 아래의 잔매듭",
+          "last": "em2-12",
+          "lastTitle": "이제 큰 줄 앞에서",
+          "return": "em2-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "em1-04",
+          "title": "별개로 이어지는 골목",
+          "destinations": [
+            "em1-05a",
+            "em1-05b"
+          ]
+        },
+        {
+          "id": "em2-04",
+          "title": "아직 필요한 두 가지",
+          "destinations": [
+            "em2-05a",
+            "em2-05b"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "epic-market-empty-spool",
+          "name": "빈 나무 실감개",
+          "description": "나비가 빌려준 작은 실감개. 끝난 소원을 자르지 않고 보존하며 따로 감을 수 있다.",
+          "useHint": "서사시 후반 하역대 보조 줄 걸이에서 완료된 부탁을 분리하는 데 쓴다.",
+          "consumable": false
+        }
+      ],
+      "epicEndingEpiloguePassages": 15,
+      "musicTheme": "moon-market",
+      "artwork": "public/game/art/moon-market.webp"
+    },
+    {
+      "id": "deep-sea",
+      "title": "해저 기지의 마지막 방송",
+      "newInV22": false,
+      "description": "해저 기지의 대피가 끝났다는 보고가 왔다. 그런데 무전기에서는 열두 시간 전에 죽은 의사가 도움을 청하고, 기지 안에는 아직 사람들이 남아 있다. 물이 차오르는 방들을 지나며 빠진 이름을 찾고, 살아서 수면으로 돌아갈 길을 열어야 한다.",
+      "basic": {
+        "estimatedMinutes": "35–60",
+        "playableScenes": 17,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 48,
+        "riskyChoices": 32,
+        "outcomePassages": 144,
+        "clues": 12,
+        "items": 4,
+        "flags": 27,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 4,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "70–110",
+        "playableScenes": 45,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 102,
+        "riskyChoices": 43,
+        "outcomePassages": 231,
+        "clues": 14,
+        "items": 5,
+        "flags": 39,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 10,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "sea-salvage-diver",
+          "name": "잠수 구조대원",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "먼저 들어 올릴 무게",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "문턱에서 굴러온 빈 들것",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "sea-exterior-rigger",
+          "name": "선외 작업사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "아직 물에 닿지 않은 고리",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "인양줄이 아닌 선내 길",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "sea-biosystems-engineer",
+          "name": "해양 생체공학자",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "빈 물컵의 기준값",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "물에 젖기 전의 연결부",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "sea-emergency-medic",
+          "name": "응급 잠수의",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "사람이 앉을 빈 자리",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "바람 속에서 들릴 설명",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "ending-witness": 24,
+        "ending-harbor": 24,
+        "ending-common": 24,
+        "ending-open-water": 24,
+        "ending-deep-watch": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "archive",
+          "title": "사고 보고서의 빈칸",
+          "entry": {
+            "label": "기록실 출구를 막은 역류부터 멈추러 점검문으로 들어간다",
+            "text": "통신실과 부력실 쪽 문을 고르려는 순간 천장의 역류 경보가 울렸다. 물이 들어온 방화문 두 개가 함께 내려앉았다. 누리가 기록실 옆 점검문을 열었다. “옆 차단실에서 이 구간만 비워야 두 길이 다시 열려요.” 기록은 책상에 그대로 두고 좁은 정비 통로로 들어갔다."
+          },
+          "sceneCount": 13,
+          "first": "epb-sea-a01",
+          "firstTitle": "천장에서 내려온 물",
+          "last": "epb-sea-a12",
+          "lastTitle": "이번에는 열리는 문",
+          "return": "epb-sea-a-return"
+        },
+        {
+          "at": "lifeboat",
+          "title": "마지막으로 탈 사람",
+          "entry": {
+            "label": "연결교를 당기는 연구 계류선을 풀러 아래 점검대에 간다",
+            "text": "연결교를 건너기 전, 누리가 교각 아래를 비췄다. 무거운 캐비닛 외에도 팽팽한 연구 계류선 하나가 다리를 옆으로 당기고 있었다. 환자들이 있는 상승 구획에는 도윤이 남았다. 누리와 같은 쪽 둑의 점검 사다리를 내려가 연구선부터 풀기로 했다."
+          },
+          "sceneCount": 13,
+          "first": "epb-sea-b01",
+          "firstTitle": "아직 붙잡고 있는 줄",
+          "last": "epb-sea-b12",
+          "lastTitle": "다시 다리의 시작에",
+          "return": "epb-sea-b-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "epb-sea-a03",
+          "title": "마른 발판과 젖은 난간",
+          "destinations": [
+            "epb-sea-a04-dry",
+            "epb-sea-a04-pipe"
+          ]
+        },
+        {
+          "id": "epb-sea-b03",
+          "title": "줄이 시작된 방",
+          "destinations": [
+            "epb-sea-b04-winch",
+            "epb-sea-b04-sonar"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "epb_sea_clamp",
+          "name": "잠금식 배관 죔쇠",
+          "description": "은재가 공구함 안쪽에 걸어 둔 손잡이 달린 죔쇠. 물속에서도 톱니를 잠글 수 있다.",
+          "useHint": "역류관을 받쳐 놓았다가 회수하거나, 마지막 계류선 분리 때 설치해 남긴다.",
+          "consumable": true
+        }
+      ],
+      "epicEndingEpiloguePassages": 10,
+      "musicTheme": "deep-sea",
+      "artwork": "public/game/art/deep-sea.webp"
+    },
+    {
+      "id": "dragon-banquet",
+      "title": "용의 마지막 만찬",
+      "newInV22": false,
+      "description": "용왕의 은퇴식에서 푸른 김이 나는 국을 보고 재상이 독살이라고 외친다. 요리사는 끌려갈 처지다. 새로 들어온 소금과 고쳐 쓴 연설문을 따라가면, 누가 왕을 성에 붙잡으려 하는지 드러난다. 용왕을 떠나보내면서 마을의 겨울도 지킬 수 있을까?",
+      "basic": {
+        "estimatedMinutes": "35–60",
+        "playableScenes": 16,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 44,
+        "riskyChoices": 26,
+        "outcomePassages": 122,
+        "clues": 11,
+        "items": 4,
+        "flags": 18,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 4,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "70–110",
+        "playableScenes": 44,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 98,
+        "riskyChoices": 33,
+        "outcomePassages": 197,
+        "clues": 13,
+        "items": 5,
+        "flags": 31,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 4,
+        "sceneSoundBindings": 8,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "feast-pot-knight",
+          "name": "왕실 냄비 기사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "솥이 먼저 길을 막았다",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "한 사람이 지날 만큼",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "feast-hearth-acrobat",
+          "name": "화덕 곡예사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "불길보다 낮은 발판",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "차양 끝의 한 걸음",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "feast-spice-alchemist",
+          "name": "향신료 연금술사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "이름이 번진 시험병",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "빈 그릇이 먼저",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "feast-court-envoy",
+          "name": "궁정 만찬 사절",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "초대받은 이유",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "빈 인사말 한 줄",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "ending-hearth": 24,
+        "ending-caravan": 24,
+        "ending-transition": 24,
+        "ending-winter-palace": 24,
+        "ending-spring-return": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "tasting",
+          "title": "국보다 위험한 건 접시였다",
+          "entry": {
+            "label": "저장실 문을 두드리는 피프를 보러 주방 뒤편으로 간다",
+            "text": "재상과 용왕 중 누구를 먼저 만날지 정하려는데 저장실에서 세 번 두드리는 소리가 났다. 경비가 납품 상자를 옮긴 피프를 안에 가둔 것이다. 도란은 시식용 그릇을 덮었다. 왕실로 가기 전, 무슨 말을 하려는지 듣기 위해 주방 뒤편으로 돌아갔다."
+          },
+          "sceneCount": 13,
+          "first": "epb-dragon-a01",
+          "firstTitle": "국자보다 작은 손",
+          "last": "epb-dragon-a12",
+          "lastTitle": "다시 덮개를 여는 손",
+          "return": "epb-dragon-a-return"
+        },
+        {
+          "at": "chimney",
+          "title": "용의 재채기보다 먼저",
+          "entry": {
+            "label": "굴뚝 압력을 잠시 붙들 냉각통을 찾으러 아래 통로로 내려간다",
+            "text": "굴뚝 마개로 바로 다가가기에는 압력이 너무 불규칙했다. 델은 왕실 불을 잠시 멈추게 하고, 아래 냉각통의 수동 밸브부터 열자고 했다. 마개를 제거하는 일은 그 뒤에도 남는다. 델과 굴뚝 옆 계단을 내려 냉각통으로 이어진 통로에 들어갔다."
+          },
+          "sceneCount": 13,
+          "first": "epb-dragon-b01",
+          "firstTitle": "불이 닿지 않는 계단",
+          "last": "epb-dragon-b12",
+          "lastTitle": "큰 불 앞의 작은 경험",
+          "return": "epb-dragon-b-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "epb-dragon-a03",
+          "title": "상자가 지나온 두 문",
+          "destinations": [
+            "epb-dragon-a04-store",
+            "epb-dragon-a04-yard"
+          ]
+        },
+        {
+          "id": "epb-dragon-b03",
+          "title": "바람 길과 사람 길",
+          "destinations": [
+            "epb-dragon-b04-roof",
+            "epb-dragon-b04-rooms"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "epb_dragon_tongs",
+          "name": "델의 긴 화덕 집게",
+          "description": "화덕 기술자 델이 수리 도구함에서 꺼내 준 긴 집게. 손잡이를 천으로 감아 뜨거운 철망과 벽돌을 다룰 수 있다.",
+          "useHint": "주방의 뜨거운 철망을 옮기거나 굴뚝 아래 시험 화덕을 안전하게 정리한다.",
+          "consumable": false
+        }
+      ],
+      "epicEndingEpiloguePassages": 10,
+      "musicTheme": "dragon-banquet",
+      "artwork": "public/game/art/dragon-banquet.webp"
+    },
+    {
+      "id": "clock-city",
+      "title": "13분 뒤에 사라지는 도시",
+      "newInV22": false,
+      "description": "전차 뒷문은 어제로 열리고, 빵집의 문은 벽으로 변한다. 발치의 고지서는 정오에 도시를 가져가겠다고 한다. 남은 시간은 열세 분. 갇힌 사람들을 꺼내며, 누가 허락도 없이 온 도시를 시간 금고에 맡겼는지 찾아야 한다.",
+      "basic": {
+        "estimatedMinutes": "35–60",
+        "playableScenes": 17,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 48,
+        "riskyChoices": 33,
+        "outcomePassages": 147,
+        "clues": 13,
+        "items": 4,
+        "flags": 25,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 4,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "75–115",
+        "playableScenes": 44,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 101,
+        "riskyChoices": 44,
+        "outcomePassages": 233,
+        "clues": 15,
+        "items": 5,
+        "flags": 38,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 4,
+        "sceneSoundBindings": 7,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "clock-bellwright",
+          "name": "종탑 타종수",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "아직 울리지 않은 종",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "문틀이 버틸 동안",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "clock-rooftop-runner",
+          "name": "전차 지붕길잡이",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "빈 전차 위의 빗방울",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "지나갈 길과 내려올 길",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "clock-escapement-tuner",
+          "name": "태엽 조율사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "같은 초를 세지 않는 것들",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "출구 화살표 두 개",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "clock-street-reciter",
+          "name": "골목 기록 낭독가",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "끝을 읽기 전에 지워지는 글",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "멀리서도 알아들을 한 문장",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 1,
+      "totalEpicAddedPlayableScenes": 27,
+      "shortestAddedScenesByEnding": {
+        "ending-slow": 24,
+        "ending-newtown": 24,
+        "ending-common": 24,
+        "ending-return-station": 24,
+        "ending-last-delivery": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "library",
+          "title": "도시가 빌린 것",
+          "entry": {
+            "label": "최초 계약 보관문을 가린 접힌 서고를 모라와 함께 정리한다",
+            "text": "두 열쇠를 집으려는 순간 책장 사이가 종이처럼 접혔다. 보관실과 인쇄소로 가는 문이 안쪽으로 말려 들어갔다. 모라는 정지 서고가 틀어졌다며 좁은 틈을 열었다. “안에서는 한순간이 길게 펴져요. 바깥의 13분을 벌어 주는 곳은 아니에요.” 열린 틈으로 들어가 문을 제자리로 돌려놓기로 했다."
+          },
+          "sceneCount": 26,
+          "first": "epb-clock-01",
+          "firstTitle": "초침이 머무는 문턱",
+          "last": "epb-clock-24",
+          "lastTitle": "다시 움직이는 초침",
+          "return": "epb-clock-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "epb-clock-03",
+          "title": "눈높이가 다른 길",
+          "destinations": [
+            "epb-clock-04-high",
+            "epb-clock-04-low"
+          ]
+        },
+        {
+          "id": "epb-clock-15",
+          "title": "골목의 계단, 역의 발코니",
+          "destinations": [
+            "epb-clock-16-stairs",
+            "epb-clock-16-balcony"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "epb_clock_bookmark",
+          "name": "정지 서고의 은빛 책갈피",
+          "description": "모라가 돌려놓기 전에 수리해 쓰도록 맡긴 서고 전용 책갈피. 접힌 기록 한 장의 모서리를 잠깐 고정한다.",
+          "useHint": "흩어지는 생활 기록을 붙들거나 마지막 복귀문을 고정한다. 서고 밖에서는 평범한 얇은 금속판이다.",
+          "consumable": true
+        }
+      ],
+      "epicEndingEpiloguePassages": 10,
+      "musicTheme": "clock-city",
+      "artwork": "public/game/art/clock-city.webp"
+    },
+    {
+      "id": "snow-radio",
+      "title": "설원에서 온 내 목소리",
+      "newInV22": false,
+      "description": "교신이 끊긴 수색대원 가람을 찾아 극지 중계소에 도착했다. 무전기에서 낯익은 목소리가 도움을 청하는데, 화면은 지하를 가리킨다. 난방은 식어 가고 눈보라는 가까워진다. 눈 속의 가람을 찾고, 누가 그 목소리로 돌아오고 싶다는 말을 하는지 들어야 한다.",
+      "basic": {
+        "estimatedMinutes": "35–60",
+        "playableScenes": 17,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 49,
+        "riskyChoices": 31,
+        "outcomePassages": 142,
+        "clues": 11,
+        "items": 4,
+        "flags": 25,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 3,
+        "sceneSoundBindings": 5,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "70–110",
+        "playableScenes": 45,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 103,
+        "riskyChoices": 42,
+        "outcomePassages": 229,
+        "clues": 13,
+        "items": 5,
+        "flags": 37,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 5,
+        "sceneSoundBindings": 11,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "snow-icewall-rescuer",
+          "name": "빙벽 구조원",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "손이 먼저 닿을 자리",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "문 앞의 마지막 발판",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "snow-polar-tracker",
+          "name": "극지 추적자",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "발자국보다 오래 남는 것",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "남겨 둘 손잡이",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "snow-biopattern-tech",
+          "name": "생체 복원 기사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "사람을 대기 전에",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "읽히지 않은 이름",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "snow-polar-communicator",
+          "name": "극야 통신사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "마지막 말의 뒤를 비워 두기",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "아직 오지 않은 대답",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "ending-silence": 24,
+        "ending-beacon": 24,
+        "ending-choice": 24,
+        "ending-carried-voices": 24,
+        "ending-kept-letters": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "checkpoint",
+          "title": "살아 있는 사람만 통과",
+          "entry": {
+            "label": "사라진 출구로 부르는 옛 안내 방송을 확인하러 옆 통로에 들어간다",
+            "text": "기록실과 복원 틀로 향하려는데 검문소 옆 스피커가 동쪽 출구로 나오라고 외쳤다. 이안이 그 문은 작년 붕괴 때 없어졌다고 말했다. 잘못된 안내를 그대로 두면 살아 있는 누군가도 따라갈 수 있었다. 두 문을 고르기 전, 스피커 선을 따라 옆 정비 통로로 들어갔다."
+          },
+          "sceneCount": 13,
+          "first": "epb-snow-a01",
+          "firstTitle": "없는 출구로 오라는 말",
+          "last": "epb-snow-a12",
+          "lastTitle": "두 문이 다시 보일 때",
+          "return": "epb-snow-a-return"
+        },
+        {
+          "at": "transmitter",
+          "title": "모두를 부르는 한 목소리",
+          "entry": {
+            "label": "소미가 가리키는 무너질 계단을 확인하러 실내 보조 통로로 간다",
+            "text": "송신 회로를 고르려는 순간 소미가 창 너머에서 난방계가 아니라 천장을 가리켰다. 대피소로 가는 원래 계단 위에 눈 무게가 실려 금이 벌어지고 있었다. 밖으로 나가지 않고 이동할 보조 길부터 열어야 했다. 송신기를 대기 상태로 두고 실내 점검문으로 들어갔다."
+          },
+          "sceneCount": 13,
+          "first": "epb-snow-b01",
+          "firstTitle": "유리 너머의 손",
+          "last": "epb-snow-b12",
+          "lastTitle": "다시 분배판 앞에",
+          "return": "epb-snow-b-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "epb-snow-a03",
+          "title": "배관의 길, 창문의 길",
+          "destinations": [
+            "epb-snow-a04-pipe",
+            "epb-snow-a04-window"
+          ]
+        },
+        {
+          "id": "epb-snow-b03",
+          "title": "낮은 계단과 따뜻했던 다락",
+          "destinations": [
+            "epb-snow-b04-stairs",
+            "epb-snow-b04-loft"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "epb_snow_heat_tile",
+          "name": "밀봉 세라믹 보온판",
+          "description": "옛 유도실의 비상함에서 꺼낸 작은 보온판. 밀봉을 뜯으면 한 번만 열이 나며 전기를 쓰지 않는다.",
+          "useHint": "얼어붙은 안내 장치의 뚜껑을 녹이거나 대피소에서 작은 휴식 자리를 덥힌다. 전체 난방을 대신하지는 않는다.",
+          "consumable": true
+        }
+      ],
+      "epicEndingEpiloguePassages": 10,
+      "musicTheme": "snow-radio",
+      "artwork": "public/game/art/snow-radio.webp"
+    },
+    {
+      "id": "hollow-apartment",
+      "title": "문밖에서 부르는 이름",
+      "newInV22": true,
+      "description": "폭우가 쏟아지는 밤, 아파트 현관이 같은 현관으로 이어진다. 404호에서는 실종된 주민의 목소리가 들리고, 그 목소리는 곧 당신을 흉내 낸다. 닫힌 피난문과 살아 있는 손을 구별해 건물 밖으로 돌아가야 한다.",
+      "basic": {
+        "estimatedMinutes": "40–65",
+        "playableScenes": 19,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 48,
+        "riskyChoices": 13,
+        "outcomePassages": 87,
+        "clues": 8,
+        "items": 5,
+        "flags": 31,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 2,
+        "sceneSoundBindings": 9,
+        "outcomeSoundBindings": 0
+      },
+      "epic": {
+        "estimatedMinutes": "75–115",
+        "playableScenes": 47,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 102,
+        "riskyChoices": 35,
+        "outcomePassages": 207,
+        "clues": 15,
+        "items": 7,
+        "flags": 77,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 2,
+        "sceneSoundBindings": 17,
+        "outcomeSoundBindings": 0
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "apartment-caretaker",
+          "name": "복구 기사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "의뢰서에 없는 방화문",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "꺼진 외벽등",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "apartment-courier",
+          "name": "야간 배송원",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "이미 찍힌 수취 서명",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "같은 주소가 두 개",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "apartment-locksmith",
+          "name": "출장 열쇠공",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "손금처럼 생긴 열쇠 구멍",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "안내판 뒤의 오래된 나사",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "apartment-counselor",
+          "name": "긴급 상담사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "통화가 끝난 뒤의 숨",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "문 앞에서 말하지 않은 이름",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "dawn-homes": 24,
+        "open-stair": 24,
+        "keeper-door": 24,
+        "ash-address": 24,
+        "borrowed-home": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "service-corridor",
+          "title": "방화문에 걸린 것",
+          "entry": {
+            "label": "배전함 뒤에서 열린 문을 살펴 건물이 숨긴 통로를 조사한다",
+            "text": "빈 외투가 무너진 뒤 배전함 뒤의 문고리가 떨어진다. 아래 문짝 보관실로 가기 전에 도면에 없는 통로를 확인하기로 한다. 열린 방화문을 받쳐 두고 낮은 철문 앞에 선다."
+          },
+          "sceneCount": 13,
+          "first": "apt-e1-hatch",
+          "firstTitle": "복도 도면에 없는 문",
+          "last": "apt-e1-backtrack",
+          "lastTitle": "처음 떨어진 문고리",
+          "return": "apt-e1-return"
+        },
+        {
+          "at": "roof",
+          "title": "지붕 위에 선 현관문",
+          "entry": {
+            "label": "물탱크 옆 관리 부속실에서 마지막 방화문 기록을 확인한다",
+            "text": "현관문의 경첩 쪽으로 가던 중 물탱크 그림자 끝에 관리 부속실이 나타난다. 문에 적힌 마지막 점검일을 확인하고, 경첩을 조작하기 전에 기록을 찾아보기로 한다."
+          },
+          "sceneCount": 13,
+          "first": "apt-e2-roofwing",
+          "firstTitle": "지붕 옆의 두 번째 그림자",
+          "last": "apt-e2-roofreturn",
+          "lastTitle": "마지막 문 앞에 다시 서다",
+          "return": "apt-e2-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "apt-e1-fork",
+          "title": "같은 방으로 가지 않는 두 길",
+          "destinations": [
+            "apt-e1-wires",
+            "apt-e1-duct"
+          ]
+        },
+        {
+          "id": "apt-e2-fork",
+          "title": "탱크를 돌아가는 두 길",
+          "destinations": [
+            "apt-e2-vane",
+            "apt-e2-pipe"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "apt_epic_glass",
+          "name": "그을음 관찰 유리",
+          "description": "액자 창고의 모서리를 감싼 그을음 유리. 덧그린 선 아래의 원래 흔적을 읽는다.",
+          "useHint": "폐쇄 놀이방에서 지워진 실제 키 표시를 읽는다.",
+          "consumable": false
+        },
+        {
+          "id": "apt_epic_low_handle",
+          "name": "낮은 문손잡이",
+          "description": "반려된 피난문 공사를 위해 남겨 둔 손잡이.",
+          "useHint": "옥상 뒤의 보조 걸쇠에 달아 낮은 곳에서도 잡을 길을 만든다.",
+          "consumable": true
+        }
+      ],
+      "epicEndingEpiloguePassages": 8,
+      "musicTheme": "glass-hotel",
+      "artwork": "public/game/art/hollow-apartment.webp"
+    },
+    {
+      "id": "drowned-broadcast",
+      "title": "새벽 두 시의 폐쇄 방송국",
+      "newInV22": true,
+      "description": "폐쇄 방송국에서 오늘의 날씨와 아직 하지 않은 말이 흘러나온다. 새벽 두 시의 생방송이 시작되기 전, 실종된 진행자를 찾고 물에 잠긴 송출선을 끊어야 한다. 빨간 불이 켜진 방에서는 다음 말을 기다리는 것이 움직인다.",
+      "basic": {
+        "estimatedMinutes": "40–65",
+        "playableScenes": 19,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 48,
+        "riskyChoices": 15,
+        "outcomePassages": 93,
+        "clues": 12,
+        "items": 5,
+        "flags": 32,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 2,
+        "sceneSoundBindings": 9,
+        "outcomeSoundBindings": 5
+      },
+      "epic": {
+        "estimatedMinutes": "75–115",
+        "playableScenes": 47,
+        "ordinaryEndings": 5,
+        "partyDeathEndings": 1,
+        "choices": 102,
+        "riskyChoices": 29,
+        "outcomePassages": 189,
+        "clues": 22,
+        "items": 7,
+        "flags": 81,
+        "professions": 4,
+        "combatScenes": 1,
+        "resurrectionSceneBindings": 2,
+        "sceneSoundBindings": 17,
+        "outcomeSoundBindings": 5
+      },
+      "openingProfessions": 4,
+      "openingStages": 8,
+      "openingChoices": 16,
+      "openingDetails": [
+        {
+          "id": "broadcast-rigger",
+          "name": "무대 설치 기사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "끊긴 선의 전류",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "펜스 너머의 붉은 등",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "broadcast-runner",
+          "name": "현장 촬영기사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "먼저 저장된 복도",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "반쯤 열려 있는 가림막",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "broadcast-engineer",
+          "name": "음향 복원사",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "잡음을 지우고 남은 것",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "소리만 돌아오는 점검함",
+              "choices": 2
+            }
+          ]
+        },
+        {
+          "id": "broadcast-announcer",
+          "name": "심야 진행자",
+          "stages": [
+            {
+              "id": "approach",
+              "title": "녹음한 적 없는 종료 인사",
+              "choices": 2
+            },
+            {
+              "id": "arrival",
+              "title": "마이크가 없는 안내 부스",
+              "choices": 2
+            }
+          ]
+        }
+      ],
+      "addedEpicScenes": 26,
+      "addedReturnScenes": 2,
+      "totalEpicAddedPlayableScenes": 28,
+      "shortestAddedScenesByEnding": {
+        "quiet-morning": 24,
+        "last-news": 24,
+        "tide-break": 24,
+        "night-watch": 24,
+        "open-channel": 24
+      },
+      "smallestAddedSceneCount": 24,
+      "chapters": [
+        {
+          "at": "studio",
+          "title": "청취자가 없는 생방송",
+          "entry": {
+            "label": "전선 더미 밑 배선표를 따라 예비 편집동의 되먹임을 조사한다",
+            "text": "청취자가 풀린 뒤 전선 밑에서 편집동 배선표가 드러난다. 녹색 기록실로 가기 전에 신호가 어디서 되돌아오는지 확인하기로 한다. 스튜디오 옆 유리의 실제 문을 찾는다."
+          },
+          "sceneCount": 13,
+          "first": "bc-e1-glass",
+          "firstTitle": "꺼진 유리에 남은 방",
+          "last": "bc-e1-exit",
+          "lastTitle": "다시 보이는 녹색 문",
+          "return": "bc-e1-return"
+        },
+        {
+          "at": "antenna-base",
+          "title": "안테나 아래의 작은 파도",
+          "entry": {
+            "label": "안테나 아래 기상 관측동에서 도시와 바다의 실제 연결을 확인한다",
+            "text": "안테나 지지대 밑의 기상 연결함 뒤에 작은 문이 열린다. 바다 쪽으로 보낼 길이 실제로 어디에 닿는지 확인한 뒤 송출을 정리하기로 한다. 지지대 번호를 기억하고 관측동 입구로 향한다."
+          },
+          "sceneCount": 13,
+          "first": "bc-e2-weather",
+          "firstTitle": "사라진 기상계의 문",
+          "last": "bc-e2-returnwalk",
+          "lastTitle": "안테나의 같은 번호",
+          "return": "bc-e2-return"
+        }
+      ],
+      "pathSplits": [
+        {
+          "id": "bc-e1-fork",
+          "title": "같은 박수가 만들어진 곳",
+          "destinations": [
+            "bc-e1-props",
+            "bc-e1-editing"
+          ]
+        },
+        {
+          "id": "bc-e2-fork",
+          "title": "물 위와 벽 안",
+          "destinations": [
+            "bc-e2-bridge",
+            "bc-e2-shaft"
+          ]
+        }
+      ],
+      "addedEpicItems": [
+        {
+          "id": "bc_epic_silent_strip",
+          "name": "무음 접속띠",
+          "description": "점선대로 떼어 테이프 사이에 실제 무음을 넣는 접속띠.",
+          "useHint": "무음 부스에서 원래 신고를 듣거나 복귀 편집대의 새 숨이 붙는 꼬리를 막는다.",
+          "consumable": true
+        },
+        {
+          "id": "bc_epic_shade",
+          "name": "방송등 차광 필터",
+          "description": "관측실 서랍의 작은 차광판. 붉은 방송 표시창에 맞는다.",
+          "useHint": "중계 카메라실의 붉은 표시창을 가려 추적할 영상이 이어지지 않게 한다.",
+          "consumable": true
+        }
+      ],
+      "epicEndingEpiloguePassages": 10,
+      "musicTheme": "snow-radio",
+      "artwork": "public/game/art/drowned-broadcast.webp"
+    }
+  ],
+  "staticResources": {
+    "publicGame": {
+      "files": 115,
+      "bytes": 18820568,
+      "baselineBytes": 17623782,
+      "increaseBytes": 1196786
+    },
+    "audioDirectory": {
+      "files": 68,
+      "bytes": 14425510,
+      "baselineBytes": 14086759,
+      "increaseBytes": 338751
+    },
+    "mp3": {
+      "files": 67,
+      "bytes": 14262212,
+      "musicFiles": 42,
+      "musicBytes": 13695816,
+      "effectFiles": 25,
+      "effectBytes": 566396
+    },
+    "newContextualEffects": {
+      "files": 12,
+      "bytes": 338751,
+      "assets": [
+        {
+          "id": "knock",
+          "file": "public/game/audio/knock.mp3",
+          "bytes": 14702,
+          "sha256": "b3ad169346c17e6db2352e75a25904846e830164f15a632f0a4179d559d6cf89",
+          "authoredSeconds": 2.4,
+          "manifestMatches": true
+        },
+        {
+          "id": "scream",
+          "file": "public/game/audio/scream.mp3",
+          "bytes": 27870,
+          "sha256": "91e91b90867c35ca78e046b88cb4b8d494b27978ebc399ee4e1777519b8e9e95",
+          "authoredSeconds": 3.2,
+          "manifestMatches": true
+        },
+        {
+          "id": "murmur",
+          "file": "public/game/audio/murmur.mp3",
+          "bytes": 43830,
+          "sha256": "da05a990b765356f8ab8378763b88947c78bfe922ba5d2dcc211930b7300fc09",
+          "authoredSeconds": 6.5,
+          "manifestMatches": true
+        },
+        {
+          "id": "footsteps",
+          "file": "public/game/audio/footsteps.mp3",
+          "bytes": 23277,
+          "sha256": "969c525bd0706706d7dcc1e50cdde6dc49ce186b2a79f80cced0fb8e265c954b",
+          "authoredSeconds": 3.5,
+          "manifestMatches": true
+        },
+        {
+          "id": "door-creak",
+          "file": "public/game/audio/door-creak.mp3",
+          "bytes": 29772,
+          "sha256": "ef468311c2059ddedf41fb4d01fa11831be33e24afec84a68f3cd8249b8f3657",
+          "authoredSeconds": 3.6,
+          "manifestMatches": true
+        },
+        {
+          "id": "glass",
+          "file": "public/game/audio/glass.mp3",
+          "bytes": 14796,
+          "sha256": "5c896a86e75360815a241f27ab6c25c77972a97252f2424b5726041181daeb72",
+          "authoredSeconds": 2.7,
+          "manifestMatches": true
+        },
+        {
+          "id": "metal",
+          "file": "public/game/audio/metal.mp3",
+          "bytes": 13228,
+          "sha256": "d5bf03bed3447148c75a66da736f3d363208638d38e03e2b33409394d7500778",
+          "authoredSeconds": 3.1,
+          "manifestMatches": true
+        },
+        {
+          "id": "water",
+          "file": "public/game/audio/water.mp3",
+          "bytes": 37072,
+          "sha256": "bea6e84ba49b3c485b214fe8b6cb36b717c87e7f25b528c79eb33d075e5ea9ae",
+          "authoredSeconds": 4.6,
+          "manifestMatches": true
+        },
+        {
+          "id": "wind",
+          "file": "public/game/audio/wind.mp3",
+          "bytes": 45209,
+          "sha256": "bf279704a5c972b02956a8c70d1c052b4c9dbfd9029ca711a3360475a6ccf8f3",
+          "authoredSeconds": 5.8,
+          "manifestMatches": true
+        },
+        {
+          "id": "radio-static",
+          "file": "public/game/audio/radio-static.mp3",
+          "bytes": 54089,
+          "sha256": "7511fff45a9dcb3de7757941a1c02c799cec8af1dd58e6de4573ed77b24fec71",
+          "authoredSeconds": 3.6,
+          "manifestMatches": true
+        },
+        {
+          "id": "heartbeat",
+          "file": "public/game/audio/heartbeat.mp3",
+          "bytes": 18766,
+          "sha256": "1a754d791a88ceededa752ba9290e471d6904616ffaa338e8c1516291168825e",
+          "authoredSeconds": 4.4,
+          "manifestMatches": true
+        },
+        {
+          "id": "chime",
+          "file": "public/game/audio/chime.mp3",
+          "bytes": 16140,
+          "sha256": "52e081ea83b364a659e76ad7d46279a4e65d442edb64a07faae4cf5c9cc41375",
+          "authoredSeconds": 3.8,
+          "manifestMatches": true
+        }
+      ]
+    },
+    "artDirectory": {
+      "files": 11,
+      "bytes": 1827958,
+      "baselineBytes": 1635310,
+      "increaseBytes": 192648
+    },
+    "webp": {
+      "files": 9,
+      "bytes": 1811114,
+      "newFiles": 2,
+      "newBytes": 189422
+    },
+    "diceModule": {
+      "file": "public/game/dice.js",
+      "bytes": 12821,
+      "sha256": "c6b6de7de6fd847196cbf510bbfcf6b37acfa2a0ab936661624dc447a168fe08"
+    },
+    "offlineHtml": {
+      "file": "public/offline.html",
+      "bytes": 4104868,
+      "baselineBytes": 2925844,
+      "increaseBytes": 1179024
+    },
+    "indexHtml": {
+      "file": "public/index.html",
+      "bytes": 3132,
+      "copyPasteExact": true
+    }
+  },
+  "preservation": {
+    "baseline": "21.0.0",
+    "method": "Exact SHA-256 bytes; no normalization or re-encoding exceptions.",
+    "embeddedManifestFiles": 76,
+    "allMatch": true,
+    "suppliedBaselineChecked": true,
+    "suppliedBaselineAllMatch": true,
+    "originalSevenAtlases": {
+      "files": 7,
+      "matches": true,
+      "changed": []
+    },
+    "original55Mp3": {
+      "files": 55,
+      "matches": true,
+      "changed": []
+    },
+    "originalSevenBasicFiles": {
+      "files": 7,
+      "matches": true,
+      "changed": []
+    },
+    "originalMechanicsAndOpeningData": {
+      "files": 7,
+      "matches": true,
+      "changed": []
+    },
+    "files": [
+      {
+        "file": "public/game/art/clock-city.webp",
+        "expectedSha256": "d9ffee192d99529977cefd6f97088074f077500b03b4af1e04c302c0c9a72575",
+        "actualSha256": "d9ffee192d99529977cefd6f97088074f077500b03b4af1e04c302c0c9a72575",
+        "matches": true,
+        "suppliedBaselineSha256": "d9ffee192d99529977cefd6f97088074f077500b03b4af1e04c302c0c9a72575",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/art/deep-sea.webp",
+        "expectedSha256": "050d953ef653969d3e37d80f1b4b4d2a0be862d3e2127d316d1c57987d68ff66",
+        "actualSha256": "050d953ef653969d3e37d80f1b4b4d2a0be862d3e2127d316d1c57987d68ff66",
+        "matches": true,
+        "suppliedBaselineSha256": "050d953ef653969d3e37d80f1b4b4d2a0be862d3e2127d316d1c57987d68ff66",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/art/dragon-banquet.webp",
+        "expectedSha256": "e1e1c9208d11313ad75bc05ae305a75f62f5448cb6dc3db48d597fe69cc59843",
+        "actualSha256": "e1e1c9208d11313ad75bc05ae305a75f62f5448cb6dc3db48d597fe69cc59843",
+        "matches": true,
+        "suppliedBaselineSha256": "e1e1c9208d11313ad75bc05ae305a75f62f5448cb6dc3db48d597fe69cc59843",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/art/glass-hotel.webp",
+        "expectedSha256": "57f487d23f3ace870055229ba508c30d89aefba92d79582d932613e072072444",
+        "actualSha256": "57f487d23f3ace870055229ba508c30d89aefba92d79582d932613e072072444",
+        "matches": true,
+        "suppliedBaselineSha256": "57f487d23f3ace870055229ba508c30d89aefba92d79582d932613e072072444",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/art/last-train.webp",
+        "expectedSha256": "c4072fec960689323d2a2fdf693bb6a16299242fcc5d7a9ef198cddfd732ce6c",
+        "actualSha256": "c4072fec960689323d2a2fdf693bb6a16299242fcc5d7a9ef198cddfd732ce6c",
+        "matches": true,
+        "suppliedBaselineSha256": "c4072fec960689323d2a2fdf693bb6a16299242fcc5d7a9ef198cddfd732ce6c",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/art/moon-market.webp",
+        "expectedSha256": "912b4698302fbbfbb803f797516d5547b64d0fd8e837246667a1b9dfd755ad76",
+        "actualSha256": "912b4698302fbbfbb803f797516d5547b64d0fd8e837246667a1b9dfd755ad76",
+        "matches": true,
+        "suppliedBaselineSha256": "912b4698302fbbfbb803f797516d5547b64d0fd8e837246667a1b9dfd755ad76",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/art/snow-radio.webp",
+        "expectedSha256": "e12bdf2a312f3d1a582e1758447ec6a720dab26ca387d04f0adb19f85b696ea6",
+        "actualSha256": "e12bdf2a312f3d1a582e1758447ec6a720dab26ca387d04f0adb19f85b696ea6",
+        "matches": true,
+        "suppliedBaselineSha256": "e12bdf2a312f3d1a582e1758447ec6a720dab26ca387d04f0adb19f85b696ea6",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio-loops.js",
+        "expectedSha256": "7562aeb12fe79267b991fccf06886b80525b81d7ad7a120a740eaae8fcd3b2aa",
+        "actualSha256": "7562aeb12fe79267b991fccf06886b80525b81d7ad7a120a740eaae8fcd3b2aa",
+        "matches": true,
+        "suppliedBaselineSha256": "7562aeb12fe79267b991fccf06886b80525b81d7ad7a120a740eaae8fcd3b2aa",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/ability.mp3",
+        "expectedSha256": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+        "actualSha256": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+        "matches": true,
+        "suppliedBaselineSha256": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/attack.mp3",
+        "expectedSha256": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+        "actualSha256": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+        "matches": true,
+        "suppliedBaselineSha256": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/clock-city-calm.mp3",
+        "expectedSha256": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d",
+        "actualSha256": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d",
+        "matches": true,
+        "suppliedBaselineSha256": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/clock-city-danger.mp3",
+        "expectedSha256": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20",
+        "actualSha256": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20",
+        "matches": true,
+        "suppliedBaselineSha256": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/clock-city-grief.mp3",
+        "expectedSha256": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6",
+        "actualSha256": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6",
+        "matches": true,
+        "suppliedBaselineSha256": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/clock-city-hope.mp3",
+        "expectedSha256": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be",
+        "actualSha256": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be",
+        "matches": true,
+        "suppliedBaselineSha256": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/clock-city-mystery.mp3",
+        "expectedSha256": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d",
+        "actualSha256": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d",
+        "matches": true,
+        "suppliedBaselineSha256": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/clock-city-tension.mp3",
+        "expectedSha256": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0",
+        "actualSha256": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0",
+        "matches": true,
+        "suppliedBaselineSha256": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/clue.mp3",
+        "expectedSha256": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+        "actualSha256": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+        "matches": true,
+        "suppliedBaselineSha256": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/death.mp3",
+        "expectedSha256": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75",
+        "actualSha256": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75",
+        "matches": true,
+        "suppliedBaselineSha256": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/deep-sea-calm.mp3",
+        "expectedSha256": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a",
+        "actualSha256": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a",
+        "matches": true,
+        "suppliedBaselineSha256": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/deep-sea-danger.mp3",
+        "expectedSha256": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61",
+        "actualSha256": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61",
+        "matches": true,
+        "suppliedBaselineSha256": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/deep-sea-grief.mp3",
+        "expectedSha256": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51",
+        "actualSha256": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51",
+        "matches": true,
+        "suppliedBaselineSha256": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/deep-sea-hope.mp3",
+        "expectedSha256": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297",
+        "actualSha256": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297",
+        "matches": true,
+        "suppliedBaselineSha256": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/deep-sea-mystery.mp3",
+        "expectedSha256": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30",
+        "actualSha256": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30",
+        "matches": true,
+        "suppliedBaselineSha256": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/deep-sea-tension.mp3",
+        "expectedSha256": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e",
+        "actualSha256": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e",
+        "matches": true,
+        "suppliedBaselineSha256": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/dice.mp3",
+        "expectedSha256": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+        "actualSha256": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+        "matches": true,
+        "suppliedBaselineSha256": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/dragon-banquet-calm.mp3",
+        "expectedSha256": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5",
+        "actualSha256": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5",
+        "matches": true,
+        "suppliedBaselineSha256": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/dragon-banquet-danger.mp3",
+        "expectedSha256": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223",
+        "actualSha256": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223",
+        "matches": true,
+        "suppliedBaselineSha256": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/dragon-banquet-grief.mp3",
+        "expectedSha256": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486",
+        "actualSha256": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486",
+        "matches": true,
+        "suppliedBaselineSha256": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/dragon-banquet-hope.mp3",
+        "expectedSha256": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06",
+        "actualSha256": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06",
+        "matches": true,
+        "suppliedBaselineSha256": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/dragon-banquet-mystery.mp3",
+        "expectedSha256": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81",
+        "actualSha256": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81",
+        "matches": true,
+        "suppliedBaselineSha256": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/dragon-banquet-tension.mp3",
+        "expectedSha256": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c",
+        "actualSha256": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c",
+        "matches": true,
+        "suppliedBaselineSha256": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/enemy.mp3",
+        "expectedSha256": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+        "actualSha256": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+        "matches": true,
+        "suppliedBaselineSha256": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/failure.mp3",
+        "expectedSha256": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+        "actualSha256": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+        "matches": true,
+        "suppliedBaselineSha256": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/glass-hotel-calm.mp3",
+        "expectedSha256": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809",
+        "actualSha256": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809",
+        "matches": true,
+        "suppliedBaselineSha256": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/glass-hotel-danger.mp3",
+        "expectedSha256": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736",
+        "actualSha256": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736",
+        "matches": true,
+        "suppliedBaselineSha256": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/glass-hotel-grief.mp3",
+        "expectedSha256": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f",
+        "actualSha256": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f",
+        "matches": true,
+        "suppliedBaselineSha256": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/glass-hotel-hope.mp3",
+        "expectedSha256": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a",
+        "actualSha256": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a",
+        "matches": true,
+        "suppliedBaselineSha256": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/glass-hotel-mystery.mp3",
+        "expectedSha256": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1",
+        "actualSha256": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1",
+        "matches": true,
+        "suppliedBaselineSha256": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/glass-hotel-tension.mp3",
+        "expectedSha256": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d",
+        "actualSha256": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d",
+        "matches": true,
+        "suppliedBaselineSha256": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/last-train-calm.mp3",
+        "expectedSha256": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129",
+        "actualSha256": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129",
+        "matches": true,
+        "suppliedBaselineSha256": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/last-train-danger.mp3",
+        "expectedSha256": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9",
+        "actualSha256": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9",
+        "matches": true,
+        "suppliedBaselineSha256": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/last-train-grief.mp3",
+        "expectedSha256": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229",
+        "actualSha256": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229",
+        "matches": true,
+        "suppliedBaselineSha256": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/last-train-hope.mp3",
+        "expectedSha256": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798",
+        "actualSha256": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798",
+        "matches": true,
+        "suppliedBaselineSha256": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/last-train-mystery.mp3",
+        "expectedSha256": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d",
+        "actualSha256": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d",
+        "matches": true,
+        "suppliedBaselineSha256": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/last-train-tension.mp3",
+        "expectedSha256": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14",
+        "actualSha256": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14",
+        "matches": true,
+        "suppliedBaselineSha256": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/mixed.mp3",
+        "expectedSha256": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+        "actualSha256": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+        "matches": true,
+        "suppliedBaselineSha256": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/moon-market-calm.mp3",
+        "expectedSha256": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0",
+        "actualSha256": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0",
+        "matches": true,
+        "suppliedBaselineSha256": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/moon-market-danger.mp3",
+        "expectedSha256": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321",
+        "actualSha256": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321",
+        "matches": true,
+        "suppliedBaselineSha256": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/moon-market-grief.mp3",
+        "expectedSha256": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d",
+        "actualSha256": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d",
+        "matches": true,
+        "suppliedBaselineSha256": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/moon-market-hope.mp3",
+        "expectedSha256": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5",
+        "actualSha256": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5",
+        "matches": true,
+        "suppliedBaselineSha256": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/moon-market-mystery.mp3",
+        "expectedSha256": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b",
+        "actualSha256": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b",
+        "matches": true,
+        "suppliedBaselineSha256": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/moon-market-tension.mp3",
+        "expectedSha256": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35",
+        "actualSha256": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35",
+        "matches": true,
+        "suppliedBaselineSha256": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/reveal.mp3",
+        "expectedSha256": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+        "actualSha256": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+        "matches": true,
+        "suppliedBaselineSha256": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/revive.mp3",
+        "expectedSha256": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154",
+        "actualSha256": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154",
+        "matches": true,
+        "suppliedBaselineSha256": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/snow-radio-calm.mp3",
+        "expectedSha256": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0",
+        "actualSha256": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0",
+        "matches": true,
+        "suppliedBaselineSha256": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/snow-radio-danger.mp3",
+        "expectedSha256": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604",
+        "actualSha256": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604",
+        "matches": true,
+        "suppliedBaselineSha256": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/snow-radio-grief.mp3",
+        "expectedSha256": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29",
+        "actualSha256": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29",
+        "matches": true,
+        "suppliedBaselineSha256": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/snow-radio-hope.mp3",
+        "expectedSha256": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c",
+        "actualSha256": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c",
+        "matches": true,
+        "suppliedBaselineSha256": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/snow-radio-mystery.mp3",
+        "expectedSha256": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1",
+        "actualSha256": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1",
+        "matches": true,
+        "suppliedBaselineSha256": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/snow-radio-tension.mp3",
+        "expectedSha256": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88",
+        "actualSha256": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88",
+        "matches": true,
+        "suppliedBaselineSha256": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/success.mp3",
+        "expectedSha256": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+        "actualSha256": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+        "matches": true,
+        "suppliedBaselineSha256": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/transition.mp3",
+        "expectedSha256": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+        "actualSha256": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+        "matches": true,
+        "suppliedBaselineSha256": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/audio/victory.mp3",
+        "expectedSha256": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+        "actualSha256": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+        "matches": true,
+        "suppliedBaselineSha256": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/clock-city.js",
+        "expectedSha256": "e4937c6cd7307d15f1ed3cee687e3398d052517080f6c66c9147cd30a731b85a",
+        "actualSha256": "e4937c6cd7307d15f1ed3cee687e3398d052517080f6c66c9147cd30a731b85a",
+        "matches": true,
+        "suppliedBaselineSha256": "e4937c6cd7307d15f1ed3cee687e3398d052517080f6c66c9147cd30a731b85a",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/deep-sea.js",
+        "expectedSha256": "a4ab786606a077e96b4e67e862dae0282f5d6c5c06794dd951b8b0a91c2d6faa",
+        "actualSha256": "a4ab786606a077e96b4e67e862dae0282f5d6c5c06794dd951b8b0a91c2d6faa",
+        "matches": true,
+        "suppliedBaselineSha256": "a4ab786606a077e96b4e67e862dae0282f5d6c5c06794dd951b8b0a91c2d6faa",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/dragon-banquet.js",
+        "expectedSha256": "43f220811a769db13ab0751f470b8b6ee03c669bb7e5b84c47c574c9b1dc5e89",
+        "actualSha256": "43f220811a769db13ab0751f470b8b6ee03c669bb7e5b84c47c574c9b1dc5e89",
+        "matches": true,
+        "suppliedBaselineSha256": "43f220811a769db13ab0751f470b8b6ee03c669bb7e5b84c47c574c9b1dc5e89",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/glass-hotel.js",
+        "expectedSha256": "a0bdc032c24b9c7523f315dd07a758ce70a8caeabc79321382f76fc99e5b50ee",
+        "actualSha256": "a0bdc032c24b9c7523f315dd07a758ce70a8caeabc79321382f76fc99e5b50ee",
+        "matches": true,
+        "suppliedBaselineSha256": "a0bdc032c24b9c7523f315dd07a758ce70a8caeabc79321382f76fc99e5b50ee",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/last-train.js",
+        "expectedSha256": "a6cd44dfbf95d24112b79afe809238c0c46eb4a74ed27a5df37b1f51c688b186",
+        "actualSha256": "a6cd44dfbf95d24112b79afe809238c0c46eb4a74ed27a5df37b1f51c688b186",
+        "matches": true,
+        "suppliedBaselineSha256": "a6cd44dfbf95d24112b79afe809238c0c46eb4a74ed27a5df37b1f51c688b186",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/moon-market.js",
+        "expectedSha256": "0b5a7581093c20948c57cce081505d9cb52d5d89e34856d2d639190235b6341d",
+        "actualSha256": "0b5a7581093c20948c57cce081505d9cb52d5d89e34856d2d639190235b6341d",
+        "matches": true,
+        "suppliedBaselineSha256": "0b5a7581093c20948c57cce081505d9cb52d5d89e34856d2d639190235b6341d",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/openings-a.js",
+        "expectedSha256": "f98a99d395faec29b3e94f6bc08c9970eb4f4261aa354db91323ddd6bdb3d5e9",
+        "actualSha256": "f98a99d395faec29b3e94f6bc08c9970eb4f4261aa354db91323ddd6bdb3d5e9",
+        "matches": true,
+        "suppliedBaselineSha256": "f98a99d395faec29b3e94f6bc08c9970eb4f4261aa354db91323ddd6bdb3d5e9",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/openings-b.js",
+        "expectedSha256": "f535897c2d0dba9b69b396f8bbc076ba0bbbe7b9ab0542fa14320b5440b4c4c7",
+        "actualSha256": "f535897c2d0dba9b69b396f8bbc076ba0bbbe7b9ab0542fa14320b5440b4c4c7",
+        "matches": true,
+        "suppliedBaselineSha256": "f535897c2d0dba9b69b396f8bbc076ba0bbbe7b9ab0542fa14320b5440b4c4c7",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/campaigns/snow-radio.js",
+        "expectedSha256": "fb43510d8d1a55d4ed14576a5cca6d175f61103be04a49ea6b4568febcf71e78",
+        "actualSha256": "fb43510d8d1a55d4ed14576a5cca6d175f61103be04a49ea6b4568febcf71e78",
+        "matches": true,
+        "suppliedBaselineSha256": "fb43510d8d1a55d4ed14576a5cca6d175f61103be04a49ea6b4568febcf71e78",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/combat.js",
+        "expectedSha256": "e7622ae107b649eec87017492b83fd5f6c4b97bec6c05cefb1ee4c88aed8b2a2",
+        "actualSha256": "e7622ae107b649eec87017492b83fd5f6c4b97bec6c05cefb1ee4c88aed8b2a2",
+        "matches": true,
+        "suppliedBaselineSha256": "e7622ae107b649eec87017492b83fd5f6c4b97bec6c05cefb1ee4c88aed8b2a2",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/dice.js",
+        "expectedSha256": "c6b6de7de6fd847196cbf510bbfcf6b37acfa2a0ab936661624dc447a168fe08",
+        "actualSha256": "c6b6de7de6fd847196cbf510bbfcf6b37acfa2a0ab936661624dc447a168fe08",
+        "matches": true,
+        "suppliedBaselineSha256": "c6b6de7de6fd847196cbf510bbfcf6b37acfa2a0ab936661624dc447a168fe08",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/judgement.js",
+        "expectedSha256": "648c5b322d602e6457004254546201130eabf7c48da9bf99576fcfc8b8012129",
+        "actualSha256": "648c5b322d602e6457004254546201130eabf7c48da9bf99576fcfc8b8012129",
+        "matches": true,
+        "suppliedBaselineSha256": "648c5b322d602e6457004254546201130eabf7c48da9bf99576fcfc8b8012129",
+        "suppliedBaselineMatches": true
+      },
+      {
+        "file": "public/game/professions.js",
+        "expectedSha256": "01996adc171a97ca362d2cda57edd4498fb9d8273ec2930bd7bd3462b8f92593",
+        "actualSha256": "01996adc171a97ca362d2cda57edd4498fb9d8273ec2930bd7bd3462b8f92593",
+        "matches": true,
+        "suppliedBaselineSha256": "01996adc171a97ca362d2cda57edd4498fb9d8273ec2930bd7bd3462b8f92593",
+        "suppliedBaselineMatches": true
+      }
+    ]
+  },
+  "musicReuse": {
+    "existingMusicFiles": 42,
+    "horrorThemes": [
+      {
+        "campaignId": "hollow-apartment",
+        "title": "문밖에서 부르는 이름",
+        "themeId": "glass-hotel",
+        "themeTitle": "유리 호텔의 도난당한 새벽"
+      },
+      {
+        "campaignId": "drowned-broadcast",
+        "title": "새벽 두 시의 폐쇄 방송국",
+        "themeId": "snow-radio",
+        "themeTitle": "설원에서 온 내 목소리"
+      }
+    ],
+    "newMusicFiles": 0,
+    "contextualEffectSource": "Original deterministic synthesis; no sampled human voice or third-party audio."
+  },
+  "validation": {
+    "complete": true,
+    "issues": []
+  },
+  "scope": "정적 콘텐츠와 파일 보존을 재현하는 보고서다. 사람 대상 플레이 시간, 프레임 속도, 브라우저 메모리, 서버 부하, Supabase 계정 용량·요금·트래픽은 측정하지 않는다. 엔진·온라인·오프라인 통합 검증 결과는 VALIDATION_V22.md에서 별도로 확인한다."
+}

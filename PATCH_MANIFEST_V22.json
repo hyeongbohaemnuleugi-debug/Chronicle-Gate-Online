@@ -1,0 +1,632 @@
+{
+  "baseVersion": "21.0.0",
+  "targetVersion": "22.0.0",
+  "format": "chronicle-changed-files",
+  "files": [
+    {
+      "path": "COPYPASTE/index.html.txt",
+      "status": "modified",
+      "bytes": 3132,
+      "sha256": "b89675b59e78b9e13834ffbfbb346a814b937f6ad90bb590ad8997b54db5baa3",
+      "baseSha256": "f949539461e3f7c086807ed73fe8994864d67f4a93c44d5a203f2a9e51f59bb6"
+    },
+    {
+      "path": "PATCH_NOTES_V22.md",
+      "status": "added",
+      "bytes": 8801,
+      "sha256": "52bcb16f236395310e0c34aa50b4bea76de77427d1f9a7d162f2d90ea59d3f17",
+      "baseSha256": null
+    },
+    {
+      "path": "RESOURCE_REPORT_V22.json",
+      "status": "added",
+      "bytes": 96842,
+      "sha256": "29efd96d0736dad86f0353cb47b6d4b4bcac975d7a652265b6f5d56618265aef",
+      "baseSha256": null
+    },
+    {
+      "path": "STORY_EXPANSION_V22.md",
+      "status": "added",
+      "bytes": 12581,
+      "sha256": "cc7fa638459a3ca741d589b91a6efa2d83dc50429053872cd1743f8984aca476",
+      "baseSha256": null
+    },
+    {
+      "path": "VALIDATION_V22.md",
+      "status": "added",
+      "bytes": 7705,
+      "sha256": "4fb85e92dc4699651972659b00f47fffdc7b2e82d52ae3b025b3f05364aa6ace",
+      "baseSha256": null
+    },
+    {
+      "path": "game-server/http-service.js",
+      "status": "modified",
+      "bytes": 16256,
+      "sha256": "5c0e15a88319c913cf12cc5e6c0b46639b3f413fc6e3532a7d8cd83902d11b19",
+      "baseSha256": "09768fe042b1a605e8d72f23b3cd55a75ac9331dbae2a0ce56071704dc14b65c"
+    },
+    {
+      "path": "game-server/table-service.js",
+      "status": "modified",
+      "bytes": 30486,
+      "sha256": "e786f367d3f121069780d2e1509d582ce908bbca0642552127feb28951a11f6f",
+      "baseSha256": "683c16b983dc77d1fcd63ba127d7e4222864788bf3735d3115ae8974bd2347c4"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "modified",
+      "bytes": 73416,
+      "sha256": "5ce63498f0c7edd842b8e08c9a37a5cfbe7e2ea637c26a8faaf682e9621f1e80",
+      "baseSha256": "db92dd7aa242d8579703888b9394c9fe0b8094b36c271c04866a445752e4f7a5"
+    },
+    {
+      "path": "package.json",
+      "status": "modified",
+      "bytes": 2853,
+      "sha256": "0ae4b245f35c9a6675a5d93681e63342605d07ba8487e45040f75b76a4eef309",
+      "baseSha256": "5b66ffd5215f42ea84195d490ec9c1274d906d76ebd316fe05f352328b78709f"
+    },
+    {
+      "path": "public/game/app.js",
+      "status": "modified",
+      "bytes": 106150,
+      "sha256": "4248a90b0463f9fb6651f623de1a90f7d873ae718a8d25922e86343b92027d39",
+      "baseSha256": "02dd470d00fd8486d3c0494a0e52971ec7504e74bcf606dd7e2a70d3030e2bb0"
+    },
+    {
+      "path": "public/game/art/drowned-broadcast.webp",
+      "status": "added",
+      "bytes": 94634,
+      "sha256": "3b62291ee53770e206d5091d3fe222c760d161f767ca9ad567fa326e8d704827",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/art/hollow-apartment.webp",
+      "status": "added",
+      "bytes": 94788,
+      "sha256": "5bcd44d380ca1435500b34a23812de01df47564e02e2e4b6a00f4b364c7d78f1",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/art/provenance-v22.json",
+      "status": "added",
+      "bytes": 3226,
+      "sha256": "a1fddce90a907b05936b13f09a4d5284ccfb4e25235ca0620e3b6f3b181f0eef",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/chime.mp3",
+      "status": "added",
+      "bytes": 16140,
+      "sha256": "52e081ea83b364a659e76ad7d46279a4e65d442edb64a07faae4cf5c9cc41375",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/door-creak.mp3",
+      "status": "added",
+      "bytes": 29772,
+      "sha256": "ef468311c2059ddedf41fb4d01fa11831be33e24afec84a68f3cd8249b8f3657",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/footsteps.mp3",
+      "status": "added",
+      "bytes": 23277,
+      "sha256": "969c525bd0706706d7dcc1e50cdde6dc49ce186b2a79f80cced0fb8e265c954b",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/glass.mp3",
+      "status": "added",
+      "bytes": 14796,
+      "sha256": "5c896a86e75360815a241f27ab6c25c77972a97252f2424b5726041181daeb72",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/heartbeat.mp3",
+      "status": "added",
+      "bytes": 18766,
+      "sha256": "1a754d791a88ceededa752ba9290e471d6904616ffaa338e8c1516291168825e",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/knock.mp3",
+      "status": "added",
+      "bytes": 14702,
+      "sha256": "b3ad169346c17e6db2352e75a25904846e830164f15a632f0a4179d559d6cf89",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/metal.mp3",
+      "status": "added",
+      "bytes": 13228,
+      "sha256": "d5bf03bed3447148c75a66da736f3d363208638d38e03e2b33409394d7500778",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/murmur.mp3",
+      "status": "added",
+      "bytes": 43830,
+      "sha256": "da05a990b765356f8ab8378763b88947c78bfe922ba5d2dcc211930b7300fc09",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/radio-static.mp3",
+      "status": "added",
+      "bytes": 54089,
+      "sha256": "7511fff45a9dcb3de7757941a1c02c799cec8af1dd58e6de4573ed77b24fec71",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/scream.mp3",
+      "status": "added",
+      "bytes": 27870,
+      "sha256": "91e91b90867c35ca78e046b88cb4b8d494b27978ebc399ee4e1777519b8e9e95",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/water.mp3",
+      "status": "added",
+      "bytes": 37072,
+      "sha256": "bea6e84ba49b3c485b214fe8b6cb36b717c87e7f25b528c79eb33d075e5ea9ae",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/wind.mp3",
+      "status": "added",
+      "bytes": 45209,
+      "sha256": "bf279704a5c972b02956a8c70d1c052b4c9dbfd9029ca711a3360475a6ccf8f3",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio-fallback.js",
+      "status": "modified",
+      "bytes": 13309,
+      "sha256": "5536508b9566a65f5011575c04f659655ad43aa1972a607ade3ec304f0bf532d",
+      "baseSha256": "ab0afc1f63781ab0e80d6f80ef6989e3807f78f854c385950948eb2928560f10"
+    },
+    {
+      "path": "public/game/audio.js",
+      "status": "modified",
+      "bytes": 16449,
+      "sha256": "e008b3df9ac3713409acec43f3990d1aeead294b8d0f278464b5d12b50ed0e52",
+      "baseSha256": "6e2025df514fb1cf81b72e7187b54951f796f70411490af36caa07c77b6f7a6a"
+    },
+    {
+      "path": "public/game/campaigns/drowned-broadcast.js",
+      "status": "added",
+      "bytes": 61458,
+      "sha256": "0bd07a4e47cbecdd8878bcb6e53997d829935d51a8665e9c40c2b13a5f977f4a",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/campaigns/epic-a.js",
+      "status": "added",
+      "bytes": 161881,
+      "sha256": "a30380583dbf0edc75bd64080e40c5cedce9648662cf82bf24e1c9f0d8cecfbd",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/campaigns/epic-b.js",
+      "status": "added",
+      "bytes": 213127,
+      "sha256": "a11c3b2ce8f1260366d63fb4afbf36d00dec9c7e21c8a076d09343a5253977ba",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/campaigns/epic-horror.js",
+      "status": "added",
+      "bytes": 111999,
+      "sha256": "49c6ae17882f610c50e5d4d016ae8f4eaa14713f3a3784e2c4172199651a39fe",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/campaigns/epic-tools.js",
+      "status": "added",
+      "bytes": 3173,
+      "sha256": "1df9586990831d99626cb2fab264a581c5b9cc21ce1ac469e60a3baa21d8f5a5",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/campaigns/hollow-apartment.js",
+      "status": "added",
+      "bytes": 61070,
+      "sha256": "87363816a550e9424c825e151ba1d6ed1118359871236be006e1246e055ecb25",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/campaigns/horror-data.js",
+      "status": "added",
+      "bytes": 10859,
+      "sha256": "7192f64f9394c07e6369f214f741751d9f974b38d56cf4abaa53371c54b85f0d",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/campaigns/index.js",
+      "status": "modified",
+      "bytes": 2765,
+      "sha256": "5b9cb201b08ea511ea90e9ff49cb4a2523124e8d7c9e31454ec505a2a241dbfb",
+      "baseSha256": "5019cd0f31aa43dc3dd9378a8172f5ef78c2afe9e46f6b2a7fe7893e5120c4dd"
+    },
+    {
+      "path": "public/game/campaigns/openings-horror.js",
+      "status": "added",
+      "bytes": 32477,
+      "sha256": "8e4cc6d405094e99d0f38e7b95532456c75954caf5e3c327d8b79af25e120fb3",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/characters.js",
+      "status": "modified",
+      "bytes": 8022,
+      "sha256": "ed2358f406d9077d93593a873218e08e69a7793fd74f580b52ebcf90ee4b2577",
+      "baseSha256": "a88eb34c105e235894171765d5b759e68121c37363b193855c5cb2880a2629e7"
+    },
+    {
+      "path": "public/game/client.js",
+      "status": "modified",
+      "bytes": 16265,
+      "sha256": "c22b62b545a3cb2bc7beabe1ed7b0b5bca3fe3ae5c5c686c2f7d81c3733a1a0a",
+      "baseSha256": "443a2011099d1c674618a2d8b1c4c855ff7fc7a95013bbf0ff26e59bb08ba1f6"
+    },
+    {
+      "path": "public/game/engine.js",
+      "status": "modified",
+      "bytes": 46287,
+      "sha256": "fc0321a9fa99b3ab9526a20a6df09cd0a1d264c48f968e5f4f992ba603dca050",
+      "baseSha256": "d67fb1d1f041926bdb21a6499e4873ee243f85f8c434a8d679999dc95b6a887f"
+    },
+    {
+      "path": "public/game/music-director.js",
+      "status": "modified",
+      "bytes": 6175,
+      "sha256": "7d24c7c2931b5166631cd76d00fad1cd63c20e26f1bf0994b011c3bbdf7a7473",
+      "baseSha256": "3d52c625615911e30acb6930a2afb460db8c10a1ee91527a9417041ddd93bdc6"
+    },
+    {
+      "path": "public/game/narrative.js",
+      "status": "modified",
+      "bytes": 5500,
+      "sha256": "dccff454a50eaf423f89efdf42482ccb2e5afe20198875f60cc493fc7748ec94",
+      "baseSha256": "7a7ef1ef3bfad0b7e8ebf31541049e5afe7d64d47abd561194333fcb325ded69"
+    },
+    {
+      "path": "public/game/opening.js",
+      "status": "modified",
+      "bytes": 17292,
+      "sha256": "7a21594e534e4510731df4eb86a3912b085453695cd70feef8d45a357f397b27",
+      "baseSha256": "c6e2ed73c9ad874f426fff017966b5b872094ff864dcec086b5fde1e9175eb75"
+    },
+    {
+      "path": "public/game/scene-sound.js",
+      "status": "added",
+      "bytes": 2913,
+      "sha256": "a7981383f3ba05ae2d68fbdb357e8c96a19f0bde62754dbf39dae767012a46ed",
+      "baseSha256": null
+    },
+    {
+      "path": "public/index.html",
+      "status": "modified",
+      "bytes": 3132,
+      "sha256": "b89675b59e78b9e13834ffbfbb346a814b937f6ad90bb590ad8997b54db5baa3",
+      "baseSha256": "f949539461e3f7c086807ed73fe8994864d67f4a93c44d5a203f2a9e51f59bb6"
+    },
+    {
+      "path": "public/offline.html",
+      "status": "modified",
+      "bytes": 4104868,
+      "sha256": "1fbcb00e725c47afa73586e13d5611ce5edb1b9b0979b4b6b5df3090130cf804",
+      "baseSha256": "9ba7b147dd20c0022faaa2102158220ce1be4e0cf66606209e5f6f4883133148"
+    },
+    {
+      "path": "scripts/build-foley-v22.py",
+      "status": "added",
+      "bytes": 4835,
+      "sha256": "4854565cfb7450fb1cf05e4ff7539a0b2bf9fe0ee790c3ca74b96039cd7e5551",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/explore-scenarios.mjs",
+      "status": "modified",
+      "bytes": 12660,
+      "sha256": "54f3c616d0dc89dac046dfc1221dadc1e94da9b3a38a3b927bb23ba5caa9376c",
+      "baseSha256": "9e71127b48a5b1a4dc0f2e392e80e049f0a7ffc203a321f1d252d7d246f8d381"
+    },
+    {
+      "path": "scripts/foley-v22.json",
+      "status": "added",
+      "bytes": 2455,
+      "sha256": "bafedc39438e0b94f705c9460a2a52c60e7cce55d59baa3a89c320a139b6dda8",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/qa-v18.mjs",
+      "status": "modified",
+      "bytes": 8011,
+      "sha256": "dc30d98b5fe9bf3ca5c76fc69fe2a2453ca0c551c86ee264adb900eece6ea841",
+      "baseSha256": "1e23ec75442d90a92fcaee44aba2c0bcf5e84fe6e7cd3d2d2706f56505251957"
+    },
+    {
+      "path": "scripts/report-v22.mjs",
+      "status": "added",
+      "bytes": 38759,
+      "sha256": "00f20139b31a12da9e9f878f0839bfb1b2b1441c54bea183ce3724dc86f40774",
+      "baseSha256": null
+    },
+    {
+      "path": "server.js",
+      "status": "modified",
+      "bytes": 1651,
+      "sha256": "7772ab3afcba1ad6cc6abb82726214f3d7b0250dfd131efbc4083fdef29df441",
+      "baseSha256": "cc0fb36365ea68dcbb20adfded803908aa7e751455f1c93d0b1cb342763bd86c"
+    },
+    {
+      "path": "tests-v18/characters.test.mjs",
+      "status": "modified",
+      "bytes": 7071,
+      "sha256": "447b6525e1658eb8138c8f3c0e94ec9db5b2ca0e8fa6cd5bc575bff4fbd3435e",
+      "baseSha256": "94ae2773e4812cc980217e6063345ffc7a54c33eb1ef884cfdeb2844dfe27e80"
+    },
+    {
+      "path": "tests-v18/combat-network.integration.mjs",
+      "status": "modified",
+      "bytes": 18571,
+      "sha256": "7e61c95a44a6b22b3da9fee6ee95701288063098bc99bd484ae4e0dc8c43253e",
+      "baseSha256": "1b372d638672a0582674056f50bd06f8370753d69174c44d2d26255c3cc20596"
+    },
+    {
+      "path": "tests-v18/combat.test.mjs",
+      "status": "modified",
+      "bytes": 26476,
+      "sha256": "972e463cb2cd349f81473dc29122d4d7e8b8148ccf69d9137f1e336fbaa594a3",
+      "baseSha256": "8c0853a746fcf08a753150c7d3e30ced6bf4d46d2898663a7570bfd082c4ea7c"
+    },
+    {
+      "path": "tests-v18/content-a.test.mjs",
+      "status": "modified",
+      "bytes": 11113,
+      "sha256": "7dcd5786f080f4f9522413188127ef6df499adf59f15880acfc2c4c47c7b0c54",
+      "baseSha256": "6c7ebe776365b88f631b116cc0e8f50a11da175928ec79f589ffe5f92958c007"
+    },
+    {
+      "path": "tests-v18/core.test.mjs",
+      "status": "modified",
+      "bytes": 21686,
+      "sha256": "950a5a9f7c00ecefbaad6c9f5882cc98b218f367d64fb816e7ba553fcbd67ce7",
+      "baseSha256": "525b8a59eed2ed515bcc3d69f2d6bcd10606a92503d9ff26e7ae6a16fa24a8db"
+    },
+    {
+      "path": "tests-v18/deployment.integration.mjs",
+      "status": "modified",
+      "bytes": 19745,
+      "sha256": "3e11e25f86e5a52247a802d2992fa63bba8571fa2b6be6e5706d59efafb05b62",
+      "baseSha256": "379f8cbed16eeaba3f433d0298254b3949dc8499868fba15921af407340c7812"
+    },
+    {
+      "path": "tests-v18/items-and-results.test.mjs",
+      "status": "modified",
+      "bytes": 11731,
+      "sha256": "7ecca1095d1ed597fafa413ef50eecb1b9e7932cbdb3fafc8e7be3f27c559302",
+      "baseSha256": "b3010fa18f54111189a4a56e9de985174f379a3ebbe41aec27795647c0173a63"
+    },
+    {
+      "path": "tests-v18/loss-narrative.test.mjs",
+      "status": "modified",
+      "bytes": 5904,
+      "sha256": "e659c0553108b24a8dfe10e2c118a311aa42df05c66bf5f39f0bb6119a32b599",
+      "baseSha256": "38e032f5e79c96e0eaaef7bcad61c87433099facbf376dd4504f9cb3cbd632df"
+    },
+    {
+      "path": "tests-v18/narrative.test.mjs",
+      "status": "modified",
+      "bytes": 7272,
+      "sha256": "78be57e533ad51070d657f5f2b15da9c164ced9a30143a0ffaa841de64d5df08",
+      "baseSha256": "a2cb457071f2e580e15de30e227d1d4a45bfa89a89cd4f094091d162e3314216"
+    },
+    {
+      "path": "tests-v18/network.integration.mjs",
+      "status": "modified",
+      "bytes": 13289,
+      "sha256": "13cecba74127679abbd76acb2ebdabe9b045a2ea02aabd5adaed5ffbd6aa18d5",
+      "baseSha256": "7c30a5aa0cfa6d7b43c74384252fb7fd15a3ad2b2529a92a06f3197a32813a0a"
+    },
+    {
+      "path": "tests-v18/party-network.integration.mjs",
+      "status": "modified",
+      "bytes": 12498,
+      "sha256": "0d695759d42104d4c6dd1188cf323c7869ffb9147d7240d170c225fea8126aeb",
+      "baseSha256": "087da2ff4467804551d10c22f65246b12877d70a7eb736593c970027274b4708"
+    },
+    {
+      "path": "tests-v18/party-stories.test.mjs",
+      "status": "modified",
+      "bytes": 9408,
+      "sha256": "2d663cefbb437f7546dce636515fe2552b8d2ea711693136360444c9d7754d16",
+      "baseSha256": "a59fae6660d2e54b9c6c6bfed5b464ee1a09e8379ba6b439b6a21577896affe1"
+    },
+    {
+      "path": "tests-v18/readability.test.mjs",
+      "status": "modified",
+      "bytes": 2585,
+      "sha256": "22bcf5d8bd91b647ab7faa04e7485234f0661021227cf984d04c84c7650d6618",
+      "baseSha256": "56435f2b64314e084818dd82287a8a508ac7606f140c025f06457ecac2d11e76"
+    },
+    {
+      "path": "tests-v18/resource-budget.test.mjs",
+      "status": "modified",
+      "bytes": 16826,
+      "sha256": "ff03e895f042f8e0fb5a64d629de329a0a6994d44d9f66d5af6c10a8624aa74b",
+      "baseSha256": "66243d6f7af54b3454d9e49ef523af0950fdf220a170b2f9a80961cd82e2db1d"
+    },
+    {
+      "path": "tests-v18/scenarios.test.mjs",
+      "status": "modified",
+      "bytes": 5519,
+      "sha256": "eb85374f94f3356ae8fa9ad58e64d0fbdd5075d013e7b35eb2286e89c8a13e24",
+      "baseSha256": "ec6f6a0b98f669e443d427f3403ca15b1ba75172bc4ffeb4ed9482246a27f300"
+    },
+    {
+      "path": "tests-v18/server.integration.mjs",
+      "status": "modified",
+      "bytes": 26599,
+      "sha256": "92c789680f0288005d7384ae1c76871d5b6114a4b89cbf69cc01b7fabdc74104",
+      "baseSha256": "cf3a91df25fb6bdd39bdc95451c72ccbcf6d5f01b47b97b52b36e54e7a18ef14"
+    },
+    {
+      "path": "tests-v18/story-integrity.test.mjs",
+      "status": "modified",
+      "bytes": 6678,
+      "sha256": "bd71a3092400cb69810adf0e23b727308b7222c205c4148aa4c92b7f815ca6ad",
+      "baseSha256": "7e00059b1105265da161438d35c23382923f90a6b816531565e35422d5edaaa2"
+    },
+    {
+      "path": "tests-v18/story-network.integration.mjs",
+      "status": "modified",
+      "bytes": 6466,
+      "sha256": "671e2ab3109c1d22eccdf49c96c3cafd08a07617f8e2e024885e924303060b96",
+      "baseSha256": "8133209e826880195efaed32666c822d0a5f7e622808fa87cf2790a3c7cf4ee8"
+    },
+    {
+      "path": "tests-v18/ui.test.mjs",
+      "status": "modified",
+      "bytes": 74755,
+      "sha256": "722c445487da90e14ad89c7f63557fb9397bea59551ff9813924b80209ad2331",
+      "baseSha256": "0e7a78862961f50fa38c559902e1031b37000aac25b50a9f42d39ce40ee1575e"
+    },
+    {
+      "path": "tests-v19/music.test.mjs",
+      "status": "modified",
+      "bytes": 19444,
+      "sha256": "5ad042fe8a2f67e8a0a45bfd69794fc14c3b303f8e5ef1bf424749a3bb1b5661",
+      "baseSha256": "c5c26aead718586d3e8e94d018afe816166243e280684bad7eca8b585116d313"
+    },
+    {
+      "path": "tests-v19/opening-network.integration.mjs",
+      "status": "modified",
+      "bytes": 11478,
+      "sha256": "e0491e1ed27cf64030e8781e2ff73f4b44f74c4bf263b93657afebec60838113",
+      "baseSha256": "6bc3ca898dc5d9cd82f7c546954d9f876acf4a801467557809005d6b931f1f22"
+    },
+    {
+      "path": "tests-v19/opening.test.mjs",
+      "status": "modified",
+      "bytes": 18900,
+      "sha256": "c2d5fc1f22e277facec30b738cab65e4b6a2a32a9cd8a2d78d57cfb262931bbe",
+      "baseSha256": "75ce8aacc09d7ee084e64454c86317fcf351d6a5275585bbdb298c6adf145dcd"
+    },
+    {
+      "path": "tests-v19/ui.test.mjs",
+      "status": "modified",
+      "bytes": 27770,
+      "sha256": "182fb56e71bd88f0bf6857d564a464d242320cb63995816dc94c0e4b2a7b265f",
+      "baseSha256": "5cdcd9c2bd55d324040970116d3513ae018ac7dbecdb3e907e32d34ea13d54dd"
+    },
+    {
+      "path": "tests-v20/dice-ui.test.mjs",
+      "status": "modified",
+      "bytes": 23404,
+      "sha256": "09eabf21b6631768221ddc9dca521bcc8f84e6fca16bf5caa47456bc97a731cc",
+      "baseSha256": "711b1130b689ae1d75d8109de5b4c8de3c5b8cb7c1b5ec49eea73a09102a7b63"
+    },
+    {
+      "path": "tests-v21/expansion-a.test.mjs",
+      "status": "modified",
+      "bytes": 7355,
+      "sha256": "0f9951dace335bd629e653f0abdf6db294667e836bf5c0d6d746371f4bcfb1e1",
+      "baseSha256": "9859713356e5b56d470c2ed8c07521ee3d863fd2ef4b5e7535588362b3f22597"
+    },
+    {
+      "path": "tests-v21/expansion-b.test.mjs",
+      "status": "modified",
+      "bytes": 10707,
+      "sha256": "6cb96a9f9c1f1ed8e199dd76b9ca7a06916aca73643d7ed557d35f0d390853a6",
+      "baseSha256": "22c6135bc6f1129c693e7427b5758225185bf37bd2d959d3fe1714f2021477ab"
+    },
+    {
+      "path": "tests-v21/expansion-c.test.mjs",
+      "status": "modified",
+      "bytes": 8708,
+      "sha256": "fbcd0743aaa172cd1e39e32554daff834ed52583d285ae41e661229c73e3b576",
+      "baseSha256": "c7dd7a67b4ebec1f32ccbdbb7e37059956f42503ab6941e36853aa4d9d66a2d9"
+    },
+    {
+      "path": "tests-v21/expansion-contract.test.mjs",
+      "status": "modified",
+      "bytes": 6946,
+      "sha256": "8fabf82bf324c0dfef793396034a613b97e4ffe52292cb8c368bb5a3d12c8800",
+      "baseSha256": "dfc005a9bf2b220933c00a9fd9800b2b140b1d1852840d8a1f43c95ec41c7538"
+    },
+    {
+      "path": "tests-v21/preservation.test.mjs",
+      "status": "modified",
+      "bytes": 1214,
+      "sha256": "99a1f44c15dc06bb024cfe2f6a0022c776058ac55b68ab9d2641026aaa3ba7a6",
+      "baseSha256": "2ffe484f7777e5a71ca00ebfe7573968f8eac3349febf1e47dcd8e1e5bd4cd0a"
+    },
+    {
+      "path": "tests-v22/content.test.mjs",
+      "status": "added",
+      "bytes": 3124,
+      "sha256": "1fead782b1696fea7407a3028fb2cb351bf664fef832af3e4a6d1ee10407986a",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/epic-a.test.mjs",
+      "status": "added",
+      "bytes": 10147,
+      "sha256": "ae25994aaef78868d534d0baf9712cfe9cfde213573d6a4a001a2a76d60099d4",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/epic-b.test.mjs",
+      "status": "added",
+      "bytes": 16284,
+      "sha256": "37c76bed4c075387a50b091d290096afc96dc000a178bb723ddb35d0016ba37a",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/helpers.mjs",
+      "status": "added",
+      "bytes": 2191,
+      "sha256": "e128877b2a46ff8716e769459d3f667b24aee4084408bd9bfb254dcb2206ce01",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/horror.test.mjs",
+      "status": "added",
+      "bytes": 10188,
+      "sha256": "14216aa4740fbcc12326d916d49fe6d6521a52e94c82866d0b559d7e0490788e",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/modes.test.mjs",
+      "status": "added",
+      "bytes": 5347,
+      "sha256": "3877ff7b8b5703f928c177f7f20e8731fecd17f159cfbdb9e943de2222f2f9aa",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/network.test.mjs",
+      "status": "added",
+      "bytes": 5552,
+      "sha256": "067030521be2676ba582942c11037f8ac0c06d02766cbccbb65a32266b20a613",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/restoration-ui.test.mjs",
+      "status": "added",
+      "bytes": 6859,
+      "sha256": "96aabe79409fd15a62c05d5c438280bc712fc3aca2febbcb7729543ef5b256fb",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v22/sound.test.mjs",
+      "status": "added",
+      "bytes": 5873,
+      "sha256": "c6285ed3ce78c6373b21ef3555573a9a7a76b7b4a1a69e7d725d75ebbf779f84",
+      "baseSha256": null
+    }
+  ],
+  "deletedFiles": [],
+  "apply": "Overlay these paths on the v21 repository root. Keep existing files not listed here."
+}

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { createGame, viewGame, previewAction, applyAction, validateSave, assist, revealSecret, passTurn, deferOpening } from '../public/game/engine.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { createStoryState as createGame, viewGame, previewAction, applyAction, validateSave, assist, revealSecret, passTurn, deferOpening } from '../public/game/engine.js';
 import { OPENINGS, actionRevision, remapOpeningPlayers } from '../public/game/opening.js';
 import { chronicleText } from '../public/game/narrative.js';
 import { startCombat } from '../public/game/combat.js';
@@ -52,7 +52,7 @@ test('every 1/2/3/4-person profession combination reaches an explicit meeting wi
   let parties=0;
   for(const campaign of CAMPAIGNS)for(const n of [1,2,3,4])for(const slots of combinations([0,1,2,3],n)){
     parties++;let game=start(campaign,slots);
-    assert.equal(game.phase,'opening');assert.equal(game.schema,19);
+    assert.equal(game.phase,'opening');assert.equal(game.schema,22);
     for(const player of game.players){
       const view=viewGame(game,campaign,player.id);assert.equal(view.canAct,true);
       assert.deepEqual(view.secret,OPENINGS[campaign.id].professions[player.classId].role);
@@ -199,7 +199,7 @@ test('earned preparation applies exactly once to the first risky main-story acti
 
 test('legacy saves and explicit together mode retain their previous story and seat roles',()=>{
   const campaign=CAMPAIGNS[0],players=people(campaign,[3,1]);
-  const legacy=createGame(campaign,players);assert.equal(legacy.schema,17);assert.equal(legacy.phase,'playing');assert.equal(legacy.opening,undefined);
+  const legacy=createGame(campaign,players);assert.equal(legacy.schema,22);assert.equal(legacy.phase,'playing');assert.equal(legacy.opening,undefined);
   assert.deepEqual(viewGame(legacy,campaign,'p0').secret,campaign.roles[0]);
   assert.deepEqual(validateSave(legacy,CAMPAIGNS).game.players,legacy.players);
   assert.throws(()=>createGame(campaign,people(campaign,[0,0]),{openingMode:'separate'}),/서로 다른 직업/);

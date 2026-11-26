@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createAudio } from '../public/game/audio.js';
 import { selectMusic, ENDING_MOODS } from '../public/game/music-director.js';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { createGame, applyAction, viewGame, validateSave, assist, revealSecret } from '../public/game/engine.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { createStoryState as createGame, applyAction, viewGame, validateSave, assist, revealSecret } from '../public/game/engine.js';
 
 const clone = value => structuredClone(value);
 const person = (id, health = 3) => ({ id, name: id, health, life: health ? 'alive' : 'dead' });

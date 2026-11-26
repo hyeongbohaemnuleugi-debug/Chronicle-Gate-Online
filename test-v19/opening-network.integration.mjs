@@ -9,7 +9,7 @@ import { once } from 'node:events';
 import { Server } from 'socket.io';
 import { io as connect } from 'socket.io-client';
 import { attachTableService } from '../game-server/table-service.js';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
 import { OPENINGS } from '../public/game/opening.js';
 
 const ok=result=>{assert.equal(result?.ok,true,result?.error);return result;};
@@ -76,7 +76,7 @@ test('four online clients act from concurrent private previews; replay, stale an
     assert.deepEqual(joined[0].game.opening.meeting,joined[3].game.opening.meeting);
     const file=path.join(dir,`${code}.json`);assert.ok(fs.statSync(file).size<32*1024,'Opening state must remain small on disk');
     assert.equal((await ack(clients[1],'table:export')).ok,false);
-    const save=ok(await ack(clients[0],'table:export')).save;assert.equal(save.format,'chronicle-gate-v21');
+    const save=ok(await ack(clients[0],'table:export')).save;assert.equal(save.format,'chronicle-gate-v22');
     for(const credential of credentials)assert.ok(!JSON.stringify(save).includes(credential.token));
     const actual=h.service.rooms.get(code).game;assert.equal(actual.opening.states.every(state=>state.records.length===2),true);
   }finally{await h.close();fs.rmSync(dir,{recursive:true,force:true});}

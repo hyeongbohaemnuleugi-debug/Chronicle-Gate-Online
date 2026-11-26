@@ -15,8 +15,8 @@ import {build} from 'esbuild';
 import {Server} from 'socket.io';
 import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
-import {createGame,applyAction,previewAction,viewGame} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {createStoryState as createGame,applyAction,previewAction,viewGame} from '../public/game/engine.js';
 import {OPENINGS} from '../public/game/opening.js';
 import {startCombat} from '../public/game/combat.js';
 
@@ -52,7 +52,7 @@ async function openApp({save=null,network=null,die=20}={}){
   Object.defineProperty(w.HTMLAnchorElement.prototype,'click',{configurable:true,value(){}});
   if(network)w.io=network.connect;
   if(save)w.localStorage.setItem(saveKey,JSON.stringify(save));
-  w.eval(code);await until(()=>w.document.querySelectorAll('.campaign-card').length===7,'catalog');await pause();
+  w.eval(code);await until(()=>w.document.querySelectorAll('.campaign-card').length===9,'catalog');await pause();
   assert.deepEqual(errors,[]);
   return {w,doc:w.document,errors,media,audioRequests,close:()=>w.close()};
 }
@@ -60,7 +60,7 @@ async function lobby(app,count=2){
   await click(app,'[data-action="create"]');await click(app,'[data-mode="local"]');await change(app,'#local-count',String(count));
   for(let i=0;i<count;i++)input(app,`[data-local-row]:nth-child(${i+1}) input`,`동료 ${i+1}`);
   await submit(app,'#entry-form');
-  assert.equal(query(app,'[name="opening-mode"][value="separate"]').checked,true);
+  assert.equal(query(app,'[name="story-length"][value="basic"]').checked,true);
 }
 async function choose(app,id='safe'){await click(app,`.choices [data-choice="${id}"]`);await click(app,'[data-action="confirm-action"]');}
 async function resume(app){await click(app,'[data-action="resume"]');await click(app,'[data-action="resume-local"]');}
@@ -73,7 +73,7 @@ function assertNoOtherOpening(app,mineId,persons){
   }
 }
 
-test('default first chapters require distinct professions; the explicit together option preserves the existing start',async()=>{
+test('the length selector replaces the start-mode bypass and both lengths require distinct professions',async()=>{
   const app=await openApp();
   try{
     await lobby(app,2);const ids=stored(app).players.map(p=>p.id);
@@ -81,10 +81,13 @@ test('default first chapters require distinct professions; the explicit together
     assert.equal(query(app,'[data-action="start"]').disabled,true);
     assert.match(query(app,'.opening-job-warning').textContent,/서로 다른 직업/);
     assert.ok(query(app,`[data-local-class="${ids[1]}"]`).textContent.includes('동료 1 선택'));
-    await click(app,'[name="opening-mode"][value="together"]');
+    assert.equal(app.doc.querySelector('[name="opening-mode"]'),null);
+    await click(app,'[name="story-length"][value="epic"]');
+    assert.equal(query(app,'[data-action="start"]').disabled,true);
+    await change(app,`[data-local-class="${ids[1]}"]`,story.classes[1].id);
     await click(app,'[data-action="start"]');
-    assert.equal(stored(app).game.phase,'playing');assert.equal(stored(app).game.opening,undefined);
-    assert.equal(query(app,'#scene-title').textContent,story.nodes[story.start].title);
+    assert.equal(stored(app).game.phase,'opening');assert.equal(stored(app).game.storyLength,'epic');
+    assert.equal(stored(app).game.opening.joined,false);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });

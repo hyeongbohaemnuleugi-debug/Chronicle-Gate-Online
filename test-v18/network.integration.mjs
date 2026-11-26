@@ -1,3 +1,4 @@
+import {finishNetworkOpenings} from '../tests-v22/helpers.mjs';
 /** Real HTTP + Socket.IO clients in one process. No fake transports or source-text assertions. */
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -7,7 +8,8 @@ import path from 'node:path';
 import { Server } from 'socket.io';
 import { io as connectClient } from 'socket.io-client';
 import { attachTableService } from '../game-server/table-service.js';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { OPENINGS } from '../public/game/opening.js';
 
 const storageDir=fs.mkdtempSync(path.join(os.tmpdir(),'chronicle-v15-network-'));
 const campaign=CAMPAIGNS[0];
@@ -83,14 +85,15 @@ try {
   assert.equal((await ack(sockets[4],'table:preview',{choiceId:'question'})).ok,false);
   assert.equal((await ack(sockets[1],'table:start')).ok,false);
   succeeded(await ack(sockets[0],'table:start'));
+  await finishNetworkOpenings(sockets.slice(0,4),ack);
   mark('four real clients can join; fifth player and unauthorized start are rejected');
 
   let state=await sync(sockets[0]);
   const privateViews=await Promise.all(sockets.slice(0,4).map(sync));
   for(let i=0;i<4;i++){
-    assert.equal(privateViews[i].game.secret.secret,campaign.roles[i].secret);
+    assert.equal(privateViews[i].game.secret.secret,OPENINGS[campaign.id].professions[classes[i]].role.secret);
     noCredentials(privateViews[i]);
-    for(let j=0;j<4;j++)if(i!==j)assert.ok(!JSON.stringify(privateViews[i]).includes(campaign.roles[j].secret),`Role ${j} secret leaked to ${i}`);
+    for(let j=0;j<4;j++)if(i!==j)assert.ok(!JSON.stringify(privateViews[i]).includes(OPENINGS[campaign.id].professions[classes[j]].role.secret),`Role ${j} secret leaked to ${i}`);
   }
   const choice=state.game.scene.choices.find(c=>!c.automatic);
   assert.ok(choice,'Fixture campaign must expose a risky opening choice.');
@@ -124,7 +127,7 @@ try {
 
   assert.equal((await ack(sockets[1],'table:export')).ok,false);
   const exported=succeeded(await ack(sockets[0],'table:export')).save;
-  assert.equal(exported.format,'chronicle-gate-v21');noCredentials(exported);
+  assert.equal(exported.format,'chronicle-gate-v22');noCredentials(exported);
   assert.equal(exported.game.players.length,4);
   for(const entry of credentials)assert.ok(!JSON.stringify(exported).includes(entry.token));
   mark('only the host can export; portable saves contain no reconnect tokens');

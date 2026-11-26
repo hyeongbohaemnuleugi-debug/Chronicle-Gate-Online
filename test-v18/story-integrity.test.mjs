@@ -1,8 +1,8 @@
 /** Authored-data contracts catch mismatched branches and unusable quest objects. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CAMPAIGNS,CATALOG} from '../public/game/campaigns/index.js';
-import {createGame,applyAction,previewAction,viewGame,availableChoices} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS,LEGACY_CATALOG as CATALOG} from '../public/game/campaigns/index.js';
+import {createStoryState as createGame,applyAction,previewAction,viewGame,availableChoices} from '../public/game/engine.js';
 const grades=['critical','success','failure','fumble'];
 const effectKeys=['next','set','unset','clues','pressure','harm','harmAll','heal','gainItems','loseItems'];
 const effects=o=>JSON.stringify(Object.fromEntries(effectKeys.filter(key=>o[key]!==undefined).map(key=>[key,o[key]])));

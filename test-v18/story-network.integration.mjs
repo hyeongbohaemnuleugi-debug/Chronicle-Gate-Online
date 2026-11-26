@@ -1,3 +1,4 @@
+import {finishNetworkOpenings} from '../tests-v22/helpers.mjs';
 /** Real sockets: authored actions and one shared consumable remain authoritative online. */
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -7,7 +8,7 @@ import path from 'node:path';
 import {Server} from 'socket.io';
 import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
 
 const campaign=CAMPAIGNS.find(c=>c.id==='clock-city');
 const server=http.createServer((_req,res)=>{res.writeHead(404);res.end();});
@@ -31,6 +32,7 @@ try{
  const owner=ok(await ack(host,'table:create',{campaignId:campaign.id,name:'윤곁의 구조원',classId:campaign.classes[0].id}));
  ok(await ack(peer,'table:join',{code:owner.code,name:'동료',classId:campaign.classes[2].id}));
  ok(await ack(host,'table:start'));
+  await finishNetworkOpenings([host,peer],ack);
  let state=await sync(host);
  const startRevision=state.game.revision;
  for(const payload of [{text:'전차를 옮긴다'},{choiceId:'tram-first',text:'무엇이든 성공'},{choiceId:'tram-first',flashback:'예전에 쐐기를 챙겼다'}]){
@@ -74,7 +76,7 @@ try{
  console.log('OK shared item pickup, four-outcome preview, stale-request rejection and server-rolled fumble consume once while permanent clues remain');
 
  const portable=ok(await ack(host,'table:export')).save;
- assert.equal(portable.game.schema,17);assert.deepEqual(portable.game.spentItems,['clock_wedge']);
+ assert.equal(portable.game.schema,22);assert.deepEqual(portable.game.spentItems,['clock_wedge']);
  const arrival=structuredClone(state.game.scene.arrival);
  host.disconnect();host=await client();
  ok(await ack(host,'table:resume',{code:owner.code,playerId:owner.playerId,token:owner.token}));

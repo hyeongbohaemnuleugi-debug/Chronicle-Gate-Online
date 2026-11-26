@@ -1,9 +1,9 @@
 /** A lethal result cannot narrate a dead character walking into the next room. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
 import {LOSS_PASSAGES} from '../public/game/campaigns/loss-passages.js';
-import {createGame,applyAction,previewAction,availableChoices,viewGame,validateSave,gradeRoll} from '../public/game/engine.js';
+import {createStoryState as createGame,applyAction,previewAction,availableChoices,viewGame,validateSave,gradeRoll} from '../public/game/engine.js';
 
 const roster=(c,count)=>c.classes.slice(0,count).map((job,i)=>({id:`p${i}`,name:`독자${i+1}`,classId:job.id}));
 function satisfy(game,requires){

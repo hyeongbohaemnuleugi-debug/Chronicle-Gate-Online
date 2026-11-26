@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CLASSES, createGame, viewGame, availableChoices, previewAction, applyAction,
+  CLASSES, createStoryState as createGame, viewGame, availableChoices, previewAction, applyAction,
   gradeRoll, assist, revealSecret, passTurn, validateSave,
 } from '../public/game/engine.js';
 

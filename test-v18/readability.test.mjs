@@ -1,7 +1,7 @@
 /** Small editorial gates for the displayed story data; these do not judge literary quality. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
 
 function strings(value, path = '') {
   if (typeof value === 'string') return [[path, value]];

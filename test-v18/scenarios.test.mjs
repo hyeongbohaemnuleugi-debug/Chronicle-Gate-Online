@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { createGame, applyAction, availableChoices, previewAction, viewGame } from '../public/game/engine.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { createStoryState as createGame, applyAction, availableChoices, previewAction, viewGame } from '../public/game/engine.js';
 const roster=campaign=>campaign.classes.map((c,i)=>({id:`p${i}`,name:`동료${i+1}`,classId:c.id}));
 function clearCombat(game,campaign){
  let turns=0;

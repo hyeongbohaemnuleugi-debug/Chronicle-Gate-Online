@@ -1,3 +1,4 @@
+import {finishNetworkOpenings} from '../tests-v22/helpers.mjs';
 /** Actual Socket.IO clients: themed jobs, combat authority and portable mid-fight saves. */
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -7,7 +8,7 @@ import path from 'node:path';
 import { Server } from 'socket.io';
 import { io as connectClient } from 'socket.io-client';
 import { attachTableService } from '../game-server/table-service.js';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
 
 const storageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronicle-v18-combat-network-'));
 const campaign = CAMPAIGNS.find(c => c.id === 'deep-sea');
@@ -124,6 +125,7 @@ try {
   mark('cross-campaign jobs are rejected; joining without a job works; host campaign changes preserve profession slots');
 
   success(await ack(sockets[0], 'table:start'));
+  await finishNetworkOpenings(sockets,ack);
   state = await sync(sockets[0]);
   const indexFor = id => credentials.findIndex(entry => entry.playerId === id);
   const actorSocket = s => sockets[indexFor(s.game.activePlayerId)];
@@ -182,7 +184,7 @@ try {
   success(await ack(sockets[helperIndex], 'table:assist', { revision: state.game.revision }));
   state = await sync(sockets[0]);
   const portable = success(await ack(sockets[0], 'table:export')).save;
-  assert.equal(portable.format, 'chronicle-gate-v21'); assert.equal(portable.game.schema, 17);
+  assert.equal(portable.format, 'chronicle-gate-v22'); assert.equal(portable.game.schema, 22);
   assert.deepEqual(portable.game.assists, [credentials[helperIndex].playerId]);
   noCredentials(portable);
   assert.equal((await ack(sockets[1], 'table:export')).ok, false);

@@ -2,14 +2,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {CHARACTERS,formatCharacters} from '../public/game/characters.js';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
 
 const named=html=>[...html.matchAll(/<strong class="character-name"(?: title="[^"]*")?>(.*?)<\/strong>/gu)].map(match=>match[1]);
 const plain=html=>html.replace(/<strong class="character-name"(?: title="[^"]*")?>|<\/strong>/gu,'')
   .replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&');
 
-test('all seven casts emphasize the complete known name and preserve its attached Korean particle',()=>{
-  assert.equal(Object.keys(CHARACTERS).length,7);
+test('all nine casts emphasize the complete known name and preserve its attached Korean particle',()=>{
+  assert.equal(Object.keys(CHARACTERS).length,9);
   for(const [id,cast] of Object.entries(CHARACTERS)){
     assert.ok(cast.length>0);
     for(const character of cast){

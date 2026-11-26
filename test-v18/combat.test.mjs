@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as engine from '../public/game/engine.js';
-import { CAMPAIGNS, CATALOG } from '../public/game/campaigns/index.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS, LEGACY_CATALOG as CATALOG } from '../public/game/campaigns/index.js';
 
 const clone = value => structuredClone(value);
 const TYPES = ['strike', 'drain', 'expose', 'stun', 'guard', 'heal', 'rally'];
@@ -51,7 +51,7 @@ function party(campaign, count = 4) {
   return campaign.classes.slice(0, count).map((job, index) => ({ id: `p${index}`, name: `동료${index + 1}`, classId: job.id, connected: true }));
 }
 function start(campaign = fixture(), count = 4) {
-  const game = engine.createGame(campaign, party(campaign, count));
+  const game = engine.createStoryState(campaign, party(campaign, count));
   assert.ok(engine.viewGame(game, campaign, game.players[game.activeIndex].id).combat, 'Encounter must start when its scene is entered.');
   return game;
 }
@@ -139,7 +139,7 @@ test('combat starts on entry and scales with the living party, including solo', 
     assert.ok(v.combat.intent.targetIds.length >= 1);
   }
   const c = fixture(); c.start = 'before';
-  let g = engine.createGame(c, party(c));
+  let g = engine.createStoryState(c, party(c));
   assert.equal(view(g, c).combat, null);
   g.players[3].life = 'dead'; g.players[3].health = 0;
   g = act(g, c, { choiceId: 'enter' });
@@ -364,7 +364,7 @@ test('v15-compatible mid-combat save restores exact enemy, round, targets, statu
   const before = combatProjection(g, c, 'p0');
   const legacy = clone(g); legacy.schema = 15; legacy.version = '15.0.0';
   const restored = engine.validateSave({ format: 'chronicle-gate-v15', game: legacy }, [c]).game;
-  assert.equal(restored.schema, 17);
+  assert.equal(restored.schema, 22);
   assert.deepEqual(combatProjection(restored, c, 'p0'), before);
   assert.equal(view(restored, c, 'p0').combat.actions.ability.available, false);
   let next = act(restored, c, { combatAction: 'basic' }, 2);
@@ -374,13 +374,13 @@ test('v15-compatible mid-combat save restores exact enemy, round, targets, statu
 
 test('v14 migration maps legacy professions and preserves progress at/past a newly added combat', () => {
   const c = fixture(); c.start = 'before';
-  const legacy = engine.createGame(c, party(c));
+  const legacy = engine.createStoryState(c, party(c));
   legacy.schema = 14; legacy.version = '14.0.0';
   for (const [i, id] of ['scout', 'envoy', 'guardian', 'scholar'].entries()) legacy.players[i].classId = id;
   delete legacy.combat;
   legacy.nodeId = 'arena'; legacy.visited = ['before', 'arena'];
   const restored = engine.validateSave({ format: 'chronicle-gate-v14', game: legacy }, [c]).game;
-  assert.equal(restored.schema, 17);
+  assert.equal(restored.schema, 22);
   assert.deepEqual(restored.players.map(p => p.classId), [c.classes[1].id, c.classes[3].id, c.classes[0].id, c.classes[2].id]);
   assert.equal(restored.nodeId, 'arena');
   assert.equal(view(restored, c).combat, null, 'A previously visited v14 scene must not force a surprise fight.');

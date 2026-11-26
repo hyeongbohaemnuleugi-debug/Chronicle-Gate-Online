@@ -1,3 +1,4 @@
+import {finishNetworkOpenings} from '../tests-v22/helpers.mjs';
 /** Real HTTP/Socket.IO mode branches and reading records; no browser or fake transport. */
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
@@ -8,8 +9,9 @@ import path from 'node:path';
 import {Server} from 'socket.io';
 import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
 import {chronicleText} from '../public/game/narrative.js';
+import {OPENINGS} from '../public/game/opening.js';
 
 const campaign=CAMPAIGNS.find(story=>story.id==='last-train');
 const opening=campaign.nodes[campaign.start];
@@ -68,6 +70,7 @@ function assertPublicCopy(save,view,credentials){
     assert.ok(!txt.includes(credential.token),'Reading copy leaked a reconnect token');
   }
   for(const role of campaign.roles)assert.ok(!txt.includes(role.secret),'Reading copy leaked an unrevealed private card');
+  for(const definition of Object.values(OPENINGS[campaign.id].professions))assert.ok(!txt.includes(definition.role.secret),'Reading copy leaked an unrevealed profession card');
   return txt;
 }
 
@@ -85,13 +88,16 @@ try{
       }));
     }
     ok(await ack(fixture.host,'table:start'));
+  await finishNetworkOpenings([fixture.host,...(fixture.peer?[fixture.peer]:[])],ack);
     const state=await sync(fixture.host),game=state.game;
     assert.equal(game.storyMode,fixture.mode);assert.equal(game.partySize,fixture.size);
     assert.equal(game.players.length,fixture.size);assert.equal(game.modeDescription,campaign.playModes[fixture.mode]);
     assert.equal(game.scene.id,campaign.start);assert.equal(game.activePlayerId,fixture.owner.playerId);
-    assert.deepEqual(game.scene.reading.paragraphs,opening.partyText[fixture.mode]);
-    assert.deepEqual(game.scene.text,opening.partyText[fixture.mode]);
-    assert.deepEqual(game.chroniclePrologue,opening.partyText[fixture.mode]);
+    assert.deepEqual(game.scene.reading.paragraphs,OPENINGS[campaign.id].meeting.startText[fixture.mode]);
+    assert.deepEqual(game.scene.text,OPENINGS[campaign.id].meeting.startText[fixture.mode]);
+    assert.deepEqual(game.chroniclePrologue,[fixture.mode==='solo'?'본격적인 사건에 뛰어들기 전, 한 사람이 자기 자리에서 첫 걸음을 내딛었다.':'서로 다른 자리에서 시작된 발걸음이 한곳으로 향했다. 이들은 아직 서로의 사정을 알지 못했다.']);
+    assert.equal(game.opening.meeting.text[0],OPENINGS[campaign.id].meeting[fixture.mode]);
+    fixture.openingChronicleLength=game.chronicle.length;
     const visible=game.scene.choices.map(choice=>choice.id);
     assert.deepEqual(visible,opening.choices.filter(choice=>choice.id!==fixture.otherChoiceId).map(choice=>choice.id));
     assert.ok(visible.length<=4);assert.ok(visible.includes(fixture.choiceId));
@@ -106,7 +112,7 @@ try{
     assert.equal(invalidAct.ok,false);assert.ok(invalidAct.error);
     assert.equal(rolls,beforeRolls);assert.deepEqual((await sync(fixture.host)).game,game);
   }
-  assert.notDeepEqual(opening.partyText.solo,opening.partyText.group);
+  assert.notEqual(OPENINGS[campaign.id].meeting.solo,OPENINGS[campaign.id].meeting.group);
   assert.equal(rolls,0);
   console.log('OK solo/group rooms expose their own prose and contextual choices; wrong-mode preview/action leave dice and the entire game unchanged');
 
@@ -123,8 +129,8 @@ try{
     assert.equal(rolls,beforeRolls+1);assert.equal(game.lastResult.roll,20);
     assert.equal(game.lastResult.grade,'critical');assert.equal(game.lastResult.text,outcome.text);
     assert.equal(game.scene.id,'carriage');assert.equal(game.scene.id,outcome.next);
-    assert.equal(game.chronicle.length,1);assert.equal(game.chroniclePartial,false);
-    const entry=game.chronicle[0];
+    assert.equal(game.chronicle.length,fixture.openingChronicleLength+1);assert.equal(game.chroniclePartial,false);
+    const entry=game.chronicle.at(-1);
     assert.equal(entry.kind,'choice');assert.equal(entry.grade,'critical');
     assert.equal(entry.actor,fixture.name);assert.equal(entry.action,choice.label);
     assert.equal(entry.sceneTitle,opening.title);assert.equal(entry.text,outcome.text);
@@ -150,7 +156,7 @@ try{
   const credentials=fixtures.flatMap(fixture=>[fixture.owner,...(fixture.guest?[fixture.guest]:[])]);
   for(const fixture of fixtures){
     const txt=assertPublicCopy(fixture.portable,fixture.state.game,credentials);
-    assert.ok(txt.includes(fixture.state.game.chronicle[0].text));
+    assert.ok(txt.includes(fixture.state.game.chronicle.at(-1).text));
     assert.ok(txt.includes(fixture.state.game.scene.reading.echoes[0]));
   }
   const group=fixtures[1],before=group.state.game;

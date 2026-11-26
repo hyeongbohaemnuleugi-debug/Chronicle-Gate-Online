@@ -1,8 +1,8 @@
 /** A reading copy must reflect real events, survive saves and keep private data out. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
-import {createGame,applyAction,viewGame,availableChoices,validateSave} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {createStoryState as createGame,applyAction,viewGame,availableChoices,validateSave} from '../public/game/engine.js';
 import {appendChronicle,restoreChronicle,chronicleText,CHRONICLE_LIMIT} from '../public/game/narrative.js';
 
 const roster=(campaign,count=4)=>campaign.classes.slice(0,count).map((job,i)=>({id:`p${i}`,name:`독자${i+1}`,classId:job.id}));

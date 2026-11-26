@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,viewGame,previewAction,applyAction,availableChoices,validateSave,conditionMatches,gradeRoll} from '../public/game/engine.js';
+import {createStoryState as createGame,viewGame,previewAction,applyAction,availableChoices,validateSave,conditionMatches,gradeRoll} from '../public/game/engine.js';
 const end={id:'end',title:'출구',ending:true,text:['기록을 남기고 밖으로 나왔다.'],choices:[]};
 const c={id:'items-fixture',title:'구조 창고',start:'entry',pressureMax:8,objective:'갇힌 사람을 구한다.',
  roles:[{title:'구조원',secret:'사다리의 위치를 안다.',reveal:'옥상에 사다리가 있다.',goal:'구조'}],
@@ -83,7 +83,7 @@ test('an authored arrival survives observation and restoration without becoming 
  let g=act(equipped(),{choiceId:'unlock'},20);const expected=c.nodes.entry.choices[0].outcomes.critical.arrival;
  assert.equal(viewGame(g,c,'p0').scene.arrival.text,expected);
  g=act(g,{detailId:'ink'});assert.equal(g.lastResult.grade,'observe');assert.equal(viewGame(g,c,'p0').scene.arrival.text,expected);
- const restored=validateSave({game:g},[c]).game;assert.equal(restored.schema,17);assert.equal(viewGame(restored,c,'p0').scene.arrival.text,expected);
+ const restored=validateSave({game:g},[c]).game;assert.equal(restored.schema,22);assert.equal(viewGame(restored,c,'p0').scene.arrival.text,expected);
  const failed=act(equipped(),{choiceId:'unlock'},2);assert.match(viewGame(failed,c,'p0').scene.arrival.text,/풀리지/);assert.equal(failed.flags.certified,undefined);
 });
 
@@ -91,7 +91,7 @@ test('v17 saving never resurrects a spent item; old saves restore only earned le
  const spent=act(equipped(),{choiceId:'unlock'},1);spent.journal.push({text:'복구 검사',gainedItems:'malformed journal field'});
  const restored=validateSave(spent,[c]).game;assert.ok(!restored.inventory.includes('wrench'));assert.ok(restored.spentItems.includes('wrench'));assert.ok(restored.clues.includes('tool-proof'));
  const legacy=structuredClone(spent);legacy.schema=15;delete legacy.inventory;delete legacy.spentItems;
- const migrated=validateSave(legacy,[c]).game;assert.deepEqual(migrated.inventory,['wrench']);assert.equal(migrated.schema,17);
+ const migrated=validateSave(legacy,[c]).game;assert.deepEqual(migrated.inventory,['wrench']);assert.equal(migrated.schema,22);
  const blank=structuredClone(fresh());blank.schema=15;assert.deepEqual(validateSave(blank,[c]).game.inventory,[]);
 });
 

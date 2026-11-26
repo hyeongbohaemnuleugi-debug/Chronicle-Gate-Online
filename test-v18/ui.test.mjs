@@ -1,6 +1,8 @@
+import {finishLocalOpenings} from '../tests-v22/helpers.mjs';
 /**
  * DOM integration, NOT a browser, visual, media decoding, or layout test.
- * The actual bundled app, client, engine, and seven campaigns run in jsdom.
+ * The actual bundled app, client, engine, and nine-story catalog run in jsdom;
+ * the seven legacy stories supply the compatibility fixtures below.
  * Platform-only substitutes cover dialog open/close, ResizeObserver, Image load,
  * and explicit IntersectionObserver notifications (no layout is inferred),
  * Audio playback, scrolling, and browser downloads (Blob URLs/anchor activation),
@@ -15,10 +17,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { build } from 'esbuild';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { createGame, applyAction, previewAction, availableChoices, getClasses, gradeRoll, viewGame } from '../public/game/engine.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { createStoryState as createGame, applyAction, previewAction, availableChoices, getClasses, gradeRoll, viewGame } from '../public/game/engine.js';
 import { startCombat } from '../public/game/combat.js';
 import { chronicleText } from '../public/game/narrative.js';
+import { OPENINGS } from '../public/game/opening.js';
 
 const root=path.resolve(fileURLToPath(new URL('..',import.meta.url)));
 const html=fs.readFileSync(path.join(root,'public/index.html'),'utf8');
@@ -71,7 +74,7 @@ async function openApp(saved=null,{rolls=[],defaultRoll=12,withIntersectionObser
   };
   if(saved)w.localStorage.setItem(saveKey,JSON.stringify(saved));
   w.eval(code);
-  await until(()=>w.document.querySelectorAll('.campaign-card').length===7,'seven campaign cards');
+  await until(()=>w.document.querySelectorAll('.campaign-card').length===9,'nine campaign cards');
   await pause();
   assert.deepEqual(errors,[],'App startup raised a runtime error.');
   return {w,doc:w.document,errors,media,imageRequests,intersections,downloads,close:()=>dom.window.close()};
@@ -94,7 +97,7 @@ async function localTable(app,count=2,{start=true}={}){
   assert.equal(app.doc.querySelectorAll('.lobby-person').length,count);
   assert.equal(query(app,'#entry-dialog').open,false);
   if(!start)return;
-  await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
+  await click(app,'[data-action="start"]');await finishLocalOpenings(app,click);
   assert.equal(query(app,'#game-view').hidden,false);
   assert.equal(query(app,'#scene-title').textContent,campaign.nodes[campaign.start].title);
 }
@@ -130,7 +133,7 @@ test('solo and group introductions follow chosen seats, keep private cards priva
   assert.notEqual(campaign.playModes.solo,campaign.playModes.group);
   assert.ok(opening.partyText?.solo?.length&&opening.partyText?.group?.length);
   assert.notDeepEqual(opening.partyText.solo,opening.partyText.group,'The two modes need different actual prose.');
-  const rendered={},saves={};
+  const rendered={},meetings={},saves={};
   for(const count of [1,2]){
     const mode=count===1?'solo':'group',app=await openApp();
     try{
@@ -150,24 +153,26 @@ test('solo and group introductions follow chosen seats, keep private cards priva
       assert.equal(lobbyNote.dataset.playMode,mode);
       assert.equal(lobbyNote.querySelector('p').textContent,campaign.playModes[mode]);
       for(const role of campaign.roles)assert.ok(!app.doc.body.textContent.includes(role.secret),'An introduction must not reveal a private role card.');
-      await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
+      await click(app,'[data-action="start"]');await finishLocalOpenings(app,click);
       const game=stored(app).game,view=viewGame(game,campaign,game.players[0].id);
       assert.equal(view.storyMode,mode);assert.equal(view.partySize,count);
       rendered[mode]=[...query(app,'.prose-main').querySelectorAll(':scope>p')].map(p=>p.textContent);
-      assert.deepEqual(rendered[mode],opening.partyText[mode].slice(0,3));
+      assert.deepEqual(rendered[mode],OPENINGS[campaign.id].meeting.startText[mode].slice(0,3));
       assert.deepEqual(rendered[mode],view.scene.reading.paragraphs.slice(0,3));
+      meetings[mode]=view.opening.meeting.text[0];
+      assert.equal(meetings[mode],OPENINGS[campaign.id].meeting[mode]);
       assert.equal(query(app,'.chronicle-party').dataset.storyMode,mode);
       assert.equal(query(app,'.chronicle-party').dataset.partySize,String(count));
       const buttons=[...app.doc.querySelectorAll('.choices [data-choice]')];
       assert.ok(buttons.length<=4,'A mode adds at most one contextual choice to the existing three.');
       assert.deepEqual(buttons.map(button=>button.dataset.choice),view.scene.choices.map(choice=>choice.id));
       await click(app,'[data-action="secret"]');await click(app,'[data-action="open-secret"]');
-      assert.ok(query(app,'#info-dialog').textContent.includes(campaign.roles[0].secret));
-      for(const role of campaign.roles.slice(1))assert.ok(!app.doc.body.textContent.includes(role.secret),'Opening my card must not expose another character’s secret.');
+      assert.ok(query(app,'#info-dialog').textContent.includes(view.secret.secret));
+      for(const player of game.players.slice(1))assert.ok(!app.doc.body.textContent.includes(OPENINGS[campaign.id].professions[player.classId].role.secret),'Opening my card must not expose another character’s secret.');
       saves[mode]=game;assert.deepEqual(app.errors,[]);
     }finally{app.close();}
   }
-  assert.notDeepEqual(rendered.solo,rendered.group);
+  assert.notEqual(meetings.solo,meetings.group,'Solo and group arrivals keep their distinct authored meeting.');
   const shared=saves.group;
   shared.players[1].health=0;shared.players[1].life='dead';shared.players[1].connected=false;
   const app=await openApp(savedEnvelope(shared));
@@ -196,7 +201,7 @@ test('DOM observation preserves the turn and can be reopened without repeating t
     assert.equal(after.nodeId,before.nodeId);assert.equal(after.pressure,before.pressure);
     assert.equal(after.lastResult.grade,'observe');assert.equal(after.journal.length,before.journal.length+1);
     assert.equal(query(app,'.scene-orientation').open,true,'A reader-opened fold survives same-scene state changes.');
-    assert.equal(after.chronicle.length,0,'Observations belong to the full log, not the reading chronicle.');
+    assert.equal(after.chronicle.length,before.chronicle.length,'Observations do not add to the completed private arrivals and public meeting in the reading chronicle.');
     assert.match(query(app,'[data-detail]').textContent,/✓/);
     await click(app,'[data-detail]');
     assert.equal(query(app,'#info-dialog').open,true);
@@ -234,17 +239,19 @@ test('private role cards, explicit reveal, local seat switching and assistance u
   const app=await openApp();
   try{
     await localTable(app,4);
+    const players=stored(app).game.players;
+    const roles=players.map(player=>OPENINGS[campaign.id].professions[player.classId].role);
     await click(app,'[data-action="secret"]');
-    assert.ok(!query(app,'#info-dialog').textContent.includes(campaign.roles[0].secret));
+    assert.ok(!query(app,'#info-dialog').textContent.includes(roles[0].secret));
     await click(app,'[data-action="open-secret"]');
-    assert.ok(query(app,'#info-dialog').textContent.includes(campaign.roles[0].secret));
+    assert.ok(query(app,'#info-dialog').textContent.includes(roles[0].secret));
     await click(app,'[data-action="reveal"]');
     assert.equal(stored(app).game.players[0].revealed,true);assert.equal(stored(app).game.sparks,3);
     const ids=stored(app).game.players.map(p=>p.id);
     await click(app,`[data-seat="${ids[1]}"]`);
     await click(app,'[data-action="open-secret"]');
-    assert.ok(query(app,'#info-dialog').textContent.includes(campaign.roles[1].secret));
-    assert.ok(!query(app,'#info-dialog').textContent.includes(campaign.roles[0].secret));
+    assert.ok(query(app,'#info-dialog').textContent.includes(roles[1].secret));
+    assert.ok(!query(app,'#info-dialog').textContent.includes(roles[0].secret));
     await click(app,'[data-close="info-dialog"]');
     assert.ok([...app.doc.querySelectorAll('.choices [data-choice]')].every(button=>button.disabled));
     await click(app,'[data-action="assist"]');
@@ -358,7 +365,10 @@ test('campaign switching remaps all chosen class slots and exposes only that sto
     for(const select of app.doc.querySelectorAll('[data-local-class]'))assert.deepEqual([...select.options].map(o=>o.value),newJobs.map(c=>c.id));
     assert.ok(query(app,'.lobby-people .profession-detail').textContent.includes(newJobs[0].basic.name));
     assert.ok(query(app,'.lobby-people .profession-detail').textContent.includes(newJobs[0].ability.name));
-    await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
+    assert.equal(query(app,'[data-action="start"]').disabled,true,'Remapped duplicate professions must be resolved before private chapters start.');
+    await change(app,`[data-local-class="${before.players[3].id}"]`,newJobs[1].id);
+    assert.equal(new Set(stored(app).players.map(player=>player.classId)).size,4);
+    await click(app,'[data-action="start"]');await finishLocalOpenings(app,click);
     assert.equal(stored(app).game.campaignId,target.id);
     assert.ok(query(app,'.party-profession').textContent.includes(newJobs[0].basic.name));
     assert.ok(query(app,'.party-profession').textContent.includes(newJobs[0].ability.name));
@@ -570,9 +580,9 @@ test('v18 home presents the chronicle masthead and factual story, class and enco
       assert.equal(card.querySelector('[data-art]').dataset.artPriority,'defer');
     }
     assert.equal(app.doc.querySelectorAll('.chronicle-promise>div').length,3);
-    assert.ok(query(app,'.site-footer').textContent.includes('v21'));
-    assert.match(html,/styles\.css\?v=21000/);
-    assert.match(html,/app\.js\?v=21000/);
+    assert.ok(query(app,'.site-footer').textContent.includes('v22'));
+    assert.match(html,/styles\.css\?v=22000/);
+    assert.match(html,/app\.js\?v=22000/);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });
@@ -993,13 +1003,14 @@ test('the chronicle reads real choices forward and downloads a public TXT distin
   const app=await openApp();
   try{
     await localTable(app,2);
+    const firstChapterCount=stored(app).game.chronicle.length;
     await click(app,'[data-detail]');await click(app,'[data-action="confirm-action"]');
     const observation=stored(app).game.lastResult.text;
     for(let turn=0;turn<2;turn++){
       await click(app,'.choices [data-choice]');await click(app,'[data-action="confirm-action"]');
     }
     const saved=stored(app),g=saved.game,view=viewGame(g,campaign,g.players[g.activeIndex].id);
-    assert.equal(g.chronicle.length,2);
+    assert.equal(g.chronicle.length,firstChapterCount+2);
     const entries=[...app.doc.querySelectorAll('[data-chronicle-id]')];
     assert.deepEqual(entries.map(el=>el.dataset.chronicleId),g.chronicle.map(event=>event.id));
     assert.deepEqual(entries.map(el=>el.querySelector('p').textContent),g.chronicle.map(event=>event.text));
@@ -1007,7 +1018,7 @@ test('the chronicle reads real choices forward and downloads a public TXT distin
     assert.equal(query(app,'.full-journal').open,false);
     assert.ok(query(app,'.full-journal').textContent.includes(observation));
     await click(app,'.session-actions [data-action="export-chronicle"]');
-    const txt=app.downloads.at(-1);assert.match(txt.name,/^chronicle-gate-v21-.*\.txt$/);
+    const txt=app.downloads.at(-1);assert.match(txt.name,/^chronicle-gate-v22-.*\.txt$/);
     assert.equal(txt.blob.type,'text/plain;charset=utf-8');
     const text=await blobText(app,txt.blob);
     assert.equal(text,chronicleText(view));
@@ -1015,13 +1026,14 @@ test('the chronicle reads real choices forward and downloads a public TXT distin
     assert.ok(text.indexOf(g.chronicle[0].text)<text.indexOf(g.chronicle[1].text));
     assert.ok(text.includes(view.scene.reading.paragraphs[0]));
     for(const role of campaign.roles)assert.ok(!text.includes(role.secret),'TXT must not expose unopened private role secrets.');
+    for(const player of g.players)assert.ok(!text.includes(OPENINGS[campaign.id].professions[player.classId].role.secret),'TXT must not expose unopened profession secrets.');
     assert.ok(!/"(?:resumeToken|hostToken|secret)"\s*:/.test(text));
     await click(app,'.session-actions [data-action="export"]');
-    const json=app.downloads.at(-1);assert.match(json.name,/^chronicle-gate-v21-.*\.json$/);
+    const json=app.downloads.at(-1);assert.match(json.name,/^chronicle-gate-v22-.*\.json$/);
     assert.equal(json.blob.type,'application/json');
     const progress=JSON.parse(await blobText(app,json.blob));
     assert.equal(progress.game.nodeId,g.nodeId);
-    assert.equal(progress.game.schema,17);
+    assert.equal(progress.game.schema,22);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });
@@ -1185,7 +1197,7 @@ test('known names do not turn quoted player input or HTML chat into attributes o
     assert.equal(query(app,'[data-local-row]:first-child input').value,name);
     assert.equal(query(app,'[data-local-row]:first-child input').hasAttribute('autofocus'),false);
     input(app,'[data-local-row]:nth-child(2) input','우');
-    await submit(app,'#entry-form');await click(app,'[name="opening-mode"][value="together"]');await click(app,'[data-action="start"]');
+    await submit(app,'#entry-form');await click(app,'[data-action="start"]');await finishLocalOpenings(app,click);
     assert.ok(emphasizedNames(query(app,'.compact-party')).includes(name));
     const sameName=query(app,'.party-member:nth-child(2) .character-name');
     assert.equal(sameName.textContent,'우');assert.equal(sameName.hasAttribute('title'),false,'An NPC/player collision must not assign the NPC role to the player.');

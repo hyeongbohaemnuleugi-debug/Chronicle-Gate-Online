@@ -1,3 +1,5 @@
+import {finishNetworkOpenings} from '../tests-v22/helpers.mjs';
+import {OPENINGS} from '../public/game/opening.js';
 /**
  * Real local HTTP + Socket.IO integration checks for the v17 resource contract.
  * Four clients exercise ordinary play, chat, portable saves and reconnection.
@@ -14,8 +16,8 @@ import os from 'node:os';
 import { Server } from 'socket.io';
 import { io as connect } from 'socket.io-client';
 import { attachTableService } from '../game-server/table-service.js';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { createGame } from '../public/game/engine.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { createStoryState as createGame } from '../public/game/engine.js';
 
 const campaign = CAMPAIGNS[0];
 const tick = () => new Promise(resolve => setImmediate(resolve));
@@ -85,10 +87,10 @@ await test('four-player default service never calls configured Supabase during p
     const start = () => startHttpService({ port: 0, host: '127.0.0.1', tableOptions: { storageDir: temporary, roll: () => { rolls++; return 12; } } });
     running = await start();
     const health = await (await fetch(running.url + '/health')).json();
-    assert.equal(health.ok, true); assert.equal(health.version, '21.0.0');
+    assert.equal(health.ok, true); assert.equal(health.version, '22.0.0');
     assert.deepEqual(health.supabase, { enabled: false, requests: 0 });
     const catalog = await (await fetch(running.url + '/api/table/catalog')).json();
-    assert.equal(catalog.ok, true); assert.equal(catalog.campaigns.length, 7);
+    assert.equal(catalog.ok, true); assert.equal(catalog.campaigns.length, 9);
     assert.ok(catalog.campaigns.every(story => story.classes.length === 4 && !story.nodes && !story.roles));
     const seats = await Promise.all(Array.from({ length: 4 }, () => client(running.url, clients)));
     for (let index = 0; index < seats.length; index++) {
@@ -97,20 +99,22 @@ await test('four-player default service never calls configured Supabase during p
     }
     credentials[0] = success(await ack(seats[0], 'table:create', { campaignId: campaign.id, name: '아린', classId: campaign.classes[0].id }));
     const code = credentials[0].code;
-    assert.equal(credentials[0].state.catalog.length, 7, 'initial seating includes the catalog exactly where clients need it');
+    assert.equal(credentials[0].state.catalog.length, 9, 'initial seating includes the catalog exactly where clients need it');
     for (let index = 1; index < 4; index++) {
       credentials[index] = success(await ack(seats[index], 'table:join', { code, name: ['아린', '도윤', '서린', '유진'][index], classId: campaign.classes[index].id }));
-      assert.equal(credentials[index].state.catalog.length, 7);
+      assert.equal(credentials[index].state.catalog.length, 9);
     }
     success(await ack(seats[0], 'table:start'));
+  await finishNetworkOpenings(seats,ack);
     let state = await sync(seats[0]);
-    assert.equal(state.catalog.length, 7, 'explicit resync is allowed to include a complete catalog');
+    assert.equal(state.catalog.length, 9, 'explicit resync is allowed to include a complete catalog');
     assert.equal(state.players.length, 4); assert.equal(state.storage, 'disk');
     assert.equal(state.capabilities?.checkpoints, true);
-    assert.equal(checkpoints.length, 1, 'start should create the first private host checkpoint');
+    assert.equal(checkpoints.length, 9, 'start and eight private choices each create one private host checkpoint');
+    const openingCheckpoints=checkpoints.length;
     success(await ack(seats[1], 'table:assist', { revision: state.game.revision }));
     state = await sync(seats[0]);
-    assert.equal(checkpoints.length, 2, 'a changed assistance revision should create a fresh checkpoint');
+    assert.equal(checkpoints.length, openingCheckpoints+1, 'a changed assistance revision should create a fresh checkpoint');
     const opening = state.game.scene.choices.find(choice => !choice.automatic);
     assert.ok(opening, 'fixture has a dice-based opening action');
     const plan = success(await ack(seats[0], 'table:preview', { choiceId: opening.id })).plan;
@@ -119,13 +123,13 @@ await test('four-player default service never calls configured Supabase during p
     state = await sync(seats[0]);
     assert.equal(rolls, 1); assert.equal(state.game.lastResult.roll, 12, 'server, not submitted client dice, determines the roll');
     assert.notEqual(state.game.scene.id, campaign.start);
-    assert.equal(checkpoints.length, 3, 'resolved action should create one additional checkpoint');
+    assert.equal(checkpoints.length, openingCheckpoints+2, 'resolved action should create one additional checkpoint');
     success(await ack(seats[0], 'table:act', submitted));
-    assert.equal(rolls, 1); assert.equal(checkpoints.length, 3, 'idempotent action retry must not duplicate a save transfer');
+    assert.equal(rolls, 1); assert.equal(checkpoints.length, openingCheckpoints+2, 'idempotent action retry must not duplicate a save transfer');
     for (let index = 0; index < 4; index++) {
       const personal = await sync(seats[index]);
-      assert.equal(personal.game.secret.secret, campaign.roles[index].secret);
-      for (let other = 0; other < 4; other++) if (index !== other) assert.ok(!JSON.stringify(personal).includes(campaign.roles[other].secret), 'unrevealed role secret leaked');
+      assert.equal(personal.game.secret.secret, OPENINGS[campaign.id].professions[campaign.classes[index].id].role.secret);
+      for (let other = 0; other < 4; other++) if (index !== other) assert.ok(!JSON.stringify(personal).includes(OPENINGS[campaign.id].professions[campaign.classes[other].id].role.secret), 'unrevealed role secret leaked');
       noCredentials(personal);
     }
     // 32 chats are spread across four sockets, below the per-socket abuse limit.
@@ -133,10 +137,10 @@ await test('four-player default service never calls configured Supabase during p
     state = await sync(seats[0]);
     assert.equal(state.messages.length, 30); assert.match(state.messages[0].text, /resource-check-2:/);
     assert.match(state.messages.at(-1).text, /resource-check-31:/);
-    assert.equal(checkpoints.length, 3, 'chat-only broadcasts must not upload/download another full saved game');
+    assert.equal(checkpoints.length, openingCheckpoints+2, 'chat-only broadcasts must not upload/download another full saved game');
     assert.ok(checkpoints.every(event => event.index === 0), 'a non-host received the private saved game');
     for (const { checkpoint } of checkpoints) {
-      assert.equal(checkpoint.code, code); assert.equal(checkpoint.save.format, 'chronicle-gate-v21');
+      assert.equal(checkpoint.code, code); assert.equal(checkpoint.save.format, 'chronicle-gate-v22');
       noCredentials(checkpoint.save);
     }
     assert.equal((await ack(seats[1], 'table:export')).ok, false, 'private portable save remains host-only');
@@ -286,10 +290,12 @@ await test('actual createClient consumes private checkpoints without automatic e
     const credentials = await api.create({ name: '자동 저장 방장', campaignId: campaign.id, classId: campaign.classes[0].id });
     const peer = await client(running.url, clients);
     success(await ack(peer, 'table:join', { code: credentials.code, name: '저장을 돕는 동료', classId: campaign.classes[1].id }));
-    await api.start({openingMode:'together'});
-    assert.equal(api.state.capabilities.checkpoints, true); assert.equal(api.state.catalog.length, 7, 'client should preserve its local catalog when server state omits it');
+    await api.start({storyLength:'basic'});
+    await finishNetworkOpenings([hostSocket,peer],ack);
+    await tick();
+    assert.equal(api.state.capabilities.checkpoints, true); assert.equal(api.state.catalog.length, 9, 'client should preserve its local catalog when server state omits it');
     assert.ok(backup()?.game, 'host never consumed its first checkpoint');
-    assert.equal(backup().format, 'chronicle-gate-v21'); assert.equal(backup().game.revision, api.state.game.revision);
+    assert.equal(backup().format, 'chronicle-gate-v22'); assert.equal(backup().game.revision, api.state.game.revision);
     const firstRevision = backup().game.revision;
     success(await ack(peer, 'table:assist', { revision: api.state.game.revision }));
     await tick();

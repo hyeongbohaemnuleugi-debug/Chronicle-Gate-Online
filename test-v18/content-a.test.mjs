@@ -3,8 +3,8 @@
  * No browser, simulated transport or injected item possession is involved. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { createGame, applyAction, availableChoices, previewAction, viewGame, validateSave, gradeRoll } from '../public/game/engine.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { createStoryState as createGame, applyAction, availableChoices, previewAction, viewGame, validateSave, gradeRoll } from '../public/game/engine.js';
 const EXPECTED={
  'last-train':{gate:'ledger',risk:15,choices:28,scenes:['platform','carriage','kiosk','dining','baggage','ledger','brake','signal','tunnel','witness','switch','bridge']},
  'glass-hotel':{gate:'archive',risk:19,choices:28,scenes:['entrance','reception','service','ballroom','security','laundry','archive','workshop','stair','mirrorhall','vault','roof']},

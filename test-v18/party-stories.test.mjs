@@ -1,8 +1,8 @@
 /** Mode-specific story branches must be real, reachable and remembered. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
-import {createGame,applyAction,previewAction,availableChoices,viewGame,conditionMatches,storyMode,validateSave,gradeRoll} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {createStoryState as createGame,applyAction,previewAction,availableChoices,viewGame,conditionMatches,storyMode,validateSave,gradeRoll} from '../public/game/engine.js';
 import {chronicleText} from '../public/game/narrative.js';
 
 const modes=[{key:'solo',size:1},{key:'group',size:4}];

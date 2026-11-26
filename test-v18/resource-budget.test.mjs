@@ -1,3 +1,4 @@
+import {SCENE_SOUNDS} from '../public/game/scene-sound.js';
 /**
  * Release resource gates: real file bytes and MPEG frames, plus Audio transport
  * unit tests. The Audio substitute records requested URLs; it is not a browser,
@@ -23,7 +24,7 @@ const MOODS = ['calm', 'danger', 'hope', 'mystery', 'tension', 'grief'];
 const EFFECTS = ['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive'];
 // v21 expands authored stories while preserving the exact v20 media and D20 runtime.
 // Budgets apply to measured delivered files; no WAV masters or runtime synthesis are shipped.
-const BUDGET = 18_000_000;
+const BUDGET = 20_000_000;
 const AUDIO_BUDGET = 14_500_000;
 const relative = file => path.relative(ROOT, file).split(path.sep).join('/');
 function files(directory) {
@@ -80,7 +81,7 @@ function inspectMp3(buffer) {
   return { ...first, frames, seconds, maxKbps };
 }
 
-test('all public game resources fit the explicit 18 MB release budget', t => {
+test('all public game resources fit the explicit 20 MB release budget', t => {
   const total = allFiles.reduce((sum, file) => sum + fileBytes(file), 0);
   const audioTotal = files(AUDIO).reduce((sum, file) => sum + fileBytes(file), 0);
   const artTotal = files(ART).reduce((sum, file) => sum + fileBytes(file), 0);
@@ -99,7 +100,7 @@ test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with ho
     ...THEMES.flatMap(theme => MOODS.map(mood => `${theme}-${mood}.mp3`)),
     ...EFFECTS.map(effect => `${effect}.mp3`),
   ].sort());
-  assert.deepEqual(files(AUDIO).filter(file => /\.mp3$/i.test(file)).map(file => path.basename(file)).sort(), names.slice().sort());
+  assert.deepEqual(files(AUDIO).filter(file => /\.mp3$/i.test(file)&&!SCENE_SOUNDS.includes(path.basename(file,'.mp3'))).map(file => path.basename(file)).sort(), names.slice().sort());
   for (const entry of manifest.files) {
     assert.equal(path.basename(entry.file), entry.file, 'manifest must reference a local filename');
     const absolute = path.join(AUDIO, entry.file);

@@ -1,3 +1,4 @@
+import { validStoryLength } from '../public/game/campaigns/epic-tools.js';
 /** Local, bounded story tables. No Supabase, account API or third-party service is used. */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -21,7 +22,7 @@ export function attachTableService(io, options = {}) {
   const rooms = new Map(), diskFiles = new Map(), persistedHashes = new Map();
   const broadcastKeys = new Map(), checkpointKeys = new Map(), timers = new Set();
   const clock = typeof options.now === 'function' ? options.now : Date.now;
-  const configured = options.storageDir ?? process.env.CHRONICLE_V21_DATA_DIR ?? process.env.CHRONICLE_V20_DATA_DIR ?? process.env.CHRONICLE_V19_DATA_DIR ?? process.env.CHRONICLE_V18_DATA_DIR ?? process.env.CHRONICLE_V17_DATA_DIR ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
+  const configured = options.storageDir ?? process.env.CHRONICLE_V22_DATA_DIR ?? process.env.CHRONICLE_V21_DATA_DIR ?? process.env.CHRONICLE_V20_DATA_DIR ?? process.env.CHRONICLE_V19_DATA_DIR ?? process.env.CHRONICLE_V18_DATA_DIR ?? process.env.CHRONICLE_V17_DATA_DIR ?? process.env.CHRONICLE_V16_DATA_DIR ?? process.env.CHRONICLE_V15_DATA_DIR ?? process.env.CHRONICLE_V14_DATA_DIR ?? (process.env.CHRONICLE_DATA_DIR ? path.join(process.env.CHRONICLE_DATA_DIR, 'v14-tables') : '');
   const storageDir = configured || (process.env.NODE_ENV === 'production' ? '' : path.resolve('.chronicle-v14'));
   const roll = options.roll || (() => crypto.randomInt(1, 21));
   const maxRooms = bounded(options.maxRooms ?? process.env.CHRONICLE_MAX_ROOMS, 32, 1, 128);
@@ -51,7 +52,7 @@ export function attachTableService(io, options = {}) {
   }
   function snapshot(room) {
     return {
-      format: 'chronicle-table-room', schema: 17, code: room.code, hostId: room.hostId, campaignId: room.campaignId,
+      format: 'chronicle-table-room', schema: 17, code: room.code, hostId: room.hostId, campaignId: room.campaignId, storyLength:room.game?.storyLength || room.storyLength || 'basic',
       players: room.players.map(({ id, name, classId, tokenHash }) => ({ id, name, classId, tokenHash, connected: false })),
       game: room.game ? { ...room.game, players: room.game.players.map(player => ({ ...player, connected: false })) } : null,
       messages: room.messages, updatedAt: room.updatedAt,
@@ -104,6 +105,7 @@ export function attachTableService(io, options = {}) {
       if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_IMPORT_BYTES) return null;
       fd = fs.openSync(filename, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
       const raw = JSON.parse(fs.readFileSync(fd, 'utf8'));
+      if (raw.storyLength !== undefined && !validStoryLength(raw.storyLength)) return null;
       if (raw.format !== undefined && raw.format !== 'chronicle-table-room') return null;
       if (![14, 15, 17].includes(raw.schema) || raw.code !== code || !getCampaign(raw.campaignId) || !Number.isFinite(raw.updatedAt) || raw.updatedAt < 0) return null;
       if (!Array.isArray(raw.players) || raw.players.length < 1 || raw.players.length > 4 || !Array.isArray(raw.messages)) return null;
@@ -182,15 +184,15 @@ export function attachTableService(io, options = {}) {
     pruneChat(room);
     const people = room.game ? room.game.players : room.players;
     return {
-      mode: 'online', code: room.code, meId, hostId: room.hostId, connected: true, campaignId: room.campaignId,
-      ...(includeCatalog ? { catalog: CATALOG } : {}), capabilities: { checkpoints: true, parallelOpenings: true },
+      mode: 'online', code: room.code, meId, hostId: room.hostId, connected: true, campaignId: room.campaignId, storyLength:room.game?.storyLength || room.storyLength || 'basic',
+      ...(includeCatalog ? { catalog: CATALOG } : {}), capabilities: { checkpoints: true, parallelOpenings: true, storyLengths: true },
       players: people.map(({ id, name, classId, connected }) => ({ id, name, classId, connected })),
       game: room.game ? viewGame(room.game, getCampaign(room.campaignId), meId) : null,
       messages: room.messages, storage: storage(), historyTrimmed: room.historyTrimmed || 0,
       canStart: room.hostId === meId && !room.game && room.players.length >= 1 && room.players.every(player => player.connected),
     };
   }
-  const portableSave = room => ({ format: 'chronicle-gate-v21', savedAt: new Date(clock()).toISOString(), game: room.game });
+  const portableSave = room => ({ format: 'chronicle-gate-v22', savedAt: new Date(clock()).toISOString(), game: room.game });
   function checkpoint(room) {
     if (!room.game) return;
     const host = room.players.find(player => player.id === room.hostId && player.connected);
@@ -203,7 +205,7 @@ export function attachTableService(io, options = {}) {
   }
   function broadcast(room) {
     pruneChat(room);
-    const key = JSON.stringify([room.code, room.hostId, room.campaignId, room.game?.revision ?? -1, room.players.map(({ id, name, classId, connected }) => [id, name, classId, connected]), room.messages.map(message => message.id), storage(), room.historyTrimmed || 0]);
+    const key = JSON.stringify([room.code, room.hostId, room.campaignId, room.game?.storyLength || room.storyLength || 'basic', room.game?.revision ?? -1, room.players.map(({ id, name, classId, connected }) => [id, name, classId, connected]), room.messages.map(message => message.id), storage(), room.historyTrimmed || 0]);
     for (const player of room.players) {
       const socket = player.socketId && namespace.sockets.get(player.socketId);
       if (socket && broadcastKeys.get(socket.id) !== key) { broadcastKeys.set(socket.id, key); socket.emit('table:state', publicState(room, player.id)); }
@@ -301,7 +303,7 @@ export function attachTableService(io, options = {}) {
       const { name, classId } = requirePlayer(payload, campaign);
       const code = makeCode(), token = crypto.randomBytes(32).toString('hex');
       const player = { id: crypto.randomUUID(), name, classId, tokenHash: hash(token), connected: true, socketId: socket.id };
-      const room = { code, hostId: player.id, campaignId: campaign.id, players: [player], game: null, messages: [], handled: {}, updatedAt: clock() };
+      const room = { code, hostId: player.id, campaignId: campaign.id, storyLength:'basic', players: [player], game: null, messages: [], handled: {}, updatedAt: clock() };
       fitRoom(room); rooms.set(code, room); recentRate.push(clock()); createRate.set(ip, recentRate);
       return seat(socket, room, player, token);
     });
@@ -340,11 +342,20 @@ export function attachTableService(io, options = {}) {
       if (player.classId === payload.classId) return { ok: true };
       player.classId = payload.classId; persist(room); broadcast(room); return { ok: true };
     });
+    event('table:length', payload => {
+      const {room,player}=authenticate(socket);hostOnly(room,player);
+      if(room.game)throw new Error('이야기 길이는 시작 전에 정해 주세요.');
+      if(!validStoryLength(payload.storyLength))throw new Error('기본 또는 서사시를 선택해 주세요.');
+      if(room.storyLength===payload.storyLength)return {ok:true};
+      room.storyLength=payload.storyLength;persist(room);broadcast(room);return {ok:true};
+    });
     event('table:start', payload => {
       const { room, player } = authenticate(socket); hostOnly(room, player);
       if (room.game) throw new Error('이미 시작했습니다.');
       if (room.players.some(person => !person.connected)) throw new Error('모든 참가자가 연결된 뒤 시작해 주세요.');
-      commitGame(room, createGame(getCampaign(room.campaignId), room.players, { openingMode:payload.openingMode ?? 'together' })); return { ok: true };
+      const storyLength=payload.storyLength ?? room.storyLength ?? 'basic';
+      if(!validStoryLength(storyLength))throw new Error('기본 또는 서사시를 선택해 주세요.');
+      commitGame(room, createGame(getCampaign(room.campaignId), room.players, { storyLength }),{storyLength}); return { ok: true };
     });
     event('table:preview', payload => {
       const { room, player } = authenticate(socket); if (!room.game) throw new Error('이야기를 시작해 주세요.');
@@ -393,7 +404,7 @@ export function attachTableService(io, options = {}) {
       remapOpeningPlayers(game, playerIds);
       game.players = game.players.map((person, index) => ({ ...person, id: room.players[index].id, name: room.players[index].name, connected: room.players[index].connected }));
       const players = room.players.map((person, index) => ({ ...person, classId: game.players[index].classId }));
-      commitGame(room, game, { campaignId: campaign.id, players }); return { ok: true };
+      commitGame(room, game, { campaignId: campaign.id, storyLength:game.storyLength, players }); return { ok: true };
     });
     event('table:chat', payload => {
       const { room, player } = authenticate(socket);

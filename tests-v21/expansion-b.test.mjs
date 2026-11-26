@@ -1,8 +1,8 @@
 /** Earn every new sea/snow ending through real play; fixtures only lower health for death boundaries. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
-import {createGame,applyAction,availableChoices,previewAction,gradeRoll,validateSave,viewGame} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {createStoryState as createGame,applyAction,availableChoices,previewAction,gradeRoll,validateSave,viewGame} from '../public/game/engine.js';
 import {chronicleText} from '../public/game/narrative.js';
 
 const campaign=id=>CAMPAIGNS.find(c=>c.id===id);

@@ -2,8 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {CAMPAIGNS,CATALOG} from '../public/game/campaigns/index.js';
-import {VERSION,createGame,validateSave,viewGame,availableChoices} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS,LEGACY_CATALOG as CATALOG} from '../public/game/campaigns/index.js';
+import {VERSION,createStoryState as createGame,validateSave,viewGame,availableChoices} from '../public/game/engine.js';
 import {ENDING_MOODS,selectMusic} from '../public/game/music-director.js';
 import {chronicleText} from '../public/game/narrative.js';
 
@@ -15,7 +15,7 @@ const structural=o=>Object.fromEntries(Object.entries(o).filter(([key])=>!['text
 const fields=['stat','dc','automatic','requires','useItems','consumeItems'];
 
 test('all seven worlds gain four real scenes, two distinct ordinary endings and one usable item without replacing old choices',()=>{
-  assert.equal(VERSION,'21.0.0');assert.equal(CAMPAIGNS.length,7);
+  assert.equal(VERSION,'22.0.0');assert.equal(CAMPAIGNS.length,7);
   let playable=0,ordinary=0;
   for(const c of CAMPAIGNS){
     const old=oldFor(c.id),nodes=Object.values(c.nodes),scenes=nodes.filter(n=>!n.ending),ends=nodes.filter(n=>n.ending);

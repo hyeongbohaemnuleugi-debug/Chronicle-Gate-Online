@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGNS } from '../public/game/campaigns/index.js';
-import { STAT_LABELS, createGame, applyAction, availableChoices, previewAction, gradeRoll, validateSave, viewGame } from '../public/game/engine.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { STAT_LABELS, createStoryState as createGame, applyAction, availableChoices, previewAction, gradeRoll, validateSave, viewGame } from '../public/game/engine.js';
 
 const SPECS = {
   'dragon-banquet': {

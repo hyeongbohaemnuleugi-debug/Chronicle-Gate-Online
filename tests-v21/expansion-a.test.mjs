@@ -1,8 +1,8 @@
 /** Authored v21 continuations: earned full-game routes, four grades, recovery and lethal boundaries. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CAMPAIGNS} from '../public/game/campaigns/index.js';
-import {createGame,applyAction,availableChoices,previewAction,viewGame,gradeRoll,validateSave} from '../public/game/engine.js';
+import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {createStoryState as createGame,applyAction,availableChoices,previewAction,viewGame,gradeRoll,validateSave} from '../public/game/engine.js';
 const configs={
  'last-train':{entry:'bridge',enter:'read-unsent-mail',scenes:['return-mail','address-desk','reply-booth','last-announcement'],prepare:'trace-return-stamps',item:'return-notices',use:'use-return-notices',first:'call-confirmed-family',second:'ask-final-run',end1:'deliver-last-hello',end2:'close-last-service',ending1:'ending-letter-home',ending2:'ending-last-service',safe:['carry-mail-forward','leave-uncertain-addresses','keep-line-open','bring-mail-home'],oldEnd:'ending-home',harmNode:'reply-booth',harmChoice:'call-confirmed-family'},
  'glass-hotel':{entry:'roof',enter:'check-last-shift',scenes:['service-lockers','spare-rooms','staff-breakfast','morning-switch'],prepare:'read-shift-cards',item:'rest-room-key',use:'open-rest-room',first:'ask-who-wants-rest',second:'accept-returned-keys',end1:'open-rest-house',end2:'close-hotel-doors',ending1:'ending-rest-house',ending2:'ending-hotel-closed',safe:['look-for-empty-rooms','leave-room-locked','leave-staff-time','entrust-unfinished-morning'],oldEnd:'ending-settlement',harmNode:'spare-rooms',harmChoice:'release-spare-latch'},

@@ -1,9 +1,8 @@
-import { SCENE_SOUNDS, SOUND_LEVELS, musicTheme } from './scene-sound.js';
+import { SCENE_SOUNDS, SOUND_LEVELS } from './scene-sound.js';
 /* Buffered music runs on the audio clock. Rendering a page never restarts it. */
-import { AUDIO_LOOPS, AUDIO_VERSION } from './audio-loops.js';
+import { MUSIC_LOOPS, resolveMusicAsset, musicAssetUrl, isHorrorScore } from './music-assets.js';
 import { createMediaAudio } from './audio-fallback.js';
 
-const MOODS = new Set(['mystery', 'calm', 'tension', 'danger', 'hope', 'grief']);
 const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive', ...SCENE_SOUNDS]);
 const PRIORITY_EFFECTS = new Set(['death', 'revive']);
 const FADE_SECONDS = 1.25;
@@ -25,7 +24,7 @@ export function createAudio(onChange = () => {}, runtime = {}) {
   const Media = runtime.Audio || globalThis.Audio;
   const setTimer = runtime.setTimer || ((callback, duration) => setTimeout(callback, duration));
   const clearTimer = runtime.clearTimer || (id => clearTimeout(id));
-  const loops = runtime.loops || AUDIO_LOOPS;
+  const loops = runtime.loops || MUSIC_LOOPS;
   let storage = runtime.storage;
   if (storage === undefined) { try { storage = globalThis.localStorage; } catch {} }
   let saved = {};
@@ -130,18 +129,39 @@ export function createAudio(onChange = () => {}, runtime = {}) {
       mixTimer = setTimer(() => finishMix(token), Math.max(100, (mixEndsAt - context.currentTime) * 1000 + 5));
       return;
     }
-    const main = voices.at(-1);
+    const main = voices.at(-1)?.retiring ? null : voices.at(-1);
     for (const voice of voices) if (voice !== main) disposeVoice(voice);
     voices = main ? [main] : []; mixEndsAt = 0;
     trimCache();
     const next = queued; queued = null;
     if (next && next.key === desired && allowed()) activate(next);
   }
+  function retireOtherGenre() {
+    // Loading a horror score may fail or take seconds. Do not leave a bright
+    // score from the previous story playing throughout that wait. This uses
+    // the same audio-clock envelope and cleanup ownership as a normal fade.
+    if (!voices.some(voice => !isHorrorScore(voice.key) && !voice.retiring)) return;
+    cancelMix();
+    const time = context.currentTime, seconds = .35;
+    for (const voice of voices) {
+      const from = valueAt(voice.envelope, time, voice.gain.gain.value);
+      const keepDark = isHorrorScore(voice.key);
+      voice.envelope = automate(voice.gain.gain, voice.envelope, curveBetween(from, keepDark ? 1 : 0), seconds, time);
+      voice.retiring = !keepDark;
+    }
+    // H1 -> original -> H2 may happen inside an unfinished fade. Keep the
+    // already-playing dark voice as the owner; never preserve the original
+    // merely because it happened to be the last source in that old fade.
+    voices = [...voices.filter(voice => !isHorrorScore(voice.key)), ...voices.filter(voice => isHorrorScore(voice.key))];
+    mixEndsAt = time + seconds;
+    const token = mixSerial;
+    mixTimer = setTimer(() => finishMix(token), seconds * 1000 + 5);
+  }
   function activate(item) {
     if (!allowed() || item.key !== desired || !context) return;
     const time = context.currentTime;
     if (voices.length > 1 && time >= mixEndsAt) finishMix(mixSerial);
-    if (voices.at(-1)?.key === item.key) return;
+    if (voices.at(-1)?.key === item.key && !voices.at(-1)?.retiring) return;
     let next = voices.find(voice => voice.key === item.key);
     if (!next && voices.length > 1) {
       // A rapid third scene waits for the current audio-clock fade, rather than
@@ -160,6 +180,7 @@ export function createAudio(onChange = () => {}, runtime = {}) {
       source.start(time, offset); offsets.delete(item.key);
       next = { key: item.key, source, gain, start: item.start, end: item.end, startedAt: time, offset, envelope: null, disposed: false };
     }
+    next.retiring = false;
     const nextFrom = valueAt(next.envelope, time, next.gain.gain.value);
     const oldFrom = old ? valueAt(old.envelope, time, old.gain.gain.value) : 0;
     const angle = old ? Math.atan2(nextFrom, oldFrom || 0) : 0;
@@ -192,7 +213,7 @@ export function createAudio(onChange = () => {}, runtime = {}) {
     if (!allowed() || !desired || !context) return;
     const playing = voices.find(voice => voice.key === desired);
     if (playing) {
-      if (voices.at(-1) !== playing) activate({ key: playing.key, buffer: playing.source.buffer, start: playing.start, end: playing.end });
+      if (voices.at(-1) !== playing || playing.retiring) activate({ key: playing.key, buffer: playing.source.buffer, start: playing.start, end: playing.end });
       return;
     }
     if (pending?.key === desired || queued?.key === desired || blockedDesired === desired) return;
@@ -209,7 +230,7 @@ export function createAudio(onChange = () => {}, runtime = {}) {
     request.timer = setTimer(failed, LOAD_TIMEOUT_MS);
     (async () => {
       try {
-        const response = await fetcher(`/game/audio/${request.key}.mp3?v=${AUDIO_VERSION}`, { signal: request.controller.signal, cache: 'force-cache', credentials: 'same-origin' });
+        const response = await fetcher(musicAssetUrl(request.key), { signal: request.controller.signal, cache: 'force-cache', credentials: 'same-origin' });
         if (!response.ok) throw new Error('Music could not be loaded');
         const bytes = await response.arrayBuffer();
         if (pending !== request || !allowed() || desired !== request.key) return;
@@ -256,10 +277,11 @@ export function createAudio(onChange = () => {}, runtime = {}) {
       persist();
     },
     scene(campaignId, mood = 'mystery') {
-      campaignId=musicTheme(campaignId);
-      if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || '')) return;
-      const key = `${campaignId}-${MOODS.has(mood) ? mood : 'mystery'}`;
+      const asset = resolveMusicAsset(campaignId, mood);
+      if (destroyed || !asset) return;
+      const key = asset.key;
       if (key !== desired) { desired = key; blockedDesired = null; queued = null; cancelLoad(); }
+      if (isHorrorScore(key)) retireOtherGenre();
       playDesired();
     },
     duck(active) {

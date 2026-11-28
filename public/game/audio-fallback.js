@@ -1,10 +1,9 @@
-import { SCENE_SOUNDS, SOUND_LEVELS, musicTheme } from './scene-sound.js';
+import { SCENE_SOUNDS, SOUND_LEVELS } from './scene-sound.js';
 /* Media-element compatibility path for file:// and browsers without Web Audio.
  * Guarded regions are overlapped before the file boundary. This is deliberately
  * best effort: precise loops belong to the AudioBuffer path in audio.js. */
-import { AUDIO_LOOPS, AUDIO_VERSION } from './audio-loops.js';
+import { MUSIC_LOOPS, resolveMusicAsset, musicAssetUrl, isHorrorScore } from './music-assets.js';
 const clamp = (value, fallback = .5) => Number.isFinite(Number(value)) ? Math.min(1, Math.max(0, Number(value))) : fallback;
-const MOODS = new Set(['mystery', 'calm', 'tension', 'danger', 'hope', 'grief']);
 const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive', ...SCENE_SOUNDS]);
 const PRIORITY_EFFECTS = new Set(['death', 'revive']);
 const FADE_MS = 1250;
@@ -27,6 +26,7 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
   const prefs = { enabled: false, music: clamp(saved?.music ?? .25), effects: clamp(saved?.effects ?? .45) };
   let current = null, previous = null, desired = null, blockedDesired = null, loopSpare = null;
   let transition = 0, frameId = null, startTimer = null, pending = null, fade = null;
+  let genreFade = null, genreFrame = null;
   let isPaused = false, destroyed = false, ducked = false, duckLevel = 1, duckFrame = null;
   const activeEffects = new Map();
   const disposed = new WeakSet();
@@ -52,6 +52,26 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
     frameId = null;
     fade = null;
   };
+  function clearGenreFade() {
+    if (genreFrame !== null) cancelFrame(genreFrame);
+    genreFrame = null;
+    if (genreFade) dispose(genreFade.element);
+    genreFade = null;
+  }
+  function retireOtherGenre(element) {
+    clearGenreFade();
+    const retiring = { element, start: now(), ratio: level() > 0 ? clamp(element.volume / level(), 1) : 0 };
+    genreFade = retiring;
+    const step = time => {
+      genreFrame = null;
+      if (genreFade !== retiring || destroyed) return;
+      const progress = Math.max(0, Math.min(1, (time - retiring.start) / 350));
+      element.volume = level() * retiring.ratio * (1 - progress * progress * (3 - 2 * progress));
+      if (progress === 1) { dispose(element); genreFade = null; }
+      else genreFrame = requestFrame(step);
+    };
+    genreFrame = requestFrame(step);
+  }
   function cancelPending() {
     clearStartTimer();
     if (!pending) return;
@@ -66,6 +86,7 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
     ++transition;
     cancelPending();
     stopFrame();
+    clearGenreFade();
     dispose(previous);
     previous = null;
     dispose(loopSpare); loopSpare = null;
@@ -114,15 +135,20 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
     if (current) current.volume = level();
   }
   function startPlayback(next, old, resume = false, loop = false) {
-    const points = AUDIO_LOOPS[next.dataset.key];
+    const points = MUSIC_LOOPS[next.dataset.key];
     if (resume && points) {
       const start = points.startFrame / points.sampleRate, end = points.endFrame / points.sampleRate;
       if (next.currentTime >= end) { try { next.currentTime = start + (next.currentTime - end) % (end - start); } catch {} }
     }
-    const request = { next, old, resume, loop, token: ++transition };
+    // A previous non-horror track is never a playback-failure fallback for a
+    // horror. Give it a short independent fade while the new play() is pending.
+    const enteringHorror = !resume && old && isHorrorScore(next.dataset.key) && !isHorrorScore(old.dataset.key);
+    const retainedOld = enteringHorror ? null : old;
+    if (enteringHorror) retireOtherGenre(old);
+    const request = { next, old: retainedOld, resume, loop, token: ++transition };
     pending = request;
     current = next;
-    previous = resume ? null : old;
+    previous = resume ? null : retainedOld;
     next.volume = 0;
     startTimer = setTimer(() => failStart(request), START_TIMEOUT_MS);
     if (!musicListeners.has(next)) {
@@ -150,17 +176,17 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
       if (loop && old) {
         // Both files contain the same periodic music around their guard region.
         // Align after play() resolves so startup latency does not consume silence.
-        const points = AUDIO_LOOPS[next.dataset.key];
+        const points = MUSIC_LOOPS[next.dataset.key];
         const linked = points.startFrame / points.sampleRate + old.currentTime - points.endFrame / points.sampleRate;
         try { next.currentTime = Math.max(0, Math.min(points.endFrame / points.sampleRate - .001, linked)); } catch {}
       }
-      crossfade(next, resume ? null : old, request.token, loop ? 240 : FADE_MS);
+      crossfade(next, resume ? null : retainedOld, request.token, loop ? 240 : FADE_MS);
     }, () => failStart(request));
   }
   function makeMusic(key, preload = 'none') {
-    const element = new Media(`/game/audio/${key}.mp3?v=${AUDIO_VERSION}`);
+    const element = new Media(musicAssetUrl(key));
     element.dataset.key = key; element.loop = true; element.preload = preload;
-    const points = AUDIO_LOOPS[key];
+    const points = MUSIC_LOOPS[key];
     if (points) {
       const seek = () => { try { element.currentTime = points.startFrame / points.sampleRate; } catch {} };
       seek(); element.addEventListener('loadedmetadata', seek, { once: true });
@@ -236,9 +262,9 @@ export function createMediaAudio(onChange = () => {}, runtime = {}) {
       if (prefs.music > 0) playDesired();
     },
     scene(campaignId, mood = 'mystery') {
-      campaignId=musicTheme(campaignId);
-      if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || '')) return;
-      const next = `${campaignId}-${MOODS.has(mood) ? mood : 'mystery'}`;
+      const asset = resolveMusicAsset(campaignId, mood);
+      if (destroyed || !asset) return;
+      const next = asset.key;
       if (desired !== next) blockedDesired = null;
       desired = next;
       playDesired();

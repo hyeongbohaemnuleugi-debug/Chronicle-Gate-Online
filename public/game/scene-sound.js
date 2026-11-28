@@ -2,7 +2,7 @@
 export const SCENE_SOUNDS = Object.freeze(['knock','scream','murmur','footsteps','door-creak','glass','metal','water','wind','radio-static','heartbeat','chime']);
 const allowed = new Set(SCENE_SOUNDS);
 export const SOUND_LEVELS = Object.freeze({scream:.5,murmur:.64,wind:.65,'radio-static':.6,heartbeat:.8});
-export const musicTheme = id => ({'hollow-apartment':'glass-hotel','drowned-broadcast':'snow-radio'}[id] || id);
+export { musicTheme } from './music-assets.js';
 export const BASIC_SCENE_SOUNDS = Object.freeze({
   'last-train': {carriage:'heartbeat',tunnel:'knock',brake:'metal',switch:'metal'},
   'glass-hotel': {entrance:'door-creak',service:'footsteps',stair:'footsteps',roof:'chime'},

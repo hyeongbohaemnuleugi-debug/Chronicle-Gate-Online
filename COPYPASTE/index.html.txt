@@ -7,7 +7,7 @@
   <meta name="description" content="짧은 장면을 읽고 선택으로 써 내려가는 우리의 연대기. 혼자 또는 최대 4명이 아홉 세계, 서른여섯 직업의 이야기를 펼치는 CHRONICLE GATE.">
   <title>CHRONICLE GATE · 우리의 선택이 연대기가 되는 곳</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/game/styles.css?v=22000">
+  <link rel="stylesheet" href="/game/styles.css?v=22010">
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -34,6 +34,6 @@
   <dialog id="info-dialog" class="modal info-dialog" aria-labelledby="info-title"></dialog>
   <input id="save-file" type="file" accept=".json,application/json" hidden>
   <noscript><div class="noscript">이 게임은 JavaScript가 필요합니다. 브라우저에서 JavaScript를 켜 주세요.</div></noscript>
-  <script type="module" src="/game/app.js?v=22000"></script>
+  <script type="module" src="/game/app.js?v=22010"></script>
 </body>
 </html>

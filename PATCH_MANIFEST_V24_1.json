@@ -1,0 +1,249 @@
+{
+  "baseVersion": "24.0.0",
+  "targetVersion": "24.1.0",
+  "format": "chronicle-changed-files",
+  "summary": "Eight clearer, level-matched horror scores; cache and offline bundle refresh.",
+  "files": [
+    {
+      "path": "COPYPASTE/index.html.txt",
+      "status": "modified",
+      "bytes": 3134,
+      "sha256": "11f387c31d1b2d4193cd23e51893dc15af43cbc4ec72caae4f2952476474bb7e",
+      "baseSha256": "975960a8cc64bd460a0f6910cd9dc0fa60549a7ff060afc17013e8b6e67483b9"
+    },
+    {
+      "path": "PATCH_NOTES_V24_1.md",
+      "status": "added",
+      "bytes": 6152,
+      "sha256": "13679970b6875cd632bfc14ae9bf8cc49108ee0b193caf11cd1d1b8abc7e1cdc",
+      "baseSha256": null
+    },
+    {
+      "path": "RESOURCE_REPORT_V24_1.json",
+      "status": "added",
+      "bytes": 36589,
+      "sha256": "9fede548062d38819202a8eb1bde8006466d5b8d2a27e307551d27f303da1690",
+      "baseSha256": null
+    },
+    {
+      "path": "VALIDATION_V24_1.md",
+      "status": "added",
+      "bytes": 4924,
+      "sha256": "c07a95344ce9c5a3ae956c49ba9e3daddaffe290b92e2e5238bdc611cadbb380",
+      "baseSha256": null
+    },
+    {
+      "path": "game-server/http-service.js",
+      "status": "modified",
+      "bytes": 16288,
+      "sha256": "5efc5cf1715d0bc8fe91a28b85402947b21f2d470283e34c9f32f42116d43389",
+      "baseSha256": "43099b3c3c2b6062e7f14fc3ff61901dc519e44d68da8d64916facb6f89a465b"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "modified",
+      "bytes": 73416,
+      "sha256": "5dc25d88ef982605d3c803f024a8dc6174be26e9701eb10c739b47d1f69b5b85",
+      "baseSha256": "bce7cda362ce4e7cf196e39959b6d6502fa17741090cd300d0486f31cee03850"
+    },
+    {
+      "path": "package.json",
+      "status": "modified",
+      "bytes": 3404,
+      "sha256": "fccaddd20521035d40d2d837bf2f62c2fbabac3dd432a6e507f8568938067561",
+      "baseSha256": "7da70c8284a8a3599ad058789106c3c89cbf5fecd872df8332114a2255796d66"
+    },
+    {
+      "path": "public/game/audio/horror-apartment-ambient.mp3",
+      "status": "modified",
+      "bytes": 294668,
+      "sha256": "b8d9820ee8e494f0e9938b1b9a8c9df0e3c1e2ed9defa9af1527871b5278ff9e",
+      "baseSha256": "8f4889865394247960d7792bc0ff2795a9e8219feb16750b51dd6a7194ed752c"
+    },
+    {
+      "path": "public/game/audio/horror-apartment-danger.mp3",
+      "status": "modified",
+      "bytes": 246500,
+      "sha256": "01789ba23d238de17f7741e76ad7e1bf0976d3a717bfecc81ab894549fd3d5a7",
+      "baseSha256": "54f053ced9273fd2c7cccc61c6fd4efc37430cc2d0d9ab4dc07acccd30fb6185"
+    },
+    {
+      "path": "public/game/audio/horror-apartment-tension.mp3",
+      "status": "modified",
+      "bytes": 294668,
+      "sha256": "6457e88aa31499ff6ad239b68c58971908b5b7354f1d469b9d341d4413def83f",
+      "baseSha256": "93601da5a874e5441c27cf7fcf03fee72d2a21b7da282b18f5e726975a504d9e"
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-ambient.mp3",
+      "status": "modified",
+      "bytes": 294668,
+      "sha256": "aa3f603ea1311829abf1310d6539c85129d75cce36573d84b71e9ecd8ca10e50",
+      "baseSha256": "fbecf7d28075708f0ba9ac630309d7be3805b87c9404b52f96cc11d46995f00c"
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-danger.mp3",
+      "status": "modified",
+      "bytes": 246500,
+      "sha256": "080685dae41ccee3213451b5360fcf75cda4674b921a8b4b3eef533ff1b7b0bd",
+      "baseSha256": "bfd36dff48e2d8b33dac8b36f07bfefb926956eb736a0dd0f24dce9305a4a41e"
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-tension.mp3",
+      "status": "modified",
+      "bytes": 294668,
+      "sha256": "917e0075929dbde0895d9cbe6db75fefdf76e89d9ae03001ecb40ab872400ba7",
+      "baseSha256": "cd768569b4e266f54be9ec9286afc29ed1f9522737fcce02c5a38505433a2619"
+    },
+    {
+      "path": "public/game/audio/horror-shared-grief.mp3",
+      "status": "modified",
+      "bytes": 294668,
+      "sha256": "c0a2669acb59c38a927e53efa5063aaff5c74a1dab037c713e72f30bd0c85722",
+      "baseSha256": "679b61805d0a9861490dbdbf4dd221ecf85785bee37f04c38b0c81c7c1276f9a"
+    },
+    {
+      "path": "public/game/audio/horror-shared-relief.mp3",
+      "status": "modified",
+      "bytes": 294668,
+      "sha256": "5c6b3e79e7293cbdf34238a8c57dc2b5e1904afab162065794ec6546a30b702b",
+      "baseSha256": "6b82046dd8fa7a3edce93373cea8239440f5efdef99e24443baa122f458e599d"
+    },
+    {
+      "path": "public/game/engine.js",
+      "status": "modified",
+      "bytes": 48287,
+      "sha256": "3b34dfb78123177a54dc47ba10e53587c8e2ac46d05b74c4a3a81dcc7d74c35d",
+      "baseSha256": "2ad4b6a214d945d3342cbadfe24e62e2e5c5bd2372d3b4b57585f32cd172cb65"
+    },
+    {
+      "path": "public/game/horror-loops.js",
+      "status": "modified",
+      "bytes": 1035,
+      "sha256": "edae7bee04e461adba93ba23fbac0493ceff05de925af8ed609925c1b688dc1e",
+      "baseSha256": "2a12ecbcfd04eab664c2ae060ecf74bf65940d47a31096b0df3768faeaead42b"
+    },
+    {
+      "path": "public/index.html",
+      "status": "modified",
+      "bytes": 3134,
+      "sha256": "11f387c31d1b2d4193cd23e51893dc15af43cbc4ec72caae4f2952476474bb7e",
+      "baseSha256": "975960a8cc64bd460a0f6910cd9dc0fa60549a7ff060afc17013e8b6e67483b9"
+    },
+    {
+      "path": "public/offline.html",
+      "status": "modified",
+      "bytes": 4753065,
+      "sha256": "0a8b48d3a8d3f81fb00ec2c3545966cd6dda71cf1f7ce29fe9cda676c34f6b0a",
+      "baseSha256": "2113a43721f23a317277ec0cf67ffc8e5519223e598a4e2d90e44ddd150d45ef"
+    },
+    {
+      "path": "scripts/audio-baseline-v24_1.json",
+      "status": "added",
+      "bytes": 31895,
+      "sha256": "a93e0d3bb91a6840ca505a173a8b363f255ae34d41875905f98078cc031bcf46",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/audio-comparison-v24_1.json",
+      "status": "added",
+      "bytes": 12013,
+      "sha256": "e1b38282edcf186a0418c9983f3644931d44ebc2a4350976e51f03c8abf0195f",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/baseline-v24.json",
+      "status": "added",
+      "bytes": 28759,
+      "sha256": "d7c89f80237ed1165ed597b26faa8d07a49ee5ac91faee038f3175141df3d234",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/build-horror-score-v24_1.py",
+      "status": "added",
+      "bytes": 27372,
+      "sha256": "bb1c3b9ee59a8bd2a4e4594393bfa1e0f08dedfcc27fcc90ab5c19e3a3f3cffc",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/horror-score-audit-v24_1.json",
+      "status": "added",
+      "bytes": 25480,
+      "sha256": "e87bc0772b18a3924cc1b54db71290847cef8ba11ddf003106b548a9cf212096",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/horror-score-v24_1.json",
+      "status": "added",
+      "bytes": 112648,
+      "sha256": "057b7cce164983c3f7ec48ef014aa262a89db7fe62d9442d82780aa92e7036b7",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/report-v24_1.mjs",
+      "status": "added",
+      "bytes": 4547,
+      "sha256": "4e9cb1e39391bcb6cbec4e804e8500b9b74d40863a48f20568f14899f4817b72",
+      "baseSha256": null
+    },
+    {
+      "path": "tests-v18/deployment.integration.mjs",
+      "status": "modified",
+      "bytes": 20488,
+      "sha256": "b22cca576d463b1f8f9796624695905d8517c1c21b10c99a4a54d585964e0eb8",
+      "baseSha256": "4dce05a03dd6f51132d58c0b7325023e14974b0bc8cfbad9a3603e1964b1730e"
+    },
+    {
+      "path": "tests-v18/resource-budget.test.mjs",
+      "status": "modified",
+      "bytes": 19648,
+      "sha256": "9435c8a03121b5d242541efd488b792fc9177e6d1a02784d689c08564d4de184",
+      "baseSha256": "5118c719fd952457369bbfea3731edb5bac2b7568c58df03627a5befab2c6e69"
+    },
+    {
+      "path": "tests-v18/server.integration.mjs",
+      "status": "modified",
+      "bytes": 26599,
+      "sha256": "eb2a12e385bd33fb8101d5cf4a37d43ffa9a44b2be5db874c1e7d87e7abfbbb7",
+      "baseSha256": "a957a94da5689a0925e9dd290277cf84e6cc3c7ffd2761f2382a8cf889430244"
+    },
+    {
+      "path": "tests-v18/ui.test.mjs",
+      "status": "modified",
+      "bytes": 74985,
+      "sha256": "f0ca60567fb377e85b972ac23afca80b768f9c02f61522225e6d93c703952a26",
+      "baseSha256": "07858e15b910338035fcb9007f761f3c9b1dc2b83b8fbcae1f1f306d971d764f"
+    },
+    {
+      "path": "tests-v21/expansion-contract.test.mjs",
+      "status": "modified",
+      "bytes": 6946,
+      "sha256": "c6b1f7e4784449bbd3ab0b9341dcce7736b6a2f4f8b021c3515a37f209297d57",
+      "baseSha256": "fd5e90bf880427e850ea496d2dde7453ac50d8941b6d310e0d101786d5633cfc"
+    },
+    {
+      "path": "tests-v22/sound.test.mjs",
+      "status": "modified",
+      "bytes": 6029,
+      "sha256": "f6165ef901809a4011c7457fdfbbcfbbbacded77c9ffcc189c6839efc63bde8f",
+      "baseSha256": "c39114d9f8d3e3c4babaeeb8a62fce6dcf6ab671709ee4a3ccd626327a8604b0"
+    },
+    {
+      "path": "tests-v22_1/horror-audio.test.mjs",
+      "status": "modified",
+      "bytes": 21242,
+      "sha256": "093dced0611d103d0eb1f02a8f4451d537e3f6cce15f32b798e10bc3eb628d0a",
+      "baseSha256": "7b71310cab8cd9879a241107b9e162bbab39db96cc6d11ccc762db211a7ef839"
+    },
+    {
+      "path": "tests-v24_1/horror-score.test.mjs",
+      "status": "added",
+      "bytes": 5672,
+      "sha256": "5c9bd4b558a2714707aaadef2b4ac1383e6c5280b6c182326cc8b71c70c22b95",
+      "baseSha256": null
+    }
+  ],
+  "deletedFiles": [],
+  "saveSchema": 22,
+  "apply": "Overlay these paths on the v24 repository root. Keep unlisted files. This is a patch, not a standalone game or cumulative v23 package."
+}

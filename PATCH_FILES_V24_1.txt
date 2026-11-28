@@ -1,0 +1,36 @@
+v24 → v24.1 · 공포 이야기 음악 8곡 교체·음량 및 선율 개선
+
+modified COPYPASTE/index.html.txt
+added    PATCH_NOTES_V24_1.md
+added    RESOURCE_REPORT_V24_1.json
+added    VALIDATION_V24_1.md
+modified game-server/http-service.js
+modified package-lock.json
+modified package.json
+modified public/game/audio/horror-apartment-ambient.mp3
+modified public/game/audio/horror-apartment-danger.mp3
+modified public/game/audio/horror-apartment-tension.mp3
+modified public/game/audio/horror-broadcast-ambient.mp3
+modified public/game/audio/horror-broadcast-danger.mp3
+modified public/game/audio/horror-broadcast-tension.mp3
+modified public/game/audio/horror-shared-grief.mp3
+modified public/game/audio/horror-shared-relief.mp3
+modified public/game/engine.js
+modified public/game/horror-loops.js
+modified public/index.html
+modified public/offline.html
+added    scripts/audio-baseline-v24_1.json
+added    scripts/audio-comparison-v24_1.json
+added    scripts/baseline-v24.json
+added    scripts/build-horror-score-v24_1.py
+added    scripts/horror-score-audit-v24_1.json
+added    scripts/horror-score-v24_1.json
+added    scripts/report-v24_1.mjs
+modified tests-v18/deployment.integration.mjs
+modified tests-v18/resource-budget.test.mjs
+modified tests-v18/server.integration.mjs
+modified tests-v18/ui.test.mjs
+modified tests-v21/expansion-contract.test.mjs
+modified tests-v22/sound.test.mjs
+modified tests-v22_1/horror-audio.test.mjs
+added    tests-v24_1/horror-score.test.mjs

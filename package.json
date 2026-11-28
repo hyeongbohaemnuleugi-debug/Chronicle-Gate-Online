@@ -1,6 +1,6 @@
 {
   "name": "chronicle-gate-online",
-  "version": "24.0.0",
+  "version": "24.1.0",
   "private": true,
   "type": "module",
   "description": "Chronicle Gate: nine authored chronicles, 45 distinct opponents, optional confrontations, Basic and Epic, 1–4 players.",
@@ -30,13 +30,13 @@
     "test:expansion": "node --test tests-v21/*.test.mjs",
     "test:immersion": "node --test tests-v22/*.test.mjs",
     "build:foley": "python scripts/build-foley-v22.py",
-    "test:horror-music": "node --test tests-v22_1/*.test.mjs",
-    "build:horror-music": "python3 scripts/build-horror-score-v22_1.py",
+    "test:horror-music": "node --test tests-v22_1/*.test.mjs tests-v24_1/*.test.mjs",
+    "build:horror-music": "python3 scripts/build-horror-score-v24_1.py",
     "test:battle": "node --test tests-v23/*.test.mjs",
     "build:battle-audio": "python3 scripts/build-battle-audio-v23.py",
     "test:encounters": "node --test tests-v24/*.test.mjs",
     "report:encounters": "node scripts/explore-encounters-v24.mjs --write",
-    "report:resources": "node scripts/report-v24.mjs"
+    "report:resources": "node scripts/report-v24_1.mjs"
   },
   "dependencies": {
     "express": "5.2.1",

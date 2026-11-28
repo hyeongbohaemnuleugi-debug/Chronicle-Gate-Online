@@ -1,0 +1,155 @@
+{
+  "version": 23,
+  "cacheVersion": "23000",
+  "sampleRate": 32000,
+  "channels": 1,
+  "codec": "MP3 / libmp3lame / 64 kbit/s",
+  "source": "Original deterministic synthesis. No human recordings, samples, or third-party audio.",
+  "sourceScript": "scripts/build-battle-audio-v23.py",
+  "files": {
+    "battle-swing": {
+      "path": "public/game/audio/sfx/battle-swing.mp3",
+      "description": "공격 시작: 짧은 공기 가름과 나무 마찰",
+      "seconds": 0.34,
+      "bytes": 3500,
+      "sha256": "ddd53173e09dad6ca719364acc1fe5cc11c76341c7d5455b36a6e41c77cc3c37",
+      "decodedPeak": 0.64625,
+      "decodedRms": 0.088922,
+      "head8msPeak": 0.000178,
+      "tail8msPeak": 1.9e-05
+    },
+    "battle-skill": {
+      "path": "public/game/audio/sfx/battle-skill.mp3",
+      "description": "직업 능력: 숨을 모으는 듯한 역방향 마찰과 낮은 공명",
+      "seconds": 0.58,
+      "bytes": 5516,
+      "sha256": "05145d227ab30a8d1ebd213f7072575c8de707157b40c5358dc7c17cc85964c4",
+      "decodedPeak": 0.62517,
+      "decodedRms": 0.096199,
+      "head8msPeak": 5e-06,
+      "tail8msPeak": 7e-06
+    },
+    "battle-hit": {
+      "path": "public/game/audio/sfx/battle-hit.mp3",
+      "description": "적 명중: 단단한 타격과 짧은 금속성 잔향",
+      "seconds": 0.4,
+      "bytes": 4076,
+      "sha256": "5dd4fd905b9d67d4d219fa760417336ae57572026fc7f6d8dd7109cdcc7577c7",
+      "decodedPeak": 0.616491,
+      "decodedRms": 0.052335,
+      "head8msPeak": 0.011253,
+      "tail8msPeak": 2e-06
+    },
+    "battle-critical": {
+      "path": "public/game/audio/sfx/battle-critical.mp3",
+      "description": "대성공 명중: 무거운 타격, 갈라지는 작은 파편",
+      "seconds": 0.62,
+      "bytes": 5804,
+      "sha256": "42a3e9e5e5151603701b2a7da3f90c283d361b483e6750b1734b77b65f4c4bcc",
+      "decodedPeak": 0.645931,
+      "decodedRms": 0.062407,
+      "head8msPeak": 0.006132,
+      "tail8msPeak": 2e-06
+    },
+    "battle-miss": {
+      "path": "public/game/audio/sfx/battle-miss.mp3",
+      "description": "빗나감·회피: 충격 없이 옆으로 스치는 바람",
+      "seconds": 0.36,
+      "bytes": 3500,
+      "sha256": "4ac8e90a61267fb465c530ce064f113bf224834fdd0a5eadc4fd11cd725fc4c2",
+      "decodedPeak": 0.699416,
+      "decodedRms": 0.106839,
+      "head8msPeak": 0.001095,
+      "tail8msPeak": 0.000239
+    },
+    "battle-fumble": {
+      "path": "public/game/audio/sfx/battle-fumble.mp3",
+      "description": "대실패: 균형을 잃는 마찰과 두 번의 낮은 충격",
+      "seconds": 0.64,
+      "bytes": 5804,
+      "sha256": "0d6a6c7f5d3cd464a23753c6dce0d79f3f40522d2bf864746c5f80afa97b3648",
+      "decodedPeak": 0.628029,
+      "decodedRms": 0.072618,
+      "head8msPeak": 0.000178,
+      "tail8msPeak": 4e-06
+    },
+    "battle-enemy": {
+      "path": "public/game/audio/sfx/battle-enemy.mp3",
+      "description": "적 행동 시작: 낮게 밀려오는 마찰과 압력",
+      "seconds": 0.46,
+      "bytes": 4364,
+      "sha256": "44cf94edf9fb72c063d6d09845c8c8d887f0b73f49da13862f3dbc7127477c66",
+      "decodedPeak": 0.625777,
+      "decodedRms": 0.115764,
+      "head8msPeak": 1.9e-05,
+      "tail8msPeak": 2.8e-05
+    },
+    "battle-hurt": {
+      "path": "public/game/audio/sfx/battle-hurt.mp3",
+      "description": "동료 피격: 둔탁한 몸통 충격과 짧은 저음",
+      "seconds": 0.43,
+      "bytes": 4076,
+      "sha256": "c337758185c7801b719faf723246b7e2bfddaf2e139a0de257362e9729207f2c",
+      "decodedPeak": 0.627096,
+      "decodedRms": 0.067614,
+      "head8msPeak": 0.000226,
+      "tail8msPeak": 4e-06
+    },
+    "battle-shield": {
+      "path": "public/game/audio/sfx/battle-shield.mp3",
+      "description": "방어막 차단: 둥근 금속 충돌과 억제된 울림",
+      "seconds": 0.56,
+      "bytes": 5228,
+      "sha256": "abdac8d53cd21b231c13e8db975541ec675bb5a022b2ff9ad3daa2f1177b4982",
+      "decodedPeak": 0.631905,
+      "decodedRms": 0.053867,
+      "head8msPeak": 0.003205,
+      "tail8msPeak": 4e-06
+    },
+    "battle-heal": {
+      "path": "public/game/audio/sfx/battle-heal.mp3",
+      "description": "회복: 부드러운 숨결과 천천히 퍼지는 공명",
+      "seconds": 0.72,
+      "bytes": 6380,
+      "sha256": "521a485ed385a68d1439d87526aa7dc549170ea7d9f517e8f4dfcbbd26040389",
+      "decodedPeak": 0.627041,
+      "decodedRms": 0.118244,
+      "head8msPeak": 2e-06,
+      "tail8msPeak": 1e-06
+    },
+    "battle-stun": {
+      "path": "public/game/audio/sfx/battle-stun.mp3",
+      "description": "적 행동 중단: 짧게 떨리다 멎는 불규칙한 공명",
+      "seconds": 0.58,
+      "bytes": 5516,
+      "sha256": "a3655e9de2691e210948c1bec816ee0d57b477edf9cd615ea65f3c87a13da01c",
+      "decodedPeak": 0.620904,
+      "decodedRms": 0.063709,
+      "head8msPeak": 0.000733,
+      "tail8msPeak": 6e-06
+    },
+    "battle-victory": {
+      "path": "public/game/audio/sfx/battle-victory.mp3",
+      "description": "전투 종료: 긴장이 풀리는 낮은 종과 공기, 승전가 없음",
+      "seconds": 1.28,
+      "bytes": 10988,
+      "sha256": "d911c67e7b3f14fb9d710936ea3ed5951a59aea1d278087001f48610a46aecb6",
+      "decodedPeak": 0.620648,
+      "decodedRms": 0.114032,
+      "head8msPeak": 6.3e-05,
+      "tail8msPeak": 1.1e-05
+    },
+    "battle-defeat": {
+      "path": "public/game/audio/sfx/battle-defeat.mp3",
+      "description": "전원 사망: 아래로 가라앉는 공명과 바람, 큰 놀람 없음",
+      "seconds": 1.4,
+      "bytes": 11852,
+      "sha256": "8bd8573b6e8564e5a68b74680b06e213b2fe6a04370f0df1e95383db5f841387",
+      "decodedPeak": 0.626902,
+      "decodedRms": 0.125111,
+      "head8msPeak": 3.3e-05,
+      "tail8msPeak": 5e-06
+    }
+  },
+  "totalBytes": 76604
+}

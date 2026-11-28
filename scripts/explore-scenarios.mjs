@@ -110,7 +110,7 @@ function witness(campaign,target,count=4){
  const limit=12000;
  while(queue.length&&seen.size<limit){
   const {game,trace}=normalize(queue.pop(),campaign),id=key(game);if(seen.has(id))continue;seen.add(id);
-  if(target.ending&&game.nodeId===target.ending)return {...stats(),trace:traceList(trace),finalInventory:game.inventory,finalFlags:Object.keys(game.flags).filter(k=>game.flags[k]),completedCombats:game.completedCombats};
+  if(target.ending&&game.nodeId===target.ending)return {...stats(),trace:traceList(trace),finalInventory:game.inventory,finalFlags:Object.keys(game.flags).filter(k=>game.flags[k]),completedCombats:game.completedCombats,encounterResolutions:game.encounterResolutions||{}};
   if(game.phase!=='playing')continue;
   for(const choice of availableChoices(game,campaign)){
    const preview=previewAction(game,campaign,game.players[game.activeIndex].id,{choiceId:choice.id});if(!preview.ok)throw new Error(preview.error);
@@ -130,16 +130,26 @@ function witness(campaign,target,count=4){
 
 const report={version:VERSION,generatedAt:new Date().toISOString(),method:'Concrete target-directed routes through the actual engine. Every normal ending is witnessed separately with one, two, three and four players; item uses with four; each authored solo/group choice with its matching party size. All safe observations are read; story checks try representative rolls for each reachable grade; combat uses player natural 20 and enemy natural 1. Each search is capped at 12,000 states. Before queueing, an optimistic fixed-point reachability check unions all possible future gains from reachable observations, outcomes and combat victories, requiring only potentially attainable positive prerequisites and fixed party sizes. Negative conditions, consumption, pressure and injury are ignored by this pruning; it proves only that some branches cannot reach the target, never that a route succeeds. Actual successful witnesses still require applyAction for every event. The separate trace retains each actual event while search-only log copies are cleared to bound memory. A witness is one valid route, not exhaustive proof of prose quality, tactics or every death/revival combination. Death, revival, low-health narration and mode callbacks are separately tested by tests-v18. Profession-specific opening paths, combinations and parallel actions are separately covered by tests-v19; these witnesses begin at the shared main story.',scenarios:[],issues:[]};
 for(const campaign of CAMPAIGNS.flatMap(base=>[base,getCampaign(base.id,'epic')])){
- const row={id:campaign.id,storyLength:campaign.lengthMode||'basic',title:campaign.title,endings:[],soloEndings:[],twoPlayerEndings:[],threePlayerEndings:[],items:[],partyBranches:[]};
+ const row={id:campaign.id,storyLength:campaign.lengthMode||'basic',title:campaign.title,optionalEncounterCount:campaign.encounterCatalog?.length||0,endings:[],soloEndings:[],twoPlayerEndings:[],threePlayerEndings:[],items:[],partyBranches:[],encounterTools:[]};
  for(const node of Object.values(campaign.nodes).filter(n=>n.ending)){
   for(const [partySize,field] of [[1,'soloEndings'],[2,'twoPlayerEndings'],[3,'threePlayerEndings'],[4,'endings']]){
    const result=witness(campaign,{ending:node.id},partySize);row[field].push({id:node.id,title:node.title,partySize,...result});
    if(result.error)report.issues.push(`${campaign.id}/${node.id}/${partySize} players: ${result.error}`);
-   else if(!result.completedCombats.length)report.issues.push(`${campaign.id}/${node.id}/${partySize} players: ending bypasses combat`);
+   else{
+    const passed=new Set(result.trace.flatMap(step=>[step.sceneId,step.nextSceneId]));
+    const unresolved=Object.values(campaign.nodes).filter(scene=>passed.has(scene.id)&&scene.encounter&&!result.completedCombats.includes(scene.encounter.id)&&!result.encounterResolutions[scene.encounter.id]);
+    if(unresolved.length)report.issues.push(`${campaign.id}/${node.id}/${partySize} players: unresolved encounter ${unresolved.map(scene=>scene.encounter.id).join(', ')}`);
+   }
   }
  }
  for(const [id,item] of Object.entries(campaign.items)){
   const result=witness(campaign,{item:id});row.items.push({id,name:item.name,...result});if(result.error)report.issues.push(`${campaign.id}/${id}: ${result.error}`);
+ }
+ for(const entry of campaign.encounterCatalog||[]){
+  const choice=campaign.nodes[entry.gateId].choices.find(choice=>choice.id===`tool-${entry.id}`);if(!choice)continue;
+  const result=witness(campaign,{choice:choice.id,nodeId:entry.gateId},4);
+  row.encounterTools.push({encounterId:entry.id,nodeId:entry.gateId,choiceId:choice.id,label:choice.label,...result});
+  if(result.error)report.issues.push(`${campaign.id}/${campaign.lengthMode}/${choice.id}: ${result.error}`);
  }
  for(const node of Object.values(campaign.nodes))for(const choice of node.choices||[]){
   const mode=choice.requires?.partyMax===1?'solo':choice.requires?.partyMin===2?'group':null;if(!mode)continue;
@@ -149,7 +159,7 @@ for(const campaign of CAMPAIGNS.flatMap(base=>[base,getCampaign(base.id,'epic')]
  }
  report.scenarios.push(row);
  const routes=[...row.soloEndings,...row.twoPlayerEndings,...row.threePlayerEndings,...row.endings];
- console.log(`${campaign.id}/${campaign.lengthMode||'basic'}: ${routes.filter(r=>!r.error).length}/${routes.length} ending routes across 1–4 players, ${row.items.filter(r=>!r.error).length}/${row.items.length} item uses, ${row.partyBranches.filter(r=>!r.error).length}/${row.partyBranches.length} mode choices witnessed`);
+ console.log(`${campaign.id}/${campaign.lengthMode||'basic'}: ${routes.filter(r=>!r.error).length}/${routes.length} ending routes across 1–4 players, ${row.items.filter(r=>!r.error).length}/${row.items.length} item uses, ${row.partyBranches.filter(r=>!r.error).length}/${row.partyBranches.length} mode choices, ${row.encounterTools.filter(r=>!r.error).length}/${row.encounterTools.length} exact encounter tools witnessed`);
 }
 if(process.argv.includes('--write'))fs.writeFileSync(new URL('../NARRATIVE_REACHABILITY_V22.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
 if(report.issues.length){console.error(report.issues.join('\n'));process.exitCode=1;}

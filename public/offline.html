@@ -1502,7 +1502,7 @@ body.dice-presenting { overflow: hidden; }
     <section id="lobby-view" class="page lobby-view" hidden></section>
     <section id="game-view" class="game-view" hidden></section>
   </main>
-  <footer id="site-footer" class="site-footer"><span class="footer-wordmark">CHRONICLE GATE<small>THE STORIES WE LEAVE BEHIND</small></span><span>9개의 세계 · 36개 직업 · 우리의 선택<small>STORY TABLE v24</small></span></footer>
+  <footer id="site-footer" class="site-footer"><span class="footer-wordmark">CHRONICLE GATE<small>THE STORIES WE LEAVE BEHIND</small></span><span>9개의 세계 · 36개 직업 · 우리의 선택<small>STORY TABLE v24.1</small></span></footer>
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   <dialog id="entry-dialog" class="modal entry-dialog" aria-labelledby="entry-title"></dialog>
   <dialog id="preview-dialog" class="modal preview-dialog" aria-labelledby="preview-title"></dialog>
@@ -1538,7 +1538,7 @@ body.dice-presenting { overflow: hidden; }
   var HORROR_AUDIO_VERSION, HORROR_LOOPS;
   var init_horror_loops = __esm({
     "public/game/horror-loops.js"() {
-      HORROR_AUDIO_VERSION = "22010";
+      HORROR_AUDIO_VERSION = "24100";
       HORROR_LOOPS = Object.freeze({ "horror-apartment-ambient": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-apartment-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-apartment-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1296e3, "sourceFrames": 1312e3 }, "horror-broadcast-ambient": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-broadcast-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-broadcast-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1296e3, "sourceFrames": 1312e3 }, "horror-shared-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-shared-relief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 } });
     }
   });
@@ -39089,7 +39089,7 @@ body.dice-presenting { overflow: hidden; }
       init_opening();
       init_judgement();
       init_professions();
-      VERSION = "24.0.0";
+      VERSION = "24.1.0";
       STAT_LABELS = Object.freeze({ might: "\uD798", agility: "\uBBFC\uCCA9", wit: "\uD1B5\uCC30", heart: "\uAD50\uC12D" });
       clone = (value) => JSON.parse(JSON.stringify(value));
       bound = (value, low, high) => Math.max(low, Math.min(high, value));

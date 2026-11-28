@@ -12,7 +12,7 @@ const flush = async () => { for (let i = 0; i < 12; i++) await Promise.resolve()
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 const near = (a, b, epsilon = 1e-5) => assert.ok(Math.abs(a - b) <= epsilon, `${a} differs from ${b}`);
 
-function harness({ protocol = 'https:', fetchResponse, decode, playback } = {}) {
+function harness({ protocol = 'https:', fetchResponse, decode, playback, savedPreferences } = {}) {
   let wall = 0, nextId = 0, contextCount = 0;
   const requests = [], decodeCalls = [], contexts = [], sources = [], gains = [], media = [], timers = new Map(), frames = new Map(), records = new Map();
   class Param {
@@ -52,7 +52,7 @@ function harness({ protocol = 'https:', fetchResponse, decode, playback } = {}) 
     const response = { ok: true, arrayBuffer: async () => Uint8Array.of(id).buffer };
     return fetchResponse ? fetchResponse(request, response) : response;
   };
-  const saved = new Map();
+  const saved = new Map(savedPreferences ? [['cg-v14-audio', JSON.stringify(savedPreferences)]] : []);
   const mixer = createAudio(() => {}, { Audio: Media, AudioContext: Context, protocol, fetch: fetcher,
     now: () => wall, setTimer: (fn, delay) => { const id = ++nextId; timers.set(id, { fn, at: wall + delay }); return id; }, clearTimer: id => timers.delete(id),
     requestFrame: fn => { const id = ++nextId; frames.set(id, fn); return id; }, cancelFrame: id => frames.delete(id),
@@ -82,6 +82,29 @@ const expectedKeys = id => {
 const actualLive = h => h.mixer.backend==='buffer' ? h.live().map(s=>s.buffer.key) : h.media.filter(m=>m.src&&m.loop&&!m.paused).map(m=>m.dataset.key);
 const currentKey = h => actualLive(h).at(-1);
 
+for (const protocol of ['https:', 'file:']) {
+ test(`${protocol} changing story keeps both default and saved volume preferences and uses the same music gain`, async () => {
+  for (const savedPreferences of [undefined, { music: .37, effects: .62 }]) {
+   const h = harness({ protocol, savedPreferences });
+   const music = savedPreferences?.music ?? .25, effects = savedPreferences?.effects ?? .45;
+   const currentLevel = () => protocol === 'https:'
+    ? lastCurve(h.gains[0].gain).curve.at(-1)
+    : h.media.find(element => element.src && element.loop && !element.paused).volume;
+   try {
+    assert.deepEqual(h.mixer.preferences, { enabled: false, music, effects });
+    await h.mixer.enable();
+    for (const campaign of ['last-train', ...horrors, 'snow-radio']) {
+     for (const mood of ['mystery', 'danger', 'grief']) {
+      h.mixer.scene(campaign, mood); await flush(); h.step(1255);
+      assert.deepEqual(h.mixer.preferences, { enabled: true, music, effects });
+      near(currentLevel(), music);
+     }
+    }
+   } finally { h.mixer.destroy(); }
+  }
+ });
+}
+
 for(const protocol of ['https:','file:'])for(const campaignId of horrors){
  test(`${protocol} ${campaignId}: every mood uses the dedicated score and investigation does not restart calm`,async()=>{
   const h=harness({protocol}),keys=expectedKeys(campaignId);
@@ -96,7 +119,7 @@ for(const protocol of ['https:','file:'])for(const campaignId of horrors){
     assert.equal(currentKey(h),keys[mood]);assert.equal(actualLive(h).length,1);
    }
    const urls=protocol==='file:'?h.media.map(m=>m.initialSrc):h.requests.map(r=>r.url);
-   assert.ok(urls.every(url=>url.startsWith('/game/audio/horror-')&&url.endsWith('?v=22010')));
+   assert.ok(urls.every(url=>url.startsWith('/game/audio/horror-')&&url.endsWith('?v=24100')));
    if(protocol==='https:'){
     assert.ok(h.mixer.diagnostics.cachedTracks<=3);assert.ok(h.mixer.diagnostics.cachedBytes<=16*1024*1024);
     assert.equal(h.frames.size,0);assert.equal(h.timers.size,0);
@@ -123,7 +146,7 @@ test('all eight original horror files have guard regions and every authored Basi
   assert.equal(p.sampleRate,32000);assert.ok(p.startFrame>=16000);assert.ok(p.sourceFrames-p.endFrame>=16000);
   assert.ok((p.endFrame-p.startFrame)/p.sampleRate>=40);assert.ok((p.endFrame-p.startFrame)/p.sampleRate<=56);
   assert.ok(fs.existsSync(new URL(`../public/game/audio/${key}.mp3`,import.meta.url)));
-  assert.equal(musicAssetUrl(key),`/game/audio/${key}.mp3?v=22010`);
+  assert.equal(musicAssetUrl(key),`/game/audio/${key}.mp3?v=24100`);
  }
  for(const id of horrors)for(const length of ['basic','epic']){
   const campaign=getCampaign(id,length);
@@ -204,7 +227,7 @@ test('a missing horror file stays silent on entry and cannot request the old hot
  try{
   h.mixer.scene('hollow-apartment','calm');await h.mixer.enable();await flush();
   for(let i=0;i<12;i++)h.mixer.scene('hollow-apartment','mystery');await flush();
-  assert.deepEqual(h.requests.map(x=>x.url),['/game/audio/horror-apartment-ambient.mp3?v=22010']);assert.equal(h.live().length,0);
+  assert.deepEqual(h.requests.map(x=>x.url),['/game/audio/horror-apartment-ambient.mp3?v=24100']);assert.equal(h.live().length,0);
  }finally{h.mixer.destroy();}
 });
 
@@ -237,7 +260,7 @@ for(const protocol of ['https:','file:'])for(const failure of ['slow','reject','
     assert.equal(actualLive(h).length,0,'failed horror entry is quiet, not the previous bright score');
    }
    const urls=protocol==='https:'?h.requests.map(x=>x.url):h.media.map(x=>x.initialSrc);
-   assert.deepEqual(urls,['/game/audio/last-train-calm.mp3?v=20000','/game/audio/horror-apartment-ambient.mp3?v=22010']);
+   assert.deepEqual(urls,['/game/audio/last-train-calm.mp3?v=20000','/game/audio/horror-apartment-ambient.mp3?v=24100']);
   }finally{h.mixer.destroy();gate.resolve();await flush();}
   assert.equal(h.timers.size,0);assert.equal(h.frames.size,0);
  });

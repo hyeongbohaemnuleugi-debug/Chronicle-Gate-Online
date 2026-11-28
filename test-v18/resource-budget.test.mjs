@@ -137,7 +137,7 @@ test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with ho
 
 test('all eight horror scores have verified bytes, 48 kbps mono frames and matching authored loop metadata', () => {
   assert.deepEqual(Object.keys(HORROR_LOOPS).sort(), [...HORROR_KEYS].sort());
-  const audit = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/horror-score-audit-v22_1.json'), 'utf8'));
+  const audit = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/horror-score-audit-v24_1.json'), 'utf8'));
   assert.deepEqual(audit.tracks.map(entry => entry.id).sort(), [...HORROR_KEYS].sort());
   for (const key of HORROR_KEYS) {
     const entry = audit.tracks.find(row => row.id === key);

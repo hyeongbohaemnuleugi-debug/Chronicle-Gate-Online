@@ -583,8 +583,8 @@ test('v18 home presents the chronicle masthead and factual story, class and enco
     }
     assert.equal(app.doc.querySelectorAll('.chronicle-promise>div').length,3);
     assert.ok(query(app,'.site-footer').textContent.includes('v24'));
-    assert.match(html,/styles\.css\?v=24000/);
-    assert.match(html,/app\.js\?v=24000/);
+    assert.match(html,/styles\.css\?v=24100/);
+    assert.match(html,/app\.js\?v=24100/);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });

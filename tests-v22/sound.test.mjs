@@ -51,7 +51,7 @@ test('all seven original stories retain contextual mappings and horror uses its 
  for(const mapping of Object.values(BASIC_SCENE_SOUNDS)){assert.ok(Object.keys(mapping).length>=4);for(const sound of Object.values(mapping))assert.ok(SCENE_SOUNDS.includes(sound));}
  assert.equal(musicTheme('hollow-apartment'),'horror-apartment');assert.equal(musicTheme('drowned-broadcast'),'horror-broadcast');
  for(const id of ['hollow-apartment','drowned-broadcast'])for(const mood of ['calm','mystery','tension','danger','hope','grief']){
-  const asset=resolveMusicAsset(id,mood);assert.equal(asset.version,'22010');assert.ok(asset.loop);
+  const asset=resolveMusicAsset(id,mood);assert.equal(asset.version,'24100');assert.ok(asset.loop);
   assert.ok(fs.existsSync(new URL(`../public/game/audio/${asset.key}.mp3`,import.meta.url)));
  }
 });

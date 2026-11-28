@@ -1,0 +1,104 @@
+{
+  "version": "23.0.0",
+  "generator": "builtin image_gen",
+  "encoding": {
+    "format": "WebP",
+    "maxSize": 384,
+    "quality": 88,
+    "alphaPreserved": true
+  },
+  "promptFile": "scripts/battle-art/prompts-v23.json",
+  "totalBytes": 421480,
+  "entries": [
+    {
+      "id": "train-ledger-enforcer",
+      "file": "public/game/art/enemies/train-ledger-enforcer.webp",
+      "reference": "public/game/art/last-train.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 42542,
+      "sha256": "c5dfc5192cec92e13338cd53cfff4d53914faacaeab8c36bbe21b7edf30f95a8"
+    },
+    {
+      "id": "hotel-clockwork-archivist",
+      "file": "public/game/art/enemies/hotel-clockwork-archivist.webp",
+      "reference": "public/game/art/glass-hotel.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 36850,
+      "sha256": "614c5456d178390dd955370199fe6693e9baa54fc182b67058f39266e3a9231a"
+    },
+    {
+      "id": "market-contract-puppet",
+      "file": "public/game/art/enemies/market-contract-puppet.webp",
+      "reference": "public/game/art/glass-hotel.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 61708,
+      "sha256": "a25604e03b618c5bed2ffbfc64d46185b773e9abc5d7fa39b2ce909a47ae54bb"
+    },
+    {
+      "id": "sea-quarantine-cleaner",
+      "file": "public/game/art/enemies/sea-quarantine-cleaner.webp",
+      "reference": "public/game/art/last-train.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 36634,
+      "sha256": "9f24fc660ab49f32dfe50c59f384a92848b27e43c3f2735e3b6a26cc45e288b3"
+    },
+    {
+      "id": "feast-oath-cutlery",
+      "file": "public/game/art/enemies/feast-oath-cutlery.webp",
+      "reference": "public/game/art/glass-hotel.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 63932,
+      "sha256": "ef33bfd507f2e468247dbbcfc0518b90a8ddbf68e96d318cc094e7b81f4bac6a"
+    },
+    {
+      "id": "clock-archive-eraser",
+      "file": "public/game/art/enemies/clock-archive-eraser.webp",
+      "reference": "public/game/art/last-train.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 44586,
+      "sha256": "19aece9804884cb5cb7affc28ba46b9846c40691ff4b3bd24b0c3d4a600da240"
+    },
+    {
+      "id": "snow-checkpoint-catcher",
+      "file": "public/game/art/enemies/snow-checkpoint-catcher.webp",
+      "reference": "public/game/art/last-train.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 47514,
+      "sha256": "c9e6dbc3ff8c2e316b0df310574698f85f0435dcd26f3223ec91abac554a3c87"
+    },
+    {
+      "id": "apartment-empty-doorkeeper",
+      "file": "public/game/art/enemies/apartment-empty-doorkeeper.webp",
+      "reference": "public/game/art/hollow-apartment.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 35958,
+      "sha256": "393f61b90c4a36c1b8931358589d9c53544520b7e3a8d1e80db79939705706df"
+    },
+    {
+      "id": "broadcast-waiting-listener",
+      "file": "public/game/art/enemies/broadcast-waiting-listener.webp",
+      "reference": "public/game/art/hollow-apartment.webp",
+      "width": 384,
+      "height": 384,
+      "transparent": true,
+      "bytes": 51756,
+      "sha256": "efb2597d4168c7b739ab5115d6c1ad2db16c83ce87f50f4607b33f0018c7014a"
+    }
+  ]
+}

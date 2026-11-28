@@ -1,0 +1,545 @@
+{
+  "version": 24,
+  "provenance": "Original ImageGen illustrations using existing scene art as style reference. Not represented as hand-drawn by a human.",
+  "encoding": "WebP quality 86; nearest-neighbour proportional resize; alpha retained; 320px per square cell.",
+  "activeNewEnemyCount": 36,
+  "totalBytes": 1311094,
+  "entries": [
+    {
+      "id": "last-train",
+      "file": "public/game/art/enemies/last-train-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 102316,
+      "sha256": "047acd74b17a08d42ba41c4ecb03fdaae6a6b5e17e7c8e20b98f073273c1077b",
+      "sourceSha256": "a4afd561e4308399533c0f44cc8556f3d988b8d6565c1e450439db65d96dff70",
+      "reference": "public/game/art/last-train.webp",
+      "cells": [
+        {
+          "id": "train-tag-beast",
+          "name": "짐표를 두른 분실물 짐승",
+          "index": 0,
+          "alphaBounds": [
+            25,
+            67,
+            297,
+            282
+          ]
+        },
+        {
+          "id": "train-voice-moth",
+          "name": "목소리를 삼킨 방송나방",
+          "index": 2,
+          "alphaBounds": [
+            25,
+            48,
+            301,
+            278
+          ]
+        },
+        {
+          "id": "train-sleeper-spider",
+          "name": "침목 아래의 신호거미",
+          "index": 3,
+          "alphaBounds": [
+            17,
+            58,
+            293,
+            278
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glass-hotel",
+      "file": "public/game/art/enemies/glass-hotel-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 117936,
+      "sha256": "0c21fb90ae55213e2d9e5f60305b03c891bcdaa801ef5c1411000c70bdca8c34",
+      "sourceSha256": "314a38ab317b7ebcd8df4c2ce8edf4427ed7ddab2241ed730fe048f76ad11406",
+      "reference": "public/game/art/glass-hotel.webp",
+      "cells": [
+        {
+          "id": "hotel-glass-bellkeeper",
+          "name": "유리 날개 종지기",
+          "index": 1,
+          "alphaBounds": [
+            34,
+            21,
+            285,
+            301
+          ]
+        },
+        {
+          "id": "hotel-clockwork-magpie",
+          "name": "시간표를 쪼는 태엽까치",
+          "index": 2,
+          "alphaBounds": [
+            30,
+            55,
+            299,
+            291
+          ]
+        },
+        {
+          "id": "hotel-key-warden",
+          "name": "객실 열쇠의 문지기",
+          "index": 3,
+          "alphaBounds": [
+            18,
+            31,
+            291,
+            294
+          ]
+        }
+      ]
+    },
+    {
+      "id": "moon-market",
+      "file": "public/game/art/enemies/moon-market-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 102918,
+      "sha256": "181ee38a173c791df3b9e76e324c2e5826dfbc2433ecfc964af71fa251223543",
+      "sourceSha256": "a4eaf38f16c2c1526e75ab7abeeca392fe158df6bce918505bfb49da6904fbcb",
+      "reference": "public/game/art/moon-market.webp",
+      "cells": [
+        {
+          "id": "market-paper-serpent",
+          "name": "장부를 감은 종이구렁이",
+          "index": 1,
+          "alphaBounds": [
+            18,
+            51,
+            289,
+            276
+          ]
+        },
+        {
+          "id": "market-shadow-fox",
+          "name": "등불 기름을 핥는 그림자여우",
+          "index": 2,
+          "alphaBounds": [
+            29,
+            39,
+            294,
+            279
+          ]
+        },
+        {
+          "id": "market-wish-crab",
+          "name": "소원표를 두른 강게",
+          "index": 3,
+          "alphaBounds": [
+            9,
+            55,
+            298,
+            270
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deep-sea",
+      "file": "public/game/art/enemies/deep-sea-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 122698,
+      "sha256": "cd1a81246e1aa96a01f8d1da8d34acec9e3223620b57fd58097e8dda5eb57aeb",
+      "sourceSha256": "a0e937933464b2dd9e861c43a290ee9b3e98437f3e31455a48527f792926fbb6",
+      "reference": "public/game/art/deep-sea.webp",
+      "cells": [
+        {
+          "id": "sea-armored-eel",
+          "name": "구명줄을 감은 철갑장어",
+          "index": 1,
+          "alphaBounds": [
+            13,
+            50,
+            290,
+            291
+          ]
+        },
+        {
+          "id": "sea-pipe-crab",
+          "name": "압력관을 기는 관따개게",
+          "index": 2,
+          "alphaBounds": [
+            37,
+            59,
+            291,
+            281
+          ]
+        },
+        {
+          "id": "sea-suit-collector",
+          "name": "빈 잠수복 수거기",
+          "index": 3,
+          "alphaBounds": [
+            25,
+            23,
+            288,
+            283
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragon-banquet",
+      "file": "public/game/art/enemies/dragon-banquet-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 106406,
+      "sha256": "f526cdda119ba390a8c5a9819b681892d65a215fbddc1c303a51611c1672cac7",
+      "sourceSha256": "3e323497900ca7c58fb14c222b55d13902a8c4d0c87bbba8e0ea5b29977f24bf",
+      "reference": "public/game/art/dragon-banquet.webp",
+      "cells": [
+        {
+          "id": "feast-coal-salamander",
+          "name": "숯비늘 화덕도마뱀",
+          "index": 1,
+          "alphaBounds": [
+            17,
+            71,
+            305,
+            258
+          ]
+        },
+        {
+          "id": "feast-sugar-wasp",
+          "name": "설탕 날개 주전자말벌",
+          "index": 2,
+          "alphaBounds": [
+            46,
+            34,
+            293,
+            284
+          ]
+        },
+        {
+          "id": "feast-ash-golem",
+          "name": "재를 두른 굴뚝골렘",
+          "index": 3,
+          "alphaBounds": [
+            16,
+            17,
+            294,
+            277
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clock-city",
+      "file": "public/game/art/enemies/clock-city-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 116132,
+      "sha256": "2cc766561b09ff3a60ac96266902e789664bb28ab5bf7d5315969a735254fca6",
+      "sourceSha256": "0e7e74d96260990c114dcbef104a95a2e2717e4bfe0df95b251c3535cc721024",
+      "reference": "public/game/art/clock-city.webp",
+      "cells": [
+        {
+          "id": "clock-bronze-lion",
+          "name": "미납 시간을 지키는 청동 사자",
+          "index": 0,
+          "alphaBounds": [
+            25,
+            63,
+            291,
+            273
+          ]
+        },
+        {
+          "id": "clock-second-moth-swarm",
+          "name": "초침을 갉는 종이 나방 떼",
+          "index": 2,
+          "alphaBounds": [
+            41,
+            42,
+            272,
+            274
+          ]
+        },
+        {
+          "id": "clock-rewinding-watchman",
+          "name": "뒤로 걷는 야간 경비",
+          "index": 3,
+          "alphaBounds": [
+            44,
+            44,
+            272,
+            287
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snow-radio",
+      "file": "public/game/art/enemies/snow-radio-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 118440,
+      "sha256": "d2e90734f9d7d2525dd0b4406ae500f01bda79c24499394d9823d1407eda3e1b",
+      "sourceSha256": "c4efa631df81b602a8711803832f1d1047ad7f99ddf1ba52a57578f0dc7e3dd5",
+      "reference": "public/game/art/snow-radio.webp",
+      "cells": [
+        {
+          "id": "snow-heating-frostbear",
+          "name": "난방관을 감싼 서리곰",
+          "index": 1,
+          "alphaBounds": [
+            33,
+            52,
+            282,
+            279
+          ]
+        },
+        {
+          "id": "snow-retrieval-spider",
+          "name": "회수통을 끄는 정비 거미",
+          "index": 2,
+          "alphaBounds": [
+            35,
+            89,
+            298,
+            255
+          ]
+        },
+        {
+          "id": "snow-return-patrol",
+          "name": "귀환을 기다리는 순찰 잔상",
+          "index": 3,
+          "alphaBounds": [
+            17,
+            53,
+            285,
+            279
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hollow-apartment",
+      "file": "public/game/art/enemies/hollow-apartment-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 112914,
+      "sha256": "125f87c1b8bc930c16569c32996ad2c7a6e7d5f4b1c0d6ddb81c3fe455112c9a",
+      "sourceSha256": "c29853ad8265bb348fc4646d492d00edeb5d0cb17e52e30cca74c956a1947f0d",
+      "reference": "public/game/art/hollow-apartment.webp",
+      "cells": [
+        {
+          "id": "apartment-drain-tangle",
+          "name": "배수구에 엉킨 머리카락",
+          "index": 1,
+          "alphaBounds": [
+            6,
+            83,
+            301,
+            295
+          ]
+        },
+        {
+          "id": "apartment-rocking-horse",
+          "name": "혼자 흔들리는 목마",
+          "index": 2,
+          "alphaBounds": [
+            47,
+            38,
+            291,
+            282
+          ]
+        },
+        {
+          "id": "apartment-under-table-guest",
+          "name": "식탁 아래 숨은 손님",
+          "index": 3,
+          "alphaBounds": [
+            30,
+            33,
+            286,
+            286
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drowned-broadcast",
+      "file": "public/game/art/enemies/drowned-broadcast-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 129522,
+      "sha256": "e05eb9b65e4c8c7a88d73d3f0b6ada931dc0f52eb57586eaf28bad382de66d32",
+      "sourceSha256": "bc44480fcd05e7f57c305f57d66626d100908cbc0a87f36ad42fab646bffdd8e",
+      "reference": "public/game/art/drowned-broadcast.webp",
+      "cells": [
+        {
+          "id": "broadcast-blackwater-eel",
+          "name": "검은 물의 송신 장어",
+          "index": 1,
+          "alphaBounds": [
+            23,
+            50,
+            296,
+            293
+          ]
+        },
+        {
+          "id": "broadcast-applauding-seats",
+          "name": "박수 치는 빈 좌석들",
+          "index": 2,
+          "alphaBounds": [
+            21,
+            54,
+            300,
+            277
+          ]
+        },
+        {
+          "id": "broadcast-ahead-cameraman",
+          "name": "한 박자 먼저 움직이는 촬영기사",
+          "index": 3,
+          "alphaBounds": [
+            41,
+            33,
+            292,
+            288
+          ]
+        }
+      ]
+    },
+    {
+      "id": "human-opponents",
+      "file": "public/game/art/enemies/human-opponents-v24.webp",
+      "width": 960,
+      "height": 960,
+      "columns": 3,
+      "rows": 3,
+      "bytes": 281812,
+      "sha256": "e82ca2a9e38baabac25bc43db8870ae890d0692549fd2d7ec0297ad0b14804c3",
+      "sourceSha256": "78bc73b84d03a17fa58631d441bf4113a276b6ecd281d8d45ff26c85fb7773a0",
+      "reference": "public/game/art/last-train.webp",
+      "cells": [
+        {
+          "id": "train-track-blockade",
+          "name": "관제 선로 봉쇄조",
+          "index": 0,
+          "alphaBounds": [
+            45,
+            59,
+            296,
+            306
+          ]
+        },
+        {
+          "id": "hotel-night-security",
+          "name": "유리 호텔 야간 보안반",
+          "index": 1,
+          "alphaBounds": [
+            11,
+            49,
+            278,
+            305
+          ]
+        },
+        {
+          "id": "market-pier-enforcers",
+          "name": "나루 통행세 징수꾼",
+          "index": 2,
+          "alphaBounds": [
+            18,
+            49,
+            285,
+            307
+          ]
+        },
+        {
+          "id": "sea-quarantine-team",
+          "name": "본사 격리 집행반",
+          "index": 3,
+          "alphaBounds": [
+            27,
+            33,
+            295,
+            295
+          ]
+        },
+        {
+          "id": "feast-royal-guard",
+          "name": "왕실 배식 경비대",
+          "index": 4,
+          "alphaBounds": [
+            39,
+            30,
+            296,
+            297
+          ]
+        },
+        {
+          "id": "clock-debt-collector",
+          "name": "시간 금고의 채권 회수인",
+          "index": 5,
+          "alphaBounds": [
+            43,
+            23,
+            241,
+            299
+          ]
+        },
+        {
+          "id": "snow-whiteout-stragglers",
+          "name": "눈길을 막은 고립 대원들",
+          "index": 6,
+          "alphaBounds": [
+            26,
+            32,
+            301,
+            290
+          ]
+        },
+        {
+          "id": "apartment-floor-patrol",
+          "name": "폐쇄동 야간 순찰원",
+          "index": 7,
+          "alphaBounds": [
+            34,
+            31,
+            281,
+            290
+          ]
+        },
+        {
+          "id": "broadcast-record-removal-crew",
+          "name": "폐국 기록 회수반",
+          "index": 8,
+          "alphaBounds": [
+            40,
+            34,
+            294,
+            293
+          ]
+        }
+      ]
+    }
+  ]
+}

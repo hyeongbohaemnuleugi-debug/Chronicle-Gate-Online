@@ -8,9 +8,10 @@ import path from 'node:path';
 import {Server} from 'socket.io';
 import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
-import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {CAMPAIGNS} from '../public/game/campaigns/index.js';
 
 const campaign=CAMPAIGNS.find(c=>c.id==='clock-city');
+const libraryEncounter=campaign.encounterCatalog.find(entry=>entry.arenaId==='library');
 const server=http.createServer((_req,res)=>{res.writeHead(404);res.end();});
 const io=new Server(server,{serveClient:false});
 let rolls=0,die=12,serial=0;
@@ -72,7 +73,10 @@ try{
  assert.deepEqual(state.game.inventory,[]);
  assert.ok(permanentClues.every(id=>state.game.clues.some(c=>c.id===id)));
  assert.equal(state.game.scene.arrival.grade,'fumble');
- assert.equal(state.game.scene.arrival.toSceneId,'library');
+ assert.equal(state.game.scene.arrival.toSceneId,libraryEncounter.gateId);
+ assert.equal(state.game.combat,null,'The story fumble reaches a decision, not a compulsory fight.');
+ assert.ok(state.game.scene.choices.some(choice=>choice.id===`avoid-${libraryEncounter.id}`));
+ assert.ok(state.game.scene.choices.some(choice=>choice.id===`fight-${libraryEncounter.id}`));
  console.log('OK shared item pickup, four-outcome preview, stale-request rejection and server-rolled fumble consume once while permanent clues remain');
 
  const portable=ok(await ack(host,'table:export')).save;
@@ -89,9 +93,33 @@ try{
  const imported=await sync(newHost);
  assert.deepEqual(imported.game.inventory,[]);assert.deepEqual(imported.game.scene.arrival,arrival);
  assert.equal(imported.game.lastResult.grade,'fumble');
- assert.ok(imported.game.combat,'mid-fight gate remains active across portable import');
+ assert.equal(imported.game.combat,null,'Import must preserve the unanswered encounter decision.');
+ assert.equal(imported.game.scene.id,libraryEncounter.gateId);
  assert.deepEqual(ok(await ack(newHost,'table:export')).save.game.spentItems,['clock_wedge']);
- console.log('OK reconnect and import into a new room preserve spent items, branch arrival, last grade and active combat');
+ // Both continuations use the actual runtime gate. The imported party avoids
+ // the encounter; the original party deliberately fights and exports that phase.
+ const beforeDecision=rolls;
+ ok(await ack(newHost,'table:act',{choiceId:`avoid-${libraryEncounter.id}`,revision:imported.game.revision,requestId:'avoid-library'}));
+ const avoided=(await sync(newHost)).game;
+ assert.equal(avoided.scene.id,'library');assert.equal(avoided.combat,null);assert.deepEqual(avoided.completedCombats,[]);
+ assert.equal(avoided.encounterResolutions[libraryEncounter.id].method,'bypassed');
+ assert.ok(avoided.journal.some(entry=>entry.grade==='fumble'&&entry.lostItems.some(item=>item.id==='clock_wedge')));
+ assert.deepEqual(ok(await ack(newHost,'table:export')).save.game.spentItems,['clock_wedge']);
+ const pending=await sync(host);
+ ok(await ack(host,'table:act',{choiceId:`fight-${libraryEncounter.id}`,revision:pending.game.revision,requestId:'fight-library'}));
+ const fighting=(await sync(host)).game;
+ assert.equal(fighting.combat.id,libraryEncounter.id);assert.equal(fighting.scene.id,'library');
+ assert.equal(fighting.encounterResolutions[libraryEncounter.id],undefined);assert.equal(rolls,beforeDecision,'Neither automatic decision rolls a die.');
+ const battleSave=ok(await ack(host,'table:export')).save;
+ const [battleHost,battlePeer]=await Promise.all([client(),client()]);
+ const battleOwner=ok(await ack(battleHost,'table:create',{campaignId:campaign.id,name:'전투를 이은 방장'}));
+ ok(await ack(battlePeer,'table:join',{code:battleOwner.code,name:'전투를 이은 동료'}));
+ ok(await ack(battleHost,'table:import',{save:battleSave}));
+ const battleRestored=(await sync(battleHost)).game;
+ assert.equal(battleRestored.combat.id,libraryEncounter.id);assert.equal(battleRestored.combat.enemy.health,fighting.combat.enemy.health);
+ assert.ok(battleRestored.journal.some(entry=>entry.grade==='fumble'&&entry.lostItems.some(item=>item.id==='clock_wedge')));
+ assert.deepEqual(ok(await ack(battleHost,'table:export')).save.game.spentItems,['clock_wedge']);
+ console.log('OK reconnect/import retain the original fumble and spent item; real gate decisions independently preserve a peaceful passage or a portable active fight');
  console.log('V18 STORY NETWORK PASSED: 3 groups');
 }catch(error){console.error('V18 STORY NETWORK FAILED:',error);process.exitCode=1;}
 finally{

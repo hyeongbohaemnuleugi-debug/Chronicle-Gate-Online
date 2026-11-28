@@ -8,7 +8,7 @@ import path from 'node:path';
 import { Server } from 'socket.io';
 import { io as connectClient } from 'socket.io-client';
 import { attachTableService } from '../game-server/table-service.js';
-import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { CAMPAIGNS } from '../public/game/campaigns/index.js';
 
 const storageDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chronicle-v18-combat-network-'));
 const campaign = CAMPAIGNS.find(c => c.id === 'deep-sea');
@@ -66,9 +66,14 @@ function noCredentials(value) {
 }
 function routeToFight(c, nodeId = c.start, pathSoFar = []) {
   const node = c.nodes[nodeId];
-  if (node.encounter) return pathSoFar;
+  if (node.encounter && node.encounter.hpPerPlayer !== 2) return pathSoFar;
   if (node.ending) return null;
   for (const choice of node.choices || []) {
+    if(node.encounterGate){
+      const entry=c.encounterCatalog.find(row=>row.id===node.encounterGate);
+      const regular=c.nodes[entry.arenaId].encounter.hpPerPlayer===2;
+      if(choice.id!==`${regular?'avoid':'fight'}-${node.encounterGate}`)continue;
+    }
     if (choice.requires || choice.useItems?.length || choice.consumeItems?.length) continue;
     const next = choice.outcomes?.[choice.automatic ? 'success' : 'critical']?.next;
     if (!next || pathSoFar.some(step => step.nodeId === next)) continue;

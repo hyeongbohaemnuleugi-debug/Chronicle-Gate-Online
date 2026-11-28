@@ -17,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { build } from 'esbuild';
-import { LEGACY_CAMPAIGNS as CAMPAIGNS } from '../public/game/campaigns/index.js';
+import { LEGACY_CAMPAIGNS as CAMPAIGNS, CAMPAIGNS as CURRENT_CAMPAIGNS } from '../public/game/campaigns/index.js';
 import { createStoryState as createGame, applyAction, previewAction, availableChoices, getClasses, gradeRoll, viewGame } from '../public/game/engine.js';
 import { startCombat } from '../public/game/combat.js';
 import { chronicleText } from '../public/game/narrative.js';
@@ -482,7 +482,8 @@ test('combat victory removes the battle panel and returns to the authored curren
     assert.equal(app.doc.querySelector('.combat-panel'),null);
     assert.ok(app.doc.querySelectorAll('[data-choice]').length>0);
     assert.equal(app.doc.querySelector('#action-form'),null);
-    assert.ok(query(app,'.scene-prose').textContent.includes(viewGame(after,fixture.story,after.players[0].id).scene.reading.paragraphs[0]));
+    const currentStory=CURRENT_CAMPAIGNS.find(story=>story.id===after.campaignId);
+    assert.ok(query(app,'.scene-prose').textContent.includes(viewGame(after,currentStory,after.players[0].id).scene.reading.paragraphs[0]));
     assert.equal(after.chronicle.at(-1).kind,'combat');
     const receipt=query(app,'.result-details');assert.equal(receipt.open,false);
     assert.equal(query(app,'.last-result>p').textContent,after.lastResult.narrativeText||after.lastResult.text);
@@ -569,20 +570,21 @@ test('v18 home presents the chronicle masthead and factual story, class and enco
     assert.match(query(app,'#home-title').textContent,/CHRONICLE.*GATE/);
     assert.ok(query(app,'.hero-invitation svg'));
     assert.equal(query(app,'.hero-art').dataset.artPriority,'high');
-    for(const story of CAMPAIGNS){
+    for(const story of CURRENT_CAMPAIGNS){
       const card=query(app,`[data-campaign="${story.id}"]`);
       const scenes=Object.values(story.nodes).filter(n=>!n.ending).length;
       const endings=Object.values(story.nodes).filter(n=>n.ending).length;
       assert.ok(card.textContent.includes(`${scenes}개 장면`));
       assert.ok(card.textContent.includes(`${endings}개 결말`));
       assert.ok(card.textContent.includes('전용 직업 4개'));
-      assert.ok(card.textContent.includes('1번의 전투'));
+      assert.ok(card.textContent.includes('서로 다른 상대 5종'));
+      assert.ok(card.textContent.includes('기본 3종 · 서사시 5종 · 전투는 선택'));
       assert.equal(card.querySelector('[data-art]').dataset.artPriority,'defer');
     }
     assert.equal(app.doc.querySelectorAll('.chronicle-promise>div').length,3);
-    assert.ok(query(app,'.site-footer').textContent.includes('v22'));
-    assert.match(html,/styles\.css\?v=22010/);
-    assert.match(html,/app\.js\?v=22010/);
+    assert.ok(query(app,'.site-footer').textContent.includes('v24'));
+    assert.match(html,/styles\.css\?v=24000/);
+    assert.match(html,/app\.js\?v=24000/);
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });

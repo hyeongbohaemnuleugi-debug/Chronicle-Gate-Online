@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createAudio } from '../public/game/audio.js';
 import { HORROR_LOOPS } from '../public/game/horror-loops.js';
+import { BATTLE_EFFECTS } from '../public/game/battle-audio-assets.js';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const GAME = path.join(ROOT, 'public/game');
@@ -28,9 +29,10 @@ const HORROR_KEYS = [
   'horror-broadcast-ambient', 'horror-broadcast-tension', 'horror-broadcast-danger',
   'horror-shared-grief', 'horror-shared-relief',
 ];
-// v22.1 preserves the old scores and adds eight explicitly budgeted horror tracks.
+// v24 retains every v23 audio/image file and adds authored opponent atlases.
+// This explicit new-content allowance is a file budget, not a hosted-account quota.
 // Budgets apply to measured delivered files; no WAV masters or runtime synthesis are shipped.
-const BUDGET = 22_000_000;
+const BUDGET = 23_500_000;
 const AUDIO_BUDGET = 17_000_000;
 const HORROR_BUDGET = 2_400_000;
 const relative = file => path.relative(ROOT, file).split(path.sep).join('/');
@@ -88,7 +90,7 @@ function inspectMp3(buffer) {
   return { ...first, frames, seconds, maxKbps };
 }
 
-test('all public game resources fit 22 MB, with audio below 17 MB and new horror scores below 2.4 MB', t => {
+test('all public game resources fit 23.5 MB, with audio below 17 MB and new horror scores below 2.4 MB', t => {
   const total = allFiles.reduce((sum, file) => sum + fileBytes(file), 0);
   const audioTotal = files(AUDIO).reduce((sum, file) => sum + fileBytes(file), 0);
   const artTotal = files(ART).reduce((sum, file) => sum + fileBytes(file), 0);
@@ -97,7 +99,7 @@ test('all public game resources fit 22 MB, with audio below 17 MB and new horror
   const horrorTotal = HORROR_KEYS.reduce((sum, key) => sum + fileBytes(path.join(AUDIO, `${key}.mp3`)), 0);
   assert.ok(horrorTotal <= HORROR_BUDGET, `eight horror scores exceed their 2.4 MB delivery budget: ${horrorTotal}`);
   assert.ok(!allFiles.some(file => /\.(?:wav|flac|aiff|aif)$/i.test(file)), 'uncompressed masters must not be shipped in public/game');
-  t.diagnostic(`public/game=${total} bytes; audio=${audioTotal}; art=${artTotal}; music=50, effects=25; new horror=${horrorTotal}`);
+  t.diagnostic(`public/game=${total} bytes; audio=${audioTotal}; art=${artTotal}; music=50, effects=${25+BATTLE_EFFECTS.length}; new horror=${horrorTotal}`);
 });
 
 test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with honest duration metadata', () => {
@@ -109,9 +111,10 @@ test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with ho
     ...THEMES.flatMap(theme => MOODS.map(mood => `${theme}-${mood}.mp3`)),
     ...EFFECTS.map(effect => `${effect}.mp3`),
   ].sort());
-  assert.deepEqual(files(AUDIO).filter(file => /\.mp3$/i.test(file)).map(file => path.basename(file)).sort(), [
+  assert.deepEqual(files(AUDIO).filter(file => /\.mp3$/i.test(file)).map(file => path.relative(AUDIO,file).split(path.sep).join('/')).sort(), [
     ...names, ...SCENE_SOUNDS.map(key => `${key}.mp3`), ...HORROR_KEYS.map(key => `${key}.mp3`),
-  ].sort(), 'the complete MP3 directory must contain exactly 55 original, 12 contextual and eight horror files');
+    ...BATTLE_EFFECTS.map(key => `sfx/${key}.mp3`),
+  ].sort(), 'the complete MP3 directory must contain exactly 55 original, 12 contextual, eight horror and 13 battle files');
   for (const entry of manifest.files) {
     assert.equal(path.basename(entry.file), entry.file, 'manifest must reference a local filename');
     const absolute = path.join(AUDIO, entry.file);

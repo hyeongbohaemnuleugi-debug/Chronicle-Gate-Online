@@ -87,7 +87,7 @@ await test('four-player default service never calls configured Supabase during p
     const start = () => startHttpService({ port: 0, host: '127.0.0.1', tableOptions: { storageDir: temporary, roll: () => { rolls++; return 12; } } });
     running = await start();
     const health = await (await fetch(running.url + '/health')).json();
-    assert.equal(health.ok, true); assert.equal(health.version, '22.1.0');
+    assert.equal(health.ok, true); assert.equal(health.version, '24.0.0');
     assert.deepEqual(health.supabase, { enabled: false, requests: 0 });
     const catalog = await (await fetch(running.url + '/api/table/catalog')).json();
     assert.equal(catalog.ok, true); assert.equal(catalog.campaigns.length, 9);

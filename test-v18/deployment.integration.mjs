@@ -132,7 +132,7 @@ async function mediaContract(base, pathname) {
   assert.equal(cached.status, 304); assert.equal((await cached.arrayBuffer()).byteLength, 0, 'cache revalidation should send zero media bytes');
   const dated = await get(base, pathname, { headers: { 'if-modified-since': full.headers.get('last-modified') } });
   assert.equal(dated.status, 304); await dated.arrayBuffer();
-  for (const version of ['17000','19000','20000','22000','22010']) {
+  for (const version of ['17000','19000','20000','22000','22010','23000','24000']) {
     const versioned = await get(base, pathname + '?v=' + version, { method: 'HEAD', headers: { 'accept-encoding': 'identity' } });
     assert.match(versioned.headers.get('cache-control') || '', /max-age=31536000\b/);
     assert.match(versioned.headers.get('cache-control') || '', /immutable/);
@@ -194,18 +194,18 @@ await test('production entry has an isolated account-free surface and compact ca
     server = await spawnServer('server.js', { supabaseURL: `http://127.0.0.1:${fakeSupabase.address().port}` });
     await t.test('health exposes truthful runtime limits and nine-story catalog', async () => {
       const health = await (await get(server.base, '/health')).json();
-      assert.equal(health.ok, true); assert.equal(health.version, '22.1.0'); assert.equal(health.legacyEnabled, false);
+      assert.equal(health.ok, true); assert.equal(health.version, '24.0.0'); assert.equal(health.legacyEnabled, false);
       assert.deepEqual(health.supabase, { enabled: false, requests: 0 });
       assert.equal(health.limits.maxRooms, 32); assert.equal(health.limits.roomTtlMs, 24 * 60 * 60 * 1000);
       assert.equal(health.limits.chatTtlMs, 30 * 60 * 1000); assert.equal(health.limits.maxChatMessages, 30);
       assert.equal(health.limits.maxRoomBytes, 256 * 1024);
       const catalog = await (await get(server.base, '/api/table/catalog')).json();
-      assert.equal(catalog.ok, true); assert.equal(catalog.version, '22.1.0'); assert.equal(catalog.storage, 'disk');
+      assert.equal(catalog.ok, true); assert.equal(catalog.version, '24.0.0'); assert.equal(catalog.storage, 'disk');
       assert.equal(catalog.campaigns.length, 9); assert.equal(new Set(catalog.campaigns.map(story => story.id)).size, 9);
     });
     await t.test('homepage and Socket.IO client load under restrictive CSP', async () => {
       const response = await get(server.base, '/'); assert.equal(response.status, 200); checkCSP(response.headers.get('content-security-policy'));
-      assert.match(await response.text(), /\/game\/app\.js\?v=22010/);
+      assert.match(await response.text(), /\/game\/app\.js\?v=24000/);
       const localEntry = await get(server.base, '/offline.html', { redirect: 'manual' });
       assert.equal(localEntry.status, 302); assert.equal(localEntry.headers.get('location'), '/index.html?offline=1'); await localEntry.arrayBuffer();
       const socketClient = await get(server.base, '/socket.io/socket.io.js'); assert.equal(socketClient.status, 200);
@@ -216,6 +216,7 @@ await test('production entry has an isolated account-free surface and compact ca
       await mediaContract(server.base, '/game/audio/last-train-mystery.mp3');
       await mediaContract(server.base, '/game/audio/horror-apartment-ambient.mp3');
       await mediaContract(server.base, '/game/audio/horror-broadcast-danger.mp3');
+      await mediaContract(server.base, '/game/audio/sfx/battle-hit.mp3');
       await mediaContract(server.base, '/game/art/last-train.webp');
     });
     await t.test('JavaScript and catalog use negotiated gzip plus conditional revalidation', async () => {
@@ -239,6 +240,7 @@ await test('offline HTTP entry uses the same media contract without npm modules 
       assert.match(await page.text(), /\/game\/app\.js/); await checkAssets(server.base);
       await mediaContract(server.base, '/game/audio/victory.mp3');
       await mediaContract(server.base, '/game/audio/horror-shared-grief.mp3');
+      await mediaContract(server.base, '/game/audio/sfx/battle-fumble.mp3');
     });
     await t.test('old account/oversized WAV routes and source remain blocked offline', () => blockedRoutes(server.base));
     await t.test('double-click distribution bundles code and uses relative media paths', async () => {
@@ -281,7 +283,7 @@ await test('production loads a local env file while preserving host-provided set
     server = await spawnServer('server.js', { envFile, environment: { CHRONICLE_MAX_ROOMS: '5' } });
     // Readiness at the allocated parent PORT already proves .env PORT=0 did not win.
     const health = await (await get(server.base, '/health')).json();
-    assert.equal(health.ok, true); assert.equal(health.version, '22.1.0');
+    assert.equal(health.ok, true); assert.equal(health.version, '24.0.0');
     assert.equal(health.limits.maxRooms, 5, 'host environment must take precedence over the local file');
     assert.equal(health.limits.maxRoomBytes, 96 * 1024, 'setting absent from host environment should load from the local file');
     assert.equal(health.legacyEnabled, false); assert.deepEqual(health.supabase, { enabled: false, requests: 0 });

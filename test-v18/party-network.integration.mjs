@@ -9,7 +9,7 @@ import path from 'node:path';
 import {Server} from 'socket.io';
 import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
-import {LEGACY_CAMPAIGNS as CAMPAIGNS} from '../public/game/campaigns/index.js';
+import {CAMPAIGNS} from '../public/game/campaigns/index.js';
 import {chronicleText} from '../public/game/narrative.js';
 import {OPENINGS} from '../public/game/opening.js';
 

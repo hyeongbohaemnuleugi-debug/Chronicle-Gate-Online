@@ -1,0 +1,468 @@
+{
+  "version": "22.1.0",
+  "baseline": "22.0.0",
+  "dateKorea": "2026-11-27",
+  "change": "Dedicated darker original music for the two horror campaigns, including calm/hope, with a bounded fade out of unrelated music when loading fails.",
+  "newMusic": {
+    "files": 8,
+    "bytes": 2261008,
+    "source": {
+      "script": "scripts/build-horror-score-v22_1.py",
+      "scriptSha256": "d776156e2e5919003333d0218d2aa9fa6b9dc16c6dedc6349f43b883f24ed2ff",
+      "score": "scripts/horror-score-v22_1.json",
+      "scoreSha256": "1ee7ff57d77d5f24de8fd5c9d4eb2d6fa8e55528a95b3631f64d36023667d4d6"
+    },
+    "tracks": [
+      {
+        "id": "horror-apartment-ambient",
+        "bytes": 294668,
+        "sha256": "8f4889865394247960d7792bc0ff2795a9e8219feb16750b51dd6a7194ed752c",
+        "loopSeconds": 48.0,
+        "measured": {
+          "integratedLufs": -25.06,
+          "truePeakDbtp": -11.42,
+          "loudnessRangeLu": 4.0,
+          "rmsDbfs": -23.0988,
+          "peakDbfs": -11.4209,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -56.8477,
+            "jumpTo99thStepRatio": 0.184,
+            "secondDifferenceTo99thRatio": 0.65734,
+            "edge100msRmsDifferenceDb": 0.0199
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -48.7589,
+            "jumpTo99thStepRatio": 0.44401,
+            "secondDifferenceTo99thRatio": 0.74276,
+            "edge100msRmsDifferenceDb": 0.3292
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -48.7636,
+            "jumpTo99thStepRatio": 0.46669,
+            "secondDifferenceTo99thRatio": 0.69831,
+            "edge100msRmsDifferenceDb": 0.3429
+          }
+        }
+      },
+      {
+        "id": "horror-apartment-tension",
+        "bytes": 294668,
+        "sha256": "93601da5a874e5441c27cf7fcf03fee72d2a21b7da282b18f5e726975a504d9e",
+        "loopSeconds": 48.0,
+        "measured": {
+          "integratedLufs": -23.36,
+          "truePeakDbtp": -10.72,
+          "loudnessRangeLu": 4.1,
+          "rmsDbfs": -21.4731,
+          "peakDbfs": -10.7223,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -56.8941,
+            "jumpTo99thStepRatio": 0.13622,
+            "secondDifferenceTo99thRatio": 0.31719,
+            "edge100msRmsDifferenceDb": 0.0154
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -45.2757,
+            "jumpTo99thStepRatio": 0.49433,
+            "secondDifferenceTo99thRatio": 0.07867,
+            "edge100msRmsDifferenceDb": 0.3931
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -44.9657,
+            "jumpTo99thStepRatio": 0.53785,
+            "secondDifferenceTo99thRatio": 0.10663,
+            "edge100msRmsDifferenceDb": 0.3831
+          }
+        }
+      },
+      {
+        "id": "horror-apartment-danger",
+        "bytes": 246500,
+        "sha256": "54f053ced9273fd2c7cccc61c6fd4efc37430cc2d0d9ab4dc07acccd30fb6185",
+        "loopSeconds": 40.0,
+        "measured": {
+          "integratedLufs": -22.5,
+          "truePeakDbtp": -8.86,
+          "loudnessRangeLu": 4.7,
+          "rmsDbfs": -20.5623,
+          "peakDbfs": -8.8571,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -60.6752,
+            "jumpTo99thStepRatio": 0.07323,
+            "secondDifferenceTo99thRatio": 0.07259,
+            "edge100msRmsDifferenceDb": 0.0144
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -56.8981,
+            "jumpTo99thStepRatio": 0.10797,
+            "secondDifferenceTo99thRatio": 0.33106,
+            "edge100msRmsDifferenceDb": 0.2182
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -54.2699,
+            "jumpTo99thStepRatio": 0.15308,
+            "secondDifferenceTo99thRatio": 0.30797,
+            "edge100msRmsDifferenceDb": 0.2252
+          }
+        }
+      },
+      {
+        "id": "horror-broadcast-ambient",
+        "bytes": 294668,
+        "sha256": "fbecf7d28075708f0ba9ac630309d7be3805b87c9404b52f96cc11d46995f00c",
+        "loopSeconds": 48.0,
+        "measured": {
+          "integratedLufs": -24.85,
+          "truePeakDbtp": -10.52,
+          "loudnessRangeLu": 2.6,
+          "rmsDbfs": -23.0589,
+          "peakDbfs": -10.5197,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -67.1879,
+            "jumpTo99thStepRatio": 0.05432,
+            "secondDifferenceTo99thRatio": 0.04418,
+            "edge100msRmsDifferenceDb": 0.0245
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -60.6053,
+            "jumpTo99thStepRatio": 0.11025,
+            "secondDifferenceTo99thRatio": 0.28643,
+            "edge100msRmsDifferenceDb": 0.0729
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -64.6754,
+            "jumpTo99thStepRatio": 0.07254,
+            "secondDifferenceTo99thRatio": 0.19099,
+            "edge100msRmsDifferenceDb": 0.0699
+          }
+        }
+      },
+      {
+        "id": "horror-broadcast-tension",
+        "bytes": 294668,
+        "sha256": "cd768569b4e266f54be9ec9286afc29ed1f9522737fcce02c5a38505433a2619",
+        "loopSeconds": 48.0,
+        "measured": {
+          "integratedLufs": -23.35,
+          "truePeakDbtp": -9.76,
+          "loudnessRangeLu": 2.2,
+          "rmsDbfs": -21.4578,
+          "peakDbfs": -9.7574,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -69.6808,
+            "jumpTo99thStepRatio": 0.02989,
+            "secondDifferenceTo99thRatio": 0.05042,
+            "edge100msRmsDifferenceDb": 0.0036
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -58.6331,
+            "jumpTo99thStepRatio": 0.10163,
+            "secondDifferenceTo99thRatio": 0.1041,
+            "edge100msRmsDifferenceDb": 0.0979
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -59.3873,
+            "jumpTo99thStepRatio": 0.09779,
+            "secondDifferenceTo99thRatio": 0.16956,
+            "edge100msRmsDifferenceDb": 0.0957
+          }
+        }
+      },
+      {
+        "id": "horror-broadcast-danger",
+        "bytes": 246500,
+        "sha256": "bfd36dff48e2d8b33dac8b36f07bfefb926956eb736a0dd0f24dce9305a4a41e",
+        "loopSeconds": 40.0,
+        "measured": {
+          "integratedLufs": -22.34,
+          "truePeakDbtp": -8.06,
+          "loudnessRangeLu": 3.0,
+          "rmsDbfs": -20.5195,
+          "peakDbfs": -8.0645,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -52.3802,
+            "jumpTo99thStepRatio": 0.1759,
+            "secondDifferenceTo99thRatio": 0.42453,
+            "edge100msRmsDifferenceDb": 0.0164
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -72.6756,
+            "jumpTo99thStepRatio": 0.01623,
+            "secondDifferenceTo99thRatio": 0.04316,
+            "edge100msRmsDifferenceDb": 0.5814
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -61.0274,
+            "jumpTo99thStepRatio": 0.065,
+            "secondDifferenceTo99thRatio": 0.03048,
+            "edge100msRmsDifferenceDb": 0.5804
+          }
+        }
+      },
+      {
+        "id": "horror-shared-grief",
+        "bytes": 294668,
+        "sha256": "679b61805d0a9861490dbdbf4dd221ecf85785bee37f04c38b0c81c7c1276f9a",
+        "loopSeconds": 48.0,
+        "measured": {
+          "integratedLufs": -25.27,
+          "truePeakDbtp": -10.56,
+          "loudnessRangeLu": 4.2,
+          "rmsDbfs": -23.8246,
+          "peakDbfs": -10.5572,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -58.0623,
+            "jumpTo99thStepRatio": 0.17171,
+            "secondDifferenceTo99thRatio": 1.04328,
+            "edge100msRmsDifferenceDb": 0.0063
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -61.781,
+            "jumpTo99thStepRatio": 0.10643,
+            "secondDifferenceTo99thRatio": 0.07892,
+            "edge100msRmsDifferenceDb": 0.3066
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -61.4399,
+            "jumpTo99thStepRatio": 0.11639,
+            "secondDifferenceTo99thRatio": 0.14137,
+            "edge100msRmsDifferenceDb": 0.305
+          }
+        }
+      },
+      {
+        "id": "horror-shared-relief",
+        "bytes": 294668,
+        "sha256": "6b82046dd8fa7a3edce93373cea8239440f5efdef99e24443baa122f458e599d",
+        "loopSeconds": 48.0,
+        "measured": {
+          "integratedLufs": -25.19,
+          "truePeakDbtp": -9.73,
+          "loudnessRangeLu": 5.9,
+          "rmsDbfs": -23.6078,
+          "peakDbfs": -9.7296,
+          "clippedSamples": 0,
+          "longestBelowMinus60DbMs": 0,
+          "loopBoundary": {
+            "sampleJumpDbfs": -54.8023,
+            "jumpTo99thStepRatio": 0.22413,
+            "secondDifferenceTo99thRatio": 1.32842,
+            "edge100msRmsDifferenceDb": 0.0238
+          },
+          "originalCompositionBoundaryBeforeEncoding": {
+            "sampleJumpDbfs": -67.1909,
+            "jumpTo99thStepRatio": 0.05115,
+            "secondDifferenceTo99thRatio": 0.841,
+            "edge100msRmsDifferenceDb": 0.3069
+          },
+          "originalCompositionBoundaryAfterEncoding": {
+            "sampleJumpDbfs": -67.4378,
+            "jumpTo99thStepRatio": 0.05233,
+            "secondDifferenceTo99thRatio": 0.70907,
+            "edge100msRmsDifferenceDb": 0.321
+          }
+        }
+      }
+    ]
+  },
+  "resources": {
+    "publicGame": {
+      "files": 125,
+      "bytes": 21086699
+    },
+    "publicGameBaseline": {
+      "files": 115,
+      "bytes": 18820568
+    },
+    "increaseBytes": 2266131,
+    "audioDirectory": {
+      "files": 76,
+      "bytes": 16686518
+    },
+    "offlineHtmlBytes": 4109414,
+    "budgets": {
+      "publicGame": 22000000,
+      "audioDirectory": 17000000,
+      "newMusic": 2400000
+    }
+  },
+  "preservation": {
+    "allStorySource": {
+      "files": 20,
+      "allEqual": true,
+      "sha256": {
+        "public/game/campaigns/drowned-broadcast.js": "0bd07a4e47cbecdd8878bcb6e53997d829935d51a8665e9c40c2b13a5f977f4a",
+        "public/game/campaigns/last-train.js": "a6cd44dfbf95d24112b79afe809238c0c46eb4a74ed27a5df37b1f51c688b186",
+        "public/game/campaigns/dragon-banquet.js": "43f220811a769db13ab0751f470b8b6ee03c669bb7e5b84c47c574c9b1dc5e89",
+        "public/game/campaigns/index.js": "5b9cb201b08ea511ea90e9ff49cb4a2523124e8d7c9e31454ec505a2a241dbfb",
+        "public/game/campaigns/snow-radio.js": "fb43510d8d1a55d4ed14576a5cca6d175f61103be04a49ea6b4568febcf71e78",
+        "public/game/campaigns/deep-sea.js": "a4ab786606a077e96b4e67e862dae0282f5d6c5c06794dd951b8b0a91c2d6faa",
+        "public/game/campaigns/loss-passages.js": "2d4c286608cfc74dc5c59063762859eb4eb8306d1500b8a2c47eafa54c5e5551",
+        "public/game/campaigns/combat-data.js": "cffd8253153972c2cbb65550fd3a676692f7292205634531cf12e5bfff96bb8a",
+        "public/game/campaigns/openings-a.js": "f98a99d395faec29b3e94f6bc08c9970eb4f4261aa354db91323ddd6bdb3d5e9",
+        "public/game/campaigns/openings-horror.js": "8e4cc6d405094e99d0f38e7b95532456c75954caf5e3c327d8b79af25e120fb3",
+        "public/game/campaigns/glass-hotel.js": "a0bdc032c24b9c7523f315dd07a758ce70a8caeabc79321382f76fc99e5b50ee",
+        "public/game/campaigns/moon-market.js": "0b5a7581093c20948c57cce081505d9cb52d5d89e34856d2d639190235b6341d",
+        "public/game/campaigns/clock-city.js": "e4937c6cd7307d15f1ed3cee687e3398d052517080f6c66c9147cd30a731b85a",
+        "public/game/campaigns/hollow-apartment.js": "87363816a550e9424c825e151ba1d6ed1118359871236be006e1246e055ecb25",
+        "public/game/campaigns/horror-data.js": "7192f64f9394c07e6369f214f741751d9f974b38d56cf4abaa53371c54b85f0d",
+        "public/game/campaigns/epic-tools.js": "1df9586990831d99626cb2fab264a581c5b9cc21ce1ac469e60a3baa21d8f5a5",
+        "public/game/campaigns/openings-b.js": "f535897c2d0dba9b69b396f8bbc076ba0bbbe7b9ab0542fa14320b5440b4c4c7",
+        "public/game/campaigns/epic-horror.js": "49c6ae17882f610c50e5d4d016ae8f4eaa14713f3a3784e2c4172199651a39fe",
+        "public/game/campaigns/epic-a.js": "a30380583dbf0edc75bd64080e40c5cedce9648662cf82bf24e1c9f0d8cecfbd",
+        "public/game/campaigns/epic-b.js": "a11c3b2ce8f1260366d63fb4afbf36d00dec9c7e21c8a076d09343a5253977ba"
+      }
+    },
+    "allNineIllustrations": {
+      "files": 9,
+      "allEqual": true,
+      "sha256": {
+        "public/game/art/hollow-apartment.webp": "5bcd44d380ca1435500b34a23812de01df47564e02e2e4b6a00f4b364c7d78f1",
+        "public/game/art/dragon-banquet.webp": "e1e1c9208d11313ad75bc05ae305a75f62f5448cb6dc3db48d597fe69cc59843",
+        "public/game/art/clock-city.webp": "d9ffee192d99529977cefd6f97088074f077500b03b4af1e04c302c0c9a72575",
+        "public/game/art/moon-market.webp": "912b4698302fbbfbb803f797516d5547b64d0fd8e837246667a1b9dfd755ad76",
+        "public/game/art/glass-hotel.webp": "57f487d23f3ace870055229ba508c30d89aefba92d79582d932613e072072444",
+        "public/game/art/last-train.webp": "c4072fec960689323d2a2fdf693bb6a16299242fcc5d7a9ef198cddfd732ce6c",
+        "public/game/art/deep-sea.webp": "050d953ef653969d3e37d80f1b4b4d2a0be862d3e2127d316d1c57987d68ff66",
+        "public/game/art/drowned-broadcast.webp": "3b62291ee53770e206d5091d3fe222c760d161f767ca9ad567fa326e8d704827",
+        "public/game/art/snow-radio.webp": "e12bdf2a312f3d1a582e1758447ec6a720dab26ca387d04f0adb19f85b696ea6"
+      }
+    },
+    "existing67Audio": {
+      "files": 67,
+      "allEqual": true,
+      "sha256": {
+        "public/game/audio/moon-market-mystery.mp3": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b",
+        "public/game/audio/snow-radio-grief.mp3": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29",
+        "public/game/audio/glass-hotel-calm.mp3": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809",
+        "public/game/audio/wind.mp3": "bf279704a5c972b02956a8c70d1c052b4c9dbfd9029ca711a3360475a6ccf8f3",
+        "public/game/audio/glass-hotel-grief.mp3": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f",
+        "public/game/audio/dice.mp3": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+        "public/game/audio/last-train-mystery.mp3": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d",
+        "public/game/audio/moon-market-danger.mp3": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321",
+        "public/game/audio/snow-radio-hope.mp3": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c",
+        "public/game/audio/deep-sea-danger.mp3": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61",
+        "public/game/audio/glass.mp3": "5c896a86e75360815a241f27ab6c25c77972a97252f2424b5726041181daeb72",
+        "public/game/audio/moon-market-grief.mp3": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d",
+        "public/game/audio/last-train-danger.mp3": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9",
+        "public/game/audio/deep-sea-grief.mp3": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51",
+        "public/game/audio/failure.mp3": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+        "public/game/audio/glass-hotel-hope.mp3": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a",
+        "public/game/audio/dragon-banquet-grief.mp3": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486",
+        "public/game/audio/dragon-banquet-tension.mp3": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c",
+        "public/game/audio/enemy.mp3": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+        "public/game/audio/dragon-banquet-calm.mp3": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5",
+        "public/game/audio/mixed.mp3": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+        "public/game/audio/dragon-banquet-mystery.mp3": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81",
+        "public/game/audio/snow-radio-mystery.mp3": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1",
+        "public/game/audio/moon-market-tension.mp3": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35",
+        "public/game/audio/snow-radio-tension.mp3": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88",
+        "public/game/audio/snow-radio-danger.mp3": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604",
+        "public/game/audio/chime.mp3": "52e081ea83b364a659e76ad7d46279a4e65d442edb64a07faae4cf5c9cc41375",
+        "public/game/audio/moon-market-hope.mp3": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5",
+        "public/game/audio/death.mp3": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75",
+        "public/game/audio/dragon-banquet-hope.mp3": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06",
+        "public/game/audio/clock-city-mystery.mp3": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d",
+        "public/game/audio/deep-sea-mystery.mp3": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30",
+        "public/game/audio/metal.mp3": "d5bf03bed3447148c75a66da736f3d363208638d38e03e2b33409394d7500778",
+        "public/game/audio/door-creak.mp3": "ef468311c2059ddedf41fb4d01fa11831be33e24afec84a68f3cd8249b8f3657",
+        "public/game/audio/clock-city-hope.mp3": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be",
+        "public/game/audio/glass-hotel-mystery.mp3": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1",
+        "public/game/audio/snow-radio-calm.mp3": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0",
+        "public/game/audio/success.mp3": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+        "public/game/audio/last-train-calm.mp3": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129",
+        "public/game/audio/knock.mp3": "b3ad169346c17e6db2352e75a25904846e830164f15a632f0a4179d559d6cf89",
+        "public/game/audio/transition.mp3": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+        "public/game/audio/heartbeat.mp3": "1a754d791a88ceededa752ba9290e471d6904616ffaa338e8c1516291168825e",
+        "public/game/audio/dragon-banquet-danger.mp3": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223",
+        "public/game/audio/last-train-grief.mp3": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229",
+        "public/game/audio/revive.mp3": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154",
+        "public/game/audio/last-train-tension.mp3": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14",
+        "public/game/audio/footsteps.mp3": "969c525bd0706706d7dcc1e50cdde6dc49ce186b2a79f80cced0fb8e265c954b",
+        "public/game/audio/clock-city-grief.mp3": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6",
+        "public/game/audio/last-train-hope.mp3": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798",
+        "public/game/audio/scream.mp3": "91e91b90867c35ca78e046b88cb4b8d494b27978ebc399ee4e1777519b8e9e95",
+        "public/game/audio/reveal.mp3": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+        "public/game/audio/radio-static.mp3": "7511fff45a9dcb3de7757941a1c02c799cec8af1dd58e6de4573ed77b24fec71",
+        "public/game/audio/water.mp3": "bea6e84ba49b3c485b214fe8b6cb36b717c87e7f25b528c79eb33d075e5ea9ae",
+        "public/game/audio/clock-city-danger.mp3": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20",
+        "public/game/audio/deep-sea-tension.mp3": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e",
+        "public/game/audio/glass-hotel-tension.mp3": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d",
+        "public/game/audio/victory.mp3": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+        "public/game/audio/attack.mp3": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+        "public/game/audio/clock-city-tension.mp3": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0",
+        "public/game/audio/clock-city-calm.mp3": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d",
+        "public/game/audio/glass-hotel-danger.mp3": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736",
+        "public/game/audio/murmur.mp3": "da05a990b765356f8ab8378763b88947c78bfe922ba5d2dcc211930b7300fc09",
+        "public/game/audio/deep-sea-hope.mp3": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297",
+        "public/game/audio/moon-market-calm.mp3": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0",
+        "public/game/audio/ability.mp3": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+        "public/game/audio/clue.mp3": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+        "public/game/audio/deep-sea-calm.mp3": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a"
+      }
+    },
+    "existingMechanics": {
+      "files": 6,
+      "allEqual": true,
+      "sha256": {
+        "public/game/combat.js": "e7622ae107b649eec87017492b83fd5f6c4b97bec6c05cefb1ee4c88aed8b2a2",
+        "public/game/dice.js": "c6b6de7de6fd847196cbf510bbfcf6b37acfa2a0ab936661624dc447a168fe08",
+        "public/game/judgement.js": "648c5b322d602e6457004254546201130eabf7c48da9bf99576fcfc8b8012129",
+        "public/game/professions.js": "01996adc171a97ca362d2cda57edd4498fb9d8273ec2930bd7bd3462b8f92593",
+        "public/game/opening.js": "7a21594e534e4510731df4eb86a3912b085453695cd70feef8d45a357f397b27",
+        "public/game/music-director.js": "7d24c7c2931b5166631cd76d00fad1cd63c20e26f1bf0994b011c3bbdf7a7473"
+      }
+    }
+  },
+  "playback": {
+    "oldMusicCacheVersion": "20000",
+    "horrorMusicCacheVersion": "22010",
+    "simultaneousMusicMaximum": 2,
+    "cacheEntriesMaximum": 3,
+    "decodedCacheBytesMaximum": 16777216,
+    "normalTransitionSeconds": 1.25,
+    "unrelatedMusicExitSeconds": 0.35,
+    "newDatabaseTables": 0
+  },
+  "validation": {
+    "command": "npm run test:all",
+    "appliedToCleanV22": true,
+    "nodeTests": {
+      "tests": 654,
+      "pass": 654,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "networkScenarioGroups": 20,
+    "audioFilesDecoded": 8,
+    "horrorRuntimeTests": 25,
+    "originalVersionChecksUpdated": true,
+    "fullGraphAndEngineRoutesIncluded": true,
+    "physicalDeviceListeningTest": false
+  },
+  "preview": {
+    "sequence": [
+      "exploration",
+      "tension",
+      "combat"
+    ],
+    "seconds": 30.5,
+    "gamePayload": false
+  },
+  "scope": "Automated execution, real local HTTP/Socket.IO, decoded-file loop and level checks; no claim of physical-speaker listening, all-device gaplessness, or a measured hosted-account quota."
+}

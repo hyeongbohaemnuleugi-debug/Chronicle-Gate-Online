@@ -1,0 +1,261 @@
+{
+  "baseVersion": "22.0.0",
+  "targetVersion": "22.1.0",
+  "format": "chronicle-changed-files",
+  "files": [
+    {
+      "path": "AUDIO_FIX_REPORT_V22_1.json",
+      "status": "added",
+      "bytes": 23766,
+      "sha256": "63b21943f379f62970787aa33ff0151743ff5c98b76f16d87bae45f52d2e6191",
+      "baseSha256": null
+    },
+    {
+      "path": "COPYPASTE/index.html.txt",
+      "status": "modified",
+      "bytes": 3132,
+      "sha256": "3ebfac2290628eb904b5e04c5687544b79a5ef95f9253feb45a0782374cadcbe",
+      "baseSha256": "b89675b59e78b9e13834ffbfbb346a814b937f6ad90bb590ad8997b54db5baa3"
+    },
+    {
+      "path": "PATCH_NOTES_V22_1.md",
+      "status": "added",
+      "bytes": 6396,
+      "sha256": "eb132cf2566669d532b7010bcb7ee488d2587a2e91a865eccdcf30888a83c188",
+      "baseSha256": null
+    },
+    {
+      "path": "RESOURCE_REPORT_V22.json",
+      "status": "modified",
+      "bytes": 107456,
+      "sha256": "1ff49ae55b3b820327cda200fb93aabe428c1c56a94cd5fafab46d4412fb949d",
+      "baseSha256": "29efd96d0736dad86f0353cb47b6d4b4bcac975d7a652265b6f5d56618265aef"
+    },
+    {
+      "path": "STORY_EXPANSION_V22.md",
+      "status": "modified",
+      "bytes": 13259,
+      "sha256": "148fec27d7a3f3c5d02cc3bdfe13117d54a8a4bf164fe05960815def59d4e95e",
+      "baseSha256": "cc7fa638459a3ca741d589b91a6efa2d83dc50429053872cd1743f8984aca476"
+    },
+    {
+      "path": "game-server/http-service.js",
+      "status": "modified",
+      "bytes": 16264,
+      "sha256": "62e69883cc49f3f2e6be6167112da28fbb717c6697a033551a6a5cce8cf7935c",
+      "baseSha256": "5c0e15a88319c913cf12cc5e6c0b46639b3f413fc6e3532a7d8cd83902d11b19"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "modified",
+      "bytes": 73416,
+      "sha256": "4aec7438b35a75259b21aae0e99afddb4424004ee91dcc44644b2a8b8a281ead",
+      "baseSha256": "5ce63498f0c7edd842b8e08c9a37a5cfbe7e2ea637c26a8faaf682e9621f1e80"
+    },
+    {
+      "path": "package.json",
+      "status": "modified",
+      "bytes": 3015,
+      "sha256": "4b1b338a304aec428024184fe4c3b62e9affa9d2536321d5a246904383405ffb",
+      "baseSha256": "0ae4b245f35c9a6675a5d93681e63342605d07ba8487e45040f75b76a4eef309"
+    },
+    {
+      "path": "public/game/audio/horror-apartment-ambient.mp3",
+      "status": "added",
+      "bytes": 294668,
+      "sha256": "8f4889865394247960d7792bc0ff2795a9e8219feb16750b51dd6a7194ed752c",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/horror-apartment-danger.mp3",
+      "status": "added",
+      "bytes": 246500,
+      "sha256": "54f053ced9273fd2c7cccc61c6fd4efc37430cc2d0d9ab4dc07acccd30fb6185",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/horror-apartment-tension.mp3",
+      "status": "added",
+      "bytes": 294668,
+      "sha256": "93601da5a874e5441c27cf7fcf03fee72d2a21b7da282b18f5e726975a504d9e",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-ambient.mp3",
+      "status": "added",
+      "bytes": 294668,
+      "sha256": "fbecf7d28075708f0ba9ac630309d7be3805b87c9404b52f96cc11d46995f00c",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-danger.mp3",
+      "status": "added",
+      "bytes": 246500,
+      "sha256": "bfd36dff48e2d8b33dac8b36f07bfefb926956eb736a0dd0f24dce9305a4a41e",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-tension.mp3",
+      "status": "added",
+      "bytes": 294668,
+      "sha256": "cd768569b4e266f54be9ec9286afc29ed1f9522737fcce02c5a38505433a2619",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/horror-shared-grief.mp3",
+      "status": "added",
+      "bytes": 294668,
+      "sha256": "679b61805d0a9861490dbdbf4dd221ecf85785bee37f04c38b0c81c7c1276f9a",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio/horror-shared-relief.mp3",
+      "status": "added",
+      "bytes": 294668,
+      "sha256": "6b82046dd8fa7a3edce93373cea8239440f5efdef99e24443baa122f458e599d",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/audio-fallback.js",
+      "status": "modified",
+      "bytes": 14450,
+      "sha256": "27aa0e6d76ad7f513cda789638db47f492e356017ea6cc3048b1837743f6beef",
+      "baseSha256": "5536508b9566a65f5011575c04f659655ad43aa1972a607ade3ec304f0bf532d"
+    },
+    {
+      "path": "public/game/audio.js",
+      "status": "modified",
+      "bytes": 17678,
+      "sha256": "804ac26e9b6098c3d536c66d06f0c75123f50f9589900d367f7b33e74f5a1f49",
+      "baseSha256": "e008b3df9ac3713409acec43f3990d1aeead294b8d0f278464b5d12b50ed0e52"
+    },
+    {
+      "path": "public/game/engine.js",
+      "status": "modified",
+      "bytes": 46287,
+      "sha256": "941f4162da8f1e11617035a95dc0f68914185a3f76c7c75e7f489ef5e6658098",
+      "baseSha256": "fc0321a9fa99b3ab9526a20a6df09cd0a1d264c48f968e5f4f992ba603dca050"
+    },
+    {
+      "path": "public/game/horror-loops.js",
+      "status": "added",
+      "bytes": 1035,
+      "sha256": "2a12ecbcfd04eab664c2ae060ecf74bf65940d47a31096b0df3768faeaead42b",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/music-assets.js",
+      "status": "added",
+      "bytes": 1783,
+      "sha256": "24be7e5f444a73387ae317804cd51071e1e7ad5af45a4848ac857acf5ce154da",
+      "baseSha256": null
+    },
+    {
+      "path": "public/game/scene-sound.js",
+      "status": "modified",
+      "bytes": 2848,
+      "sha256": "e2a1e46caf080d2de5258b31db595c79bf12aead2b9af32d68fde5029d103f5b",
+      "baseSha256": "a7981383f3ba05ae2d68fbdb357e8c96a19f0bde62754dbf39dae767012a46ed"
+    },
+    {
+      "path": "public/index.html",
+      "status": "modified",
+      "bytes": 3132,
+      "sha256": "3ebfac2290628eb904b5e04c5687544b79a5ef95f9253feb45a0782374cadcbe",
+      "baseSha256": "b89675b59e78b9e13834ffbfbb346a814b937f6ad90bb590ad8997b54db5baa3"
+    },
+    {
+      "path": "public/offline.html",
+      "status": "modified",
+      "bytes": 4109414,
+      "sha256": "4bb1fb2adb6cdd9916d2e1217560eb3ab9ab4b4461e2ae737593c569dcf4c9d3",
+      "baseSha256": "1fbcb00e725c47afa73586e13d5611ce5edb1b9b0979b4b6b5df3090130cf804"
+    },
+    {
+      "path": "scripts/build-horror-score-v22_1.py",
+      "status": "added",
+      "bytes": 24896,
+      "sha256": "d776156e2e5919003333d0218d2aa9fa6b9dc16c6dedc6349f43b883f24ed2ff",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/horror-score-audit-v22_1.json",
+      "status": "added",
+      "bytes": 19469,
+      "sha256": "11c7c8534fe939c4a85338dfcc6f28e874790f0b0234058a9f2954b74b05d539",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/horror-score-v22_1.json",
+      "status": "added",
+      "bytes": 59277,
+      "sha256": "1ee7ff57d77d5f24de8fd5c9d4eb2d6fa8e55528a95b3631f64d36023667d4d6",
+      "baseSha256": null
+    },
+    {
+      "path": "scripts/qa-v18.mjs",
+      "status": "modified",
+      "bytes": 8087,
+      "sha256": "bbc4c4d61dc8697798428a8f71dc2e7d978dc9fa8d56e726125ab59679bc5351",
+      "baseSha256": "dc30d98b5fe9bf3ca5c76fc69fe2a2453ca0c551c86ee264adb900eece6ea841"
+    },
+    {
+      "path": "scripts/report-v22.mjs",
+      "status": "modified",
+      "bytes": 43399,
+      "sha256": "2a47b43d60589bb2a621e55a6ec009ef4801be4f888bd52f02f393f3a540575d",
+      "baseSha256": "00f20139b31a12da9e9f878f0839bfb1b2b1441c54bea183ce3724dc86f40774"
+    },
+    {
+      "path": "tests-v18/deployment.integration.mjs",
+      "status": "modified",
+      "bytes": 20313,
+      "sha256": "57d845bebe5e581036451c810c5cf04258272f3d66e53b49255e8e18e9d18b94",
+      "baseSha256": "3e11e25f86e5a52247a802d2992fa63bba8571fa2b6be6e5706d59efafb05b62"
+    },
+    {
+      "path": "tests-v18/resource-budget.test.mjs",
+      "status": "modified",
+      "bytes": 19375,
+      "sha256": "b622d58e75d64df68d149d61eba18eafd186ab3f6d018271590c11a2f8f57f13",
+      "baseSha256": "ff03e895f042f8e0fb5a64d629de329a0a6994d44d9f66d5af6c10a8624aa74b"
+    },
+    {
+      "path": "tests-v18/server.integration.mjs",
+      "status": "modified",
+      "bytes": 26599,
+      "sha256": "65ac6f2de2f4ba2fc598588ec22ced0011ae2a3406e8c139bbcba78007a30420",
+      "baseSha256": "92c789680f0288005d7384ae1c76871d5b6114a4b89cbf69cc01b7fabdc74104"
+    },
+    {
+      "path": "tests-v18/ui.test.mjs",
+      "status": "modified",
+      "bytes": 74755,
+      "sha256": "196117fa88131e312d2cac305c90816f8d20d39b8c319497d4d344c74d8e4328",
+      "baseSha256": "722c445487da90e14ad89c7f63557fb9397bea59551ff9813924b80209ad2331"
+    },
+    {
+      "path": "tests-v21/expansion-contract.test.mjs",
+      "status": "modified",
+      "bytes": 6946,
+      "sha256": "ba6b8368117b42e2c676172384d2772d30f026f91e47275830fe37df4d2c5670",
+      "baseSha256": "8fabf82bf324c0dfef793396034a613b97e4ffe52292cb8c368bb5a3d12c8800"
+    },
+    {
+      "path": "tests-v22/sound.test.mjs",
+      "status": "modified",
+      "bytes": 6029,
+      "sha256": "c39114d9f8d3e3c4babaeeb8a62fce6dcf6ab671709ee4a3ccd626327a8604b0",
+      "baseSha256": "c6285ed3ce78c6373b21ef3555573a9a7a76b7b4a1a69e7d725d75ebbf779f84"
+    },
+    {
+      "path": "tests-v22_1/horror-audio.test.mjs",
+      "status": "added",
+      "bytes": 20079,
+      "sha256": "7b71310cab8cd9879a241107b9e162bbab39db96cc6d11ccc762db211a7ef839",
+      "baseSha256": null
+    }
+  ],
+  "deletedFiles": [],
+  "apply": "Overlay these paths on the v22 repository root. Keep all files not listed here. Saves and schema 22 remain compatible."
+}

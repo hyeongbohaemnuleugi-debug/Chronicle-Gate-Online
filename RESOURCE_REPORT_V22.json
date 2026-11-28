@@ -1,7 +1,7 @@
 {
-  "version": "22.0.0",
+  "version": "22.1.0",
   "baseline": "21.0.0",
-  "generatedAt": "2026-11-26T14:34:49.230Z",
+  "generatedAt": "2026-11-26T15:24:44.103Z",
   "command": "node scripts/report-v22.mjs",
   "definitions": {
     "playableScenes": "각 모드 데이터에 있는 일반 장면 노드 수. 대체 갈래와 복귀 장면을 포함하며 한 번의 플레이에서 모두 방문하는 수가 아니다. 개인 도입·관찰·전투 턴·결말은 제외한다.",
@@ -238,6 +238,32 @@
       ],
       "epicEndingEpiloguePassages": 15,
       "musicTheme": "last-train",
+      "musicAssets": {
+        "calm": {
+          "key": "last-train-calm",
+          "version": "20000"
+        },
+        "mystery": {
+          "key": "last-train-mystery",
+          "version": "20000"
+        },
+        "tension": {
+          "key": "last-train-tension",
+          "version": "20000"
+        },
+        "danger": {
+          "key": "last-train-danger",
+          "version": "20000"
+        },
+        "hope": {
+          "key": "last-train-hope",
+          "version": "20000"
+        },
+        "grief": {
+          "key": "last-train-grief",
+          "version": "20000"
+        }
+      },
       "artwork": "public/game/art/last-train.webp"
     },
     {
@@ -418,6 +444,32 @@
       ],
       "epicEndingEpiloguePassages": 15,
       "musicTheme": "glass-hotel",
+      "musicAssets": {
+        "calm": {
+          "key": "glass-hotel-calm",
+          "version": "20000"
+        },
+        "mystery": {
+          "key": "glass-hotel-mystery",
+          "version": "20000"
+        },
+        "tension": {
+          "key": "glass-hotel-tension",
+          "version": "20000"
+        },
+        "danger": {
+          "key": "glass-hotel-danger",
+          "version": "20000"
+        },
+        "hope": {
+          "key": "glass-hotel-hope",
+          "version": "20000"
+        },
+        "grief": {
+          "key": "glass-hotel-grief",
+          "version": "20000"
+        }
+      },
       "artwork": "public/game/art/glass-hotel.webp"
     },
     {
@@ -598,6 +650,32 @@
       ],
       "epicEndingEpiloguePassages": 15,
       "musicTheme": "moon-market",
+      "musicAssets": {
+        "calm": {
+          "key": "moon-market-calm",
+          "version": "20000"
+        },
+        "mystery": {
+          "key": "moon-market-mystery",
+          "version": "20000"
+        },
+        "tension": {
+          "key": "moon-market-tension",
+          "version": "20000"
+        },
+        "danger": {
+          "key": "moon-market-danger",
+          "version": "20000"
+        },
+        "hope": {
+          "key": "moon-market-hope",
+          "version": "20000"
+        },
+        "grief": {
+          "key": "moon-market-grief",
+          "version": "20000"
+        }
+      },
       "artwork": "public/game/art/moon-market.webp"
     },
     {
@@ -778,6 +856,32 @@
       ],
       "epicEndingEpiloguePassages": 10,
       "musicTheme": "deep-sea",
+      "musicAssets": {
+        "calm": {
+          "key": "deep-sea-calm",
+          "version": "20000"
+        },
+        "mystery": {
+          "key": "deep-sea-mystery",
+          "version": "20000"
+        },
+        "tension": {
+          "key": "deep-sea-tension",
+          "version": "20000"
+        },
+        "danger": {
+          "key": "deep-sea-danger",
+          "version": "20000"
+        },
+        "hope": {
+          "key": "deep-sea-hope",
+          "version": "20000"
+        },
+        "grief": {
+          "key": "deep-sea-grief",
+          "version": "20000"
+        }
+      },
       "artwork": "public/game/art/deep-sea.webp"
     },
     {
@@ -958,6 +1062,32 @@
       ],
       "epicEndingEpiloguePassages": 10,
       "musicTheme": "dragon-banquet",
+      "musicAssets": {
+        "calm": {
+          "key": "dragon-banquet-calm",
+          "version": "20000"
+        },
+        "mystery": {
+          "key": "dragon-banquet-mystery",
+          "version": "20000"
+        },
+        "tension": {
+          "key": "dragon-banquet-tension",
+          "version": "20000"
+        },
+        "danger": {
+          "key": "dragon-banquet-danger",
+          "version": "20000"
+        },
+        "hope": {
+          "key": "dragon-banquet-hope",
+          "version": "20000"
+        },
+        "grief": {
+          "key": "dragon-banquet-grief",
+          "version": "20000"
+        }
+      },
       "artwork": "public/game/art/dragon-banquet.webp"
     },
     {
@@ -1124,6 +1254,32 @@
       ],
       "epicEndingEpiloguePassages": 10,
       "musicTheme": "clock-city",
+      "musicAssets": {
+        "calm": {
+          "key": "clock-city-calm",
+          "version": "20000"
+        },
+        "mystery": {
+          "key": "clock-city-mystery",
+          "version": "20000"
+        },
+        "tension": {
+          "key": "clock-city-tension",
+          "version": "20000"
+        },
+        "danger": {
+          "key": "clock-city-danger",
+          "version": "20000"
+        },
+        "hope": {
+          "key": "clock-city-hope",
+          "version": "20000"
+        },
+        "grief": {
+          "key": "clock-city-grief",
+          "version": "20000"
+        }
+      },
       "artwork": "public/game/art/clock-city.webp"
     },
     {
@@ -1304,6 +1460,32 @@
       ],
       "epicEndingEpiloguePassages": 10,
       "musicTheme": "snow-radio",
+      "musicAssets": {
+        "calm": {
+          "key": "snow-radio-calm",
+          "version": "20000"
+        },
+        "mystery": {
+          "key": "snow-radio-mystery",
+          "version": "20000"
+        },
+        "tension": {
+          "key": "snow-radio-tension",
+          "version": "20000"
+        },
+        "danger": {
+          "key": "snow-radio-danger",
+          "version": "20000"
+        },
+        "hope": {
+          "key": "snow-radio-hope",
+          "version": "20000"
+        },
+        "grief": {
+          "key": "snow-radio-grief",
+          "version": "20000"
+        }
+      },
       "artwork": "public/game/art/snow-radio.webp"
     },
     {
@@ -1490,7 +1672,33 @@
         }
       ],
       "epicEndingEpiloguePassages": 8,
-      "musicTheme": "glass-hotel",
+      "musicTheme": "horror-apartment",
+      "musicAssets": {
+        "calm": {
+          "key": "horror-apartment-ambient",
+          "version": "22010"
+        },
+        "mystery": {
+          "key": "horror-apartment-ambient",
+          "version": "22010"
+        },
+        "tension": {
+          "key": "horror-apartment-tension",
+          "version": "22010"
+        },
+        "danger": {
+          "key": "horror-apartment-danger",
+          "version": "22010"
+        },
+        "hope": {
+          "key": "horror-shared-relief",
+          "version": "22010"
+        },
+        "grief": {
+          "key": "horror-shared-grief",
+          "version": "22010"
+        }
+      },
       "artwork": "public/game/art/hollow-apartment.webp"
     },
     {
@@ -1677,28 +1885,56 @@
         }
       ],
       "epicEndingEpiloguePassages": 10,
-      "musicTheme": "snow-radio",
+      "musicTheme": "horror-broadcast",
+      "musicAssets": {
+        "calm": {
+          "key": "horror-broadcast-ambient",
+          "version": "22010"
+        },
+        "mystery": {
+          "key": "horror-broadcast-ambient",
+          "version": "22010"
+        },
+        "tension": {
+          "key": "horror-broadcast-tension",
+          "version": "22010"
+        },
+        "danger": {
+          "key": "horror-broadcast-danger",
+          "version": "22010"
+        },
+        "hope": {
+          "key": "horror-shared-relief",
+          "version": "22010"
+        },
+        "grief": {
+          "key": "horror-shared-grief",
+          "version": "22010"
+        }
+      },
       "artwork": "public/game/art/drowned-broadcast.webp"
     }
   ],
   "staticResources": {
     "publicGame": {
-      "files": 115,
-      "bytes": 18820568,
+      "files": 125,
+      "bytes": 21086699,
       "baselineBytes": 17623782,
-      "increaseBytes": 1196786
+      "increaseBytes": 3462917
     },
     "audioDirectory": {
-      "files": 68,
-      "bytes": 14425510,
+      "files": 76,
+      "bytes": 16686518,
       "baselineBytes": 14086759,
-      "increaseBytes": 338751
+      "increaseBytes": 2599759
     },
     "mp3": {
-      "files": 67,
-      "bytes": 14262212,
-      "musicFiles": 42,
-      "musicBytes": 13695816,
+      "files": 75,
+      "bytes": 16523220,
+      "baselineBytes": 13923461,
+      "increaseBytes": 2599759,
+      "musicFiles": 50,
+      "musicBytes": 15956824,
       "effectFiles": 25,
       "effectBytes": 566396
     },
@@ -1804,6 +2040,100 @@
         }
       ]
     },
+    "newHorrorScores": {
+      "files": 8,
+      "bytes": 2261008,
+      "assets": [
+        {
+          "key": "horror-apartment-ambient",
+          "file": "public/game/audio/horror-apartment-ambient.mp3",
+          "bytes": 294668,
+          "sha256": "8f4889865394247960d7792bc0ff2795a9e8219feb16750b51dd6a7194ed752c",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 48,
+          "sourceSeconds": 49
+        },
+        {
+          "key": "horror-apartment-tension",
+          "file": "public/game/audio/horror-apartment-tension.mp3",
+          "bytes": 294668,
+          "sha256": "93601da5a874e5441c27cf7fcf03fee72d2a21b7da282b18f5e726975a504d9e",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 48,
+          "sourceSeconds": 49
+        },
+        {
+          "key": "horror-apartment-danger",
+          "file": "public/game/audio/horror-apartment-danger.mp3",
+          "bytes": 246500,
+          "sha256": "54f053ced9273fd2c7cccc61c6fd4efc37430cc2d0d9ab4dc07acccd30fb6185",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 40,
+          "sourceSeconds": 41
+        },
+        {
+          "key": "horror-broadcast-ambient",
+          "file": "public/game/audio/horror-broadcast-ambient.mp3",
+          "bytes": 294668,
+          "sha256": "fbecf7d28075708f0ba9ac630309d7be3805b87c9404b52f96cc11d46995f00c",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 48,
+          "sourceSeconds": 49
+        },
+        {
+          "key": "horror-broadcast-tension",
+          "file": "public/game/audio/horror-broadcast-tension.mp3",
+          "bytes": 294668,
+          "sha256": "cd768569b4e266f54be9ec9286afc29ed1f9522737fcce02c5a38505433a2619",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 48,
+          "sourceSeconds": 49
+        },
+        {
+          "key": "horror-broadcast-danger",
+          "file": "public/game/audio/horror-broadcast-danger.mp3",
+          "bytes": 246500,
+          "sha256": "bfd36dff48e2d8b33dac8b36f07bfefb926956eb736a0dd0f24dce9305a4a41e",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 40,
+          "sourceSeconds": 41
+        },
+        {
+          "key": "horror-shared-grief",
+          "file": "public/game/audio/horror-shared-grief.mp3",
+          "bytes": 294668,
+          "sha256": "679b61805d0a9861490dbdbf4dd221ecf85785bee37f04c38b0c81c7c1276f9a",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 48,
+          "sourceSeconds": 49
+        },
+        {
+          "key": "horror-shared-relief",
+          "file": "public/game/audio/horror-shared-relief.mp3",
+          "bytes": 294668,
+          "sha256": "6b82046dd8fa7a3edce93373cea8239440f5efdef99e24443baa122f458e599d",
+          "manifestMatches": true,
+          "version": "22010",
+          "sampleRate": 32000,
+          "loopSeconds": 48,
+          "sourceSeconds": 49
+        }
+      ]
+    },
     "artDirectory": {
       "files": 11,
       "bytes": 1827958,
@@ -1823,9 +2153,9 @@
     },
     "offlineHtml": {
       "file": "public/offline.html",
-      "bytes": 4104868,
+      "bytes": 4109414,
       "baselineBytes": 2925844,
-      "increaseBytes": 1179024
+      "increaseBytes": 1183570
     },
     "indexHtml": {
       "file": "public/index.html",
@@ -2477,17 +2807,72 @@
       {
         "campaignId": "hollow-apartment",
         "title": "문밖에서 부르는 이름",
-        "themeId": "glass-hotel",
-        "themeTitle": "유리 호텔의 도난당한 새벽"
+        "themeId": "horror-apartment",
+        "moodAssets": {
+          "calm": {
+            "key": "horror-apartment-ambient",
+            "version": "22010"
+          },
+          "mystery": {
+            "key": "horror-apartment-ambient",
+            "version": "22010"
+          },
+          "tension": {
+            "key": "horror-apartment-tension",
+            "version": "22010"
+          },
+          "danger": {
+            "key": "horror-apartment-danger",
+            "version": "22010"
+          },
+          "hope": {
+            "key": "horror-shared-relief",
+            "version": "22010"
+          },
+          "grief": {
+            "key": "horror-shared-grief",
+            "version": "22010"
+          }
+        }
       },
       {
         "campaignId": "drowned-broadcast",
         "title": "새벽 두 시의 폐쇄 방송국",
-        "themeId": "snow-radio",
-        "themeTitle": "설원에서 온 내 목소리"
+        "themeId": "horror-broadcast",
+        "moodAssets": {
+          "calm": {
+            "key": "horror-broadcast-ambient",
+            "version": "22010"
+          },
+          "mystery": {
+            "key": "horror-broadcast-ambient",
+            "version": "22010"
+          },
+          "tension": {
+            "key": "horror-broadcast-tension",
+            "version": "22010"
+          },
+          "danger": {
+            "key": "horror-broadcast-danger",
+            "version": "22010"
+          },
+          "hope": {
+            "key": "horror-shared-relief",
+            "version": "22010"
+          },
+          "grief": {
+            "key": "horror-shared-grief",
+            "version": "22010"
+          }
+        }
       }
     ],
-    "newMusicFiles": 0,
+    "newMusicFiles": 8,
+    "sharedHorrorFiles": [
+      "horror-shared-grief",
+      "horror-shared-relief"
+    ],
+    "horrorScoreSource": "프로젝트용으로 작성한 공포 배경음 8곡. 이야기별 탐색·긴장·전투 3곡씩과 공유하는 상실·절제된 안도 2곡이다. 평상과 조사는 같은 탐색곡을 사용한다.",
     "contextualEffectSource": "Original deterministic synthesis; no sampled human voice or third-party audio."
   },
   "validation": {

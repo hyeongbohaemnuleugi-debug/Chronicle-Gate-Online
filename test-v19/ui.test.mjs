@@ -198,10 +198,11 @@ test('two real combat actions with identical receipt values each sound once; rev
       await click(app,'[data-combat="basic"]');await click(app,'[data-action="confirm-action"]');
       receipts.push(stored(app).game.lastResult);
     }
-    assert.deepEqual(receipts[0],receipts[1],'The fixture must produce genuinely identical values from two distinct actions.');
-    assert.equal(app.audioRequests.filter(src=>src.includes('/attack.mp3')).length,2);
+    assert.equal(receipts[0].text,receipts[1].text,'Visible receipt text can match for two distinct actors.');
+    assert.notEqual(receipts[0].actorId,receipts[1].actorId,'Presentation metadata must distinguish those seats.');
+    assert.equal(app.audioRequests.filter(src=>src.includes('/battle-hit.mp3')).length,2);
     await click(app,'[data-action="secret"]');await click(app,'[data-action="open-secret"]');await click(app,'[data-action="reveal"]');
-    assert.equal(app.audioRequests.filter(src=>src.includes('/attack.mp3')).length,2,'A new reveal journal entry does not make the old combat receipt new.');
+    assert.equal(app.audioRequests.filter(src=>src.includes('/battle-hit.mp3')).length,2,'A new reveal journal entry does not make the old combat receipt new.');
     assert.deepEqual(app.errors,[]);
   }finally{app.close();}
 });

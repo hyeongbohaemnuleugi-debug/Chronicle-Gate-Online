@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {SCENE_SOUNDS,BASIC_SCENE_SOUNDS,musicTheme,createSceneSoundDirector,SOUND_LEVELS} from '../public/game/scene-sound.js';
 import {createMediaAudio} from '../public/game/audio-fallback.js';
+import {resolveMusicAsset} from '../public/game/music-assets.js';
 const view=(id='tunnel',sound='knock',result=null)=>({campaignId:'last-train',storyLength:'basic',scene:{id,sound},lastResult:result});
 test('scene sound follows the actual reading surface once; redraw, observation and reconnect do not repeat it',()=>{
  const played=[],d=createSceneSoundDirector(n=>played.push(n));
@@ -45,11 +46,14 @@ test('original contextual files are complete and hash checked; available FFmpeg 
  }
  assert.ok(bytes<400000);
 });
-test('all seven original stories have explicit contextual mappings and horror reuses existing guarded music loops',()=>{
+test('all seven original stories retain contextual mappings and horror uses its own guarded scores',()=>{
  assert.equal(Object.keys(BASIC_SCENE_SOUNDS).length,7);
  for(const mapping of Object.values(BASIC_SCENE_SOUNDS)){assert.ok(Object.keys(mapping).length>=4);for(const sound of Object.values(mapping))assert.ok(SCENE_SOUNDS.includes(sound));}
- assert.equal(musicTheme('hollow-apartment'),'glass-hotel');assert.equal(musicTheme('drowned-broadcast'),'snow-radio');
- for(const id of ['hollow-apartment','drowned-broadcast'])for(const mood of ['calm','mystery','tension','danger','hope','grief'])assert.ok(fs.existsSync(new URL(`../public/game/audio/${musicTheme(id)}-${mood}.mp3`,import.meta.url)));
+ assert.equal(musicTheme('hollow-apartment'),'horror-apartment');assert.equal(musicTheme('drowned-broadcast'),'horror-broadcast');
+ for(const id of ['hollow-apartment','drowned-broadcast'])for(const mood of ['calm','mystery','tension','danger','hope','grief']){
+  const asset=resolveMusicAsset(id,mood);assert.equal(asset.version,'22010');assert.ok(asset.loop);
+  assert.ok(fs.existsSync(new URL(`../public/game/audio/${asset.key}.mp3`,import.meta.url)));
+ }
 });
 test('contextual one-shots are bounded to one, respect separate volume, and death cancels them',async()=>{
  const media=[],timers=new Map();let n=0;

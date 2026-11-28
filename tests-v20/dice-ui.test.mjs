@@ -118,8 +118,8 @@ test('identical real combat receipts get one die each, while revealing a card do
       await click(app,'[data-combat="basic"]');await click(app,'[data-action="confirm-action"]');
       assert.equal(query(app,'#dice-dialog').dataset.phase,'rolling');receipts.push(stored(app).game.lastResult);await revealAndContinue(app);
     }
-    assert.deepEqual(receipts[0],receipts[1]);assert.equal(app.audioRequests.filter(src=>src.includes('/dice.mp3')).length,2);
-    assert.equal(app.audioRequests.filter(src=>src.includes('/attack.mp3')).length,2);
+    assert.equal(receipts[0].text,receipts[1].text);assert.notEqual(receipts[0].actorId,receipts[1].actorId);assert.equal(app.audioRequests.filter(src=>src.includes('/dice.mp3')).length,2);
+    assert.equal(app.audioRequests.filter(src=>src.includes('/battle-hit.mp3')).length,2);
     await click(app,'[data-action="secret"]');await click(app,'[data-action="open-secret"]');await click(app,'[data-action="reveal"]');
     assert.equal(query(app,'#dice-dialog').open,false);assert.equal(app.audioRequests.filter(src=>src.includes('/dice.mp3')).length,2);assert.deepEqual(app.errors,[]);
   }finally{app.close();}
@@ -186,7 +186,7 @@ test('four online players preserve three shared rolls in order, ignore reveal re
     assert.equal(query(app,'.dice-actor').textContent,'세 번째 동료의 행동');
     await click(app,'[data-dice-control="skip"]');assert.equal(query(app,'.dice-final-story').textContent,afterC.game.lastResult.narrativeText||afterC.game.lastResult.text);
     await click(app,'[data-dice-control="continue"]');
-    assert.equal(query(app,'#scene-title').textContent,afterC.game.scene.title);assert.equal(net.rolls,3);
+    assert.equal(query(app,'#scene-title').textContent,afterC.game.combat?.title||afterC.game.scene.title);assert.equal(net.rolls,3);
     assert.equal(app.audioRequests.filter(src=>src.includes('/dice.mp3')).length,3);
     const own=net.sockets.at(-1);own.disconnect();await until(()=>query(app,'#connection').textContent.includes('재연결'),'disconnected');own.connect();
     await until(()=>query(app,'#connection').textContent.includes('온라인'),'resumed');await settle(app);

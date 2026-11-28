@@ -2,14 +2,14 @@ import { sceneSound, safeSound } from './scene-sound.js';
 import { campaignForLength, validStoryLength } from './campaigns/epic-tools.js';
 /** Chronicle Gate 18: a concise story shaped by the party's actual choices. */
 import { CLASSES, LEGACY_CLASS_IDS, getClasses, getClass, normalizeClassId } from './professions.js';
-import { startCombat, combatView, previewCombat, applyCombatAction, skipCombatTurn, restoreCombat } from './combat.js';
+import { startCombat, combatView, previewCombat, applyCombatAction, skipCombatTurn, restoreCombat, restoreCombatPresentation } from './combat.js';
 import { gradeRoll, gradeChances, GRADE_LABELS, ROLLED_GRADES } from './judgement.js';
 import { appendChronicle, restoreChronicle } from './narrative.js';
 import { initializeOpening, openingRole, openingView, openingStartParagraphs, actionRevision, previewOpening, applyOpeningAction, deferOpeningPlayer, meetingPassages, spendOpeningBonus, restoreOpening } from './opening.js';
 export { actionRevision } from './opening.js';
 export { gradeRoll } from './judgement.js';
 export { CLASSES, getClasses, getClass, normalizeClassId } from './professions.js';
-export const VERSION = '22.1.0';
+export const VERSION = '24.0.0';
 export const STAT_LABELS = Object.freeze({ might: '힘', agility: '민첩', wit: '통찰', heart: '교섭' });
 const clone = value => JSON.parse(JSON.stringify(value));
 const bound = (value, low, high) => Math.max(low, Math.min(high, value));
@@ -19,6 +19,13 @@ const nodeFor = (game, campaign) => game.nodeId === '__all_dead__' ? { id:'__all
 const currentPlayer = game => game.players[game.activeIndex];
 const trustedDie = source => { try { const value=typeof source==='function'?source():source;return Number.isInteger(value)&&value>=1&&value<=20?value:null; } catch { return null; } };
 const storedItemIds = value => Array.isArray(value)?value.map(item=>item?.id):[];
+function restoreEncounterReceipt(raw,players,campaign){
+  const resolution=raw?.encounterResolution;
+  if(!resolution || !['bypassed','negotiated','tool'].includes(resolution.method) ||
+      !players.some(player=>player.id===raw.actorId) ||
+      !Object.values(campaign.nodes).some(node=>node.encounter?.id===resolution.id&&node.encounter.resolutionFlags?.[resolution.method]))return {};
+  return {encounterResolution:{id:resolution.id,method:resolution.method},actorId:raw.actorId};
+}
 
 // Story seats are fixed when the game begins. Death or a lost connection must
 // never rewrite a shared journey into the solo version halfway through.
@@ -123,7 +130,7 @@ export function createStoryState(campaign, players, { openingMode = 'together', 
       classId: normalizeClassId(campaign, p.classId, i),
       roleIndex: i, focus: true, revealed: false, health:3, maxHealth:3, life:'alive', revivals:0, echoUsed:false, connected: p.connected !== false })),
     journal: [], chronicle: [], chroniclePartial:false, lastResult: null, arrival: null, startedAt: new Date().toISOString(),
-    combat: null, completedCombats: [], combatRecords: {},
+    combat: null, completedCombats: [], combatRecords: {}, encounterResolutions: {},
   };
   if (openingMode === 'separate') initializeOpening(game, campaign);
   else startCombat(game, campaign);
@@ -167,12 +174,12 @@ export function viewGame(game, campaign, viewerId) {
     scene: {
       id: node.id || game.nodeId, title: node.title, chapter: node.chapter || 1,
       location: node.location || campaign.title, art: Number(node.art) || 0, sound:combat?null:sceneSound(campaign.id,node),
-      summary: combat ? `일행의 앞을 ${combat.enemy.name}이 가로막았습니다. 적의 다음 공격과 대상을 확인하고 차례대로 행동하세요.` : node.summary || (node.text||[])[0] || campaign.description,
+      summary: combat ? `일행을 가로막은 상대는 ${combat.enemy.name}입니다. 적의 다음 공격과 대상을 확인하고 차례대로 행동하세요.` : node.summary || (node.text||[])[0] || campaign.description,
       stakes: combat ? '기본 공격은 계속 쓸 수 있고, 고유 기술은 전투당 한 번입니다. 생명이 0이 되면 사망합니다.' : node.stakes || '',
       arrival: game.arrival?.toSceneId===game.nodeId ? clone(game.arrival) : null,
       mood: combat ? 'danger' : node.mood || 'mystery', text: combat ? combat.intro : actualText, dialogue: combat ? null : node.dialogue || null,
       reading:combat?null:{paragraphs:prose,echoes:[...callbacks,...(node.ending&&game.deathSceneTitle?[`마지막 발걸음은 ‘${game.deathSceneTitle}’에 남았습니다.`]:[])],personal,fate},
-      objective: combat ? `${combat.enemy.name}을 제압하고 길을 여세요.` : node.objective || campaign.objective, entities: combat ? [] : clone(node.entities || []),
+      objective: combat ? `${combat.enemy.name}의 저항을 꺾고 길을 여세요.` : node.objective || campaign.objective, entities: combat ? [] : clone(node.entities || []),
       details: (combat ? [] : node.details || []).map(d => ({ id: d.id, label: d.label,
         read: Boolean(game.detailsRead[`${game.nodeId}:${d.id}`]),
         text: game.detailsRead[`${game.nodeId}:${d.id}`] ? d.text : undefined })),
@@ -200,6 +207,7 @@ export function viewGame(game, campaign, viewerId) {
     canAct: Boolean(me && me.life !== 'dead' && me.id === currentPlayer(game)?.id && game.phase === 'playing'),
     canAssist: Boolean(me && me.id !== currentPlayer(game)?.id && game.phase === 'playing' && !game.assists.includes(me.id) && (me.life !== 'dead' || !me.echoUsed)),
     combat, completedCombats: [...(game.completedCombats || [])],
+    encounterResolutions:clone(game.encounterResolutions || {}),
     helpText: combat ? '기본 공격은 계속 사용할 수 있고, 직업 능력은 전투마다 한 번입니다. 자연 20은 대성공, 자연 1은 대실패입니다. 생존자들이 한 번씩 행동하면 적이 예고한 대로 공격합니다.' : '정해진 행동을 고르세요. 안전한 관찰에는 주사위를 쓰지 않습니다. 위험 행동은 자연 20 대성공·자연 1 대실패, 나머지는 합계가 목표 이상이면 성공, 미만이면 실패입니다.',
     ending: Boolean(node.ending), visitedCount: game.visited.length,
     ...(openingView(game, campaign, viewerId) || {}),
@@ -360,6 +368,16 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
   const outcome = choice.outcomes?.[outcomeKey];
   if (!outcome || !campaign.nodes[outcome.next]) return fail('연결된 다음 장면을 찾을 수 없습니다. 저장 후 제작자에게 알려 주세요.');
   if (next.visited.includes(outcome.next)) return fail('같은 장면으로 돌아가는 연결 오류를 발견했습니다. 상태는 바뀌지 않았습니다.');
+  // Only the selected server-authored branch may resolve an encounter. A client
+  // sends a choice ID, never a result, a resolution method or a victory flag.
+  const resolution=outcome.encounterResolution;
+  if(resolution){
+    const encounter=campaign.nodes[outcome.next].encounter;
+    if(!encounter || encounter.id!==resolution.id || node.encounterGate!==encounter.id ||
+        !['bypassed','negotiated','tool'].includes(resolution.method) ||
+        !outcome.set?.includes(encounter.resolutionFlags?.[resolution.method]) ||
+        next.encounterResolutions?.[encounter.id] || next.completedCombats?.includes(encounter.id))return fail('조우의 해결 경로가 올바르지 않습니다. 상태는 바뀌지 않았습니다.');
+  }
   if (plan.spendSpark) next.sparks--;
   if (plan.preparation) actor.focus = false;
   if (plan.openingPreparation) spendOpeningBonus(next, playerId);
@@ -380,11 +398,16 @@ export function applyAction(game, campaign, playerId, payload = {}, { roll } = {
     if(person.health===0){person.life='dead';person.echoUsed=false;died.push(person.name);}
   }
   const allDead=next.players.every(p=>p.life==='dead');
+  if(resolution&&!allDead){
+    next.encounterResolutions ||= {};
+    next.encounterResolutions[resolution.id]={method:resolution.method,sceneId:outcome.next,actorId:actor.id,turn:next.turn};
+  }
   if(died.length)changes.push(`사망: ${died.join(', ')}`);
   next.lastResult = { action: choice.label,
     text: storyPassage(outcome,died,allDead), sound:safeSound(outcome.sound), deaths:died, actor: actor.name, grade, roll: die, total, dc: plan.dc, bonus: plan.bonus,
     stat: plan.stat, assistance: plan.assistance, spentSpark: plan.spendSpark,
     preparation: plan.preparation, gainedSpark: grade === 'critical', fromSceneId: next.nodeId,
+    ...(resolution&&!allDead?{encounterResolution:{id:resolution.id,method:resolution.method},actorId:actor.id}:{}),
     ...items,usedItems:validItems(campaign,[...(choice.useItems||[]),...(choice.consumeItems||[])]).map(id=>({id,name:campaign.items[id].name})),changes };
   next.nodeId = allDead?'__all_dead__':outcome.next;
   if(allDead)next.deathSceneTitle=node.title;else next.visited.push(outcome.next);
@@ -495,13 +518,17 @@ export function validateSave(data, campaigns) {
     ...(Array.isArray(e.deaths) ? { deaths:e.deaths.slice(0,4).map(name=>cleanText(name,18)).filter(Boolean) } : {}),
     ...(game.players.some(player=>player.id===e.revivedId) ? { revivedId:e.revivedId } : {}),
     ...(e.opening === true ? {opening:true} : {}), ...(e.meeting === true ? {meeting:true} : {}),
+    ...restoreEncounterReceipt(e,game.players,campaign),
     ...(e.combat === true ? {
       combat: true,
       combatEvent: ['attack','ability','victory','defeat'].includes(e.combatEvent) ? e.combatEvent : 'attack',
       damage: bound(Number.isInteger(e.damage) ? e.damage : 0,0,5),
       targetId: game.players.some(p=>p.id===e.targetId) ? e.targetId : null,
-      enemyRolls: Array.isArray(e.enemyRolls) ? e.enemyRolls.slice(0,4).filter(r=>r&&game.players.some(p=>p.id===r.targetId)&&Number.isInteger(r.roll)&&r.roll>=1&&r.roll<=20).map(r=>({targetId:r.targetId,roll:r.roll,dc:bound(Number.isInteger(r.dc)?r.dc:12,1,20),damage:bound(Number.isInteger(r.damage)?r.damage:0,0,3),blocked:bound(Number.isInteger(r.blocked)?r.blocked:0,0,3)})) : [],
+      enemyRolls: Array.isArray(e.enemyRolls) ? e.enemyRolls.slice(0,4).filter(r=>r&&game.players.some(p=>p.id===r.targetId)&&Number.isInteger(r.roll)&&r.roll>=1&&r.roll<=20).map(r=>({targetId:r.targetId,roll:r.roll,dc:bound(Number.isInteger(r.dc)?r.dc:12,1,20),damage:bound(Number.isInteger(r.damage)?r.damage:0,0,3),blocked:bound(Number.isInteger(r.blocked)?r.blocked:0,0,3),
+        ...(e.presentationVersion===1?Object.fromEntries(['healthBefore','healthAfter','healthDamage','shieldBefore','shieldAfter'].filter(key=>Number.isInteger(r[key])).map(key=>[key,bound(r[key],0,3)])):{}),
+      })) : [],
       deaths: Array.isArray(e.deaths) ? e.deaths.slice(0,4).map(n=>cleanText(n,18)) : [],
+      ...restoreCombatPresentation(e,game.players,campaign),
     } : {}),
   })) : [];
   Object.assign(game,restoreChronicle(raw,game.journal,{turn:game.turn,startTitle:campaign.nodes[campaign.start].title}));

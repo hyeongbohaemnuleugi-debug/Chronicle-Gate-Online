@@ -1,10 +1,13 @@
 import { SCENE_SOUNDS, SOUND_LEVELS } from './scene-sound.js';
+import { BATTLE_EFFECTS, BATTLE_SOUND_LEVELS, battleSoundUrl, isBattleEffect } from './battle-audio-assets.js';
 /* Buffered music runs on the audio clock. Rendering a page never restarts it. */
 import { MUSIC_LOOPS, resolveMusicAsset, musicAssetUrl, isHorrorScore } from './music-assets.js';
 import { createMediaAudio } from './audio-fallback.js';
 
-const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive', ...SCENE_SOUNDS]);
+const SFX = new Set(['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive', ...SCENE_SOUNDS, ...BATTLE_EFFECTS]);
 const PRIORITY_EFFECTS = new Set(['death', 'revive']);
+const TERMINAL_BATTLE_EFFECTS = new Set(['battle-victory', 'battle-defeat']);
+const effectGain = name => BATTLE_SOUND_LEVELS[name] ?? SOUND_LEVELS[name] ?? 1;
 const FADE_SECONDS = 1.25;
 const LOAD_TIMEOUT_MS = 12000;
 const EFFECT_TIMEOUT_MS = 10000;
@@ -21,6 +24,7 @@ export function createAudio(onChange = () => {}, runtime = {}) {
   if (!Context || !fetcher || protocol === 'file:') return createMediaAudio(onChange, runtime);
 
   const effectNames = new WeakMap();
+  const effectScopes = new WeakMap();
   const Media = runtime.Audio || globalThis.Audio;
   const setTimer = runtime.setTimer || ((callback, duration) => setTimeout(callback, duration));
   const clearTimer = runtime.clearTimer || (id => clearTimeout(id));
@@ -273,7 +277,7 @@ export function createAudio(onChange = () => {}, runtime = {}) {
         if (prefs.enabled && !isPaused) { try { if (!context || context.state !== 'running') wakeContext(); } catch {} }
         updateMaster(); playDesired();
       }
-      if (!prefs.effects) stopEffects(); else for (const element of effects.keys()) element.volume = prefs.effects * (SOUND_LEVELS[effectNames.get(element)] ?? 1);
+      if (!prefs.effects) stopEffects(); else for (const element of effects.keys()) element.volume = prefs.effects * effectGain(effectNames.get(element));
       persist();
     },
     scene(campaignId, mood = 'mystery') {
@@ -289,15 +293,17 @@ export function createAudio(onChange = () => {}, runtime = {}) {
       ducked = Boolean(active); updateMaster(ducked ? .12 : .28);
     },
     stopSceneEffects(){for(const [element,timer] of effects){if(SCENE_SOUNDS.includes(effectNames.get(element))){clearTimer(timer);effects.delete(element);disposeMedia(element);}}},
-    effect(name) {
+    stopBattleEffects(){for(const [element,timer] of effects){if(isBattleEffect(effectNames.get(element))||effectScopes.get(element)==='battle'){clearTimer(timer);effects.delete(element);disposeMedia(element);}}},
+    effect(name, {scope} = {}) {
       if (!prefs.enabled || isPaused || destroyed || prefs.effects <= 0 || !SFX.has(name) || !Media) return false;
-      if (PRIORITY_EFFECTS.has(name)) stopEffects();
+      if (PRIORITY_EFFECTS.has(name) || TERMINAL_BATTLE_EFFECTS.has(name)) stopEffects();
       else if(SCENE_SOUNDS.includes(name)) for(const [other,timer] of effects){if(SCENE_SOUNDS.includes(effectNames.get(other))){clearTimer(timer);effects.delete(other);disposeMedia(other);}}
       if (effects.size >= 4) return false;
       const version = SCENE_SOUNDS.includes(name) ? '22000' : PRIORITY_EFFECTS.has(name) ? '19000' : '17000';
-      const element = new Media(`/game/audio/${name}.mp3?v=${version}`);
+      const element = new Media(battleSoundUrl(name) || `/game/audio/${name}.mp3?v=${version}`);
       effectNames.set(element,name);
-      element.preload = 'none'; element.loop = false; element.volume = prefs.effects * (SOUND_LEVELS[effectNames.get(element)] ?? 1);
+      if(scope==='battle')effectScopes.set(element,'battle');
+      element.preload = 'none'; element.loop = false; element.volume = prefs.effects * effectGain(name);
       const cleanup = () => { if (!effects.has(element)) return; clearTimer(effects.get(element)); effects.delete(element); disposeMedia(element); };
       effects.set(element, setTimer(cleanup, EFFECT_TIMEOUT_MS));
       element.addEventListener('ended', cleanup, { once: true }); element.addEventListener('error', cleanup, { once: true });

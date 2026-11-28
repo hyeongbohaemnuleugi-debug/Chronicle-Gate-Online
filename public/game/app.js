@@ -4,6 +4,9 @@ import { createDicePresenter } from './dice.js';
 import { selectMusic } from './music-director.js';
 import { chronicleText } from './narrative.js';
 import { formatCharacters } from './characters.js';
+import { renderBattleScreen, hydrateBattleSprites } from './battle-ui.js';
+import { createBattlePresenter } from './battle-presenter.js';
+import { buildCombatPresentation } from './combat-presentation.js';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -14,7 +17,7 @@ const GRADE = {critical:'대성공',success:'성공',failure:'실패',fumble:'�
 const ROLLED_GRADES=['critical','success','failure','fumble'];
 let client=null, state=null, catalog=[], selected='last-train', busy=false, pending=null;
 let activeTab='journal', secretOpen=false, toastTimer=null, lastScene='',lastResultKey='', lastPerson='';
-let combatTarget=null, showingRoll=null;
+let combatTarget=null, showingRoll=null, battleFrame=null;
 let draft={spark:false,preparation:false,chat:''}, entryMode='online', entryKind='create', localCount=2;
 let localOpeningSeat=null,meetingStep=null,meetingViewed=false,meetingReceiptScene=null;
 const loadedArt=new Map(),artDimensions=new Map(),waitingArt=new Set();
@@ -33,6 +36,9 @@ const dice=createDicePresenter({
   onSettled(result,request){
     if(showingRoll!==request)return;
     sound.duck?.(false);
+    // The die reveals only the judgement. The battle stage owns the following
+    // impact, retaliation and casualty cues, in their committed order.
+    if(request.battle)return;
     const music=selectMusic(request.view);
     sound.scene(request.view.campaignId,music.mood);
     lastResultKey=request.key;
@@ -41,6 +47,11 @@ const dice=createDicePresenter({
   },
   onCancel(){sound.duck?.(false);},
   onRender(dialog){highlightNames(dialog,showingRoll?.view?.campaignId,showingRoll?.snapshot?.game?.players||[]);},
+});
+const battle=createBattlePresenter({
+  effect:(name,options)=>sound.effect(name,options),
+  reducedMotion:()=>dice.mode==='reduce'||(dice.mode==='auto'&&window.matchMedia?.('(prefers-reduced-motion: reduce)').matches),
+  onEvent(event){if(event.type==='death'||event.type==='defeat')sound.scene(showingRoll?.view?.campaignId||game()?.campaignId,'grief');},
 });
 const position = index => ['0% 0%','100% 0%','0% 100%','100% 100%'][Math.max(0,Math.min(3,Number(index)||0))];
 const art = (id,index=0,classes='',label='장면 그림') => `<div class="art-frame ${classes}" data-art-priority="${/(?:hero|lobby|scene)-art/.test(classes)?'high':'defer'}" data-art="${slug(id)}" data-art-index="${Number(index)||0}" style="--art-position:${position(index)}" role="img" aria-label="${esc(label)}"><span class="art-placeholder" aria-hidden="true">✦</span></div>`;
@@ -209,7 +220,7 @@ function renderHome(){
       <div class="campaign-grid" aria-label="시나리오 목록">${catalog.map((c,i)=>`
         <button class="campaign-card ${i===0?'featured':''} ${c.id===selected?'selected':''}" data-campaign="${slug(c.id)}" type="button" aria-pressed="${c.id===selected}">
           <div class="cover-wrap">${art(c.id,0,'campaign-art',c.title+' 표지')}<span class="cover-number"><small>CHRONICLE</small>${ROMAN[i]||String(i+1)}</span><span class="cover-arrow" aria-hidden="true">↗</span>${c.id===selected?'<span class="selected-chip"><i aria-hidden="true"></i> 선택한 기록</span>':''}</div>
-          <div class="card-copy"><div class="card-genre">${esc(c.genre||'협력 이야기')}</div><h3>${esc(c.title)}</h3><p>${esc(c.description||c.subtitle||'동료들과 함께 새로운 사건에 뛰어드세요.')}</p><div class="card-features"><span>${Number(c.sceneCount)||0}개 장면</span><span>${Number(c.endingCount)||0}개 결말</span><span>전용 직업 ${(c.classes||[]).length}개</span></div><div class="card-bottom"><span>${Number(c.combatCount)||0}번의 전투 · 1–4명</span><b>이 기록 펼치기 <span aria-hidden="true">↗</span></b></div></div>
+          <div class="card-copy"><div class="card-genre">${esc(c.genre||'협력 이야기')}</div><h3>${esc(c.title)}</h3><p>${esc(c.description||c.subtitle||'동료들과 함께 새로운 사건에 뛰어드세요.')}</p><div class="card-features"><span>${Number(c.sceneCount)||0}개 장면</span><span>${Number(c.endingCount)||0}개 결말</span><span>전용 직업 ${(c.classes||[]).length}개</span></div><div class="card-bottom"><span>서로 다른 상대 ${Number(c.lengthModes?.find(mode=>mode.id==='epic')?.encounterCount)||0}종<br><small>기본 ${Number(c.combatCount)||0}종 · 서사시 ${Number(c.lengthModes?.find(mode=>mode.id==='epic')?.encounterCount)||0}종 · 전투는 선택</small></span><b>이 기록 펼치기 <span aria-hidden="true">↗</span></b></div></div>
         </button>`).join('')}</div>
     </section>
     <section class="table-note"><div class="note-icon">${chronicleSeal()}</div><div><div class="eyebrow">EVERY CHOICE LEAVES A TRACE</div><h2>이 연대기의 마지막 문장은, 아직 쓰이지 않았습니다.</h2><p>한 장면을 읽고 다음 행동을 고르면, 그 결과가 우리의 연대기에 남습니다. 위험한 선택 앞에서는 주사위를 굴리고 동료와 힘을 모으세요. 함께 써 내려간 기록은 글 파일로 간직할 수 있습니다.</p></div><button class="button quiet" data-action="help" type="button">플레이 방법 살펴보기</button></section>`;
@@ -252,7 +263,7 @@ function updateReadingAudio({allowEffects=false}={}){
   const audible=listeningView(),music=selectMusic(audible,{privateCover:privateOpeningCover()});
   if(!audible)return;
   sound.scene(audible.campaignId,music.mood);
-  sceneSounds.update(audible,{allowEffects,privateCover:privateOpeningCover(),eventKey:resultEventKey(audible),scope:state?.code||'',mood:music.mood});
+  sceneSounds.update(audible,{allowEffects:allowEffects&&!audible.lastResult?.combat,privateCover:privateOpeningCover(),eventKey:resultEventKey(audible),scope:state?.code||'',mood:music.mood});
   // A meeting has no new receipt. In particular, do not mark a main-story
   // result as consumed before the reader has reached that story surface.
   if(!audible.lastResult)return;
@@ -261,6 +272,9 @@ function updateReadingAudio({allowEffects=false}={}){
   lastResultKey=key;
 }
 function playResultCue(view,music,key){
+  // Combat sounds are emitted by the event presenter; presence and restored
+  // receipts must never restart the previous attack.
+  if(view?.lastResult?.combat)return;
   if(music.effect)sound.effect(music.effect);
   if(music.enemyEffect)setTimeout(()=>{
     if(lastResultKey===key&&!privateOpeningCover()&&(!showingRoll||showingRoll.key===key)&&selectMusic(view).enemyEffect)sound.effect('enemy');
@@ -282,20 +296,27 @@ function freshRoll(before,next){
   }
   if(meetingStep||next.game.opening?.active)return null;
   const view=next.game,result=view.lastResult,key=resultEventKey(view,next,false);
-  if(!Number.isInteger(result?.roll)||result.roll<1||result.roll>20||!ROLLED_GRADES.includes(result.grade)||key===resultEventKey(before.game,before,false))return null;
-  return {view,key,result,personal:false};
+  if(!result||key===resultEventKey(before.game,before,false))return null;
+  const combatPlan=buildCombatPresentation(before.game,view,result);
+  const rolled=Number.isInteger(result.roll)&&result.roll>=1&&result.roll<=20&&ROLLED_GRADES.includes(result.grade);
+  if(!rolled&&!combatPlan)return null;
+  return {view,key,result,personal:false,battle:combatPlan,before};
+}
+function cancelPresentation(next){
+  showingRoll=null;battleFrame=null;dice.cancel();battle.cancel();sound.duck?.(false);sound.stopBattleEffects?.();
+  document.body.classList.remove('battle-presenting');
+  if(next)applyState(next);
 }
 function renderState(next){
-  if(next?.restored){showingRoll=null;dice.cancel();sound.duck?.(false);applyState(next);return;}
+  if(next?.restored){cancelPresentation(next);return;}
   if(showingRoll){
     const expected=showingRoll.snapshot;
-    if(!next?.game||next.code!==expected.code||next.mode!==expected.mode||next.meId!==expected.meId||next.game.campaignId!==expected.game.campaignId){
-      showingRoll=null;dice.cancel();sound.duck?.(false);applyState(next);
+    if(!next?.game||next.connected===false||next.code!==expected.code||next.mode!==expected.mode||(next.meId!==expected.meId&&(next.mode!=='local'||showingRoll.personal))||next.game.campaignId!==expected.game.campaignId){
+      cancelPresentation(next);
     }else{
       const candidate=freshRoll(showingRoll.latest,next);
-      // Several companions can act while this reader is watching one die.
-      // Keep each new shared receipt, while presence/reveal updates only refresh
-      // the final state. A personal receipt still leads to its own meeting first.
+      // A complete action stream includes automatic abilities as well as dice.
+      // Presence/reveal updates refresh only the final snapshot.
       if(!showingRoll.personal&&candidate&&!candidate.personal&&!showingRoll.seenKeys.has(candidate.key)){
         showingRoll.queue.push({candidate,snapshot:next});showingRoll.seenKeys.add(candidate.key);
       }
@@ -304,31 +325,61 @@ function renderState(next){
     return;
   }
   const candidate=freshRoll(state,next);
-  if(!candidate||!dice.canAnimate){applyState(next);return;}
+  if(!candidate){applyState(next);return;}
+  if(!candidate.battle&&!dice.canAnimate){applyState(next);return;}
   startRoll(candidate,next);
+}
+function instantBattleSound(plan){
+  // Without motion support, present a single clear outcome instead of layering
+  // an entire exchange of sounds on the same instant.
+  const abilityType=plan.events.find(event=>event.type==='ability')?.abilityType;
+  const primarySupport={heal:'heal',guard:'shield',stun:'stun',expose:'ability',rally:'ability'}[abilityType]||'ability';
+  const priorities=['defeat','death','victory','fumble','player-hit',...(plan.grade==='automatic'?[primarySupport]:['enemy-hit']),'shield','heal','enemy-stunned','stun','enemy-hit','miss','ability'];
+  const event=priorities.map(type=>plan.events.find(event=>event.type===type&&event.sound)).find(Boolean);
+  if(event?.sound)sound.effect(event.sound,{scope:'battle'});
 }
 function startRoll(candidate,next,stream=null){
   const request={...candidate,snapshot:next,latest:stream?.latest||next,queue:stream?.queue||[],seenKeys:stream?.seenKeys||new Set([candidate.key])};showingRoll=request;
-  // The server has already committed the action. Hold its prose only while the
-  // reader watches the die; later state is retained without a second action.
-  clearPersonalDialogs();
-  sound.stopSceneEffects?.();sound.duck?.(true);sound.effect('dice');
-  let presentation;
-  try{presentation=dice.show(candidate.result,request);}
-  catch{showingRoll=null;dice.cancel();sound.duck?.(false);applyState(request.latest);return;}
-  void presentation.then(()=>{
+  clearPersonalDialogs();sound.stopSceneEffects?.();
+  const rolled=Number.isInteger(candidate.result?.roll)&&ROLLED_GRADES.includes(candidate.result.grade);
+  if(candidate.battle){
+    battleFrame={view:candidate.before.game,request};
+    document.body.classList.add('battle-presenting');renderGame(false);
+  }
+  const finish=()=>{
     if(showingRoll!==request)return;
-    showingRoll=null;sound.duck?.(false);
+    showingRoll=null;battleFrame=null;document.body.classList.remove('battle-presenting');sound.duck?.(false);
+    // Cues were consumed by this presentation. Applying the authoritative board
+    // can now update prose and music without replaying its last attack.
+    if(candidate.battle)lastResultKey=request.key;
     applyState(request.snapshot);
     const queued=request.queue.shift();
-    if(queued&&dice.canAnimate){startRoll(queued.candidate,queued.snapshot,request);return;}
-    // Every live result was considered on arrival. Apply this last snapshot
-    // directly so a reconnect/sync cannot turn an older result into a new roll.
+    if(queued){startRoll(queued.candidate,queued.snapshot,request);return;}
     if(request.latest!==request.snapshot)applyState(request.latest);
     if(!showingRoll)$('scene-title')?.focus({preventScroll:true});
-  },()=>{
+  };
+  void (async()=>{
+    if(rolled&&dice.canAnimate){
+      sound.duck?.(true);sound.effect('dice');
+      const receipt=candidate.battle?{...candidate.result,narrativeText:`${candidate.result.actor}의 ‘${candidate.result.action}’ · ${GRADE[candidate.result.grade]}. 이어지는 전투 장면에서 결과를 확인합니다.`}:candidate.result;
+      await dice.show(receipt,request);
+    }
     if(showingRoll!==request)return;
-    showingRoll=null;sound.duck?.(false);dice.cancel();applyState(request.latest);
+    sound.duck?.(false);
+    if(candidate.battle){
+      lastResultKey=request.key;
+      if(battle.canAnimate){
+        const stage=$('battle-stage');
+        stage?.scrollIntoView?.({block:'center',behavior:'instant'});
+        await battle.show(candidate.battle,stage);
+      }
+      else if(!document.hidden)instantBattleSound(candidate.battle);
+    }
+    finish();
+  })().catch(()=>{
+    if(showingRoll!==request)return;
+    // Presentation failure cannot strand a committed server action or reroll it.
+    battle.cancel();dice.cancel();sound.stopBattleEffects?.();finish();
   });
 }
 function classOptions(value,campaign=selectedCampaign(),ownerId=state?.meId){
@@ -369,7 +420,7 @@ function renderLobby(){
       ${state.mode!=='local'?`<label class="field"><span>이번 이야기에서의 내 직업</span><select id="lobby-class">${classOptions(players.find(p=>p.id===state.meId)?.classId)}</select></label>`:`<div class="local-professions">${players.map(p=>`<label class="field"><span>${esc(p.name)}의 직업</span><select data-local-class="${esc(p.id)}">${classOptions(p.classId,campaign,p.id)}</select></label>`).join('')}</div>`}
       ${professionDetail(classFor(players.find(p=>p.id===state.meId)?.classId))}
       <div class="quiet-note"><b>능력치는 직업에 따라 고정됩니다.</b><p>주사위는 행동의 결과를 정할 때만 굴립니다. 이야기마다 전용 직업 네 개가 있고, 각자 기본 공격과 고유 기술 하나를 갖습니다.</p></div>
-      <fieldset class="opening-mode-picker story-length-picker" ${host?'':'disabled'}><legend>어느 길이로 기록할까요?</legend><label><input type="radio" name="story-length" value="basic" ${storyLength==='basic'?'checked':''}><span><b>기본</b><small>지금까지의 호흡 그대로 · 약 ${esc(campaign?.estimatedMinutes||'35–60')}분</small></span></label><label><input type="radio" name="story-length" value="epic" ${storyLength==='epic'?'checked':''}><span><b>서사시</b><small>더 깊은 조사와 갈림길 · 약 ${esc(campaign?.lengthModes?.find(mode=>mode.id==='epic')?.estimatedMinutes||'70–110')}분</small></span></label></fieldset>
+      <fieldset class="opening-mode-picker story-length-picker" ${host?'':'disabled'}><legend>어느 길이로 기록할까요?</legend><label><input type="radio" name="story-length" value="basic" ${storyLength==='basic'?'checked':''}><span><b>기본</b><small>약 ${esc(campaign?.estimatedMinutes||'35–60')}분 · 서로 다른 상대 ${Number(campaign?.lengthModes?.find(mode=>mode.id==='basic')?.encounterCount)||3}종 · 전투는 선택</small></span></label><label><input type="radio" name="story-length" value="epic" ${storyLength==='epic'?'checked':''}><span><b>서사시</b><small>약 ${esc(campaign?.lengthModes?.find(mode=>mode.id==='epic')?.estimatedMinutes||'70–110')}분 · 서로 다른 상대 ${Number(campaign?.lengthModes?.find(mode=>mode.id==='epic')?.encounterCount)||5}종 · 전투는 선택</small></span></label></fieldset>
       <p class="small muted">각자 직업에 맞는 첫 장을 읽은 뒤, 이야기 속에서 만납니다. 시간은 읽기·대화 속도에 따라 달라지며 전원 사망하면 일찍 끝날 수 있어요.</p>
       ${host?`${needDifferentJobs?'<p class="opening-job-warning" role="status">서로 다른 직업을 골라 주세요. 각 인물의 첫 장이 하나의 사건으로 이어집니다.</p>':''}<button class="button primary full" data-action="start" data-busy-guard type="button" ${state.canStart===false||needDifferentJobs?'disabled':''}>첫 장면 펼치기 <span>↗</span></button>`:'<div class="waiting-note"><span class="pulse-dot"></span>방장이 이야기를 시작하기를 기다리고 있어요.</div>'}
       <p class="small muted">1명으로도 시작할 수 있어요. 온라인에서는 시작 전에 참가해 주세요.</p>
@@ -379,7 +430,7 @@ function renderLobby(){
 function renderGame(newScene=false){
   if(game().opening?.active){renderOpening(newScene);return;}
   if(meetingStep&&game().opening?.meeting){renderMeeting(newScene);return;}
-  const g=game(),s=g.scene,players=g.players||state.players||[],active=players.find(p=>p.id===g.activePlayerId),me=players.find(p=>p.id===state.meId);
+  const g=battleFrame?.view||game(),s=g.scene,players=g.players||state.players||[],active=players.find(p=>p.id===g.activePlayerId),me=players.find(p=>p.id===state.meId);
   const candidate=lastNarrativeResult(g),readingResult=candidate?.meeting&&meetingViewed?null:candidate,observation=isObservation(g.lastResult)?g.lastResult:null;
   if(!g.sparks)draft.spark=false;if(me?.focus===false)draft.preparation=false;
   const focused=document.activeElement,focusId=focused?.id,selection=focused?.selectionStart;
@@ -391,8 +442,8 @@ function renderGame(newScene=false){
   $('game-view').innerHTML=`
     <div class="session-bar"><div class="session-title"><span class="tiny-star" aria-hidden="true">✦</span><div><small>${esc(g.title)} <span data-story-length="${g.storyLength||'basic'}">· ${g.storyLength==='epic'?'서사시':'기본'}</span></small><span>${state.mode==='local'?'함께 앉은 탁자':`ROOM ${esc(state.code)}`}</span></div></div><div class="session-actions"><button class="text-button" data-action="export-chronicle" type="button">연대기 TXT</button><button class="text-button" data-action="export" type="button" ${state.mode!=='local'&&state.hostId!==state.meId?'disabled title="방장이 저장 파일을 내보낼 수 있습니다."':''}>저장 파일</button><button class="text-button" data-action="leave" type="button">나가기</button></div></div>
     ${state.connected===false&&state.mode!=='local'?'<div class="reconnect-banner" role="status">서버에 다시 연결하는 중입니다. 연결되면 같은 자리에서 이어갑니다. 새로고침 전에 잠시 기다려 주세요.</div>':''}
-    <div class="table-layout"><article class="story-column" id="story-column">
-      <div class="scene-visual">${art(g.campaignId,s.art,'scene-art',`${s.location||s.title} · ${s.title}`)}<div class="scene-visual-shade"></div><div class="scene-location"><span class="eyebrow">${hasEnded?'EPILOGUE':`CHAPTER ${String(s.chapter||1).padStart(2,'0')}`}</span><span>${esc(s.location||'이야기의 한 장면')}</span></div></div>
+    <div class="table-layout ${g.combat?'battle-layout':''}"><article class="story-column" id="story-column">
+      ${g.combat?renderBattle(g,players,me):`      <div class="scene-visual">${art(g.campaignId,s.art,'scene-art',`${s.location||s.title} · ${s.title}`)}<div class="scene-visual-shade"></div><div class="scene-location"><span class="eyebrow">${hasEnded?'EPILOGUE':`CHAPTER ${String(s.chapter||1).padStart(2,'0')}`}</span><span>${esc(s.location||'이야기의 한 장면')}</span></div></div>
       <div class="story-paper">
         ${readingResult?renderResult(readingResult):!hasEnded?renderArrival(g):''}${me?.life==='dead'&&!hasEnded?'<div class="death-notice"><b>이 인물은 사망했습니다.</b><p>살아 있는 동료가 행동을 이어갑니다. 비밀을 나누거나 한 번의 잔향으로 도울 수 있고, 이야기에 부활 지점이 나타나면 귀환을 시도할 수 있어요.</p></div>':''}
         <div class="scene-heading"><div class="eyebrow">${hasEnded?'우리의 이야기가 남긴 것':'다음 한 장'}</div><h1 id="scene-title" tabindex="-1">${esc(s.title)}</h1></div>
@@ -409,6 +460,7 @@ function renderGame(newScene=false){
           ${!g.canAct?`<div class="waiting-actions"><p>${esc(active?.name||'동료')}의 이야기를 듣고, 다음 행동에 힘을 보태 주세요.</p><button class="button quiet" data-action="assist" data-busy-guard type="button" ${!g.canAssist?'disabled':''}>${me?.assisting?'협력하는 중 ✓':me?.life==='dead'?'잔향으로 돕기 · 한 번만':'동료 돕기 · +1'}</button>${state.meId===state.hostId&&active?.connected===false?'<button class="button quiet" data-action="pass" type="button">연결 끊긴 동료 차례 넘기기</button>':''}</div>`:`<div class="pass-row"><button class="text-button" data-action="pass" type="button">다음 동료에게 차례 넘기기 →</button></div>`}
           </section>`}
       </div>
+`}
     </article><aside class="table-sidebar" aria-label="일행과 기록">
       <section class="party-panel panel"><div class="panel-heading"><h2>탁자에 앉은 사람들</h2><span>${players.length} / 4</span></div><div class="compact-party">${players.map((p,i)=>`<div class="party-member ${p.id===g.activePlayerId?'active':''} ${p.life==='dead'?'fallen':''}"><div class="avatar color-${i}">${esc(classIcon(p.classId))}</div><div><b>${esc(p.name)}${p.id===state.meId?'<small>나</small>':''}</b><span>${esc(p.className||cname(p.classId))}${p.assisting?' · 협력 +1':''}${p.connected===false?' · 자리 비움':''}</span>${healthMarkup(p)}${combatStatusMarkup(g,p.id)}</div>${p.id===g.activePlayerId?'<span class="active-star" title="현재 차례">✦</span>':''}${state.mode==='local'&&p.id!==state.meId?`<button class="seat-button" data-seat="${esc(p.id)}" type="button" title="${esc(p.name)}의 비밀 카드 확인">카드</button>`:''}</div>`).join('')}</div>
       ${professionSummary(me)}<div class="pressure-block"><div><span>${esc(pressure.label)}</span><b>${pressure.value} <small>/ ${pressure.max}</small></b></div><div class="pressure-track" role="meter" aria-label="${esc(pressure.label)}" aria-valuemin="0" aria-valuemax="${pressure.max}" aria-valuenow="${pressure.value}">${Array.from({length:pressure.max||8},(_,i)=>`<i class="${i<pressure.value?'filled':''}"></i>`).join('')}</div><p>위기가 가득 차면 이후 판정의 목표가 +1 높아집니다.</p></div>
@@ -417,7 +469,7 @@ function renderGame(newScene=false){
       ${renderInventory(g)}<section class="notebook panel"><div class="notebook-tabs" role="tablist" aria-label="탁자 기록"><button id="tab-clues" data-tab="clues" role="tab" aria-selected="${activeTab==='clues'}" aria-controls="notebook-body" type="button">단서 <small>${(g.clues||[]).length}</small></button><button id="tab-journal" data-tab="journal" role="tab" aria-selected="${activeTab==='journal'}" aria-controls="notebook-body" type="button">연대기</button><button id="tab-chat" data-tab="chat" role="tab" aria-selected="${activeTab==='chat'}" aria-controls="notebook-body" type="button">대화</button></div><div id="notebook-body" class="notebook-body" role="tabpanel" aria-labelledby="tab-${activeTab}">${renderNotebook()}</div></section>
       <div class="table-caption"><span>✧</span><p>놀라운 이야기는<br>동료의 한마디에서 시작되기도 해요.</p></div>
     </aside></div>`;
-  highlightNames($('game-view'));hydrateArt();
+  highlightNames($('game-view'));hydrateArt();hydrateBattleSprites($('game-view'));
   for(const fold of $('game-view').querySelectorAll('details[data-fold]'))if(folds.has(fold.dataset.fold))fold.open=folds.get(fold.dataset.fold);
   if(!newScene&&focusedFold){const fold=[...$('game-view').querySelectorAll('details[data-fold]')].find(el=>el.dataset.fold===focusedFold);fold?.querySelector('summary')?.focus({preventScroll:true});}
   if(!newScene&&focusId){const input=$(focusId);if(input){input.focus({preventScroll:true});if(typeof selection==='number'&&input.setSelectionRange){try{input.setSelectionRange(selection,selection);}catch{}}}}
@@ -531,30 +583,25 @@ function renderInventory(g){
   }).join('')}</div>`:'<p class="inventory-empty">아직 챙긴 물건이 없습니다. 주변을 관찰하거나 행동의 결과로 소지품을 얻을 수 있습니다.</p>'}</section>`;
 }
 function renderTactics(g,me,combat=false){
-  const canAct=Boolean(combat?g.combat?.canAct:g.canAct)&&state.connected!==false;
+  const canAct=Boolean(combat?g.combat?.canAct:g.canAct)&&state.connected!==false&&!showingRoll;
   return `${!combat&&me?.openingBonus?`<p class="opening-bonus-note">첫 장에서 얻은 준비 <b>+${Number(me.openingBonus)||0}</b>가 전투·부활을 제외한 첫 이야기 판정에 한 번 더해져요.</p>`:''}<details class="tactics ${combat?'combat-tactics':''}" ${draft.spark||draft.preparation?'open':''}><summary>이번 판정에 보너스 더하기 <span>+</span></summary><div class="tactics-content"><label class="spark-option"><input id="spend-spark" type="checkbox" ${draft.spark?'checked':''} ${!canAct||!g.sparks?'disabled':''}><span><b>운명 조각 사용 · +3</b><small>파티 공용 ${g.sparks??0}개 남음. 주사위를 굴리는 행동에만 사용합니다.</small></span></label><label class="spark-option preparation-option"><input id="use-preparation" type="checkbox" ${draft.preparation?'checked':''} ${!canAct||me?.focus===false?'disabled':''}><span><b>준비한 수단 사용 · +2</b><small>${me?.focus===false?'이 인물은 준비한 수단을 이미 사용했습니다.':'인물마다 이야기 전체에서 한 번. 이번 주사위 판정에 미리 챙긴 준비를 사용합니다.'}</small></span></label></div></details>`;
+}
+function renderBattle(g,players,me){
+  const context=`<details class="battle-story-context" data-fold="battle-story-context"><summary>이야기와 직전 행동 다시 읽기</summary><div>${g.lastResult?renderResult(g.lastResult):''}${renderReading(g.scene,{ended:false,combat:true})}</div></details>`;
+  return renderBattleScreen(g,{meId:state.meId,connected:state.connected!==false,locked:Boolean(showingRoll),reduceMotion:dice.mode==='reduce',art,iconFor:classIcon,classNameFor:cname,commands:renderCombat(g,players,me),context});
 }
 function renderCombat(g,players,me){
   const c=g.combat;if(!c)return '';
-  const enemy=c.enemy||{},intent=c.intent||{},basic=c.actions?.basic||{},ability=c.actions?.ability||{};
-  const canAct=Boolean(c.canAct)&&state.connected!==false;
+  const basic=c.actions?.basic||{},ability=c.actions?.ability||{};
+  const canAct=Boolean(c.canAct)&&state.connected!==false&&!showingRoll;
   const active=players.find(p=>p.id===g.activePlayerId);
   const targets=c.targetOptions||players.filter(p=>p.life!=='dead');
   if(!targets.some(p=>p.id===combatTarget))combatTarget=targets.find(p=>p.id===me?.id)?.id||targets[0]?.id||'';
-  const announcedTargets=(intent.targetIds||[]).map(id=>players.find(p=>p.id===id)?.name).filter(Boolean);
-  const targetLabel=announcedTargets.length?announcedTargets.join(', '):intent.target==='all'?'생존한 일행 전체':intent.target==='weakest'?'생명력이 가장 낮은 동료':'이번 행동자';
-  const health=Math.max(0,Number(enemy.health)||0),maxHealth=Math.max(1,Number(enemy.maxHealth)||1);
-  return `<section class="combat-panel" aria-labelledby="combat-title">
-    <div class="combat-heading"><div><div class="eyebrow">ENCOUNTER · ROUND ${c.round||1}</div><h2 id="combat-title">${esc(c.title||'함께 맞서는 위기')}</h2></div><span class="turn-pill ${canAct?'my-turn':''}">${canAct?'당신의 차례':esc(active?.name||'동료')+'의 차례'}</span></div>
-    <div class="enemy-card"><div class="enemy-heading"><div><span>맞서야 할 위협</span><h3>${esc(enemy.name||'앞을 막는 적')}</h3></div><div class="enemy-health"><b>${health}</b><small>/ ${maxHealth}</small></div></div><progress class="enemy-health-bar" value="${health}" max="${maxHealth}" aria-label="${esc(enemy.name||'적')} 생명력 ${health}/${maxHealth}"></progress><p>${esc(enemy.description||'')}</p>${c.vulnerable||c.staggered?`<div class="enemy-status">${c.vulnerable?`<span>약점 노출 · 다음 ${Number(c.vulnerable)||2}회 명중 피해 +1</span>`:''}${c.staggered?'<span>제압됨 · 다음 적 행동 한 번 취소</span>':''}</div>`:''}</div>
-    <div class="enemy-intent"><div><span>이번 라운드의 적 행동</span><b>${esc(intent.name||'위협적인 움직임')}</b></div><p>${esc(intent.text||'일행이 행동을 마치면 적이 움직입니다.')}</p><div class="intent-targets"><span><b>대상</b> ${esc(targetLabel)}</span><span><b>피해</b> ${Number(intent.damage)||0}</span><span><b>적 D20 목표</b> ${Number(intent.dc)||12}</span></div><small>살아 있는 일행이 한 번씩 행동한 뒤 적이 판정합니다. 방어는 피해를 먼저 막습니다.</small></div>
-    <div class="combat-turn-status">${players.filter(p=>p.life!=='dead').map(p=>`<span class="${(c.actedIds||[]).includes(p.id)?'done':p.id===g.activePlayerId?'now':''}">${(c.actedIds||[]).includes(p.id)?'✓':'·'} ${esc(p.name)}</span>`).join('')}</div>
-    ${ability.target==='ally'?`<label class="field combat-target-field"><span>${esc(ability.name||'고유 기술')}을 받을 동료</span><select id="combat-target" ${!canAct||!ability.available?'disabled':''}>${targets.map(p=>`<option value="${esc(p.id)}" ${p.id===combatTarget?'selected':''}>${esc(p.name)}${p.id===me?.id?' (나)':''} · 생명 ${p.health??0}/${p.maxHealth||3}</option>`).join('')}</select></label>`:''}
+  return `${me?.life==='dead'?'<div class="death-notice battle-death-notice"><b>이 인물은 사망했습니다.</b><p>살아 있는 동료가 행동을 이어갑니다. 잔향으로 한 번 도울 수 있고, 이후 부활 장소에서 귀환을 시도할 수 있어요.</p></div>':''}    ${ability.target==='ally'?`<label class="field combat-target-field"><span>${esc(ability.name||'고유 기술')}을 받을 동료</span><select id="combat-target" ${!canAct||!ability.available?'disabled':''}>${targets.map(p=>`<option value="${esc(p.id)}" ${p.id===combatTarget?'selected':''}>${esc(p.name)}${p.id===me?.id?' (나)':''} · 생명 ${p.health??0}/${p.maxHealth||3}</option>`).join('')}</select></label>`:''}
     <div class="combat-actions"><button class="combat-action basic-action" data-combat="basic" type="button" ${!canAct?'disabled':''}><span class="move-label">기본 공격 · 계속 사용</span><b>${esc(basic.name||'기본 공격')}</b><p>${esc(basic.description||'직업의 주 능력치로 적을 공격합니다.')}</p><small>${esc(STAT[basic.stat]||'주 능력')} 판정 · 성공 피해 2</small><span class="move-arrow" aria-hidden="true">↗</span></button><button class="combat-action ability-action" data-combat="ability" type="button" ${!canAct||!ability.available?'disabled':''}><span class="move-label">고유 기술 · ${(c.usedAbilityIds||[]).includes(me?.id)?'이번 전투 사용 완료':me?.life==='dead'?'사망하여 사용 불가':'전투마다 한 번'}</span><b>${esc(ability.name||'고유 기술')}</b><p>${esc(ability.description||'직업의 특수한 방법으로 위기를 바꿉니다.')}</p><small>${['strike','drain'].includes(ability.type)?'주사위 판정으로 효과 결정':'판정 없이 효과 적용'} · 차례 소모</small><span class="move-arrow" aria-hidden="true">${ability.available?'↗':'✓'}</span></button></div>
     ${renderTactics(g,me,true)}
-    ${!canAct?`<div class="waiting-actions"><p>${me?.life==='dead'?'남은 동료에게 마지막 조언을 전할 수 있어요.':`${esc(active?.name||'동료')}의 행동을 기다리며 힘을 보태 주세요.`}</p><button class="button quiet" data-action="assist" data-busy-guard type="button" ${!g.canAssist?'disabled':''}>${me?.assisting?'협력하는 중 ✓':me?.life==='dead'?'잔향으로 돕기 · 한 번만':'동료 돕기 · +1'}</button>${state.meId===state.hostId&&active?.connected===false?'<button class="button quiet" data-action="pass" type="button">연결 끊긴 동료 차례 넘기기</button>':''}</div>`:''}
-    ${(c.log||[]).length?`<details class="combat-history"><summary>전투 기록 ${(c.log||[]).length}개</summary><div>${[...(c.log||[])].reverse().slice(0,8).map(row=>`<p>${esc(row.text||row)}</p>`).join('')}</div></details>`:''}
-  </section>`;
+    ${!canAct&&!showingRoll?`<div class="waiting-actions"><p>${me?.life==='dead'?'남은 동료에게 마지막 조언을 전할 수 있어요.':`${esc(active?.name||'동료')}의 행동을 기다리며 힘을 보태 주세요.`}</p><button class="button quiet" data-action="assist" data-busy-guard type="button" ${!g.canAssist?'disabled':''}>${me?.assisting?'협력하는 중 ✓':me?.life==='dead'?'잔향으로 돕기 · 한 번만':'동료 돕기 · +1'}</button>${state.meId===state.hostId&&active?.connected===false?'<button class="button quiet" data-action="pass" type="button">연결 끊긴 동료 차례 넘기기</button>':''}</div>`:''}
+`;
 }
 function renderResurrection(g,players){
   const site=g.scene?.resurrection;if(!site||site.available===false)return '';
@@ -650,7 +697,7 @@ function showSecret(){
   openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">FOR YOUR EYES ONLY</div><h2 id="info-title">${esc(me?.name||'나')}의 비밀 카드</h2>${!secretOpen?`<div class="secret-envelope"><span>✉</span><h3>${esc(title)}</h3><p>${state.mode==='local'?'다른 동료가 화면을 보고 있지 않은지 확인한 뒤 열어 주세요.':'동료에게 아직 공개되지 않은 정보입니다.'}</p><button class="button primary" data-action="open-secret" type="button">나만 보기</button></div>`:`<div class="secret-content"><h3>${esc(title)}</h3><p>${esc(secret.secret)}</p><div class="personal-goal"><span>내가 바라는 것</span><p>${esc(secret.goal)}</p></div></div>${history}${sharing}`}`);
 }
 function showHelp(){
-  openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">WELCOME TO THE TABLE</div><h2 id="info-title">함께 다음 문장을 쓰는 방법</h2><p class="modal-intro">시작 전에 기본 또는 서사시를 고르고, 서로 다른 직업으로 짧은 두 장면을 각자 진행해요. 온라인에서는 동시에, 한 기기에서는 한 사람씩 읽습니다. 모두 같은 곳에 도착하면 겪은 일을 나누고 본편으로 이어집니다. 서사시에서는 더 긴 조사와 갈림길을 거쳐 결말에 도착합니다.</p><div class="help-steps"><section><span>01</span><div><h3>지금 상황과 해결할 일을 읽어요.</h3><p>짧은 장면을 읽고 다음 행동을 고르세요. 도움이 필요하면 「장면 정리」에서 상황과 목표를 확인하고, 「잠깐 살펴보기」로 차례를 쓰지 않고 주변을 살펴볼 수 있어요.</p></div></section><section><span>02</span><div><h3>현재 장면의 행동을 골라요.</h3><p>선택지마다 무엇을 하려는지와 필요한 소지품이 표시됩니다. 행동을 누르면 먼저 결과를 확인할 수 있고, 필요한 물건이 없으면 어디서 찾을지 안내합니다.</p></div></section><section><span>03</span><div><h3>불확실한 행동에만 D20을 굴려요.</h3><p>대성공·성공·실패·대실패의 네 가지 결과가 있습니다. 자연 20은 대성공, 자연 1은 대실패입니다. 나머지는 주사위와 보너스의 합이 목표 이상이면 성공, 미만이면 실패입니다. 각 결과의 확률과 실제 변화를 굴리기 전에 볼 수 있어요.</p></div></section><section><span>04</span><div><h3>소지품과 동료의 힘을 보태요.</h3><p>물건은 일행이 함께 씁니다. 사용 가능한 물건은 가방에서 알 수 있어요. 동료를 돕거나 운명 조각으로 +3을 더하고, 인물마다 한 번 「준비한 수단 사용」을 골라 +2를 받을 수 있습니다.</p></div></section></div><div class="quiet-note"><b>우리의 선택은 연대기에 남습니다.</b><p>연대기에는 실제 선택과 부활, 전투의 결말이 시간순으로 이어집니다. 「연대기 TXT」는 읽을 글을, 「저장 파일」은 나중에 이어 할 진행을 보관합니다. 긴 후일담과 판정 수치는 접힌 제목을 눌러 끝까지 읽을 수 있어요.</p></div><div class="quiet-note"><b>소지품과 단서는 다릅니다.</b><p>단서는 알아낸 사실을 기록한 것입니다. 소지품은 정해진 선택지에 실제로 사용하는 물건입니다. 소모되는 물건은 실행 전에 알려주며, 행동한 뒤 가방에서 빠집니다.</p></div><div class="quiet-note"><b>전투에서는 기본 공격과 고유 기술 하나만 기억하세요.</b><p>일행이 한 번씩 행동하면 적의 예고된 행동이 진행됩니다. 고유 기술은 전투마다 한 번, 기본 공격은 계속 사용할 수 있어요. 다음 공격 대상과 피해를 살피고 협력하세요. 적을 제압하면 멈췄던 이야기를 다시 이어갑니다.</p></div><div class="quiet-note"><b>위험은 실제로 인물을 잃게 할 수 있어요.</b><p>각 인물은 생명력 3으로 시작합니다. 위험한 선택의 판정창에서 피해를 먼저 확인하세요. 사망하면 살아 있는 동료가 행동을 이어가며, 부활 지점에서 한 번의 귀환을 시도할 수 있습니다. 모두 사망하면 이야기는 그 자리에서 끝납니다.</p></div><div class="rules-panel"><h3>${esc(selectedCampaign()?.title||'이번 이야기')}의 네 직업</h3><div class="rules-stats">${classList().map(c=>`<div><b>${classIcon(c.id)} ${esc(c.name)}</b><p>${Object.entries(c.stats).map(([k,v])=>`${STAT[k]} +${v}`).join(' · ')}</p><p>기본: ${esc(c.basic?.name)}<br>고유: ${esc(c.ability?.name)}</p></div>`).join('')}</div></div><p class="small muted">온라인은 방 코드로 1–4명이 참가합니다. 한 기기로 함께 모드는 같은 화면을 차례로 사용하며, 저장 파일로 진행을 옮길 수 있습니다. 장면 그림과 소리는 모두 게임에 포함되어 있습니다.</p>`);
+  openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">WELCOME TO THE TABLE</div><h2 id="info-title">함께 다음 문장을 쓰는 방법</h2><p class="modal-intro">시작 전에 기본 또는 서사시를 고르고, 서로 다른 직업으로 짧은 두 장면을 각자 진행해요. 온라인에서는 동시에, 한 기기에서는 한 사람씩 읽습니다. 모두 같은 곳에 도착하면 겪은 일을 나누고 본편으로 이어집니다. 서사시에서는 더 긴 조사와 갈림길을 거쳐 결말에 도착합니다.</p><div class="help-steps"><section><span>01</span><div><h3>지금 상황과 해결할 일을 읽어요.</h3><p>짧은 장면을 읽고 다음 행동을 고르세요. 도움이 필요하면 「장면 정리」에서 상황과 목표를 확인하고, 「잠깐 살펴보기」로 차례를 쓰지 않고 주변을 살펴볼 수 있어요.</p></div></section><section><span>02</span><div><h3>현재 장면의 행동을 골라요.</h3><p>선택지마다 무엇을 하려는지와 필요한 소지품이 표시됩니다. 행동을 누르면 먼저 결과를 확인할 수 있고, 필요한 물건이 없으면 어디서 찾을지 안내합니다.</p></div></section><section><span>03</span><div><h3>불확실한 행동에만 D20을 굴려요.</h3><p>대성공·성공·실패·대실패의 네 가지 결과가 있습니다. 자연 20은 대성공, 자연 1은 대실패입니다. 나머지는 주사위와 보너스의 합이 목표 이상이면 성공, 미만이면 실패입니다. 각 결과의 확률과 실제 변화를 굴리기 전에 볼 수 있어요.</p></div></section><section><span>04</span><div><h3>소지품과 동료의 힘을 보태요.</h3><p>물건은 일행이 함께 씁니다. 사용 가능한 물건은 가방에서 알 수 있어요. 동료를 돕거나 운명 조각으로 +3을 더하고, 인물마다 한 번 「준비한 수단 사용」을 골라 +2를 받을 수 있습니다.</p></div></section></div><div class="quiet-note"><b>우리의 선택은 연대기에 남습니다.</b><p>연대기에는 실제 선택과 부활, 전투의 결말이 시간순으로 이어집니다. 「연대기 TXT」는 읽을 글을, 「저장 파일」은 나중에 이어 할 진행을 보관합니다. 긴 후일담과 판정 수치는 접힌 제목을 눌러 끝까지 읽을 수 있어요.</p></div><div class="quiet-note"><b>소지품과 단서는 다릅니다.</b><p>단서는 알아낸 사실을 기록한 것입니다. 소지품은 정해진 선택지에 실제로 사용하는 물건입니다. 소모되는 물건은 실행 전에 알려주며, 행동한 뒤 가방에서 빠집니다.</p></div><div class="quiet-note"><b>싸울지, 다른 길을 찾을지는 우리가 정합니다.</b><p>이야기마다 서로 다른 상대 5종이 있습니다. 기본에서는 3종, 서사시에서는 별도의 상대 2종까지 만나 볼 수 있어요. 각 이야기에서 뜻이 부딪히는 사람들부터 기이한 존재와 장치까지, 저마다 길을 막는 이유가 다릅니다. 모두 상황에 맞게 우회하거나 대화·교란을 시도하고, 모아 둔 소지품으로 싸움을 피할 수 있어요. 협상 판정이 나쁘면 전투가 시작될 수 있으니 네 가지 결과를 먼저 읽어 보세요.</p></div><div class="quiet-note"><b>전투에서는 기본 공격과 고유 기술 하나만 기억하세요.</b><p>일행이 한 번씩 행동하면 적의 예고된 행동이 진행됩니다. 고유 기술은 전투마다 한 번, 기본 공격은 계속 사용할 수 있어요. 다음 공격 대상과 피해를 살피고 협력하세요. 적을 제압하면 멈췄던 이야기를 다시 이어갑니다.</p></div><div class="quiet-note"><b>위험은 실제로 인물을 잃게 할 수 있어요.</b><p>각 인물은 생명력 3으로 시작합니다. 위험한 선택의 판정창에서 피해를 먼저 확인하세요. 사망하면 살아 있는 동료가 행동을 이어가며, 부활 지점에서 한 번의 귀환을 시도할 수 있습니다. 모두 사망하면 이야기는 그 자리에서 끝납니다.</p></div><div class="rules-panel"><h3>${esc(selectedCampaign()?.title||'이번 이야기')}의 네 직업</h3><div class="rules-stats">${classList().map(c=>`<div><b>${classIcon(c.id)} ${esc(c.name)}</b><p>${Object.entries(c.stats).map(([k,v])=>`${STAT[k]} +${v}`).join(' · ')}</p><p>기본: ${esc(c.basic?.name)}<br>고유: ${esc(c.ability?.name)}</p></div>`).join('')}</div></div><p class="small muted">온라인은 방 코드로 1–4명이 참가합니다. 한 기기로 함께 모드는 같은 화면을 차례로 사용하며, 저장 파일로 진행을 옮길 수 있습니다. 장면 그림과 소리는 모두 게임에 포함되어 있습니다.</p>`);
 }
 function updateSoundButton(){
   const p=sound?.preferences;
@@ -659,7 +706,7 @@ function updateSoundButton(){
   $('sound-toggle').setAttribute('aria-label',p.enabled?'소리 끄기':'소리 켜기');
   $('sound-toggle').setAttribute('aria-pressed',String(p.enabled));
 }
-function showAudio(){const p=sound.preferences;openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">THE SOUND OF THE STORY</div><h2 id="info-title">소리와 주사위</h2><p class="modal-intro">배경음과 효과음의 크기, 주사위 움직임을 편안하게 맞춰 주세요.</p><label class="volume-field"><span>배경음 <output id="music-value">${Math.round(p.music*100)}%</output></span><input id="music-volume" type="range" min="0" max="100" value="${Math.round(p.music*100)}"></label><label class="volume-field"><span>효과음 <output id="effects-value">${Math.round(p.effects*100)}%</output></span><input id="effects-volume" type="range" min="0" max="100" value="${Math.round(p.effects*100)}"></label><label class="motion-field"><span>주사위 움직임</span><select id="dice-motion"><option value="auto" ${dice.mode==='auto'?'selected':''}>기기 설정 따르기</option><option value="full" ${dice.mode==='full'?'selected':''}>입체 주사위 굴리기</option><option value="reduce" ${dice.mode==='reduce'?'selected':''}>움직임 줄이기 · 결과 바로 보기</option></select></label><button class="button primary full" data-action="toggle-audio" type="button">${p.enabled?'모든 소리 끄기':'소리 켜기'}</button><p class="small muted">처음에는 조용히 시작합니다. 탭이 보이지 않는 동안 소리를 멈춥니다.</p>`);}
+function showAudio(){const p=sound.preferences;openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">THE SOUND OF THE STORY</div><h2 id="info-title">소리와 주사위</h2><p class="modal-intro">배경음과 효과음의 크기, 주사위와 전투의 움직임을 편안하게 맞춰 주세요.</p><label class="volume-field"><span>배경음 <output id="music-value">${Math.round(p.music*100)}%</output></span><input id="music-volume" type="range" min="0" max="100" value="${Math.round(p.music*100)}"></label><label class="volume-field"><span>효과음 <output id="effects-value">${Math.round(p.effects*100)}%</output></span><input id="effects-volume" type="range" min="0" max="100" value="${Math.round(p.effects*100)}"></label><label class="motion-field"><span>주사위 · 전투 움직임</span><select id="dice-motion"><option value="auto" ${dice.mode==='auto'?'selected':''}>기기 설정 따르기</option><option value="full" ${dice.mode==='full'?'selected':''}>입체 주사위와 전투 연출 보기</option><option value="reduce" ${dice.mode==='reduce'?'selected':''}>움직임 줄이기 · 결과 바로 보기</option></select></label><button class="button primary full" data-action="toggle-audio" type="button">${p.enabled?'모든 소리 끄기':'소리 켜기'}</button><p class="small muted">처음에는 조용히 시작합니다. 탭이 보이지 않는 동안 소리를 멈춥니다.</p>`);}
 function showResume(){
   const saved=client?.state||state||{};
   openDialog('info-dialog',`${closeButton('info-dialog')}<div class="eyebrow">THE STORY CONTINUES</div><h2 id="info-title">어느 탁자로 돌아갈까요?</h2><p class="modal-intro">이 브라우저에 남은 자리나 저장된 이야기를 선택해 주세요.</p><div class="resume-options"><button class="button quiet full" data-action="resume-online" type="button" ${!saved.hasOnlineSave?'disabled':''}>온라인 방에 다시 연결</button><button class="button quiet full" data-action="resume-local" type="button" ${!saved.hasLocalSave?'disabled':''}>한 기기로 함께 · 자동 저장</button><button class="button quiet full" data-action="resume-backup" type="button" ${!saved.hasBackup?'disabled':''}>온라인 자동 백업을 로컬로 열기</button><button class="button primary full" data-action="import" type="button">내려받은 저장 파일 열기</button></div><p class="small muted">온라인 서버가 재시작되어 방이 사라진 경우, 방장 브라우저의 자동 백업으로 같은 이야기를 로컬에서 이어갈 수 있습니다.</p>`);
@@ -683,6 +730,7 @@ function exportChronicle(){
 
 document.addEventListener('click',event=>{
   const el=event.target.closest('button');if(!el||el.disabled)return;
+  if(el.hasAttribute('data-battle-skip')){battle.finish();if(showingRoll&&!battle.active&&$('dice-dialog')?.open)dice.finish();return;}
   if(showingRoll&&!el.closest('#dice-dialog'))return;
   if(el.dataset.close){closeDialog(el.dataset.close);return;}
   if(el.dataset.campaign){selected=el.dataset.campaign;renderHome();openEntry('create');return;}
@@ -755,7 +803,8 @@ document.addEventListener('input',event=>{
 });
 document.addEventListener('change',event=>{
   const el=event.target;
-  if(el.id==='dice-motion')dice.setMode(el.value);
+  if(showingRoll&&!['dice-motion','music-volume','effects-volume'].includes(el.id)){event.preventDefault();return;}
+  if(el.id==='dice-motion'){dice.setMode(el.value);if(el.value==='reduce')battle.finish();if(!showingRoll&&game()?.combat)renderGame(false);}
   else if(el.id==='spend-spark')draft.spark=el.checked;
   else if(el.name==='story-length')void guarded(()=>call('setStoryLength',el.value));
   else if(el.id==='use-preparation')draft.preparation=el.checked;
@@ -790,11 +839,11 @@ for(const dialog of document.querySelectorAll('dialog')){
   dialog.addEventListener('cancel',()=>{if(dialog.id==='preview-dialog')pending=null;if(dialog.id==='info-dialog')secretOpen=false;});
 }
 document.querySelector('.brand').addEventListener('click',event=>{if(showingRoll){event.preventDefault();return;}if(state?.mode&&!event.ctrlKey&&!event.metaKey){event.preventDefault();confirmLeave();}});
-document.addEventListener('keydown',event=>{if(event.target?.dataset?.tab&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const tabs=['clues','journal','chat'];let index=tabs.indexOf(activeTab);index=event.key==='Home'?0:event.key==='End'?2:(index+(event.key==='ArrowRight'?1:2))%3;activeTab=tabs[index];renderGame(false);$('tab-'+activeTab)?.focus({preventScroll:true});}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){dice.finish();sound.pause();}else sound.resume();});
-window.addEventListener('pagehide',()=>{dice.finish();sound.pause();});
+document.addEventListener('keydown',event=>{if(showingRoll&&event.target?.dataset?.tab){event.preventDefault();return;}if(event.target?.dataset?.tab&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const tabs=['clues','journal','chat'];let index=tabs.indexOf(activeTab);index=event.key==='Home'?0:event.key==='End'?2:(index+(event.key==='ArrowRight'?1:2))%3;activeTab=tabs[index];renderGame(false);$('tab-'+activeTab)?.focus({preventScroll:true});}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(showingRoll)cancelPresentation(showingRoll.latest);else{dice.finish();battle.cancel();}sound.pause();}else sound.resume();});
+window.addEventListener('pagehide',()=>{if(showingRoll)cancelPresentation(showingRoll.latest);else{dice.finish();battle.cancel();}sound.pause();});
 window.addEventListener('pageshow',()=>sound.resume());
-window.addEventListener('beforeunload',()=>{showingRoll=null;dice.destroy();sound.destroy();});
+window.addEventListener('beforeunload',()=>{showingRoll=null;battleFrame=null;dice.destroy();battle.destroy();sound.destroy();});
 
 async function boot(){
   try{

@@ -9,6 +9,12 @@ const clean = (v, n = 220) => String(v ?? '').replace(/[\u0000-\u001f\u007f<>]/g
 const living = game => game.players.filter(p => p.life !== 'dead');
 const failure = error => ({ ok: false, error });
 const encounterFor = (game, campaign) => campaign.nodes[game.nodeId]?.encounter;
+const enemyHealthFor = (encounter, count) => 2 + count * (encounter.hpPerPlayer === 2 ? 2 : 4);
+const contextualMove = (campaign, encounter, job, ability) => {
+  const move = ability ? job.ability : job.basic;
+  const text = encounter?.actions?.[ability?'ability':'basic']?.[campaign.classes.findIndex(person=>person.id===job.id)];
+  return text ? {...move,text,description:ability?`${text} ${move.description}`:move.description} : move;
+};
 const BASIC_DC = 11;
 const ABILITY_TYPES = new Set(['strike', 'drain', 'expose', 'stun', 'guard', 'heal', 'rally']);
 const rolledAbility = type => type === 'strike' || type === 'drain';
@@ -29,10 +35,10 @@ function pickIntent(game, encounter) {
 }
 export function startCombat(game, campaign) {
   const encounter = encounterFor(game, campaign);
-  if (game.phase !== 'playing' || !encounter || game.combat || game.completedCombats?.includes(encounter.id)) return;
+  if (game.phase !== 'playing' || !encounter || game.combat || game.completedCombats?.includes(encounter.id) || game.encounterResolutions?.[encounter.id]) return;
   const entryCount = living(game).length;
   if (!entryCount) return;
-  const enemyMaxHealth = 2 + 4 * entryCount;
+  const enemyMaxHealth = enemyHealthFor(encounter,entryCount);
   game.combat = {
     id: encounter.id, nodeId: game.nodeId, round: 1, entryCount,
     enemyHealth: enemyMaxHealth, enemyMaxHealth, actedIds: [], usedAbilityIds: [],
@@ -52,14 +58,16 @@ export function combatView(game, campaign, viewerId) {
   if (!encounter) return null;
   const player = game.players.find(p => p.id === viewerId);
   const profession = player && getClass(campaign, player.classId);
+  const basic = profession && contextualMove(campaign,encounter,profession,false);
+  const ability = profession && contextualMove(campaign,encounter,profession,true);
   const used = game.combat.usedAbilityIds.includes(viewerId);
   return {
     id: encounter.id, title: encounter.title, intro: [...encounter.intro], round: game.combat.round,
     enemy: { name: encounter.enemyName, description: encounter.enemyDescription, health: game.combat.enemyHealth, maxHealth: game.combat.enemyMaxHealth },
     intent: intentView(game, encounter), actedIds: [...game.combat.actedIds], usedAbilityIds: [...game.combat.usedAbilityIds],
     actions: profession ? {
-      basic: { name: profession.basic.name, description: `${profession.basic.text} 성공 피해 2 · 자연 20 대성공 피해 3 · 실패 피해 0 · 자연 1 대실패는 자신 생명 −1.`, stat: profession.basic.stat },
-      ability: { ...profession.ability, available: !used && player.life !== 'dead' },
+      basic: { name: basic.name, description: `${basic.text} 성공 피해 2 · 자연 20 대성공 피해 3 · 실패 피해 0 · 자연 1 대실패는 자신 생명 −1.`, stat: basic.stat },
+      ability: { ...ability, available: !used && player.life !== 'dead' },
     } : null,
     targetOptions: living(game).map(({ id, name, health, maxHealth }) => ({ id, name, health, maxHealth })),
     statuses: game.players.map(p => ({ id: p.id, shield: game.combat.shields[p.id] || 0, boost: game.combat.boosts[p.id] || 0 })),
@@ -74,7 +82,7 @@ export function previewCombat(game, campaign, actor, payload = {}) {
   if (combat.actedIds.includes(actor.id)) return failure('이번 라운드에는 이미 행동했습니다.');
   const job = getClass(campaign, actor.classId);
   const ability = payload.combatAction === 'ability';
-  const move = ability ? job.ability : job.basic;
+  const move = contextualMove(campaign,encounter,job,ability);
   if (!move || (ability && !ABILITY_TYPES.has(move.type))) return failure('직업의 전투 행동을 찾을 수 없습니다.');
   if (ability && combat.usedAbilityIds.includes(actor.id)) return failure('직업 능력은 전투마다 한 번 사용할 수 있습니다. 기본 공격은 계속 사용할 수 있습니다.');
   const automatic = ability && !rolledAbility(move.type);
@@ -126,6 +134,7 @@ function selectPending(game) {
 }
 function endInDefeat(game, campaign, encounter, result) {
   const combat = game.combat;
+  if (result.enemyPhase === 'pending') result.enemyPhase = 'none';
   result.combatEvent = 'defeat';
   result.text += ` ${encounter.defeatText}`;
   result.narrativeText = `${encounter.defeatText} ${game.players.map(p=>p.name).join(', ')}의 다음 선택은 기록되지 않았다.`;
@@ -137,12 +146,23 @@ function endInDefeat(game, campaign, encounter, result) {
 }
 function endInVictory(game, campaign, encounter, result) {
   const combat = game.combat;
+  if (result.enemyPhase === 'pending') result.enemyPhase = 'none';
   game.completedCombats.push(encounter.id);
   game.combatRecords[encounter.id] = { result: 'victory', rounds: combat.round, fallenIds: [...combat.fallenIds], usedAbilityIds: [...combat.usedAbilityIds] };
   if (encounter.victoryFlag) game.flags[encounter.victoryFlag] = true;
+  if (encounter.resolutionFlags?.victory) {
+    game.flags[encounter.resolutionFlags.victory] = true;
+    game.encounterResolutions ||= {};
+    game.encounterResolutions[encounter.id] = {method:'victory',sceneId:game.nodeId,actorId:result.actorId,turn:game.turn};
+  }
   game.pressure = Math.max(0, game.pressure - 1);
   game.sparks = Math.min(4, game.sparks + 1);
-  for (const p of living(game)) p.health = Math.min(p.maxHealth, p.health + 1);
+  result.recovery = [];
+  for (const p of living(game)) {
+    const before = p.health;
+    p.health = Math.min(p.maxHealth, p.health + 1);
+    result.recovery.push({ targetId: p.id, amount: p.health - before, health: p.health });
+  }
   result.combatEvent = 'victory';
   result.text += ` ${encounter.victoryText} 살아 있는 일행은 숨을 고르며 생명을 1씩 회복합니다. 위기 −1, 운명 토큰 +1. 사망한 동료는 자동으로 부활하지 않습니다.`;
   const fallen=game.players.filter(p=>p.life==='dead').map(p=>p.name);
@@ -165,26 +185,32 @@ function finishCombatTurn(game, campaign, actor, result, roll) {
   if (!combat.actedIds.includes(actor.id)) combat.actedIds.push(actor.id);
   if (selectPending(game)) return;
   const intent = intentView(game, encounter);
+  result.enemyIntentName = intent.name;
   if (combat.staggered) {
+    result.enemyPhase = 'stunned';
     combat.staggered = false;
     const text = `적의 ‘${intent.name}’이 중단됩니다. 이번 라운드에는 반격하지 못합니다.`;
     result.text += ` ${text}`; note(combat, text, 'enemy');
   } else {
+    result.enemyPhase = 'resolved';
     const lines = [];
     for (const id of intent.targetIds) {
       const target = game.players.find(p => p.id === id && p.life !== 'dead');
       if (!target) continue;
       const die = rollDie(roll);
+      const healthBefore = target.health, shieldBefore = combat.shields[id] || 0;
       let damage = die === 1 || (die !== 20 && die < intent.dc) ? 0 : intent.damage;
       const shield = Math.min(combat.shields[id] || 0, damage);
       damage -= shield; combat.shields[id] = (combat.shields[id] || 0) - shield;
       target.health = Math.max(0, target.health - damage);
-      result.enemyRolls.push({ targetId: id, roll: die, dc: intent.dc, damage, blocked: shield });
+      result.enemyRolls.push({ targetId: id, roll: die, dc: intent.dc, damage, blocked: shield,
+        healthBefore, healthAfter: target.health, healthDamage: healthBefore - target.health,
+        shieldBefore, shieldAfter: combat.shields[id] || 0 });
       const hitText = damage ? `생명 ${damage} 피해` : shield ? `방어막이 피해 ${shield} 차단` : '회피';
       lines.push(`${target.name}: 적 D20 ${die}/${intent.dc} → ${hitText}`);
       if (!target.health) {
         target.life = 'dead'; target.echoUsed = false;
-        combat.fallenIds.push(id); result.deaths.push(target.name);
+        combat.fallenIds.push(id); result.deaths.push(target.name); result.deathIds.push(id);
         lines.push(`${target.name} 사망. 부활 장소에 도달하면 남은 동료가 귀환을 시도할 수 있습니다.`);
       }
     }
@@ -202,10 +228,14 @@ export function applyCombatAction(game, campaign, actorId, plan, { roll, gradeRo
   const actor = game.players.find(p => p.id === actorId), combat = game.combat;
   const job = getClass(campaign, actor.classId);
   const isAbility = plan.combatAction === 'ability';
-  const move = isAbility ? job.ability : job.basic;
+  const move = contextualMove(campaign,encounterFor(game,campaign),job,isAbility);
   const die = plan.automatic ? null : rollDie(roll);
   const grade = plan.automatic ? 'automatic' : gradeRoll(die, die + plan.bonus, plan.dc);
   const hit = ['critical','success','automatic'].includes(grade);
+  // These facts describe this committed action only. They never affect rules or
+  // accept client-supplied outcomes; the battle renderer consumes them in order.
+  const enemyHealthBefore = combat.enemyHealth, actorHealthBefore = actor.health;
+  const supportEffects = [];
   let damage = 0;
   const notes = [];
   if (plan.spendSpark) game.sparks--;
@@ -216,15 +246,35 @@ export function applyCombatAction(game, campaign, actorId, plan, { roll, gradeRo
   if (!isAbility || rolledAbility(move.type)) {
     damage = !hit ? 0 : grade === 'critical' ? (move.type === 'strike' ? 4 : 3) : (move.type === 'strike' ? 3 : 2);
     if (damage && combat.vulnerable > 0) { damage++; combat.vulnerable--; notes.push('드러난 약점을 찔러 피해 +1'); }
-    if (isAbility && move.type === 'drain' && hit) { actor.health = Math.min(actor.maxHealth, actor.health + 1); notes.push(`${actor.name} 생명 1 회복`); }
+    if (isAbility && move.type === 'drain' && hit) {
+      const before = actor.health;
+      actor.health = Math.min(actor.maxHealth, actor.health + 1);
+      supportEffects.push({ type: 'heal', targetId: actor.id, amount: actor.health - before, health: actor.health });
+      notes.push(`${actor.name} 생명 1 회복`);
+    }
   } else {
     damage = 1;
     const target = game.players.find(p => p.id === (plan.targetId || actorId));
-    if (move.type === 'guard') { combat.shields[target.id] = Math.min(3, (combat.shields[target.id] || 0) + 2); notes.push(`${target.name} 방어막 +2 (최대 3)`); }
-    if (move.type === 'heal') { target.health = Math.min(target.maxHealth, target.health + 1); combat.shields[target.id] = Math.min(3, (combat.shields[target.id] || 0) + 1); notes.push(`${target.name} 생명 1 회복 · 방어막 +1 (최대 3)`); }
-    if (move.type === 'expose') { combat.vulnerable = Math.max(combat.vulnerable, 2); notes.push('다음 두 번의 명중에 피해 +1'); }
-    if (move.type === 'stun') { combat.staggered = true; notes.push('다음 적 행동을 한 번 중단 (중첩되지 않음)'); }
-    if (move.type === 'rally') { for (const p of living(game)) combat.boosts[p.id] = 2; notes.push('살아 있는 일행의 다음 공격 판정 +2 (중첩되지 않음)'); }
+    if (move.type === 'guard') {
+      const before = combat.shields[target.id] || 0;
+      combat.shields[target.id] = Math.min(3, before + 2);
+      supportEffects.push({ type: 'guard', targetId: target.id, amount: combat.shields[target.id] - before, shield: combat.shields[target.id] });
+      notes.push(`${target.name} 방어막 +2 (최대 3)`);
+    }
+    if (move.type === 'heal') {
+      const healthBefore = target.health, shieldBefore = combat.shields[target.id] || 0;
+      target.health = Math.min(target.maxHealth, target.health + 1);
+      combat.shields[target.id] = Math.min(3, shieldBefore + 1);
+      supportEffects.push({ type: 'heal', targetId: target.id, amount: target.health - healthBefore, health: target.health });
+      supportEffects.push({ type: 'guard', targetId: target.id, amount: combat.shields[target.id] - shieldBefore, shield: combat.shields[target.id] });
+      notes.push(`${target.name} 생명 1 회복 · 방어막 +1 (최대 3)`);
+    }
+    if (move.type === 'expose') { combat.vulnerable = Math.max(combat.vulnerable, 2); supportEffects.push({ type: 'expose', value: combat.vulnerable }); notes.push('다음 두 번의 명중에 피해 +1'); }
+    if (move.type === 'stun') { combat.staggered = true; supportEffects.push({ type: 'stun', value: 1 }); notes.push('다음 적 행동을 한 번 중단 (중첩되지 않음)'); }
+    if (move.type === 'rally') {
+      for (const p of living(game)) { combat.boosts[p.id] = 2; supportEffects.push({ type: 'boost', targetId: p.id, value: 2 }); }
+      notes.push('살아 있는 일행의 다음 공격 판정 +2 (중첩되지 않음)');
+    }
   }
   combat.enemyHealth = Math.max(0, combat.enemyHealth - damage);
   const narration = grade === 'fumble' ? `‘${move.name}’을 시도하다 자세가 무너졌습니다. 적에게 피해를 주지 못했고 자신의 생명 1을 잃었습니다.` : grade === 'failure' ? `‘${move.name}’을 시도했지만 적의 대응에 막혔습니다. 피해를 주지 못했습니다.` : `${move.text} 적에게 피해 ${damage}.`;
@@ -235,11 +285,17 @@ export function applyCombatAction(game, campaign, actorId, plan, { roll, gradeRo
     dc: plan.dc, bonus: plan.bonus, stat: plan.stat, assistance: plan.assistance, spentSpark: plan.spendSpark,
     preparation: plan.preparation, gainedSpark: grade === 'critical', fromSceneId: game.nodeId,
     combat: true, combatEvent: isAbility ? 'ability' : 'attack', damage, targetId: plan.targetId,
-    enemyRolls: [], deaths: [],changes:[`적 생명 −${damage}`,...notes,...(grade==='fumble'?['자신 생명 −1']:[]),...(plan.preparation?['인물의 준비 보너스 사용 완료']:[])],
+    presentationVersion: 1, actorId, encounterId: combat.id, combatAction: plan.combatAction,
+    abilityType: isAbility ? move.type : null, enemyHealthBefore, enemyHealthAfter: combat.enemyHealth,
+    actorHealthBefore, actorHealthAfter: actor.health, selfDamage: 0, supportEffects,
+    enemyPhase: 'pending', enemyIntentName: intentView(game, encounterFor(game, campaign)).name,
+    enemyRolls: [], deaths: [], deathIds: [], recovery: [], changes:[`적 생명 −${damage}`,...notes,...(grade==='fumble'?['자신 생명 −1']:[]),...(plan.preparation?['인물의 준비 보너스 사용 완료']:[])],
   };
   if(grade==='fumble'){
     actor.health=Math.max(0,actor.health-1);
-    if(!actor.health){actor.life='dead';actor.echoUsed=false;combat.fallenIds.push(actor.id);result.deaths.push(actor.name);result.text+=` ${actor.name} 사망. 살아 있는 동료가 귀환 장소에 도착해야 부활을 시도할 수 있습니다.`;}
+    result.selfDamage = actorHealthBefore - actor.health;
+    result.actorHealthAfter = actor.health;
+    if(!actor.health){actor.life='dead';actor.echoUsed=false;combat.fallenIds.push(actor.id);result.deaths.push(actor.name);result.deathIds.push(actor.id);result.text+=` ${actor.name} 사망. 살아 있는 동료가 귀환 장소에 도착해야 부활을 시도할 수 있습니다.`;}
   }
   finishCombatTurn(game, campaign, actor, result, roll);
   if(result.deaths.length&&!result.narrativeText)result.narrativeText=`${result.deaths.join(', ')}의 목소리가 전투 속에서 끊긴다. 남은 동료들이 서로의 위치를 확인한다. 싸움은 아직 끝나지 않았다.`;
@@ -248,8 +304,15 @@ export function applyCombatAction(game, campaign, actorId, plan, { roll, gradeRo
 }
 export function skipCombatTurn(game, campaign, { roll }) {
   const actor = game.players[game.activeIndex];
+  const shieldBefore = game.combat.shields[actor.id] || 0;
   game.combat.shields[actor.id] = Math.min(3, (game.combat.shields[actor.id] || 0) + 1);
-  const result = { action: '연결이 끊긴 동료의 차례 넘기기', actor: actor.name, text: `${actor.name}은 방어막 1을 얻고 이번 라운드의 차례를 마칩니다.`, grade: 'automatic', roll: null, total: null, dc: 0, bonus: 0, combat: true, combatEvent: 'ability', enemyRolls: [], deaths: [] };
+  const result = { action: '연결이 끊긴 동료의 차례 넘기기', actor: actor.name, text: `${actor.name}은 방어막 1을 얻고 이번 라운드의 차례를 마칩니다.`, grade: 'automatic', roll: null, total: null, dc: 0, bonus: 0, combat: true, combatEvent: 'ability',
+    presentationVersion: 1, actorId: actor.id, encounterId: game.combat.id, combatAction: 'pass', abilityType: 'guard',
+    enemyHealthBefore: game.combat.enemyHealth, enemyHealthAfter: game.combat.enemyHealth,
+    actorHealthBefore: actor.health, actorHealthAfter: actor.health, selfDamage: 0,
+    supportEffects: [{ type: 'guard', targetId: actor.id, amount: game.combat.shields[actor.id] - shieldBefore, shield: game.combat.shields[actor.id] }],
+    enemyPhase: 'pending', enemyIntentName: intentView(game, encounterFor(game, campaign)).name,
+    enemyRolls: [], deaths: [], deathIds: [], recovery: [] };
   note(game.combat, result.text, 'guard');
   finishCombatTurn(game, campaign, actor, result, roll);
   game.lastResult = result;
@@ -257,27 +320,39 @@ export function skipCombatTurn(game, campaign, { roll }) {
 }
 export function restoreCombat(game, campaign, raw) {
   const encounters = Object.values(campaign.nodes).map(n => n.encounter).filter(Boolean);
-  game.completedCombats = [];
+  const knownEncounters=new Map(encounters.map(encounter=>[encounter.id,encounter]));
+  const atNode=new Map(encounters.map(encounter=>[encounter.nodeId,encounter.id]));
+  // Preserve the order actually played, not the order of source declarations.
+  game.completedCombats=raw.schema===14?game.visited.map(id=>atNode.get(id)).filter(Boolean):
+    [...new Set(Array.isArray(raw.completedCombats)?raw.completedCombats.filter(id=>knownEncounters.has(id)&&game.visited.includes(knownEncounters.get(id).nodeId)):[])];
   game.combatRecords = {};
+  game.encounterResolutions = {};
   game.combat = null;
   const ids = new Set(game.players.map(p => p.id));
   const validIds = list => [...new Set(Array.isArray(list) ? list.filter(id => ids.has(id)) : [])];
   for (const encounter of encounters) {
     const visited = game.visited.includes(encounter.nodeId);
-    if (raw.schema === 14 && visited) game.completedCombats.push(encounter.id);
-    else if (visited && Array.isArray(raw.completedCombats) && raw.completedCombats.includes(encounter.id)) game.completedCombats.push(encounter.id);
     const record = raw.combatRecords?.[encounter.id];
-    if (record && ['victory', 'defeat'].includes(record.result)) game.combatRecords[encounter.id] = {
+    if (visited && record && ['victory', 'defeat'].includes(record.result)) game.combatRecords[encounter.id] = {
       result: record.result, rounds: integer(record.rounds, 1, 1, 500), fallenIds: validIds(record.fallenIds), usedAbilityIds: validIds(record.usedAbilityIds),
     };
+    const resolution = raw.encounterResolutions?.[encounter.id];
+    if(resolution && ['bypassed','negotiated','tool'].includes(resolution.method) && game.completedCombats.includes(encounter.id))throw new Error('저장 파일에 같은 조우의 우회와 전투 승리가 함께 기록되어 있습니다.');
+    if (visited && resolution && ['bypassed','negotiated','tool','victory'].includes(resolution.method) &&
+        resolution.sceneId===encounter.nodeId &&
+        encounter.resolutionFlags?.[resolution.method] && game.flags[encounter.resolutionFlags[resolution.method]] &&
+        (resolution.method!=='victory'||game.completedCombats.includes(encounter.id))) {
+      game.encounterResolutions[encounter.id]={method:resolution.method,sceneId:encounter.nodeId,
+        actorId:ids.has(resolution.actorId)?resolution.actorId:null,turn:integer(resolution.turn,0,0,500)};
+    }
   }
   if (raw.schema === 14 || game.phase !== 'playing') return;
   const encounter = encounterFor(game, campaign);
   if (raw.combat) {
     const state = raw.combat;
-    if (!encounter || state.id !== encounter.id || state.nodeId !== game.nodeId || game.completedCombats.includes(encounter.id)) throw new Error('저장 파일의 전투 위치가 맞지 않습니다.');
+    if (!encounter || state.id !== encounter.id || state.nodeId !== game.nodeId || game.completedCombats.includes(encounter.id) || game.encounterResolutions[encounter.id]) throw new Error('저장 파일의 전투 위치가 맞지 않습니다.');
     const entryCount = integer(state.entryCount, game.players.length, 1, game.players.length);
-    const enemyMaxHealth = 2 + entryCount * 4;
+    const enemyMaxHealth = enemyHealthFor(encounter,entryCount);
     if (!Number.isInteger(state.enemyHealth) || state.enemyHealth < 1 || state.enemyHealth > enemyMaxHealth) throw new Error('저장 파일의 적 생명력이 올바르지 않습니다.');
     game.combat = {
       id: encounter.id, nodeId: game.nodeId, round: integer(state.round, 1, 1, 500), entryCount,
@@ -296,10 +371,38 @@ export function restoreCombat(game, campaign, raw) {
     }
   } else startCombat(game, campaign);
 }
+/** Keep additive visual receipts when importing a save, never arbitrary code or IDs. */
+export function restoreCombatPresentation(raw, players, campaign) {
+  if (raw?.presentationVersion !== 1) return {};
+  const ids = new Set(players.map(player => player.id));
+  const encounters = new Set(Object.values(campaign.nodes).map(node => node.encounter?.id).filter(Boolean));
+  if (!ids.has(raw.actorId) || !encounters.has(raw.encounterId)) return {};
+  const targetEffects = new Set(['heal', 'guard', 'boost']);
+  const supportEffects = Array.isArray(raw.supportEffects) ? raw.supportEffects.slice(0,8).filter(effect => effect &&
+    (targetEffects.has(effect.type) ? ids.has(effect.targetId) : ['expose','stun'].includes(effect.type))).map(effect => ({
+      type: effect.type, ...(ids.has(effect.targetId) ? { targetId: effect.targetId } : {}),
+      ...Object.fromEntries(['amount','value','health','shield'].filter(key => Number.isInteger(effect[key])).map(key => [key,clamp(effect[key],0,3)])),
+    })) : [];
+  return {
+    presentationVersion: 1, actorId: raw.actorId, encounterId: raw.encounterId,
+    combatAction: ['basic','ability','pass'].includes(raw.combatAction) ? raw.combatAction : 'basic',
+    abilityType: ABILITY_TYPES.has(raw.abilityType) ? raw.abilityType : null,
+    enemyHealthBefore: integer(raw.enemyHealthBefore,0,0,18), enemyHealthAfter: integer(raw.enemyHealthAfter,0,0,18),
+    actorHealthBefore: integer(raw.actorHealthBefore,0,0,3), actorHealthAfter: integer(raw.actorHealthAfter,0,0,3),
+    selfDamage: integer(raw.selfDamage,0,0,1), supportEffects,
+    enemyPhase: ['pending','none','resolved','stunned'].includes(raw.enemyPhase) ? raw.enemyPhase : 'pending',
+    enemyIntentName: clean(raw.enemyIntentName,100),
+    deathIds: [...new Set(Array.isArray(raw.deathIds) ? raw.deathIds.filter(id => ids.has(id)).slice(0,4) : [])],
+    recovery: Array.isArray(raw.recovery) ? raw.recovery.slice(0,4).filter(effect => effect && ids.has(effect.targetId)).map(effect => ({
+      targetId: effect.targetId, amount: integer(effect.amount,0,0,1), health: integer(effect.health,0,0,3),
+    })) : [],
+  };
+}
 /** Importing a save into a new online lobby assigns new seat IDs to every combat reference. */
 export function remapCombatPlayers(game, mapping) {
   const remap = list => (list || []).map(id => mapping[id]).filter(Boolean);
   game.assists = remap(game.assists);
+  for(const resolution of Object.values(game.encounterResolutions||{}))if(resolution.actorId)resolution.actorId=mapping[resolution.actorId]||null;
   if (game.combat) {
     for (const key of ['actedIds', 'usedAbilityIds', 'intentTargetIds', 'fallenIds']) game.combat[key] = remap(game.combat[key]);
     for (const key of ['shields', 'boosts']) game.combat[key] = Object.fromEntries(Object.entries(game.combat[key]).filter(([id]) => mapping[id]).map(([id, value]) => [mapping[id], value]));
@@ -309,9 +412,13 @@ export function remapCombatPlayers(game, mapping) {
   }
   const remapResult = result => {
     if (!result) return;
+    if (result.actorId) result.actorId = mapping[result.actorId] || null;
     if (result.targetId) result.targetId = mapping[result.targetId] || null;
     if (result.revivedId) result.revivedId = mapping[result.revivedId] || null;
     if (result.enemyRolls) result.enemyRolls = result.enemyRolls.map(r=>({...r,targetId:mapping[r.targetId]})).filter(r=>r.targetId);
+    if (result.deathIds) result.deathIds = remap(result.deathIds);
+    if (result.supportEffects) result.supportEffects = result.supportEffects.map(effect => effect.targetId ? {...effect,targetId:mapping[effect.targetId]} : effect).filter(effect => !['heal','guard','boost'].includes(effect.type) || effect.targetId);
+    if (result.recovery) result.recovery = result.recovery.map(effect=>({...effect,targetId:mapping[effect.targetId]})).filter(effect=>effect.targetId);
   };
   for (const entry of game.journal || []) remapResult(entry);
   // validateSave points lastResult at the last journal item; remap it only once.

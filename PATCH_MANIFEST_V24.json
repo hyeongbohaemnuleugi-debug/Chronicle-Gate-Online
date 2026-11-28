@@ -1,0 +1,902 @@
+{
+  "baseVersion": "22.1.0",
+  "alsoAppliesTo": [
+    "23.0.0"
+  ],
+  "targetVersion": "24.0.0",
+  "format": "chronicle-changed-files",
+  "containsPreviousPatch": "v23 separate battle screen, nine original opponent sprites, thirteen battle effects, and their code/tests/docs",
+  "files": [
+    {
+      "path": "BATTLE_GUIDE_V23.md",
+      "status": "added",
+      "bytes": 4987,
+      "sha256": "598cd12e752fd48abebc239621d9831ed8da9217cbec6a3f01fb7ab5d8a8d8b0",
+      "baseSha256": null,
+      "v23Sha256": "598cd12e752fd48abebc239621d9831ed8da9217cbec6a3f01fb7ab5d8a8d8b0"
+    },
+    {
+      "path": "COPYPASTE/index.html.txt",
+      "status": "modified",
+      "bytes": 3132,
+      "sha256": "975960a8cc64bd460a0f6910cd9dc0fa60549a7ff060afc17013e8b6e67483b9",
+      "baseSha256": "3ebfac2290628eb904b5e04c5687544b79a5ef95f9253feb45a0782374cadcbe",
+      "v23Sha256": "d9d2bff7f8e01afe95f1a5700eb85bf9ee63cc35d435407a2bff1d4fe1f59a4d"
+    },
+    {
+      "path": "ENCOUNTER_ROUTES_V24.json",
+      "status": "added",
+      "bytes": 621862,
+      "sha256": "f65e77ff92974539576bb0a61137d8de5ea73a5887a89c2b757babd1e972ecc0",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "NARRATIVE_SUMMARY_V24.json",
+      "status": "added",
+      "bytes": 235843,
+      "sha256": "a44f97031af677173a0d8e7f7e15451015560d6c499460b7579afe2569ac617d",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "OPPONENTS_V24.md",
+      "status": "added",
+      "bytes": 75862,
+      "sha256": "4cf8ae253c69bc06c0218d19b135252515575c80d481852c201c28423b0b3476",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "PATCH_NOTES_V23.md",
+      "status": "added",
+      "bytes": 8391,
+      "sha256": "6b762d536c1d1f2336f5b9460e4a2cac3d73f60b901e32b850ee1f4a6f794411",
+      "baseSha256": null,
+      "v23Sha256": "6b762d536c1d1f2336f5b9460e4a2cac3d73f60b901e32b850ee1f4a6f794411"
+    },
+    {
+      "path": "PATCH_NOTES_V24.md",
+      "status": "added",
+      "bytes": 11026,
+      "sha256": "01fbc54de102dae5cc350190145b20d137a7ccee921f3de0f4ed516c3f9533b3",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "README.md",
+      "status": "modified",
+      "bytes": 3977,
+      "sha256": "52ca7311c0ba1171e5f13ad80173f99e51010d4bd03cfc21e93f93d224c4a069",
+      "baseSha256": "a4698135e5766e04a68bad51f1e0266ef6cfc82a65bd96279ab29076fe70a445",
+      "v23Sha256": "696eeeeaed4e100b9ab14f900895c5ce661e2b91a2746e6e8adfd8481af46297"
+    },
+    {
+      "path": "RELEASE_CHECK_V24.json",
+      "status": "added",
+      "bytes": 35367,
+      "sha256": "e3a43b75bb63969a646b839df2e020729ffca76c652008597f7a6db18a0a11c5",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "RESOURCE_REPORT_V23.json",
+      "status": "added",
+      "bytes": 45012,
+      "sha256": "e84a569959e3d534f078850e601bdb98e3869fd4606e260efd8151ae3f48f4e8",
+      "baseSha256": null,
+      "v23Sha256": "e84a569959e3d534f078850e601bdb98e3869fd4606e260efd8151ae3f48f4e8"
+    },
+    {
+      "path": "RESOURCE_REPORT_V24.json",
+      "status": "added",
+      "bytes": 117744,
+      "sha256": "24f1ccd31659a27e4fc2e7dce9aba3bc66390f47e64c42f8f83dd0b613ef8b68",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "VALIDATION_V23.md",
+      "status": "added",
+      "bytes": 4754,
+      "sha256": "ca018bb16b5d4a445f9f4f2af287558f08ebad64707ab14eacc4bf968112b6b3",
+      "baseSha256": null,
+      "v23Sha256": "ca018bb16b5d4a445f9f4f2af287558f08ebad64707ab14eacc4bf968112b6b3"
+    },
+    {
+      "path": "VALIDATION_V24.md",
+      "status": "added",
+      "bytes": 6406,
+      "sha256": "43511bbfa3b1e3c5fad2b55a5ffbcb8c13adb1dd03d1ce63582fd80e108a0b9c",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "game-server/http-service.js",
+      "status": "modified",
+      "bytes": 16280,
+      "sha256": "43099b3c3c2b6062e7f14fc3ff61901dc519e44d68da8d64916facb6f89a465b",
+      "baseSha256": "62e69883cc49f3f2e6be6167112da28fbb717c6697a033551a6a5cce8cf7935c",
+      "v23Sha256": "413e8e8d6dc45b3e6b409fe791fae2f046a7e217cd6f3a8615636957ceba7cc8"
+    },
+    {
+      "path": "package-lock.json",
+      "status": "modified",
+      "bytes": 73416,
+      "sha256": "bce7cda362ce4e7cf196e39959b6d6502fa17741090cd300d0486f31cee03850",
+      "baseSha256": "4aec7438b35a75259b21aae0e99afddb4424004ee91dcc44644b2a8b8a281ead",
+      "v23Sha256": "15210a7fb574ba42253b1363ec09102f85434eddfd023fd8350ab77605c567f0"
+    },
+    {
+      "path": "package.json",
+      "status": "modified",
+      "bytes": 3379,
+      "sha256": "7da70c8284a8a3599ad058789106c3c89cbf5fecd872df8332114a2255796d66",
+      "baseSha256": "4b1b338a304aec428024184fe4c3b62e9affa9d2536321d5a246904383405ffb",
+      "v23Sha256": "a3aa373a93ee970b5a641fa2a0f4ad8027be04f5f5a8e363671bf919ab06b32e"
+    },
+    {
+      "path": "public/game/app.js",
+      "status": "modified",
+      "bytes": 109200,
+      "sha256": "22d900ac352b89ba7a272400e1d452d0f0e3f4769774f99b52f172c0c791d8df",
+      "baseSha256": "4248a90b0463f9fb6651f623de1a90f7d873ae718a8d25922e86343b92027d39",
+      "v23Sha256": "e85c6bf227db3afb64e01e5cbf06e0e33acb6dc1907a499b7083518c5499dfba"
+    },
+    {
+      "path": "public/game/art/enemies/apartment-empty-doorkeeper.webp",
+      "status": "added",
+      "bytes": 35958,
+      "sha256": "393f61b90c4a36c1b8931358589d9c53544520b7e3a8d1e80db79939705706df",
+      "baseSha256": null,
+      "v23Sha256": "393f61b90c4a36c1b8931358589d9c53544520b7e3a8d1e80db79939705706df"
+    },
+    {
+      "path": "public/game/art/enemies/broadcast-waiting-listener.webp",
+      "status": "added",
+      "bytes": 51756,
+      "sha256": "efb2597d4168c7b739ab5115d6c1ad2db16c83ce87f50f4607b33f0018c7014a",
+      "baseSha256": null,
+      "v23Sha256": "efb2597d4168c7b739ab5115d6c1ad2db16c83ce87f50f4607b33f0018c7014a"
+    },
+    {
+      "path": "public/game/art/enemies/clock-archive-eraser.webp",
+      "status": "added",
+      "bytes": 44586,
+      "sha256": "19aece9804884cb5cb7affc28ba46b9846c40691ff4b3bd24b0c3d4a600da240",
+      "baseSha256": null,
+      "v23Sha256": "19aece9804884cb5cb7affc28ba46b9846c40691ff4b3bd24b0c3d4a600da240"
+    },
+    {
+      "path": "public/game/art/enemies/clock-city-v24.webp",
+      "status": "added",
+      "bytes": 116132,
+      "sha256": "2cc766561b09ff3a60ac96266902e789664bb28ab5bf7d5315969a735254fca6",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/deep-sea-v24.webp",
+      "status": "added",
+      "bytes": 122698,
+      "sha256": "cd1a81246e1aa96a01f8d1da8d34acec9e3223620b57fd58097e8dda5eb57aeb",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/dragon-banquet-v24.webp",
+      "status": "added",
+      "bytes": 106406,
+      "sha256": "f526cdda119ba390a8c5a9819b681892d65a215fbddc1c303a51611c1672cac7",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/drowned-broadcast-v24.webp",
+      "status": "added",
+      "bytes": 129522,
+      "sha256": "e05eb9b65e4c8c7a88d73d3f0b6ada931dc0f52eb57586eaf28bad382de66d32",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/feast-oath-cutlery.webp",
+      "status": "added",
+      "bytes": 63932,
+      "sha256": "ef33bfd507f2e468247dbbcfc0518b90a8ddbf68e96d318cc094e7b81f4bac6a",
+      "baseSha256": null,
+      "v23Sha256": "ef33bfd507f2e468247dbbcfc0518b90a8ddbf68e96d318cc094e7b81f4bac6a"
+    },
+    {
+      "path": "public/game/art/enemies/glass-hotel-v24.webp",
+      "status": "added",
+      "bytes": 117936,
+      "sha256": "0c21fb90ae55213e2d9e5f60305b03c891bcdaa801ef5c1411000c70bdca8c34",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/hollow-apartment-v24.webp",
+      "status": "added",
+      "bytes": 112914,
+      "sha256": "125f87c1b8bc930c16569c32996ad2c7a6e7d5f4b1c0d6ddb81c3fe455112c9a",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/hotel-clockwork-archivist.webp",
+      "status": "added",
+      "bytes": 36850,
+      "sha256": "614c5456d178390dd955370199fe6693e9baa54fc182b67058f39266e3a9231a",
+      "baseSha256": null,
+      "v23Sha256": "614c5456d178390dd955370199fe6693e9baa54fc182b67058f39266e3a9231a"
+    },
+    {
+      "path": "public/game/art/enemies/human-opponents-v24.webp",
+      "status": "added",
+      "bytes": 281812,
+      "sha256": "e82ca2a9e38baabac25bc43db8870ae890d0692549fd2d7ec0297ad0b14804c3",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/last-train-v24.webp",
+      "status": "added",
+      "bytes": 102316,
+      "sha256": "047acd74b17a08d42ba41c4ecb03fdaae6a6b5e17e7c8e20b98f073273c1077b",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/market-contract-puppet.webp",
+      "status": "added",
+      "bytes": 61708,
+      "sha256": "a25604e03b618c5bed2ffbfc64d46185b773e9abc5d7fa39b2ce909a47ae54bb",
+      "baseSha256": null,
+      "v23Sha256": "a25604e03b618c5bed2ffbfc64d46185b773e9abc5d7fa39b2ce909a47ae54bb"
+    },
+    {
+      "path": "public/game/art/enemies/moon-market-v24.webp",
+      "status": "added",
+      "bytes": 102918,
+      "sha256": "181ee38a173c791df3b9e76e324c2e5826dfbc2433ecfc964af71fa251223543",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/sea-quarantine-cleaner.webp",
+      "status": "added",
+      "bytes": 36634,
+      "sha256": "9f24fc660ab49f32dfe50c59f384a92848b27e43c3f2735e3b6a26cc45e288b3",
+      "baseSha256": null,
+      "v23Sha256": "9f24fc660ab49f32dfe50c59f384a92848b27e43c3f2735e3b6a26cc45e288b3"
+    },
+    {
+      "path": "public/game/art/enemies/snow-checkpoint-catcher.webp",
+      "status": "added",
+      "bytes": 47514,
+      "sha256": "c9e6dbc3ff8c2e316b0df310574698f85f0435dcd26f3223ec91abac554a3c87",
+      "baseSha256": null,
+      "v23Sha256": "c9e6dbc3ff8c2e316b0df310574698f85f0435dcd26f3223ec91abac554a3c87"
+    },
+    {
+      "path": "public/game/art/enemies/snow-radio-v24.webp",
+      "status": "added",
+      "bytes": 118440,
+      "sha256": "d2e90734f9d7d2525dd0b4406ae500f01bda79c24499394d9823d1407eda3e1b",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/art/enemies/train-ledger-enforcer.webp",
+      "status": "added",
+      "bytes": 42542,
+      "sha256": "c5dfc5192cec92e13338cd53cfff4d53914faacaeab8c36bbe21b7edf30f95a8",
+      "baseSha256": null,
+      "v23Sha256": "c5dfc5192cec92e13338cd53cfff4d53914faacaeab8c36bbe21b7edf30f95a8"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-critical.mp3",
+      "status": "added",
+      "bytes": 5804,
+      "sha256": "42a3e9e5e5151603701b2a7da3f90c283d361b483e6750b1734b77b65f4c4bcc",
+      "baseSha256": null,
+      "v23Sha256": "42a3e9e5e5151603701b2a7da3f90c283d361b483e6750b1734b77b65f4c4bcc"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-defeat.mp3",
+      "status": "added",
+      "bytes": 11852,
+      "sha256": "8bd8573b6e8564e5a68b74680b06e213b2fe6a04370f0df1e95383db5f841387",
+      "baseSha256": null,
+      "v23Sha256": "8bd8573b6e8564e5a68b74680b06e213b2fe6a04370f0df1e95383db5f841387"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-enemy.mp3",
+      "status": "added",
+      "bytes": 4364,
+      "sha256": "44cf94edf9fb72c063d6d09845c8c8d887f0b73f49da13862f3dbc7127477c66",
+      "baseSha256": null,
+      "v23Sha256": "44cf94edf9fb72c063d6d09845c8c8d887f0b73f49da13862f3dbc7127477c66"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-fumble.mp3",
+      "status": "added",
+      "bytes": 5804,
+      "sha256": "0d6a6c7f5d3cd464a23753c6dce0d79f3f40522d2bf864746c5f80afa97b3648",
+      "baseSha256": null,
+      "v23Sha256": "0d6a6c7f5d3cd464a23753c6dce0d79f3f40522d2bf864746c5f80afa97b3648"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-heal.mp3",
+      "status": "added",
+      "bytes": 6380,
+      "sha256": "521a485ed385a68d1439d87526aa7dc549170ea7d9f517e8f4dfcbbd26040389",
+      "baseSha256": null,
+      "v23Sha256": "521a485ed385a68d1439d87526aa7dc549170ea7d9f517e8f4dfcbbd26040389"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-hit.mp3",
+      "status": "added",
+      "bytes": 4076,
+      "sha256": "5dd4fd905b9d67d4d219fa760417336ae57572026fc7f6d8dd7109cdcc7577c7",
+      "baseSha256": null,
+      "v23Sha256": "5dd4fd905b9d67d4d219fa760417336ae57572026fc7f6d8dd7109cdcc7577c7"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-hurt.mp3",
+      "status": "added",
+      "bytes": 4076,
+      "sha256": "c337758185c7801b719faf723246b7e2bfddaf2e139a0de257362e9729207f2c",
+      "baseSha256": null,
+      "v23Sha256": "c337758185c7801b719faf723246b7e2bfddaf2e139a0de257362e9729207f2c"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-miss.mp3",
+      "status": "added",
+      "bytes": 3500,
+      "sha256": "4ac8e90a61267fb465c530ce064f113bf224834fdd0a5eadc4fd11cd725fc4c2",
+      "baseSha256": null,
+      "v23Sha256": "4ac8e90a61267fb465c530ce064f113bf224834fdd0a5eadc4fd11cd725fc4c2"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-shield.mp3",
+      "status": "added",
+      "bytes": 5228,
+      "sha256": "abdac8d53cd21b231c13e8db975541ec675bb5a022b2ff9ad3daa2f1177b4982",
+      "baseSha256": null,
+      "v23Sha256": "abdac8d53cd21b231c13e8db975541ec675bb5a022b2ff9ad3daa2f1177b4982"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-skill.mp3",
+      "status": "added",
+      "bytes": 5516,
+      "sha256": "05145d227ab30a8d1ebd213f7072575c8de707157b40c5358dc7c17cc85964c4",
+      "baseSha256": null,
+      "v23Sha256": "05145d227ab30a8d1ebd213f7072575c8de707157b40c5358dc7c17cc85964c4"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-stun.mp3",
+      "status": "added",
+      "bytes": 5516,
+      "sha256": "a3655e9de2691e210948c1bec816ee0d57b477edf9cd615ea65f3c87a13da01c",
+      "baseSha256": null,
+      "v23Sha256": "a3655e9de2691e210948c1bec816ee0d57b477edf9cd615ea65f3c87a13da01c"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-swing.mp3",
+      "status": "added",
+      "bytes": 3500,
+      "sha256": "ddd53173e09dad6ca719364acc1fe5cc11c76341c7d5455b36a6e41c77cc3c37",
+      "baseSha256": null,
+      "v23Sha256": "ddd53173e09dad6ca719364acc1fe5cc11c76341c7d5455b36a6e41c77cc3c37"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-victory.mp3",
+      "status": "added",
+      "bytes": 10988,
+      "sha256": "d911c67e7b3f14fb9d710936ea3ed5951a59aea1d278087001f48610a46aecb6",
+      "baseSha256": null,
+      "v23Sha256": "d911c67e7b3f14fb9d710936ea3ed5951a59aea1d278087001f48610a46aecb6"
+    },
+    {
+      "path": "public/game/audio-fallback.js",
+      "status": "modified",
+      "bytes": 15098,
+      "sha256": "668fcd9fb2fc991baa1967d9aa2a6f8bc48a6bea9a6017a6f565da5d2f280b71",
+      "baseSha256": "27aa0e6d76ad7f513cda789638db47f492e356017ea6cc3048b1837743f6beef",
+      "v23Sha256": "668fcd9fb2fc991baa1967d9aa2a6f8bc48a6bea9a6017a6f565da5d2f280b71"
+    },
+    {
+      "path": "public/game/audio.js",
+      "status": "modified",
+      "bytes": 18319,
+      "sha256": "0bfc96d5e7f48c8979bd3553805c24c461411c5779c9710eb7266ce11b180d6c",
+      "baseSha256": "804ac26e9b6098c3d536c66d06f0c75123f50f9589900d367f7b33e74f5a1f49",
+      "v23Sha256": "0bfc96d5e7f48c8979bd3553805c24c461411c5779c9710eb7266ce11b180d6c"
+    },
+    {
+      "path": "public/game/battle-assets.js",
+      "status": "added",
+      "bytes": 4187,
+      "sha256": "865f5a3298f5c7cdcc7ded9a05a1b4ee4f653086116200f1b564361074b121ba",
+      "baseSha256": null,
+      "v23Sha256": "0940f74c190b0859d6a6e5611e3283a87d045843df2b379f03ce1f9139ba0ccb"
+    },
+    {
+      "path": "public/game/battle-audio-assets.js",
+      "status": "added",
+      "bytes": 895,
+      "sha256": "5967f22d1e1a6842477953a3bd8a288b208700e8c84433558b9dd6f44ddff781",
+      "baseSha256": null,
+      "v23Sha256": "5967f22d1e1a6842477953a3bd8a288b208700e8c84433558b9dd6f44ddff781"
+    },
+    {
+      "path": "public/game/battle-presenter.js",
+      "status": "added",
+      "bytes": 6853,
+      "sha256": "d74ff5f80795ede4fc0a8d19cc76951f4d1dc404abe3f16617c952fa6b42e5f9",
+      "baseSha256": null,
+      "v23Sha256": "d74ff5f80795ede4fc0a8d19cc76951f4d1dc404abe3f16617c952fa6b42e5f9"
+    },
+    {
+      "path": "public/game/battle-ui.js",
+      "status": "added",
+      "bytes": 8998,
+      "sha256": "661659909df7764b82201807e8bf4d6c791dcfc9e66c5fc30db40f9940672036",
+      "baseSha256": null,
+      "v23Sha256": "295b495997f014646448ad6da4f9ad9ce65e830919c6df61d2735d4b3b2dbbc4"
+    },
+    {
+      "path": "public/game/campaigns/encounter-tools.js",
+      "status": "added",
+      "bytes": 9171,
+      "sha256": "a1785c38f3bf71579096b1832fdf33e2665fb819aa75c6f5fd3882ea7af55101",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/campaigns/encounters-a.js",
+      "status": "added",
+      "bytes": 163830,
+      "sha256": "48d09703d5a3b2288de1f56a9a3436f1c5a69deba782d28cf3c755bf27894d10",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/campaigns/encounters-b.js",
+      "status": "added",
+      "bytes": 124297,
+      "sha256": "b0bbb21e054d7c7761ff378929ee7a407022f1aa973bb9583f04f8689803f02c",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/campaigns/epic-tools.js",
+      "status": "modified",
+      "bytes": 3636,
+      "sha256": "1a970c004fe638f41810376fbde216b936ff9546c8f795b207ceaf64a30db871",
+      "baseSha256": "1df9586990831d99626cb2fab264a581c5b9cc21ce1ac469e60a3baa21d8f5a5",
+      "v23Sha256": "1df9586990831d99626cb2fab264a581c5b9cc21ce1ac469e60a3baa21d8f5a5"
+    },
+    {
+      "path": "public/game/campaigns/index.js",
+      "status": "modified",
+      "bytes": 2967,
+      "sha256": "a7c32be02e714b4e5f380c39fbba5f4be947fe7114927bea5d5b716574a267f5",
+      "baseSha256": "5b9cb201b08ea511ea90e9ff49cb4a2523124e8d7c9e31454ec505a2a241dbfb",
+      "v23Sha256": "5b9cb201b08ea511ea90e9ff49cb4a2523124e8d7c9e31454ec505a2a241dbfb"
+    },
+    {
+      "path": "public/game/combat-presentation.js",
+      "status": "added",
+      "bytes": 10151,
+      "sha256": "fd20b88ce7c3421a1eac572e18e36b48eb7c356ab492055368a89e417725968d",
+      "baseSha256": null,
+      "v23Sha256": "fd20b88ce7c3421a1eac572e18e36b48eb7c356ab492055368a89e417725968d"
+    },
+    {
+      "path": "public/game/combat.js",
+      "status": "modified",
+      "bytes": 31213,
+      "sha256": "db858b314c3931c738732a7458a378f2ff3ca9495da7565c263f34d4729d1de0",
+      "baseSha256": "e7622ae107b649eec87017492b83fd5f6c4b97bec6c05cefb1ee4c88aed8b2a2",
+      "v23Sha256": "88698bd3083dd142aa53406111eaafe708a62ef7d23d4ab2cf39091892929626"
+    },
+    {
+      "path": "public/game/enemy-atlases-v24.js",
+      "status": "added",
+      "bytes": 21201,
+      "sha256": "f872f18f01b43c12be214259c39d39b70c992a7b635c6d9deef6994a2a8f9f3a",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "public/game/engine.js",
+      "status": "modified",
+      "bytes": 48287,
+      "sha256": "2ad4b6a214d945d3342cbadfe24e62e2e5c5bd2372d3b4b57585f32cd172cb65",
+      "baseSha256": "941f4162da8f1e11617035a95dc0f68914185a3f76c7c75e7f489ef5e6658098",
+      "v23Sha256": "b8e30996983237d370fe30ccb72459f7d165cd6fca035454f4bb67d81e114e6c"
+    },
+    {
+      "path": "public/game/styles.css",
+      "status": "modified",
+      "bytes": 122590,
+      "sha256": "90ab839d31be21145281ceef5a00505a67f021e49edb566003f3a75dbfd14a3b",
+      "baseSha256": "13f06e76ca55ac595795963b7b314ec0942b9061196b247d6aa85d39a4d0763f",
+      "v23Sha256": "b45ec28cefe62c003b5fcc1744bf4aea5fd9a66fad642043c43ba9a1658c30ed"
+    },
+    {
+      "path": "public/index.html",
+      "status": "modified",
+      "bytes": 3132,
+      "sha256": "975960a8cc64bd460a0f6910cd9dc0fa60549a7ff060afc17013e8b6e67483b9",
+      "baseSha256": "3ebfac2290628eb904b5e04c5687544b79a5ef95f9253feb45a0782374cadcbe",
+      "v23Sha256": "d9d2bff7f8e01afe95f1a5700eb85bf9ee63cc35d435407a2bff1d4fe1f59a4d"
+    },
+    {
+      "path": "public/offline.html",
+      "status": "modified",
+      "bytes": 4753063,
+      "sha256": "2113a43721f23a317277ec0cf67ffc8e5519223e598a4e2d90e44ddd150d45ef",
+      "baseSha256": "4bb1fb2adb6cdd9916d2e1217560eb3ab9ab4b4461e2ae737593c569dcf4c9d3",
+      "v23Sha256": "2df6122e5edb19bfa640788c15b6b748b1c4018842908b8873d7f262783afd15"
+    },
+    {
+      "path": "scripts/baseline-v22_1.json",
+      "status": "added",
+      "bytes": 19547,
+      "sha256": "370ffb932efec48c1efce72c4a64d3203d79fc26dab6c0d11d44d4e3d804a760",
+      "baseSha256": null,
+      "v23Sha256": "370ffb932efec48c1efce72c4a64d3203d79fc26dab6c0d11d44d4e3d804a760"
+    },
+    {
+      "path": "scripts/baseline-v23.json",
+      "status": "added",
+      "bytes": 24211,
+      "sha256": "af47531e032cfcc6401af14cc66bd5d3163bf99b02cad3e9c2aaaad76df5bbee",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "scripts/battle-art/briefs-v24.json",
+      "status": "added",
+      "bytes": 22524,
+      "sha256": "b7aeb4c7bcf2bc00dbb4408f53557978a2cf2e424183c2f5f51a864e4064ba2e",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "scripts/battle-art/manifest-v23.json",
+      "status": "added",
+      "bytes": 3417,
+      "sha256": "22505bc7df5c2316dfbc767c94cb11b9dbea81ea012761cbece25e1830d6d238",
+      "baseSha256": null,
+      "v23Sha256": "22505bc7df5c2316dfbc767c94cb11b9dbea81ea012761cbece25e1830d6d238"
+    },
+    {
+      "path": "scripts/battle-art/manifest-v24.json",
+      "status": "added",
+      "bytes": 13522,
+      "sha256": "b45fc12e11cf5beaf61f385ae8125db7aea1f336958a09984149f3acbcc00406",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "scripts/battle-art/prompts-v23.json",
+      "status": "added",
+      "bytes": 16332,
+      "sha256": "fef04a00da97451443dae54e4c17c5041f9f93896b18f89a4f2b803280fd3fcb",
+      "baseSha256": null,
+      "v23Sha256": "fef04a00da97451443dae54e4c17c5041f9f93896b18f89a4f2b803280fd3fcb"
+    },
+    {
+      "path": "scripts/battle-art/prompts-v24.json",
+      "status": "added",
+      "bytes": 39946,
+      "sha256": "b67ac14cd3c344a658f78b7c4823a2ea0a707dc165e5310a823e7d1d87a9150b",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "scripts/battle-audio-v23.json",
+      "status": "added",
+      "bytes": 5764,
+      "sha256": "90bb88164a9f7cc3aa929665e757195f792f9febb7c26960698bb661a69c50ef",
+      "baseSha256": null,
+      "v23Sha256": "90bb88164a9f7cc3aa929665e757195f792f9febb7c26960698bb661a69c50ef"
+    },
+    {
+      "path": "scripts/build-battle-audio-v23.py",
+      "status": "added",
+      "bytes": 8566,
+      "sha256": "828cd877b1d8411dd3c94e40f27ebcd5687470459271d5c78ad19684e9710b0d",
+      "baseSha256": null,
+      "v23Sha256": "828cd877b1d8411dd3c94e40f27ebcd5687470459271d5c78ad19684e9710b0d"
+    },
+    {
+      "path": "scripts/build-enemy-art-v24.py",
+      "status": "added",
+      "bytes": 3520,
+      "sha256": "b78a384016dbec33311aecdd8d88fb9fdc1e831770e146706df8cbb936cd1bd4",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "scripts/encode-battle-art-v23.py",
+      "status": "added",
+      "bytes": 2213,
+      "sha256": "fd8977fad90271d18079b5003c3a97ec9dd8f94a16f04e77eb898575f7e87d13",
+      "baseSha256": null,
+      "v23Sha256": "fd8977fad90271d18079b5003c3a97ec9dd8f94a16f04e77eb898575f7e87d13"
+    },
+    {
+      "path": "scripts/explore-encounters-v24.mjs",
+      "status": "added",
+      "bytes": 2681,
+      "sha256": "0bf657583b9313058a0ae141ace8d2fdd6e17a131235c1b2d9053d6cd5bfc52e",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "scripts/explore-scenarios.mjs",
+      "status": "modified",
+      "bytes": 13713,
+      "sha256": "3ce138a6d211dac6e72d5fc4529613c2c0dbcf221271967c74288bc33989d426",
+      "baseSha256": "54f3c616d0dc89dac046dfc1221dadc1e94da9b3a38a3b927bb23ba5caa9376c",
+      "v23Sha256": "54f3c616d0dc89dac046dfc1221dadc1e94da9b3a38a3b927bb23ba5caa9376c"
+    },
+    {
+      "path": "scripts/report-v23.mjs",
+      "status": "added",
+      "bytes": 4747,
+      "sha256": "cadc30e9c54298310c6814d4172c37e351d0f67ecbe3c330a07a4ac89df67ba0",
+      "baseSha256": null,
+      "v23Sha256": "cadc30e9c54298310c6814d4172c37e351d0f67ecbe3c330a07a4ac89df67ba0"
+    },
+    {
+      "path": "scripts/report-v24.mjs",
+      "status": "added",
+      "bytes": 5738,
+      "sha256": "5056e23bc4c22ca4481547b9b1be33372c84b4d3d54e924f38dfe1221ae6937e",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "scripts/summarize-routes-v24.mjs",
+      "status": "added",
+      "bytes": 1814,
+      "sha256": "2464fc788301b5a7148e123702ac5359c1d2eb7a10f9841a59fbb434bfa2319c",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "tests-v18/combat-network.integration.mjs",
+      "status": "modified",
+      "bytes": 18850,
+      "sha256": "e82e13b73f5bdc8e96ccf506d006b494db6af150b980a5402906b60003bbac52",
+      "baseSha256": "7e61c95a44a6b22b3da9fee6ee95701288063098bc99bd484ae4e0dc8c43253e",
+      "v23Sha256": "7e61c95a44a6b22b3da9fee6ee95701288063098bc99bd484ae4e0dc8c43253e"
+    },
+    {
+      "path": "tests-v18/deployment.integration.mjs",
+      "status": "modified",
+      "bytes": 20480,
+      "sha256": "4dce05a03dd6f51132d58c0b7325023e14974b0bc8cfbad9a3603e1964b1730e",
+      "baseSha256": "57d845bebe5e581036451c810c5cf04258272f3d66e53b49255e8e18e9d18b94",
+      "v23Sha256": "4ff43d9b6a468221f9940d772cbb82ba96a3933c305ad2e9bde3bb33bad4439e"
+    },
+    {
+      "path": "tests-v18/party-network.integration.mjs",
+      "status": "modified",
+      "bytes": 12478,
+      "sha256": "a55b0740e3afa82d9eeb363e92265f8359bb6c229c431cd48f2438f9dcf6ae23",
+      "baseSha256": "0d695759d42104d4c6dd1188cf323c7869ffb9147d7240d170c225fea8126aeb",
+      "v23Sha256": "0d695759d42104d4c6dd1188cf323c7869ffb9147d7240d170c225fea8126aeb"
+    },
+    {
+      "path": "tests-v18/resource-budget.test.mjs",
+      "status": "modified",
+      "bytes": 19648,
+      "sha256": "5118c719fd952457369bbfea3731edb5bac2b7568c58df03627a5befab2c6e69",
+      "baseSha256": "b622d58e75d64df68d149d61eba18eafd186ab3f6d018271590c11a2f8f57f13",
+      "v23Sha256": "93a3afaafec1ae2000cd305e2c0b2e01046cdf8cacd5415b0e0e58bf0c037f5f"
+    },
+    {
+      "path": "tests-v18/server.integration.mjs",
+      "status": "modified",
+      "bytes": 26599,
+      "sha256": "a957a94da5689a0925e9dd290277cf84e6cc3c7ffd2761f2382a8cf889430244",
+      "baseSha256": "65ac6f2de2f4ba2fc598588ec22ced0011ae2a3406e8c139bbcba78007a30420",
+      "v23Sha256": "68df8cf3641ba5b79833a39086ebfa0151fd0bfebd05f434d374a8601d45e36f"
+    },
+    {
+      "path": "tests-v18/story-network.integration.mjs",
+      "status": "modified",
+      "bytes": 9026,
+      "sha256": "867b030a292d361f8352f283447add3b120b0868f8782e388eb67e33bcfb6aca",
+      "baseSha256": "671e2ab3109c1d22eccdf49c96c3cafd08a07617f8e2e024885e924303060b96",
+      "v23Sha256": "671e2ab3109c1d22eccdf49c96c3cafd08a07617f8e2e024885e924303060b96"
+    },
+    {
+      "path": "tests-v18/ui.test.mjs",
+      "status": "modified",
+      "bytes": 74985,
+      "sha256": "07858e15b910338035fcb9007f761f3c9b1dc2b83b8fbcae1f1f306d971d764f",
+      "baseSha256": "196117fa88131e312d2cac305c90816f8d20d39b8c319497d4d344c74d8e4328",
+      "v23Sha256": "ef12503c7bec0c93b20f6ac6d3816f5e3054e81802c36f681f42209dfc916864"
+    },
+    {
+      "path": "tests-v19/ui.test.mjs",
+      "status": "modified",
+      "bytes": 27877,
+      "sha256": "df36209a9c8f7280dff79c6d7d61610b5ecfb2caa2ed4d6baf79d583c38767b9",
+      "baseSha256": "182fb56e71bd88f0bf6857d564a464d242320cb63995816dc94c0e4b2a7b265f",
+      "v23Sha256": "df36209a9c8f7280dff79c6d7d61610b5ecfb2caa2ed4d6baf79d583c38767b9"
+    },
+    {
+      "path": "tests-v20/dice-ui.test.mjs",
+      "status": "modified",
+      "bytes": 23498,
+      "sha256": "86742f3d17beb9eae21df14d2f4d42bfbf17bf92a4b3fcc0bbce73865a7df60d",
+      "baseSha256": "09eabf21b6631768221ddc9dca521bcc8f84e6fca16bf5caa47456bc97a731cc",
+      "v23Sha256": "86742f3d17beb9eae21df14d2f4d42bfbf17bf92a4b3fcc0bbce73865a7df60d"
+    },
+    {
+      "path": "tests-v21/expansion-contract.test.mjs",
+      "status": "modified",
+      "bytes": 6946,
+      "sha256": "fd5e90bf880427e850ea496d2dde7453ac50d8941b6d310e0d101786d5633cfc",
+      "baseSha256": "ba6b8368117b42e2c676172384d2772d30f026f91e47275830fe37df4d2c5670",
+      "v23Sha256": "3acd11ddd9b00dfcee6737e8734bac422547fe7008ed5e1e9d4dd785422ee272"
+    },
+    {
+      "path": "tests-v21/preservation.test.mjs",
+      "status": "modified",
+      "bytes": 1247,
+      "sha256": "a11ead2554d51be5dbfd0f337e2cfacf5ab87d1e0ce8fc17dbc35d64ad4b2039",
+      "baseSha256": "99a1f44c15dc06bb024cfe2f6a0022c776058ac55b68ab9d2641026aaa3ba7a6",
+      "v23Sha256": "a11ead2554d51be5dbfd0f337e2cfacf5ab87d1e0ce8fc17dbc35d64ad4b2039"
+    },
+    {
+      "path": "tests-v22/horror.test.mjs",
+      "status": "modified",
+      "bytes": 11497,
+      "sha256": "ab80c933ec19a0e6df82e0ed508778dca282544bbc1af71d191af4b43987f50c",
+      "baseSha256": "14216aa4740fbcc12326d916d49fe6d6521a52e94c82866d0b559d7e0490788e",
+      "v23Sha256": "14216aa4740fbcc12326d916d49fe6d6521a52e94c82866d0b559d7e0490788e"
+    },
+    {
+      "path": "tests-v22/modes.test.mjs",
+      "status": "modified",
+      "bytes": 5432,
+      "sha256": "8c934b5613465aca25d302ee51e1bbfc3fe121164d21dc71ffc8317f708d8fcb",
+      "baseSha256": "3877ff7b8b5703f928c177f7f20e8731fecd17f159cfbdb9e943de2222f2f9aa",
+      "v23Sha256": "3877ff7b8b5703f928c177f7f20e8731fecd17f159cfbdb9e943de2222f2f9aa"
+    },
+    {
+      "path": "tests-v22/network.test.mjs",
+      "status": "modified",
+      "bytes": 5964,
+      "sha256": "4f669aa795dbb1f8448ee558f98092253c7e1850ed45d3c827f5d6d879dbdd67",
+      "baseSha256": "067030521be2676ba582942c11037f8ac0c06d02766cbccbb65a32266b20a613",
+      "v23Sha256": "067030521be2676ba582942c11037f8ac0c06d02766cbccbb65a32266b20a613"
+    },
+    {
+      "path": "tests-v23/battle-app.test.mjs",
+      "status": "added",
+      "bytes": 18533,
+      "sha256": "e1bf55630d685dabefd6f7cd0442172d868b20b6b04e31bbeaedcf00ac79798c",
+      "baseSha256": null,
+      "v23Sha256": "e1bf55630d685dabefd6f7cd0442172d868b20b6b04e31bbeaedcf00ac79798c"
+    },
+    {
+      "path": "tests-v23/battle-art.test.mjs",
+      "status": "added",
+      "bytes": 2738,
+      "sha256": "b52582698b98a713b2238346de8b968c6675322c018bcad97a49a966ffdeb782",
+      "baseSha256": null,
+      "v23Sha256": "c6df6cb71b47a68444d3e314706852d437b102df1bb36a99bf18ed4fd4e4ac59"
+    },
+    {
+      "path": "tests-v23/battle-audio-integration.test.mjs",
+      "status": "added",
+      "bytes": 10069,
+      "sha256": "d9532f99a5da2dfb93abde04f82962db598167f877386eb18cf6670e0cde35ca",
+      "baseSha256": null,
+      "v23Sha256": "d9532f99a5da2dfb93abde04f82962db598167f877386eb18cf6670e0cde35ca"
+    },
+    {
+      "path": "tests-v23/battle-audio.test.mjs",
+      "status": "added",
+      "bytes": 7747,
+      "sha256": "35c627bda845d8d50bde725b47f3cf92f4b2f46e74bcae73ed621e130bc1ff5c",
+      "baseSha256": null,
+      "v23Sha256": "35c627bda845d8d50bde725b47f3cf92f4b2f46e74bcae73ed621e130bc1ff5c"
+    },
+    {
+      "path": "tests-v23/battle-ui.test.mjs",
+      "status": "added",
+      "bytes": 11558,
+      "sha256": "857b1ef15ee4da18fe3d91d520af9106a19f43f112d1d885c1263fb6f0a69854",
+      "baseSha256": null,
+      "v23Sha256": "857b1ef15ee4da18fe3d91d520af9106a19f43f112d1d885c1263fb6f0a69854"
+    },
+    {
+      "path": "tests-v23/combat-presentation.test.mjs",
+      "status": "added",
+      "bytes": 16366,
+      "sha256": "a771fe7b927df4f1e68ada461f731b0aa7a5530fdbf431eae418d6c50dd2d6eb",
+      "baseSha256": null,
+      "v23Sha256": "a773d1bfec379136d55fd75439ef4503aa375118ae4f4f19c2ff7a9111a8b419"
+    },
+    {
+      "path": "tests-v24/atlas-ui.test.mjs",
+      "status": "added",
+      "bytes": 6448,
+      "sha256": "aba4a3b16c680ab3706288145cfc59a4c2480326ae9dc8deb37609e7d14a3b3f",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "tests-v24/content-a.test.mjs",
+      "status": "added",
+      "bytes": 7119,
+      "sha256": "c089042974281bef2c56d24fff4073f703b032a49ab3f669a4334285d3a7de14",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "tests-v24/content-b.test.mjs",
+      "status": "added",
+      "bytes": 7752,
+      "sha256": "d659712dae3450375f76acf09cfe10132b33eff58dc39cf7b64fb624b6b3d44b",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "tests-v24/encounters.test.mjs",
+      "status": "added",
+      "bytes": 14882,
+      "sha256": "0388e453d5475c64954ffe0ade18a5e2fcaa458493eacac9544c43207fa2933b",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "tests-v24/helpers.mjs",
+      "status": "added",
+      "bytes": 4771,
+      "sha256": "e751e901091abc252fc4cbfcbef9f249f0d82ebb3525af6dba67e2c63732fbcc",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "tests-v24/network.test.mjs",
+      "status": "added",
+      "bytes": 7162,
+      "sha256": "c51ecd151eda2d0cc3179bbaf6991a2f4d64e4635fdb8db988191b84650990e6",
+      "baseSha256": null,
+      "v23Sha256": null
+    },
+    {
+      "path": "validation-v23/final-checks.json",
+      "status": "added",
+      "bytes": 1451,
+      "sha256": "01de41b652b6c61cef207e9d48a9e25dd8bdfea9a0206f8d94c2d93b8a0f2dd9",
+      "baseSha256": null,
+      "v23Sha256": "01de41b652b6c61cef207e9d48a9e25dd8bdfea9a0206f8d94c2d93b8a0f2dd9"
+    },
+    {
+      "path": "validation-v23/full-release-summary.json",
+      "status": "added",
+      "bytes": 8877,
+      "sha256": "a150514d760ebb64ac1e965898415a9a233ac054189539ee171723abc2a33b2e",
+      "baseSha256": null,
+      "v23Sha256": "a150514d760ebb64ac1e965898415a9a233ac054189539ee171723abc2a33b2e"
+    }
+  ],
+  "deletedFiles": [],
+  "saveSchema": 22,
+  "apply": "Overlay these paths on the v22.1 or v23 repository root; keep unlisted files. This is a cumulative patch, not a complete game distribution."
+}

@@ -1,0 +1,1049 @@
+{
+  "version": "24.0.0",
+  "validationDate": "2026-11-28",
+  "nodeVersion": "24.22.3",
+  "wholeSuite": {
+    "command": "npm run test:all",
+    "exitCode": 0,
+    "tests": 825,
+    "passed": 825,
+    "failed": 0,
+    "skipped": 0,
+    "additionalRealSocketIoGroups": 20
+  },
+  "overlays": [
+    {
+      "sourceVersion": "v22_1",
+      "runtimeFilesIdentical": 203,
+      "schemaCheck": true,
+      "atlasAndActualFourClientTests": 10,
+      "passed": true
+    },
+    {
+      "sourceVersion": "v23",
+      "runtimeFilesIdentical": 203,
+      "schemaCheck": true,
+      "atlasAndActualFourClientTests": 10,
+      "passed": true
+    }
+  ],
+  "runtimeFiles": [
+    {
+      "path": "game-server/http-service.js",
+      "bytes": 16280,
+      "sha256": "43099b3c3c2b6062e7f14fc3ff61901dc519e44d68da8d64916facb6f89a465b"
+    },
+    {
+      "path": "game-server/table-service.js",
+      "bytes": 30486,
+      "sha256": "e786f367d3f121069780d2e1509d582ce908bbca0642552127feb28951a11f6f"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 73416,
+      "sha256": "bce7cda362ce4e7cf196e39959b6d6502fa17741090cd300d0486f31cee03850"
+    },
+    {
+      "path": "package.json",
+      "bytes": 3379,
+      "sha256": "7da70c8284a8a3599ad058789106c3c89cbf5fecd872df8332114a2255796d66"
+    },
+    {
+      "path": "public/app.js",
+      "bytes": 185257,
+      "sha256": "76e6564e4cd262cd67522ff04f21536dff0b52b40e48bfcb5c9a72d9a60d6855"
+    },
+    {
+      "path": "public/art/director/1",
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "public/art/director/abyss.webp",
+      "bytes": 70108,
+      "sha256": "61b10e95574bd2f249f0bf61ba5640d9e1cf83d9304075eae614c88856a2e705"
+    },
+    {
+      "path": "public/art/director/clock.webp",
+      "bytes": 90230,
+      "sha256": "60c07c3cffff8bbdc0cbe8d582b20690a124d9e84a26c77616d16524ac74d19a"
+    },
+    {
+      "path": "public/art/director/echo.webp",
+      "bytes": 78412,
+      "sha256": "a489b3abebf4bcf68d9efbe1cb3a853bc2ead9a6bd259478cc9df61f2b59a341"
+    },
+    {
+      "path": "public/art/director/ember.webp",
+      "bytes": 83182,
+      "sha256": "a2178cd5bd050ce65e98f0adfb61e29c1690602a838981eaa3b0967357525e08"
+    },
+    {
+      "path": "public/art/director/neon.webp",
+      "bytes": 87244,
+      "sha256": "acf8fd0b9802d7d1f31a320d889a3f0df7d563c74be3db2864674092f1b4984c"
+    },
+    {
+      "path": "public/art/director/wild.webp",
+      "bytes": 101322,
+      "sha256": "7dcd3295acd32467b1b57e1db900af80bd2a244e2b7ab1c8f771c737f20bf5d8"
+    },
+    {
+      "path": "public/audio/attack.wav",
+      "bytes": 14596,
+      "sha256": "b39e773cf42bf21687d2f79b8c5831b70c1af0a09becb774b144e9cefb663df8"
+    },
+    {
+      "path": "public/audio/bgm_abyss.wav",
+      "bytes": 617444,
+      "sha256": "43ffce37aaf22ce63950e72dbcb95de6f8f82c5fa7ac2c29e510e86399903831"
+    },
+    {
+      "path": "public/audio/bgm_clock.wav",
+      "bytes": 617444,
+      "sha256": "88114fbe4d041ae91376720f98c1d47a1371ac7eef0fbc9dbbc9a3f97692b189"
+    },
+    {
+      "path": "public/audio/bgm_combat.wav",
+      "bytes": 617444,
+      "sha256": "af52a534b95a56a819278e46873f771cd31055551fc8dca0d3f2da0bba88a447"
+    },
+    {
+      "path": "public/audio/bgm_dread.wav",
+      "bytes": 705644,
+      "sha256": "998e84ca0787bd612a452b2b2a0c786637a4e151c57e357bc7f65efc3a33e0a3"
+    },
+    {
+      "path": "public/audio/bgm_ember.wav",
+      "bytes": 617444,
+      "sha256": "7e4e7690100fae77f84b4deb7ab8b23b108bd44f4ebd3d84aa6b606fd66cd3a4"
+    },
+    {
+      "path": "public/audio/bgm_neon.wav",
+      "bytes": 617444,
+      "sha256": "39ecdd31669ec8f09961b32a79466a256ec2c20ce6cb00fa041a83d4419bdf54"
+    },
+    {
+      "path": "public/audio/bgm_wild.wav",
+      "bytes": 617444,
+      "sha256": "0a8a57b6f537b0720f85d8266195677a53f9848509f68abe074b863eed78dbbd"
+    },
+    {
+      "path": "public/audio/boss_warning.wav",
+      "bytes": 48554,
+      "sha256": "28814e1b51add7ef90840d11c76c16f36f7dcb950079ff25f02b5501e7dde4f1"
+    },
+    {
+      "path": "public/audio/dice_roll.wav",
+      "bytes": 44144,
+      "sha256": "2967d5723231b2b4cb41945144ea136ae07e1c9d16c45894a9baccd64d93fae9"
+    },
+    {
+      "path": "public/audio/failure.wav",
+      "bytes": 39734,
+      "sha256": "8657f00c4539bba9046c0184abdea0d68947ec3ee618f97eb46ad94957097416"
+    },
+    {
+      "path": "public/audio/heartbeat.wav",
+      "bytes": 63988,
+      "sha256": "2cbc96581e6bc3b23b05f7f2ba7a1d343176d39777ba06162041d4093da11814"
+    },
+    {
+      "path": "public/audio/hit.wav",
+      "bytes": 9746,
+      "sha256": "ae26f878706a27655e6802cf3705c0e4389c23dc1441dbcff7bef000e3cf42f6"
+    },
+    {
+      "path": "public/audio/hp_loss.wav",
+      "bytes": 18566,
+      "sha256": "5e019aec5c16de6d56bb8c55be9d3a6a7b3f6881e57c7e32b73ace3b6d31b4b6"
+    },
+    {
+      "path": "public/audio/resolve.wav",
+      "bytes": 66194,
+      "sha256": "33ecb4927172b00f62c43fd9e15d0a4d35e348f448181ca690ca5f9a9cbc1c39"
+    },
+    {
+      "path": "public/audio/scene_next.wav",
+      "bytes": 35324,
+      "sha256": "d6e7eb179272ca8bfebbaad24f809bf977e6e3036802113fef1907d5d99b9dff"
+    },
+    {
+      "path": "public/audio/success.wav",
+      "bytes": 35324,
+      "sha256": "20291f62dcb3e46d99ae859f2e34afef7784798e9c398298ea01346588948334"
+    },
+    {
+      "path": "public/audio/vote_lock.wav",
+      "bytes": 19888,
+      "sha256": "b1e8533fe6540c640d1be3e9ca556a6cd39d9d0f0a66bf386527752927dfd347"
+    },
+    {
+      "path": "public/dice3d.js",
+      "bytes": 91783,
+      "sha256": "2b0ddc4bc674cdec1f2c6ee4c3a413a709b068c56aaeaac5563ba16de7c7fcbf"
+    },
+    {
+      "path": "public/favicon.svg",
+      "bytes": 356,
+      "sha256": "0f149140a1772c2cf924c1a2d6c94e08131b0a1d9384beed5cea586bdd7be8a1"
+    },
+    {
+      "path": "public/game/app.js",
+      "bytes": 109200,
+      "sha256": "22d900ac352b89ba7a272400e1d452d0f0e3f4769774f99b52f172c0c791d8df"
+    },
+    {
+      "path": "public/game/art/clock-city.webp",
+      "bytes": 261306,
+      "sha256": "d9ffee192d99529977cefd6f97088074f077500b03b4af1e04c302c0c9a72575"
+    },
+    {
+      "path": "public/game/art/deep-sea.webp",
+      "bytes": 194978,
+      "sha256": "050d953ef653969d3e37d80f1b4b4d2a0be862d3e2127d316d1c57987d68ff66"
+    },
+    {
+      "path": "public/game/art/dragon-banquet.webp",
+      "bytes": 260974,
+      "sha256": "e1e1c9208d11313ad75bc05ae305a75f62f5448cb6dc3db48d597fe69cc59843"
+    },
+    {
+      "path": "public/game/art/drowned-broadcast.webp",
+      "bytes": 94634,
+      "sha256": "3b62291ee53770e206d5091d3fe222c760d161f767ca9ad567fa326e8d704827"
+    },
+    {
+      "path": "public/game/art/enemies/apartment-empty-doorkeeper.webp",
+      "bytes": 35958,
+      "sha256": "393f61b90c4a36c1b8931358589d9c53544520b7e3a8d1e80db79939705706df"
+    },
+    {
+      "path": "public/game/art/enemies/broadcast-waiting-listener.webp",
+      "bytes": 51756,
+      "sha256": "efb2597d4168c7b739ab5115d6c1ad2db16c83ce87f50f4607b33f0018c7014a"
+    },
+    {
+      "path": "public/game/art/enemies/clock-archive-eraser.webp",
+      "bytes": 44586,
+      "sha256": "19aece9804884cb5cb7affc28ba46b9846c40691ff4b3bd24b0c3d4a600da240"
+    },
+    {
+      "path": "public/game/art/enemies/clock-city-v24.webp",
+      "bytes": 116132,
+      "sha256": "2cc766561b09ff3a60ac96266902e789664bb28ab5bf7d5315969a735254fca6"
+    },
+    {
+      "path": "public/game/art/enemies/deep-sea-v24.webp",
+      "bytes": 122698,
+      "sha256": "cd1a81246e1aa96a01f8d1da8d34acec9e3223620b57fd58097e8dda5eb57aeb"
+    },
+    {
+      "path": "public/game/art/enemies/dragon-banquet-v24.webp",
+      "bytes": 106406,
+      "sha256": "f526cdda119ba390a8c5a9819b681892d65a215fbddc1c303a51611c1672cac7"
+    },
+    {
+      "path": "public/game/art/enemies/drowned-broadcast-v24.webp",
+      "bytes": 129522,
+      "sha256": "e05eb9b65e4c8c7a88d73d3f0b6ada931dc0f52eb57586eaf28bad382de66d32"
+    },
+    {
+      "path": "public/game/art/enemies/feast-oath-cutlery.webp",
+      "bytes": 63932,
+      "sha256": "ef33bfd507f2e468247dbbcfc0518b90a8ddbf68e96d318cc094e7b81f4bac6a"
+    },
+    {
+      "path": "public/game/art/enemies/glass-hotel-v24.webp",
+      "bytes": 117936,
+      "sha256": "0c21fb90ae55213e2d9e5f60305b03c891bcdaa801ef5c1411000c70bdca8c34"
+    },
+    {
+      "path": "public/game/art/enemies/hollow-apartment-v24.webp",
+      "bytes": 112914,
+      "sha256": "125f87c1b8bc930c16569c32996ad2c7a6e7d5f4b1c0d6ddb81c3fe455112c9a"
+    },
+    {
+      "path": "public/game/art/enemies/hotel-clockwork-archivist.webp",
+      "bytes": 36850,
+      "sha256": "614c5456d178390dd955370199fe6693e9baa54fc182b67058f39266e3a9231a"
+    },
+    {
+      "path": "public/game/art/enemies/human-opponents-v24.webp",
+      "bytes": 281812,
+      "sha256": "e82ca2a9e38baabac25bc43db8870ae890d0692549fd2d7ec0297ad0b14804c3"
+    },
+    {
+      "path": "public/game/art/enemies/last-train-v24.webp",
+      "bytes": 102316,
+      "sha256": "047acd74b17a08d42ba41c4ecb03fdaae6a6b5e17e7c8e20b98f073273c1077b"
+    },
+    {
+      "path": "public/game/art/enemies/market-contract-puppet.webp",
+      "bytes": 61708,
+      "sha256": "a25604e03b618c5bed2ffbfc64d46185b773e9abc5d7fa39b2ce909a47ae54bb"
+    },
+    {
+      "path": "public/game/art/enemies/moon-market-v24.webp",
+      "bytes": 102918,
+      "sha256": "181ee38a173c791df3b9e76e324c2e5826dfbc2433ecfc964af71fa251223543"
+    },
+    {
+      "path": "public/game/art/enemies/sea-quarantine-cleaner.webp",
+      "bytes": 36634,
+      "sha256": "9f24fc660ab49f32dfe50c59f384a92848b27e43c3f2735e3b6a26cc45e288b3"
+    },
+    {
+      "path": "public/game/art/enemies/snow-checkpoint-catcher.webp",
+      "bytes": 47514,
+      "sha256": "c9e6dbc3ff8c2e316b0df310574698f85f0435dcd26f3223ec91abac554a3c87"
+    },
+    {
+      "path": "public/game/art/enemies/snow-radio-v24.webp",
+      "bytes": 118440,
+      "sha256": "d2e90734f9d7d2525dd0b4406ae500f01bda79c24499394d9823d1407eda3e1b"
+    },
+    {
+      "path": "public/game/art/enemies/train-ledger-enforcer.webp",
+      "bytes": 42542,
+      "sha256": "c5dfc5192cec92e13338cd53cfff4d53914faacaeab8c36bbe21b7edf30f95a8"
+    },
+    {
+      "path": "public/game/art/glass-hotel.webp",
+      "bytes": 257584,
+      "sha256": "57f487d23f3ace870055229ba508c30d89aefba92d79582d932613e072072444"
+    },
+    {
+      "path": "public/game/art/hollow-apartment.webp",
+      "bytes": 94788,
+      "sha256": "5bcd44d380ca1435500b34a23812de01df47564e02e2e4b6a00f4b364c7d78f1"
+    },
+    {
+      "path": "public/game/art/last-train.webp",
+      "bytes": 234046,
+      "sha256": "c4072fec960689323d2a2fdf693bb6a16299242fcc5d7a9ef198cddfd732ce6c"
+    },
+    {
+      "path": "public/game/art/moon-market.webp",
+      "bytes": 244882,
+      "sha256": "912b4698302fbbfbb803f797516d5547b64d0fd8e837246667a1b9dfd755ad76"
+    },
+    {
+      "path": "public/game/art/provenance-v22.json",
+      "bytes": 3226,
+      "sha256": "a1fddce90a907b05936b13f09a4d5284ccfb4e25235ca0620e3b6f3b181f0eef"
+    },
+    {
+      "path": "public/game/art/provenance.json",
+      "bytes": 13618,
+      "sha256": "190d323695b80d2b29654f535c9a338ea6cc5833d41ffe93453104e92dc906ce"
+    },
+    {
+      "path": "public/game/art/snow-radio.webp",
+      "bytes": 167922,
+      "sha256": "e12bdf2a312f3d1a582e1758447ec6a720dab26ca387d04f0adb19f85b696ea6"
+    },
+    {
+      "path": "public/game/audio-fallback.js",
+      "bytes": 15098,
+      "sha256": "668fcd9fb2fc991baa1967d9aa2a6f8bc48a6bea9a6017a6f565da5d2f280b71"
+    },
+    {
+      "path": "public/game/audio-loops.js",
+      "bytes": 4398,
+      "sha256": "7562aeb12fe79267b991fccf06886b80525b81d7ad7a120a740eaae8fcd3b2aa"
+    },
+    {
+      "path": "public/game/audio.js",
+      "bytes": 18319,
+      "sha256": "0bfc96d5e7f48c8979bd3553805c24c461411c5779c9710eb7266ce11b180d6c"
+    },
+    {
+      "path": "public/game/audio/ability.mp3",
+      "bytes": 11328,
+      "sha256": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378"
+    },
+    {
+      "path": "public/game/audio/attack.mp3",
+      "bytes": 6313,
+      "sha256": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169"
+    },
+    {
+      "path": "public/game/audio/chime.mp3",
+      "bytes": 16140,
+      "sha256": "52e081ea83b364a659e76ad7d46279a4e65d442edb64a07faae4cf5c9cc41375"
+    },
+    {
+      "path": "public/game/audio/clock-city-calm.mp3",
+      "bytes": 301148,
+      "sha256": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d"
+    },
+    {
+      "path": "public/game/audio/clock-city-danger.mp3",
+      "bytes": 313244,
+      "sha256": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20"
+    },
+    {
+      "path": "public/game/audio/clock-city-grief.mp3",
+      "bytes": 373292,
+      "sha256": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6"
+    },
+    {
+      "path": "public/game/audio/clock-city-hope.mp3",
+      "bytes": 301148,
+      "sha256": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be"
+    },
+    {
+      "path": "public/game/audio/clock-city-mystery.mp3",
+      "bytes": 307196,
+      "sha256": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d"
+    },
+    {
+      "path": "public/game/audio/clock-city-tension.mp3",
+      "bytes": 326204,
+      "sha256": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0"
+    },
+    {
+      "path": "public/game/audio/clue.mp3",
+      "bytes": 8821,
+      "sha256": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43"
+    },
+    {
+      "path": "public/game/audio/death.mp3",
+      "bytes": 44108,
+      "sha256": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75"
+    },
+    {
+      "path": "public/game/audio/deep-sea-calm.mp3",
+      "bytes": 316268,
+      "sha256": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a"
+    },
+    {
+      "path": "public/game/audio/deep-sea-danger.mp3",
+      "bytes": 324476,
+      "sha256": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61"
+    },
+    {
+      "path": "public/game/audio/deep-sea-grief.mp3",
+      "bytes": 384524,
+      "sha256": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51"
+    },
+    {
+      "path": "public/game/audio/deep-sea-hope.mp3",
+      "bytes": 316268,
+      "sha256": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297"
+    },
+    {
+      "path": "public/game/audio/deep-sea-mystery.mp3",
+      "bytes": 333116,
+      "sha256": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30"
+    },
+    {
+      "path": "public/game/audio/deep-sea-tension.mp3",
+      "bytes": 352124,
+      "sha256": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e"
+    },
+    {
+      "path": "public/game/audio/dice.mp3",
+      "bytes": 9761,
+      "sha256": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a"
+    },
+    {
+      "path": "public/game/audio/door-creak.mp3",
+      "bytes": 29772,
+      "sha256": "ef468311c2059ddedf41fb4d01fa11831be33e24afec84a68f3cd8249b8f3657"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-calm.mp3",
+      "bytes": 301148,
+      "sha256": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-danger.mp3",
+      "bytes": 308492,
+      "sha256": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-grief.mp3",
+      "bytes": 362060,
+      "sha256": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-hope.mp3",
+      "bytes": 301148,
+      "sha256": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-mystery.mp3",
+      "bytes": 308492,
+      "sha256": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81"
+    },
+    {
+      "path": "public/game/audio/dragon-banquet-tension.mp3",
+      "bytes": 320156,
+      "sha256": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c"
+    },
+    {
+      "path": "public/game/audio/enemy.mp3",
+      "bytes": 8821,
+      "sha256": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb"
+    },
+    {
+      "path": "public/game/audio/failure.mp3",
+      "bytes": 12582,
+      "sha256": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded"
+    },
+    {
+      "path": "public/game/audio/footsteps.mp3",
+      "bytes": 23277,
+      "sha256": "969c525bd0706706d7dcc1e50cdde6dc49ce186b2a79f80cced0fb8e265c954b"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-calm.mp3",
+      "bytes": 311084,
+      "sha256": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-danger.mp3",
+      "bytes": 311084,
+      "sha256": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-grief.mp3",
+      "bytes": 373292,
+      "sha256": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-hope.mp3",
+      "bytes": 311084,
+      "sha256": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-mystery.mp3",
+      "bytes": 321884,
+      "sha256": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1"
+    },
+    {
+      "path": "public/game/audio/glass-hotel-tension.mp3",
+      "bytes": 333116,
+      "sha256": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d"
+    },
+    {
+      "path": "public/game/audio/glass.mp3",
+      "bytes": 14796,
+      "sha256": "5c896a86e75360815a241f27ab6c25c77972a97252f2424b5726041181daeb72"
+    },
+    {
+      "path": "public/game/audio/heartbeat.mp3",
+      "bytes": 18766,
+      "sha256": "1a754d791a88ceededa752ba9290e471d6904616ffaa338e8c1516291168825e"
+    },
+    {
+      "path": "public/game/audio/horror-apartment-ambient.mp3",
+      "bytes": 294668,
+      "sha256": "8f4889865394247960d7792bc0ff2795a9e8219feb16750b51dd6a7194ed752c"
+    },
+    {
+      "path": "public/game/audio/horror-apartment-danger.mp3",
+      "bytes": 246500,
+      "sha256": "54f053ced9273fd2c7cccc61c6fd4efc37430cc2d0d9ab4dc07acccd30fb6185"
+    },
+    {
+      "path": "public/game/audio/horror-apartment-tension.mp3",
+      "bytes": 294668,
+      "sha256": "93601da5a874e5441c27cf7fcf03fee72d2a21b7da282b18f5e726975a504d9e"
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-ambient.mp3",
+      "bytes": 294668,
+      "sha256": "fbecf7d28075708f0ba9ac630309d7be3805b87c9404b52f96cc11d46995f00c"
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-danger.mp3",
+      "bytes": 246500,
+      "sha256": "bfd36dff48e2d8b33dac8b36f07bfefb926956eb736a0dd0f24dce9305a4a41e"
+    },
+    {
+      "path": "public/game/audio/horror-broadcast-tension.mp3",
+      "bytes": 294668,
+      "sha256": "cd768569b4e266f54be9ec9286afc29ed1f9522737fcce02c5a38505433a2619"
+    },
+    {
+      "path": "public/game/audio/horror-shared-grief.mp3",
+      "bytes": 294668,
+      "sha256": "679b61805d0a9861490dbdbf4dd221ecf85785bee37f04c38b0c81c7c1276f9a"
+    },
+    {
+      "path": "public/game/audio/horror-shared-relief.mp3",
+      "bytes": 294668,
+      "sha256": "6b82046dd8fa7a3edce93373cea8239440f5efdef99e24443baa122f458e599d"
+    },
+    {
+      "path": "public/game/audio/knock.mp3",
+      "bytes": 14702,
+      "sha256": "b3ad169346c17e6db2352e75a25904846e830164f15a632f0a4179d559d6cf89"
+    },
+    {
+      "path": "public/game/audio/last-train-calm.mp3",
+      "bytes": 308492,
+      "sha256": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129"
+    },
+    {
+      "path": "public/game/audio/last-train-danger.mp3",
+      "bytes": 316268,
+      "sha256": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9"
+    },
+    {
+      "path": "public/game/audio/last-train-grief.mp3",
+      "bytes": 373292,
+      "sha256": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229"
+    },
+    {
+      "path": "public/game/audio/last-train-hope.mp3",
+      "bytes": 308492,
+      "sha256": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798"
+    },
+    {
+      "path": "public/game/audio/last-train-mystery.mp3",
+      "bytes": 316268,
+      "sha256": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d"
+    },
+    {
+      "path": "public/game/audio/last-train-tension.mp3",
+      "bytes": 328796,
+      "sha256": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14"
+    },
+    {
+      "path": "public/game/audio/manifest.json",
+      "bytes": 163298,
+      "sha256": "e1ea76ddfc7b0df04123b4e9b2e7848b99f0647b37ae1b56da64635015d8bb19"
+    },
+    {
+      "path": "public/game/audio/metal.mp3",
+      "bytes": 13228,
+      "sha256": "d5bf03bed3447148c75a66da736f3d363208638d38e03e2b33409394d7500778"
+    },
+    {
+      "path": "public/game/audio/mixed.mp3",
+      "bytes": 13209,
+      "sha256": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa"
+    },
+    {
+      "path": "public/game/audio/moon-market-calm.mp3",
+      "bytes": 311084,
+      "sha256": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0"
+    },
+    {
+      "path": "public/game/audio/moon-market-danger.mp3",
+      "bytes": 311084,
+      "sha256": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321"
+    },
+    {
+      "path": "public/game/audio/moon-market-grief.mp3",
+      "bytes": 365948,
+      "sha256": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d"
+    },
+    {
+      "path": "public/game/audio/moon-market-hope.mp3",
+      "bytes": 301148,
+      "sha256": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5"
+    },
+    {
+      "path": "public/game/audio/moon-market-mystery.mp3",
+      "bytes": 316268,
+      "sha256": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b"
+    },
+    {
+      "path": "public/game/audio/moon-market-tension.mp3",
+      "bytes": 321884,
+      "sha256": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35"
+    },
+    {
+      "path": "public/game/audio/murmur.mp3",
+      "bytes": 43830,
+      "sha256": "da05a990b765356f8ab8378763b88947c78bfe922ba5d2dcc211930b7300fc09"
+    },
+    {
+      "path": "public/game/audio/radio-static.mp3",
+      "bytes": 54089,
+      "sha256": "7511fff45a9dcb3de7757941a1c02c799cec8af1dd58e6de4573ed77b24fec71"
+    },
+    {
+      "path": "public/game/audio/reveal.mp3",
+      "bytes": 17911,
+      "sha256": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0"
+    },
+    {
+      "path": "public/game/audio/revive.mp3",
+      "bytes": 46700,
+      "sha256": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154"
+    },
+    {
+      "path": "public/game/audio/scream.mp3",
+      "bytes": 27870,
+      "sha256": "91e91b90867c35ca78e046b88cb4b8d494b27978ebc399ee4e1777519b8e9e95"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-critical.mp3",
+      "bytes": 5804,
+      "sha256": "42a3e9e5e5151603701b2a7da3f90c283d361b483e6750b1734b77b65f4c4bcc"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-defeat.mp3",
+      "bytes": 11852,
+      "sha256": "8bd8573b6e8564e5a68b74680b06e213b2fe6a04370f0df1e95383db5f841387"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-enemy.mp3",
+      "bytes": 4364,
+      "sha256": "44cf94edf9fb72c063d6d09845c8c8d887f0b73f49da13862f3dbc7127477c66"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-fumble.mp3",
+      "bytes": 5804,
+      "sha256": "0d6a6c7f5d3cd464a23753c6dce0d79f3f40522d2bf864746c5f80afa97b3648"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-heal.mp3",
+      "bytes": 6380,
+      "sha256": "521a485ed385a68d1439d87526aa7dc549170ea7d9f517e8f4dfcbbd26040389"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-hit.mp3",
+      "bytes": 4076,
+      "sha256": "5dd4fd905b9d67d4d219fa760417336ae57572026fc7f6d8dd7109cdcc7577c7"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-hurt.mp3",
+      "bytes": 4076,
+      "sha256": "c337758185c7801b719faf723246b7e2bfddaf2e139a0de257362e9729207f2c"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-miss.mp3",
+      "bytes": 3500,
+      "sha256": "4ac8e90a61267fb465c530ce064f113bf224834fdd0a5eadc4fd11cd725fc4c2"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-shield.mp3",
+      "bytes": 5228,
+      "sha256": "abdac8d53cd21b231c13e8db975541ec675bb5a022b2ff9ad3daa2f1177b4982"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-skill.mp3",
+      "bytes": 5516,
+      "sha256": "05145d227ab30a8d1ebd213f7072575c8de707157b40c5358dc7c17cc85964c4"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-stun.mp3",
+      "bytes": 5516,
+      "sha256": "a3655e9de2691e210948c1bec816ee0d57b477edf9cd615ea65f3c87a13da01c"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-swing.mp3",
+      "bytes": 3500,
+      "sha256": "ddd53173e09dad6ca719364acc1fe5cc11c76341c7d5455b36a6e41c77cc3c37"
+    },
+    {
+      "path": "public/game/audio/sfx/battle-victory.mp3",
+      "bytes": 10988,
+      "sha256": "d911c67e7b3f14fb9d710936ea3ed5951a59aea1d278087001f48610a46aecb6"
+    },
+    {
+      "path": "public/game/audio/snow-radio-calm.mp3",
+      "bytes": 316268,
+      "sha256": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0"
+    },
+    {
+      "path": "public/game/audio/snow-radio-danger.mp3",
+      "bytes": 328796,
+      "sha256": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604"
+    },
+    {
+      "path": "public/game/audio/snow-radio-grief.mp3",
+      "bytes": 384524,
+      "sha256": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29"
+    },
+    {
+      "path": "public/game/audio/snow-radio-hope.mp3",
+      "bytes": 308492,
+      "sha256": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c"
+    },
+    {
+      "path": "public/game/audio/snow-radio-mystery.mp3",
+      "bytes": 324476,
+      "sha256": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1"
+    },
+    {
+      "path": "public/game/audio/snow-radio-tension.mp3",
+      "bytes": 342188,
+      "sha256": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88"
+    },
+    {
+      "path": "public/game/audio/success.mp3",
+      "bytes": 15090,
+      "sha256": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613"
+    },
+    {
+      "path": "public/game/audio/transition.mp3",
+      "bytes": 11955,
+      "sha256": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a"
+    },
+    {
+      "path": "public/game/audio/victory.mp3",
+      "bytes": 21046,
+      "sha256": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56"
+    },
+    {
+      "path": "public/game/audio/water.mp3",
+      "bytes": 37072,
+      "sha256": "bea6e84ba49b3c485b214fe8b6cb36b717c87e7f25b528c79eb33d075e5ea9ae"
+    },
+    {
+      "path": "public/game/audio/wind.mp3",
+      "bytes": 45209,
+      "sha256": "bf279704a5c972b02956a8c70d1c052b4c9dbfd9029ca711a3360475a6ccf8f3"
+    },
+    {
+      "path": "public/game/battle-assets.js",
+      "bytes": 4187,
+      "sha256": "865f5a3298f5c7cdcc7ded9a05a1b4ee4f653086116200f1b564361074b121ba"
+    },
+    {
+      "path": "public/game/battle-audio-assets.js",
+      "bytes": 895,
+      "sha256": "5967f22d1e1a6842477953a3bd8a288b208700e8c84433558b9dd6f44ddff781"
+    },
+    {
+      "path": "public/game/battle-presenter.js",
+      "bytes": 6853,
+      "sha256": "d74ff5f80795ede4fc0a8d19cc76951f4d1dc404abe3f16617c952fa6b42e5f9"
+    },
+    {
+      "path": "public/game/battle-ui.js",
+      "bytes": 8998,
+      "sha256": "661659909df7764b82201807e8bf4d6c791dcfc9e66c5fc30db40f9940672036"
+    },
+    {
+      "path": "public/game/campaigns/clock-city.js",
+      "bytes": 188539,
+      "sha256": "e4937c6cd7307d15f1ed3cee687e3398d052517080f6c66c9147cd30a731b85a"
+    },
+    {
+      "path": "public/game/campaigns/combat-data.js",
+      "bytes": 35134,
+      "sha256": "cffd8253153972c2cbb65550fd3a676692f7292205634531cf12e5bfff96bb8a"
+    },
+    {
+      "path": "public/game/campaigns/deep-sea.js",
+      "bytes": 196484,
+      "sha256": "a4ab786606a077e96b4e67e862dae0282f5d6c5c06794dd951b8b0a91c2d6faa"
+    },
+    {
+      "path": "public/game/campaigns/dragon-banquet.js",
+      "bytes": 154157,
+      "sha256": "43f220811a769db13ab0751f470b8b6ee03c669bb7e5b84c47c574c9b1dc5e89"
+    },
+    {
+      "path": "public/game/campaigns/drowned-broadcast.js",
+      "bytes": 61458,
+      "sha256": "0bd07a4e47cbecdd8878bcb6e53997d829935d51a8665e9c40c2b13a5f977f4a"
+    },
+    {
+      "path": "public/game/campaigns/encounter-tools.js",
+      "bytes": 9171,
+      "sha256": "a1785c38f3bf71579096b1832fdf33e2665fb819aa75c6f5fd3882ea7af55101"
+    },
+    {
+      "path": "public/game/campaigns/encounters-a.js",
+      "bytes": 163830,
+      "sha256": "48d09703d5a3b2288de1f56a9a3436f1c5a69deba782d28cf3c755bf27894d10"
+    },
+    {
+      "path": "public/game/campaigns/encounters-b.js",
+      "bytes": 124297,
+      "sha256": "b0bbb21e054d7c7761ff378929ee7a407022f1aa973bb9583f04f8689803f02c"
+    },
+    {
+      "path": "public/game/campaigns/epic-a.js",
+      "bytes": 161881,
+      "sha256": "a30380583dbf0edc75bd64080e40c5cedce9648662cf82bf24e1c9f0d8cecfbd"
+    },
+    {
+      "path": "public/game/campaigns/epic-b.js",
+      "bytes": 213127,
+      "sha256": "a11c3b2ce8f1260366d63fb4afbf36d00dec9c7e21c8a076d09343a5253977ba"
+    },
+    {
+      "path": "public/game/campaigns/epic-horror.js",
+      "bytes": 111999,
+      "sha256": "49c6ae17882f610c50e5d4d016ae8f4eaa14713f3a3784e2c4172199651a39fe"
+    },
+    {
+      "path": "public/game/campaigns/epic-tools.js",
+      "bytes": 3636,
+      "sha256": "1a970c004fe638f41810376fbde216b936ff9546c8f795b207ceaf64a30db871"
+    },
+    {
+      "path": "public/game/campaigns/glass-hotel.js",
+      "bytes": 148548,
+      "sha256": "a0bdc032c24b9c7523f315dd07a758ce70a8caeabc79321382f76fc99e5b50ee"
+    },
+    {
+      "path": "public/game/campaigns/hollow-apartment.js",
+      "bytes": 61070,
+      "sha256": "87363816a550e9424c825e151ba1d6ed1118359871236be006e1246e055ecb25"
+    },
+    {
+      "path": "public/game/campaigns/horror-data.js",
+      "bytes": 10859,
+      "sha256": "7192f64f9394c07e6369f214f741751d9f974b38d56cf4abaa53371c54b85f0d"
+    },
+    {
+      "path": "public/game/campaigns/index.js",
+      "bytes": 2967,
+      "sha256": "a7c32be02e714b4e5f380c39fbba5f4be947fe7114927bea5d5b716574a267f5"
+    },
+    {
+      "path": "public/game/campaigns/last-train.js",
+      "bytes": 139225,
+      "sha256": "a6cd44dfbf95d24112b79afe809238c0c46eb4a74ed27a5df37b1f51c688b186"
+    },
+    {
+      "path": "public/game/campaigns/loss-passages.js",
+      "bytes": 53803,
+      "sha256": "2d4c286608cfc74dc5c59063762859eb4eb8306d1500b8a2c47eafa54c5e5551"
+    },
+    {
+      "path": "public/game/campaigns/moon-market.js",
+      "bytes": 142532,
+      "sha256": "0b5a7581093c20948c57cce081505d9cb52d5d89e34856d2d639190235b6341d"
+    },
+    {
+      "path": "public/game/campaigns/openings-a.js",
+      "bytes": 153590,
+      "sha256": "f98a99d395faec29b3e94f6bc08c9970eb4f4261aa354db91323ddd6bdb3d5e9"
+    },
+    {
+      "path": "public/game/campaigns/openings-b.js",
+      "bytes": 117869,
+      "sha256": "f535897c2d0dba9b69b396f8bbc076ba0bbbe7b9ab0542fa14320b5440b4c4c7"
+    },
+    {
+      "path": "public/game/campaigns/openings-horror.js",
+      "bytes": 32477,
+      "sha256": "8e4cc6d405094e99d0f38e7b95532456c75954caf5e3c327d8b79af25e120fb3"
+    },
+    {
+      "path": "public/game/campaigns/snow-radio.js",
+      "bytes": 200680,
+      "sha256": "fb43510d8d1a55d4ed14576a5cca6d175f61103be04a49ea6b4568febcf71e78"
+    },
+    {
+      "path": "public/game/characters.js",
+      "bytes": 8022,
+      "sha256": "ed2358f406d9077d93593a873218e08e69a7793fd74f580b52ebcf90ee4b2577"
+    },
+    {
+      "path": "public/game/client.js",
+      "bytes": 16265,
+      "sha256": "c22b62b545a3cb2bc7beabe1ed7b0b5bca3fe3ae5c5c686c2f7d81c3733a1a0a"
+    },
+    {
+      "path": "public/game/combat-presentation.js",
+      "bytes": 10151,
+      "sha256": "fd20b88ce7c3421a1eac572e18e36b48eb7c356ab492055368a89e417725968d"
+    },
+    {
+      "path": "public/game/combat.js",
+      "bytes": 31213,
+      "sha256": "db858b314c3931c738732a7458a378f2ff3ca9495da7565c263f34d4729d1de0"
+    },
+    {
+      "path": "public/game/dice.js",
+      "bytes": 12821,
+      "sha256": "c6b6de7de6fd847196cbf510bbfcf6b37acfa2a0ab936661624dc447a168fe08"
+    },
+    {
+      "path": "public/game/enemy-atlases-v24.js",
+      "bytes": 21201,
+      "sha256": "f872f18f01b43c12be214259c39d39b70c992a7b635c6d9deef6994a2a8f9f3a"
+    },
+    {
+      "path": "public/game/engine.js",
+      "bytes": 48287,
+      "sha256": "2ad4b6a214d945d3342cbadfe24e62e2e5c5bd2372d3b4b57585f32cd172cb65"
+    },
+    {
+      "path": "public/game/horror-loops.js",
+      "bytes": 1035,
+      "sha256": "2a12ecbcfd04eab664c2ae060ecf74bf65940d47a31096b0df3768faeaead42b"
+    },
+    {
+      "path": "public/game/judgement.js",
+      "bytes": 658,
+      "sha256": "648c5b322d602e6457004254546201130eabf7c48da9bf99576fcfc8b8012129"
+    },
+    {
+      "path": "public/game/music-assets.js",
+      "bytes": 1783,
+      "sha256": "24be7e5f444a73387ae317804cd51071e1e7ad5af45a4848ac857acf5ce154da"
+    },
+    {
+      "path": "public/game/music-director.js",
+      "bytes": 6175,
+      "sha256": "7d24c7c2931b5166631cd76d00fad1cd63c20e26f1bf0994b011c3bbdf7a7473"
+    },
+    {
+      "path": "public/game/narrative.js",
+      "bytes": 5500,
+      "sha256": "dccff454a50eaf423f89efdf42482ccb2e5afe20198875f60cc493fc7748ec94"
+    },
+    {
+      "path": "public/game/opening.js",
+      "bytes": 17292,
+      "sha256": "7a21594e534e4510731df4eb86a3912b085453695cd70feef8d45a357f397b27"
+    },
+    {
+      "path": "public/game/professions.js",
+      "bytes": 1565,
+      "sha256": "01996adc171a97ca362d2cda57edd4498fb9d8273ec2930bd7bd3462b8f92593"
+    },
+    {
+      "path": "public/game/scene-sound.js",
+      "bytes": 2848,
+      "sha256": "e2a1e46caf080d2de5258b31db595c79bf12aead2b9af32d68fde5029d103f5b"
+    },
+    {
+      "path": "public/game/styles.css",
+      "bytes": 122590,
+      "sha256": "90ab839d31be21145281ceef5a00505a67f021e49edb566003f3a75dbfd14a3b"
+    },
+    {
+      "path": "public/index.html",
+      "bytes": 3132,
+      "sha256": "975960a8cc64bd460a0f6910cd9dc0fa60549a7ff060afc17013e8b6e67483b9"
+    },
+    {
+      "path": "public/legacy.html",
+      "bytes": 23585,
+      "sha256": "7bfa72d048a51f1cfd4dec524ac07c93138959c62e7cb2de282d86ad3a2f2c30"
+    },
+    {
+      "path": "public/offline.html",
+      "bytes": 4753063,
+      "sha256": "2113a43721f23a317277ec0cf67ffc8e5519223e598a4e2d90e44ddd150d45ef"
+    },
+    {
+      "path": "public/styles.css",
+      "bytes": 170430,
+      "sha256": "803c03ad3615c46f5c799d85a31b120ebbb135dab92005eed592b84e4429e7d2"
+    },
+    {
+      "path": "server.js",
+      "bytes": 1651,
+      "sha256": "7772ab3afcba1ad6cc6abb82726214f3d7b0250dfd131efbc4083fdef29df441"
+    }
+  ],
+  "allPassed": true,
+  "scope": "Two independent overlays on frozen v22.1 and v23. Runtime hashes and ten atlas/actual four-client network tests passed on each. Repeated tests are not added to the 825 distinct full-suite tests."
+}

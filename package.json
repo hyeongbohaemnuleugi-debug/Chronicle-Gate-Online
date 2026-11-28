@@ -1,9 +1,9 @@
 {
   "name": "chronicle-gate-online",
-  "version": "22.1.0",
+  "version": "24.0.0",
   "private": true,
   "type": "module",
-  "description": "Chronicle Gate: nine authored chronicles, Basic and Epic, private profession openings, contextual sound and 1–4 players.",
+  "description": "Chronicle Gate: nine authored chronicles, 45 distinct opponents, optional confrontations, Basic and Epic, 1–4 players.",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
@@ -17,7 +17,7 @@
     "check:legacy": "node scripts/qa.mjs",
     "build:offline": "node scripts/build-offline.mjs",
     "test:ui": "node --test tests-v18/ui.test.mjs tests-v19/ui.test.mjs",
-    "test:all": "npm run verify && npm run test:opening && npm run test:expansion && npm run test:music && npm run test:dice && npm run test:ui && npm run test:integration && npm run test:routes && npm run test:immersion && npm run test:horror-music",
+    "test:all": "npm run verify && npm run test:opening && npm run test:expansion && npm run test:music && npm run test:dice && npm run test:ui && npm run test:integration && npm run test:routes && npm run test:immersion && npm run test:horror-music && npm run test:battle && npm run test:encounters",
     "clean:media": "node scripts/cleanup-v17.mjs --apply",
     "clean:media:preview": "node scripts/cleanup-v17.mjs",
     "start:legacy": "node server.js --legacy",
@@ -31,7 +31,12 @@
     "test:immersion": "node --test tests-v22/*.test.mjs",
     "build:foley": "python scripts/build-foley-v22.py",
     "test:horror-music": "node --test tests-v22_1/*.test.mjs",
-    "build:horror-music": "python3 scripts/build-horror-score-v22_1.py"
+    "build:horror-music": "python3 scripts/build-horror-score-v22_1.py",
+    "test:battle": "node --test tests-v23/*.test.mjs",
+    "build:battle-audio": "python3 scripts/build-battle-audio-v23.py",
+    "test:encounters": "node --test tests-v24/*.test.mjs",
+    "report:encounters": "node scripts/explore-encounters-v24.mjs --write",
+    "report:resources": "node scripts/report-v24.mjs"
   },
   "dependencies": {
     "express": "5.2.1",

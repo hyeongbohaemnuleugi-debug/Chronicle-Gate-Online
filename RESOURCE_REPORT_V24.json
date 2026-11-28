@@ -1,0 +1,3182 @@
+{
+  "version": "24.0.0",
+  "complete": true,
+  "issues": [],
+  "measurement": "Actual local file bytes/SHA-256 and engine route witnesses. Not a hosted-account quota, FPS benchmark, browser visual review or exhaustive balance/playtest claim.",
+  "resources": {
+    "current": {
+      "publicGameBytes": 23286341,
+      "audioDirectoryBytes": 16763122,
+      "offlineHtmlBytes": 4753063
+    },
+    "baselineV23": {
+      "publicGameBytes": 21649626,
+      "audioDirectoryBytes": 16763122,
+      "offlineHtmlBytes": 4179629
+    },
+    "baselineV22_1": {
+      "publicGameBytes": 21086699,
+      "audioDirectoryBytes": 16686518,
+      "offlineHtmlBytes": 4109414
+    },
+    "addedOverV23": 1636715,
+    "cumulativeAddedOverV22_1": 2199642,
+    "newAtlasBytes": 1311094,
+    "budget": {
+      "publicGameBytes": 23500000,
+      "audioDirectoryBytes": 17000000,
+      "newAtlasBytes": 1600000
+    },
+    "budgetExplanation": "The public-file ceiling rises from22MB in v23 to23.5MB for added opponent art/prose. Existing images/audio remain byte-identical; the audio ceiling stays17MB.",
+    "counts": {
+      "stories": 9,
+      "professions": 36,
+      "distinctEnemies": 45,
+      "newEnemies": 36,
+      "newHumanOpponentTypes": 9,
+      "newAtlases": 10,
+      "existingEnemySprites": 9,
+      "music": 50,
+      "effects": 38
+    }
+  },
+  "preservation": {
+    "allMatch": true,
+    "count": 138,
+    "files": [
+      {
+        "path": "game-server/table-service.js",
+        "bytes": 30486,
+        "sha256": "e786f367d3f121069780d2e1509d582ce908bbca0642552127feb28951a11f6f",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/clock-city.webp",
+        "bytes": 261306,
+        "sha256": "d9ffee192d99529977cefd6f97088074f077500b03b4af1e04c302c0c9a72575",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/deep-sea.webp",
+        "bytes": 194978,
+        "sha256": "050d953ef653969d3e37d80f1b4b4d2a0be862d3e2127d316d1c57987d68ff66",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/dragon-banquet.webp",
+        "bytes": 260974,
+        "sha256": "e1e1c9208d11313ad75bc05ae305a75f62f5448cb6dc3db48d597fe69cc59843",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/drowned-broadcast.webp",
+        "bytes": 94634,
+        "sha256": "3b62291ee53770e206d5091d3fe222c760d161f767ca9ad567fa326e8d704827",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/apartment-empty-doorkeeper.webp",
+        "bytes": 35958,
+        "sha256": "393f61b90c4a36c1b8931358589d9c53544520b7e3a8d1e80db79939705706df",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/broadcast-waiting-listener.webp",
+        "bytes": 51756,
+        "sha256": "efb2597d4168c7b739ab5115d6c1ad2db16c83ce87f50f4607b33f0018c7014a",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/clock-archive-eraser.webp",
+        "bytes": 44586,
+        "sha256": "19aece9804884cb5cb7affc28ba46b9846c40691ff4b3bd24b0c3d4a600da240",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/feast-oath-cutlery.webp",
+        "bytes": 63932,
+        "sha256": "ef33bfd507f2e468247dbbcfc0518b90a8ddbf68e96d318cc094e7b81f4bac6a",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/hotel-clockwork-archivist.webp",
+        "bytes": 36850,
+        "sha256": "614c5456d178390dd955370199fe6693e9baa54fc182b67058f39266e3a9231a",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/market-contract-puppet.webp",
+        "bytes": 61708,
+        "sha256": "a25604e03b618c5bed2ffbfc64d46185b773e9abc5d7fa39b2ce909a47ae54bb",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/sea-quarantine-cleaner.webp",
+        "bytes": 36634,
+        "sha256": "9f24fc660ab49f32dfe50c59f384a92848b27e43c3f2735e3b6a26cc45e288b3",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/snow-checkpoint-catcher.webp",
+        "bytes": 47514,
+        "sha256": "c9e6dbc3ff8c2e316b0df310574698f85f0435dcd26f3223ec91abac554a3c87",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/enemies/train-ledger-enforcer.webp",
+        "bytes": 42542,
+        "sha256": "c5dfc5192cec92e13338cd53cfff4d53914faacaeab8c36bbe21b7edf30f95a8",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/glass-hotel.webp",
+        "bytes": 257584,
+        "sha256": "57f487d23f3ace870055229ba508c30d89aefba92d79582d932613e072072444",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/hollow-apartment.webp",
+        "bytes": 94788,
+        "sha256": "5bcd44d380ca1435500b34a23812de01df47564e02e2e4b6a00f4b364c7d78f1",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/last-train.webp",
+        "bytes": 234046,
+        "sha256": "c4072fec960689323d2a2fdf693bb6a16299242fcc5d7a9ef198cddfd732ce6c",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/moon-market.webp",
+        "bytes": 244882,
+        "sha256": "912b4698302fbbfbb803f797516d5547b64d0fd8e837246667a1b9dfd755ad76",
+        "matches": true
+      },
+      {
+        "path": "public/game/art/snow-radio.webp",
+        "bytes": 167922,
+        "sha256": "e12bdf2a312f3d1a582e1758447ec6a720dab26ca387d04f0adb19f85b696ea6",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio-loops.js",
+        "bytes": 4398,
+        "sha256": "7562aeb12fe79267b991fccf06886b80525b81d7ad7a120a740eaae8fcd3b2aa",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio.js",
+        "bytes": 18319,
+        "sha256": "0bfc96d5e7f48c8979bd3553805c24c461411c5779c9710eb7266ce11b180d6c",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/ability.mp3",
+        "bytes": 11328,
+        "sha256": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/attack.mp3",
+        "bytes": 6313,
+        "sha256": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/chime.mp3",
+        "bytes": 16140,
+        "sha256": "52e081ea83b364a659e76ad7d46279a4e65d442edb64a07faae4cf5c9cc41375",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/clock-city-calm.mp3",
+        "bytes": 301148,
+        "sha256": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/clock-city-danger.mp3",
+        "bytes": 313244,
+        "sha256": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/clock-city-grief.mp3",
+        "bytes": 373292,
+        "sha256": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/clock-city-hope.mp3",
+        "bytes": 301148,
+        "sha256": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/clock-city-mystery.mp3",
+        "bytes": 307196,
+        "sha256": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/clock-city-tension.mp3",
+        "bytes": 326204,
+        "sha256": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/clue.mp3",
+        "bytes": 8821,
+        "sha256": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/death.mp3",
+        "bytes": 44108,
+        "sha256": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/deep-sea-calm.mp3",
+        "bytes": 316268,
+        "sha256": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/deep-sea-danger.mp3",
+        "bytes": 324476,
+        "sha256": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/deep-sea-grief.mp3",
+        "bytes": 384524,
+        "sha256": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/deep-sea-hope.mp3",
+        "bytes": 316268,
+        "sha256": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/deep-sea-mystery.mp3",
+        "bytes": 333116,
+        "sha256": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/deep-sea-tension.mp3",
+        "bytes": 352124,
+        "sha256": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/dice.mp3",
+        "bytes": 9761,
+        "sha256": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/door-creak.mp3",
+        "bytes": 29772,
+        "sha256": "ef468311c2059ddedf41fb4d01fa11831be33e24afec84a68f3cd8249b8f3657",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/dragon-banquet-calm.mp3",
+        "bytes": 301148,
+        "sha256": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/dragon-banquet-danger.mp3",
+        "bytes": 308492,
+        "sha256": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/dragon-banquet-grief.mp3",
+        "bytes": 362060,
+        "sha256": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/dragon-banquet-hope.mp3",
+        "bytes": 301148,
+        "sha256": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/dragon-banquet-mystery.mp3",
+        "bytes": 308492,
+        "sha256": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/dragon-banquet-tension.mp3",
+        "bytes": 320156,
+        "sha256": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/enemy.mp3",
+        "bytes": 8821,
+        "sha256": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/failure.mp3",
+        "bytes": 12582,
+        "sha256": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/footsteps.mp3",
+        "bytes": 23277,
+        "sha256": "969c525bd0706706d7dcc1e50cdde6dc49ce186b2a79f80cced0fb8e265c954b",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/glass-hotel-calm.mp3",
+        "bytes": 311084,
+        "sha256": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/glass-hotel-danger.mp3",
+        "bytes": 311084,
+        "sha256": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/glass-hotel-grief.mp3",
+        "bytes": 373292,
+        "sha256": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/glass-hotel-hope.mp3",
+        "bytes": 311084,
+        "sha256": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/glass-hotel-mystery.mp3",
+        "bytes": 321884,
+        "sha256": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/glass-hotel-tension.mp3",
+        "bytes": 333116,
+        "sha256": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/glass.mp3",
+        "bytes": 14796,
+        "sha256": "5c896a86e75360815a241f27ab6c25c77972a97252f2424b5726041181daeb72",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/heartbeat.mp3",
+        "bytes": 18766,
+        "sha256": "1a754d791a88ceededa752ba9290e471d6904616ffaa338e8c1516291168825e",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-apartment-ambient.mp3",
+        "bytes": 294668,
+        "sha256": "8f4889865394247960d7792bc0ff2795a9e8219feb16750b51dd6a7194ed752c",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-apartment-danger.mp3",
+        "bytes": 246500,
+        "sha256": "54f053ced9273fd2c7cccc61c6fd4efc37430cc2d0d9ab4dc07acccd30fb6185",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-apartment-tension.mp3",
+        "bytes": 294668,
+        "sha256": "93601da5a874e5441c27cf7fcf03fee72d2a21b7da282b18f5e726975a504d9e",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-broadcast-ambient.mp3",
+        "bytes": 294668,
+        "sha256": "fbecf7d28075708f0ba9ac630309d7be3805b87c9404b52f96cc11d46995f00c",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-broadcast-danger.mp3",
+        "bytes": 246500,
+        "sha256": "bfd36dff48e2d8b33dac8b36f07bfefb926956eb736a0dd0f24dce9305a4a41e",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-broadcast-tension.mp3",
+        "bytes": 294668,
+        "sha256": "cd768569b4e266f54be9ec9286afc29ed1f9522737fcce02c5a38505433a2619",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-shared-grief.mp3",
+        "bytes": 294668,
+        "sha256": "679b61805d0a9861490dbdbf4dd221ecf85785bee37f04c38b0c81c7c1276f9a",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/horror-shared-relief.mp3",
+        "bytes": 294668,
+        "sha256": "6b82046dd8fa7a3edce93373cea8239440f5efdef99e24443baa122f458e599d",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/knock.mp3",
+        "bytes": 14702,
+        "sha256": "b3ad169346c17e6db2352e75a25904846e830164f15a632f0a4179d559d6cf89",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/last-train-calm.mp3",
+        "bytes": 308492,
+        "sha256": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/last-train-danger.mp3",
+        "bytes": 316268,
+        "sha256": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/last-train-grief.mp3",
+        "bytes": 373292,
+        "sha256": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/last-train-hope.mp3",
+        "bytes": 308492,
+        "sha256": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/last-train-mystery.mp3",
+        "bytes": 316268,
+        "sha256": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/last-train-tension.mp3",
+        "bytes": 328796,
+        "sha256": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/manifest.json",
+        "bytes": 163298,
+        "sha256": "e1ea76ddfc7b0df04123b4e9b2e7848b99f0647b37ae1b56da64635015d8bb19",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/metal.mp3",
+        "bytes": 13228,
+        "sha256": "d5bf03bed3447148c75a66da736f3d363208638d38e03e2b33409394d7500778",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/mixed.mp3",
+        "bytes": 13209,
+        "sha256": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/moon-market-calm.mp3",
+        "bytes": 311084,
+        "sha256": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/moon-market-danger.mp3",
+        "bytes": 311084,
+        "sha256": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/moon-market-grief.mp3",
+        "bytes": 365948,
+        "sha256": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/moon-market-hope.mp3",
+        "bytes": 301148,
+        "sha256": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/moon-market-mystery.mp3",
+        "bytes": 316268,
+        "sha256": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/moon-market-tension.mp3",
+        "bytes": 321884,
+        "sha256": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/murmur.mp3",
+        "bytes": 43830,
+        "sha256": "da05a990b765356f8ab8378763b88947c78bfe922ba5d2dcc211930b7300fc09",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/radio-static.mp3",
+        "bytes": 54089,
+        "sha256": "7511fff45a9dcb3de7757941a1c02c799cec8af1dd58e6de4573ed77b24fec71",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/reveal.mp3",
+        "bytes": 17911,
+        "sha256": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/revive.mp3",
+        "bytes": 46700,
+        "sha256": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/scream.mp3",
+        "bytes": 27870,
+        "sha256": "91e91b90867c35ca78e046b88cb4b8d494b27978ebc399ee4e1777519b8e9e95",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-critical.mp3",
+        "bytes": 5804,
+        "sha256": "42a3e9e5e5151603701b2a7da3f90c283d361b483e6750b1734b77b65f4c4bcc",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-defeat.mp3",
+        "bytes": 11852,
+        "sha256": "8bd8573b6e8564e5a68b74680b06e213b2fe6a04370f0df1e95383db5f841387",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-enemy.mp3",
+        "bytes": 4364,
+        "sha256": "44cf94edf9fb72c063d6d09845c8c8d887f0b73f49da13862f3dbc7127477c66",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-fumble.mp3",
+        "bytes": 5804,
+        "sha256": "0d6a6c7f5d3cd464a23753c6dce0d79f3f40522d2bf864746c5f80afa97b3648",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-heal.mp3",
+        "bytes": 6380,
+        "sha256": "521a485ed385a68d1439d87526aa7dc549170ea7d9f517e8f4dfcbbd26040389",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-hit.mp3",
+        "bytes": 4076,
+        "sha256": "5dd4fd905b9d67d4d219fa760417336ae57572026fc7f6d8dd7109cdcc7577c7",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-hurt.mp3",
+        "bytes": 4076,
+        "sha256": "c337758185c7801b719faf723246b7e2bfddaf2e139a0de257362e9729207f2c",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-miss.mp3",
+        "bytes": 3500,
+        "sha256": "4ac8e90a61267fb465c530ce064f113bf224834fdd0a5eadc4fd11cd725fc4c2",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-shield.mp3",
+        "bytes": 5228,
+        "sha256": "abdac8d53cd21b231c13e8db975541ec675bb5a022b2ff9ad3daa2f1177b4982",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-skill.mp3",
+        "bytes": 5516,
+        "sha256": "05145d227ab30a8d1ebd213f7072575c8de707157b40c5358dc7c17cc85964c4",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-stun.mp3",
+        "bytes": 5516,
+        "sha256": "a3655e9de2691e210948c1bec816ee0d57b477edf9cd615ea65f3c87a13da01c",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-swing.mp3",
+        "bytes": 3500,
+        "sha256": "ddd53173e09dad6ca719364acc1fe5cc11c76341c7d5455b36a6e41c77cc3c37",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/sfx/battle-victory.mp3",
+        "bytes": 10988,
+        "sha256": "d911c67e7b3f14fb9d710936ea3ed5951a59aea1d278087001f48610a46aecb6",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/snow-radio-calm.mp3",
+        "bytes": 316268,
+        "sha256": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/snow-radio-danger.mp3",
+        "bytes": 328796,
+        "sha256": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/snow-radio-grief.mp3",
+        "bytes": 384524,
+        "sha256": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/snow-radio-hope.mp3",
+        "bytes": 308492,
+        "sha256": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/snow-radio-mystery.mp3",
+        "bytes": 324476,
+        "sha256": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/snow-radio-tension.mp3",
+        "bytes": 342188,
+        "sha256": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/success.mp3",
+        "bytes": 15090,
+        "sha256": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/transition.mp3",
+        "bytes": 11955,
+        "sha256": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/victory.mp3",
+        "bytes": 21046,
+        "sha256": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/water.mp3",
+        "bytes": 37072,
+        "sha256": "bea6e84ba49b3c485b214fe8b6cb36b717c87e7f25b528c79eb33d075e5ea9ae",
+        "matches": true
+      },
+      {
+        "path": "public/game/audio/wind.mp3",
+        "bytes": 45209,
+        "sha256": "bf279704a5c972b02956a8c70d1c052b4c9dbfd9029ca711a3360475a6ccf8f3",
+        "matches": true
+      },
+      {
+        "path": "public/game/battle-audio-assets.js",
+        "bytes": 895,
+        "sha256": "5967f22d1e1a6842477953a3bd8a288b208700e8c84433558b9dd6f44ddff781",
+        "matches": true
+      },
+      {
+        "path": "public/game/battle-presenter.js",
+        "bytes": 6853,
+        "sha256": "d74ff5f80795ede4fc0a8d19cc76951f4d1dc404abe3f16617c952fa6b42e5f9",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/clock-city.js",
+        "bytes": 188539,
+        "sha256": "e4937c6cd7307d15f1ed3cee687e3398d052517080f6c66c9147cd30a731b85a",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/combat-data.js",
+        "bytes": 35134,
+        "sha256": "cffd8253153972c2cbb65550fd3a676692f7292205634531cf12e5bfff96bb8a",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/deep-sea.js",
+        "bytes": 196484,
+        "sha256": "a4ab786606a077e96b4e67e862dae0282f5d6c5c06794dd951b8b0a91c2d6faa",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/dragon-banquet.js",
+        "bytes": 154157,
+        "sha256": "43f220811a769db13ab0751f470b8b6ee03c669bb7e5b84c47c574c9b1dc5e89",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/drowned-broadcast.js",
+        "bytes": 61458,
+        "sha256": "0bd07a4e47cbecdd8878bcb6e53997d829935d51a8665e9c40c2b13a5f977f4a",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/epic-a.js",
+        "bytes": 161881,
+        "sha256": "a30380583dbf0edc75bd64080e40c5cedce9648662cf82bf24e1c9f0d8cecfbd",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/epic-b.js",
+        "bytes": 213127,
+        "sha256": "a11c3b2ce8f1260366d63fb4afbf36d00dec9c7e21c8a076d09343a5253977ba",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/epic-horror.js",
+        "bytes": 111999,
+        "sha256": "49c6ae17882f610c50e5d4d016ae8f4eaa14713f3a3784e2c4172199651a39fe",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/glass-hotel.js",
+        "bytes": 148548,
+        "sha256": "a0bdc032c24b9c7523f315dd07a758ce70a8caeabc79321382f76fc99e5b50ee",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/hollow-apartment.js",
+        "bytes": 61070,
+        "sha256": "87363816a550e9424c825e151ba1d6ed1118359871236be006e1246e055ecb25",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/horror-data.js",
+        "bytes": 10859,
+        "sha256": "7192f64f9394c07e6369f214f741751d9f974b38d56cf4abaa53371c54b85f0d",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/last-train.js",
+        "bytes": 139225,
+        "sha256": "a6cd44dfbf95d24112b79afe809238c0c46eb4a74ed27a5df37b1f51c688b186",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/loss-passages.js",
+        "bytes": 53803,
+        "sha256": "2d4c286608cfc74dc5c59063762859eb4eb8306d1500b8a2c47eafa54c5e5551",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/moon-market.js",
+        "bytes": 142532,
+        "sha256": "0b5a7581093c20948c57cce081505d9cb52d5d89e34856d2d639190235b6341d",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/openings-a.js",
+        "bytes": 153590,
+        "sha256": "f98a99d395faec29b3e94f6bc08c9970eb4f4261aa354db91323ddd6bdb3d5e9",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/openings-b.js",
+        "bytes": 117869,
+        "sha256": "f535897c2d0dba9b69b396f8bbc076ba0bbbe7b9ab0542fa14320b5440b4c4c7",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/openings-horror.js",
+        "bytes": 32477,
+        "sha256": "8e4cc6d405094e99d0f38e7b95532456c75954caf5e3c327d8b79af25e120fb3",
+        "matches": true
+      },
+      {
+        "path": "public/game/campaigns/snow-radio.js",
+        "bytes": 200680,
+        "sha256": "fb43510d8d1a55d4ed14576a5cca6d175f61103be04a49ea6b4568febcf71e78",
+        "matches": true
+      },
+      {
+        "path": "public/game/combat-presentation.js",
+        "bytes": 10151,
+        "sha256": "fd20b88ce7c3421a1eac572e18e36b48eb7c356ab492055368a89e417725968d",
+        "matches": true
+      },
+      {
+        "path": "public/game/dice.js",
+        "bytes": 12821,
+        "sha256": "c6b6de7de6fd847196cbf510bbfcf6b37acfa2a0ab936661624dc447a168fe08",
+        "matches": true
+      },
+      {
+        "path": "public/game/horror-loops.js",
+        "bytes": 1035,
+        "sha256": "2a12ecbcfd04eab664c2ae060ecf74bf65940d47a31096b0df3768faeaead42b",
+        "matches": true
+      },
+      {
+        "path": "public/game/judgement.js",
+        "bytes": 658,
+        "sha256": "648c5b322d602e6457004254546201130eabf7c48da9bf99576fcfc8b8012129",
+        "matches": true
+      },
+      {
+        "path": "public/game/music-assets.js",
+        "bytes": 1783,
+        "sha256": "24be7e5f444a73387ae317804cd51071e1e7ad5af45a4848ac857acf5ce154da",
+        "matches": true
+      },
+      {
+        "path": "public/game/music-director.js",
+        "bytes": 6175,
+        "sha256": "7d24c7c2931b5166631cd76d00fad1cd63c20e26f1bf0994b011c3bbdf7a7473",
+        "matches": true
+      },
+      {
+        "path": "public/game/opening.js",
+        "bytes": 17292,
+        "sha256": "7a21594e534e4510731df4eb86a3912b085453695cd70feef8d45a357f397b27",
+        "matches": true
+      },
+      {
+        "path": "public/game/professions.js",
+        "bytes": 1565,
+        "sha256": "01996adc171a97ca362d2cda57edd4498fb9d8273ec2930bd7bd3462b8f92593",
+        "matches": true
+      }
+    ]
+  },
+  "runtime": "One local atlas image is shown for the current opponent. Same-party fights reuse it from browser cache. No procedural image/audio generation, new external service or new recurring polling.",
+  "saves": {
+    "schema": 22,
+    "encounterResolutionLimitPerStory": 5,
+    "routeWitnesses": 72,
+    "largestUntrimmedWitnessBytes": 93962,
+    "note": "Existing core battle IDs and save format remain compatible. Encounters already passed in a restored old save are not retroactively inserted."
+  },
+  "network": "Existing server-authoritative choices, D20 and room broadcasts. Peaceful resolutions are bounded game-state fields; clients cannot submit their own outcome.",
+  "stories": [
+    {
+      "id": "last-train",
+      "title": "막차의 일곱 번째 승객",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 21,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "train-tag-beast",
+              "name": "짐표를 두른 분실물 짐승",
+              "gateId": "v24-train-tag-beast-approach",
+              "arenaId": "v24-train-tag-beast-arena",
+              "anchor": "ledger",
+              "epicOnly": false,
+              "description": "낡은 여행 가방과 접힌 우산이 네 발로 뭉친 짐승. 목에 달린 짐표들을 지키려 합니다. 가방 끈을 풀어 흩어 놓으면 주저앉으며, 살아 있는 승객이 변한 모습은 아닙니다.",
+              "art": "/game/art/enemies/last-train-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 0
+              },
+              "kind": "creature",
+              "intents": [
+                "손잡이 낚아채기",
+                "분실물 눌러 담기",
+                "우산살 펼치기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "train-track-blockade",
+              "name": "관제 선로 봉쇄조",
+              "gateId": "v24-train-track-blockade-approach",
+              "arenaId": "v24-train-track-blockade-arena",
+              "anchor": "switch",
+              "epicOnly": false,
+              "description": "남색 철도 작업복과 호박빛 손전등을 든 실제 관제 요원들. 무단 분기 조작으로 사고가 날까 두려워 긴 절연 봉과 접이 방벽으로 길을 막습니다. 대열과 장비를 무력화하면 물러납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 0
+              },
+              "kind": "person",
+              "intents": [
+                "절연 봉 밀치기",
+                "현장 제압",
+                "방벽 전진"
+              ],
+              "optional": true
+            },
+            {
+              "id": "train-ledger-enforcer",
+              "name": "자동 검표 집행기",
+              "gateId": "v24-train-ledger-enforcer-approach",
+              "arenaId": "ledger",
+              "anchor": "ledger",
+              "epicOnly": false,
+              "description": "집게 팔과 바퀴가 달린 낡은 관제 장치. 장부와 일행을 함께 폐기 대상으로 인식합니다. 저항을 모두 꺾으면 기계만 정지합니다.",
+              "art": "/game/art/enemies/train-ledger-enforcer.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "검표 집게",
+                "결손 승객 추적",
+                "폐기 도장"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 53,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "train-tag-beast",
+              "name": "짐표를 두른 분실물 짐승",
+              "gateId": "v24-train-tag-beast-approach",
+              "arenaId": "v24-train-tag-beast-arena",
+              "anchor": "ledger",
+              "epicOnly": false,
+              "description": "낡은 여행 가방과 접힌 우산이 네 발로 뭉친 짐승. 목에 달린 짐표들을 지키려 합니다. 가방 끈을 풀어 흩어 놓으면 주저앉으며, 살아 있는 승객이 변한 모습은 아닙니다.",
+              "art": "/game/art/enemies/last-train-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 0
+              },
+              "kind": "creature",
+              "intents": [
+                "손잡이 낚아채기",
+                "분실물 눌러 담기",
+                "우산살 펼치기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "train-track-blockade",
+              "name": "관제 선로 봉쇄조",
+              "gateId": "v24-train-track-blockade-approach",
+              "arenaId": "v24-train-track-blockade-arena",
+              "anchor": "switch",
+              "epicOnly": false,
+              "description": "남색 철도 작업복과 호박빛 손전등을 든 실제 관제 요원들. 무단 분기 조작으로 사고가 날까 두려워 긴 절연 봉과 접이 방벽으로 길을 막습니다. 대열과 장비를 무력화하면 물러납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 0
+              },
+              "kind": "person",
+              "intents": [
+                "절연 봉 밀치기",
+                "현장 제압",
+                "방벽 전진"
+              ],
+              "optional": true
+            },
+            {
+              "id": "train-ledger-enforcer",
+              "name": "자동 검표 집행기",
+              "gateId": "v24-train-ledger-enforcer-approach",
+              "arenaId": "ledger",
+              "anchor": "ledger",
+              "epicOnly": false,
+              "description": "집게 팔과 바퀴가 달린 낡은 관제 장치. 장부와 일행을 함께 폐기 대상으로 인식합니다. 저항을 모두 꺾으면 기계만 정지합니다.",
+              "art": "/game/art/enemies/train-ledger-enforcer.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "검표 집게",
+                "결손 승객 추적",
+                "폐기 도장"
+              ],
+              "optional": true
+            },
+            {
+              "id": "train-voice-moth",
+              "name": "목소리를 삼킨 방송나방",
+              "gateId": "v24-train-voice-moth-approach",
+              "arenaId": "v24-train-voice-moth-arena",
+              "anchor": "et1-06",
+              "epicOnly": true,
+              "description": "녹음테이프 날개와 검은 솜털을 가진 나방. 버려진 안내의 끝마디를 먹으며, 크게 말할수록 목소리를 향해 날아듭니다.",
+              "art": "/game/art/enemies/last-train-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "끝마디 훔치기",
+                "익숙한 호출",
+                "테이프 날개"
+              ],
+              "optional": true
+            },
+            {
+              "id": "train-sleeper-spider",
+              "name": "침목 아래의 신호거미",
+              "gateId": "v24-train-sleeper-spider-approach",
+              "arenaId": "v24-train-sleeper-spider-arena",
+              "anchor": "et2-08",
+              "epicOnly": true,
+              "description": "침목 조각과 신호봉으로 이루어진 여덟 다리의 거미. 버려진 구리선으로 진동을 느끼며, 등에는 금 간 신호등이 달렸습니다.",
+              "art": "/game/art/enemies/last-train-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "침목 다리",
+                "떨림 추적",
+                "여덟 줄 당기기"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glass-hotel",
+      "title": "유리 호텔의 도난당한 새벽",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 21,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "hotel-night-security",
+              "name": "유리 호텔 야간 보안반",
+              "gateId": "v24-hotel-night-security-approach",
+              "arenaId": "v24-hotel-night-security-arena",
+              "anchor": "archive",
+              "epicOnly": false,
+              "description": "바랜 자주색 제복과 황동 명찰을 단 실제 호텔 보안 직원들. 주인의 봉쇄 지시와 동료들의 기록을 지켜야 한다는 마음 사이에서 서 있습니다. 수하물 방패와 짧은 봉을 쓰며 무장해제되면 추격을 멈춥니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 1
+              },
+              "kind": "person",
+              "intents": [
+                "수하물 방패 밀치기",
+                "퇴실 제압",
+                "보안 대열"
+              ],
+              "optional": true
+            },
+            {
+              "id": "hotel-glass-bellkeeper",
+              "name": "유리 날개 종지기",
+              "gateId": "v24-hotel-glass-bellkeeper-approach",
+              "arenaId": "v24-hotel-glass-bellkeeper-arena",
+              "anchor": "vault",
+              "epicOnly": false,
+              "description": "샹들리에 조각이 날개처럼 펼쳐진 종지기. 작은 서비스 종이 몸통에 매달려 있으며 종을 칠 때마다 유리 날개가 닫힙니다.",
+              "art": "/game/art/enemies/glass-hotel-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "서비스 종 낙하",
+                "지친 손님 호출",
+                "샹들리에 날갯짓"
+              ],
+              "optional": true
+            },
+            {
+              "id": "hotel-clockwork-archivist",
+              "name": "반납되지 못한 거울 분신",
+              "gateId": "v24-hotel-clockwork-archivist-approach",
+              "arenaId": "archive",
+              "anchor": "archive",
+              "epicOnly": false,
+              "description": "돌아갈 순간을 잃은 거울 속 분신들. 살아 있는 손님에게 달라붙어 함께 돌아가려 합니다. 현실을 붙잡은 거울 틀과 시간 연결을 풀면 자기 거울 안으로 물러납니다.",
+              "art": "/game/art/enemies/hotel-clockwork-archivist.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "끝나지 않는 건배",
+                "내 시간 한 모금",
+                "함께 들어가자"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 53,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "hotel-night-security",
+              "name": "유리 호텔 야간 보안반",
+              "gateId": "v24-hotel-night-security-approach",
+              "arenaId": "v24-hotel-night-security-arena",
+              "anchor": "archive",
+              "epicOnly": false,
+              "description": "바랜 자주색 제복과 황동 명찰을 단 실제 호텔 보안 직원들. 주인의 봉쇄 지시와 동료들의 기록을 지켜야 한다는 마음 사이에서 서 있습니다. 수하물 방패와 짧은 봉을 쓰며 무장해제되면 추격을 멈춥니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 1
+              },
+              "kind": "person",
+              "intents": [
+                "수하물 방패 밀치기",
+                "퇴실 제압",
+                "보안 대열"
+              ],
+              "optional": true
+            },
+            {
+              "id": "hotel-glass-bellkeeper",
+              "name": "유리 날개 종지기",
+              "gateId": "v24-hotel-glass-bellkeeper-approach",
+              "arenaId": "v24-hotel-glass-bellkeeper-arena",
+              "anchor": "vault",
+              "epicOnly": false,
+              "description": "샹들리에 조각이 날개처럼 펼쳐진 종지기. 작은 서비스 종이 몸통에 매달려 있으며 종을 칠 때마다 유리 날개가 닫힙니다.",
+              "art": "/game/art/enemies/glass-hotel-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "서비스 종 낙하",
+                "지친 손님 호출",
+                "샹들리에 날갯짓"
+              ],
+              "optional": true
+            },
+            {
+              "id": "hotel-clockwork-archivist",
+              "name": "반납되지 못한 거울 분신",
+              "gateId": "v24-hotel-clockwork-archivist-approach",
+              "arenaId": "archive",
+              "anchor": "archive",
+              "epicOnly": false,
+              "description": "돌아갈 순간을 잃은 거울 속 분신들. 살아 있는 손님에게 달라붙어 함께 돌아가려 합니다. 현실을 붙잡은 거울 틀과 시간 연결을 풀면 자기 거울 안으로 물러납니다.",
+              "art": "/game/art/enemies/hotel-clockwork-archivist.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "끝나지 않는 건배",
+                "내 시간 한 모금",
+                "함께 들어가자"
+              ],
+              "optional": true
+            },
+            {
+              "id": "hotel-clockwork-magpie",
+              "name": "시간표를 쪼는 태엽까치",
+              "gateId": "v24-hotel-clockwork-magpie-approach",
+              "arenaId": "v24-hotel-clockwork-magpie-arena",
+              "anchor": "eh1-08",
+              "epicOnly": true,
+              "description": "검은 깃과 시곗바늘 꼬리를 가진 황동 자동인형. 직원의 빈 시간을 작업 예약으로 채우려 하며 가슴의 태엽이 빠르게 되감깁니다.",
+              "art": "/game/art/enemies/glass-hotel-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "펜촉 쪼기",
+                "빈 시간 압류",
+                "예약표 돌풍"
+              ],
+              "optional": true
+            },
+            {
+              "id": "hotel-key-warden",
+              "name": "객실 열쇠의 문지기",
+              "gateId": "v24-hotel-key-warden-approach",
+              "arenaId": "v24-hotel-key-warden-arena",
+              "anchor": "eh2-10",
+              "epicOnly": true,
+              "description": "큰 열쇠 고리와 황동 객실 열쇠들이 문지기 형태로 매달린 존재. 빈 고리가 몸통이고 열쇠 다발이 팔과 치마를 이룹니다. 얼굴이나 살아 있는 몸은 없습니다.",
+              "art": "/game/art/enemies/glass-hotel-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "열쇠 팔 잠금",
+                "빈 객실 배정",
+                "번호표 휩쓸기"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "moon-market",
+      "title": "달을 파는 야시장",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 21,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "market-pier-enforcers",
+              "name": "나루 통행세 징수꾼",
+              "gateId": "v24-market-pier-enforcers-approach",
+              "arenaId": "v24-market-pier-enforcers-arena",
+              "anchor": "fish",
+              "epicOnly": false,
+              "description": "기운 방수 외투와 젖은 장화를 신은 인간 징수꾼들. 맡았던 발판 수리비를 핑계로 공동 나루를 사유화하려 합니다. 긴 배 갈고리와 그물로 길을 막으며 대열이 무너지면 달아납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 2
+              },
+              "kind": "person",
+              "intents": [
+                "배 갈고리 걸기",
+                "그물 포위",
+                "발판 흔들기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "market-paper-serpent",
+              "name": "장부를 감은 종이구렁이",
+              "gateId": "v24-market-paper-serpent-approach",
+              "arenaId": "v24-market-paper-serpent-arena",
+              "anchor": "crane",
+              "epicOnly": false,
+              "description": "반납된 빈 장부와 붉은 밀랍 봉인이 긴 몸으로 엮인 구렁이. 젖는 것을 피하려 하역문을 휘감고 있습니다. 달의 원본 계약과는 다른 창고용 빈 종이입니다.",
+              "art": "/game/art/enemies/moon-market-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "장부 조르기",
+                "봉인 물어뜯기",
+                "종이 비늘 소용돌이"
+              ],
+              "optional": true
+            },
+            {
+              "id": "market-contract-puppet",
+              "name": "담보 사냥꾼 일당",
+              "gateId": "v24-market-contract-puppet-approach",
+              "arenaId": "auction",
+              "anchor": "auction",
+              "epicOnly": false,
+              "description": "수집가 대리인에게 받은 선금에 발목 잡힌 고용 사냥꾼들. 없는 요금을 핑계로 기억을 빼앗으려 합니다. 갑옷·구속 도구·대열을 무너뜨리면 싸움을 포기하고 달아납니다.",
+              "art": "/game/art/enemies/market-contract-puppet.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "체납 추심 곤봉",
+                "쉬운 담보 사냥",
+                "질문료 쇠그물"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 53,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "market-pier-enforcers",
+              "name": "나루 통행세 징수꾼",
+              "gateId": "v24-market-pier-enforcers-approach",
+              "arenaId": "v24-market-pier-enforcers-arena",
+              "anchor": "fish",
+              "epicOnly": false,
+              "description": "기운 방수 외투와 젖은 장화를 신은 인간 징수꾼들. 맡았던 발판 수리비를 핑계로 공동 나루를 사유화하려 합니다. 긴 배 갈고리와 그물로 길을 막으며 대열이 무너지면 달아납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 2
+              },
+              "kind": "person",
+              "intents": [
+                "배 갈고리 걸기",
+                "그물 포위",
+                "발판 흔들기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "market-paper-serpent",
+              "name": "장부를 감은 종이구렁이",
+              "gateId": "v24-market-paper-serpent-approach",
+              "arenaId": "v24-market-paper-serpent-arena",
+              "anchor": "crane",
+              "epicOnly": false,
+              "description": "반납된 빈 장부와 붉은 밀랍 봉인이 긴 몸으로 엮인 구렁이. 젖는 것을 피하려 하역문을 휘감고 있습니다. 달의 원본 계약과는 다른 창고용 빈 종이입니다.",
+              "art": "/game/art/enemies/moon-market-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "장부 조르기",
+                "봉인 물어뜯기",
+                "종이 비늘 소용돌이"
+              ],
+              "optional": true
+            },
+            {
+              "id": "market-contract-puppet",
+              "name": "담보 사냥꾼 일당",
+              "gateId": "v24-market-contract-puppet-approach",
+              "arenaId": "auction",
+              "anchor": "auction",
+              "epicOnly": false,
+              "description": "수집가 대리인에게 받은 선금에 발목 잡힌 고용 사냥꾼들. 없는 요금을 핑계로 기억을 빼앗으려 합니다. 갑옷·구속 도구·대열을 무너뜨리면 싸움을 포기하고 달아납니다.",
+              "art": "/game/art/enemies/market-contract-puppet.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "체납 추심 곤봉",
+                "쉬운 담보 사냥",
+                "질문료 쇠그물"
+              ],
+              "optional": true
+            },
+            {
+              "id": "market-shadow-fox",
+              "name": "등불 기름을 핥는 그림자여우",
+              "gateId": "v24-market-shadow-fox-approach",
+              "arenaId": "v24-market-shadow-fox-arena",
+              "anchor": "em1-08",
+              "epicOnly": true,
+              "description": "젖은 먹빛 털과 세 갈래 리본 꼬리를 가진 그림자 짐승. 등불 기름과 빛에 붙은 작은 소원을 먹습니다. 밝은 곳을 벗어나면 몸이 얇아집니다.",
+              "art": "/game/art/enemies/moon-market-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "먹빛 앞발",
+                "등불 심지 물기",
+                "세 꼬리 훑기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "market-wish-crab",
+              "name": "소원표를 두른 강게",
+              "gateId": "v24-market-wish-crab-approach",
+              "arenaId": "v24-market-wish-crab-arena",
+              "anchor": "em2-10",
+              "epicOnly": true,
+              "description": "젖은 소원표와 붉은 끈을 등딱지에 두른 큰 강게. 물에 떠내려온 표를 모아 보호하지만 끝난 부탁과 남은 부탁을 가리지 않습니다.",
+              "art": "/game/art/enemies/moon-market-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "줄 끊는 집게",
+                "젖은 소원 짐",
+                "옆걸음 충돌"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deep-sea",
+      "title": "해저 기지의 마지막 방송",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 22,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "sea-quarantine-team",
+              "name": "본사 격리 집행반",
+              "gateId": "v24-sea-quarantine-team-approach",
+              "arenaId": "v24-sea-quarantine-team-arena",
+              "anchor": "commons",
+              "epicOnly": false,
+              "description": "회청색 밀폐 작업복 안에 사람이 들어 있는 본사 검역 요원들. 외부 장비를 모두 검사하라는 명령으로 구조대까지 대기시킵니다. 넓은 제압 집게와 이동 차수판을 쓰며 장비를 잃으면 물러납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 3
+              },
+              "kind": "person",
+              "intents": [
+                "제압 집게",
+                "분리 격리",
+                "검역선 전진"
+              ],
+              "optional": true
+            },
+            {
+              "id": "sea-armored-eel",
+              "name": "구명줄을 감은 철갑장어",
+              "gateId": "v24-sea-armored-eel-approach",
+              "arenaId": "v24-sea-armored-eel-arena",
+              "anchor": "lifeboat",
+              "epicOnly": false,
+              "description": "검푸른 갑옷 비늘과 청록 발광선을 가진 큰 장어. 연결교 아래 물길로 들어와 떠내려온 주황 구명줄에 몸이 감겼습니다. 줄을 당길수록 더 세게 버팁니다.",
+              "art": "/game/art/enemies/deep-sea-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "철갑 머리",
+                "느슨한 줄 조이기",
+                "꼬리 파도"
+              ],
+              "optional": true
+            },
+            {
+              "id": "sea-quarantine-cleaner",
+              "name": "폭주한 격리 청소기",
+              "gateId": "v24-sea-quarantine-cleaner-approach",
+              "arenaId": "commons",
+              "anchor": "commons",
+              "epicOnly": false,
+              "description": "명단에 없는 생체 신호를 강제로 제거하는 산업용 격리 장비. 공격 대상은 구동부와 분사 팔이며, 기지의 산소 배관·보육 수조와 분리돼 있습니다.",
+              "art": "/game/art/enemies/sea-quarantine-cleaner.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "차수 집게",
+                "저체온 표적 지정",
+                "격리 분무"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 54,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "sea-quarantine-team",
+              "name": "본사 격리 집행반",
+              "gateId": "v24-sea-quarantine-team-approach",
+              "arenaId": "v24-sea-quarantine-team-arena",
+              "anchor": "commons",
+              "epicOnly": false,
+              "description": "회청색 밀폐 작업복 안에 사람이 들어 있는 본사 검역 요원들. 외부 장비를 모두 검사하라는 명령으로 구조대까지 대기시킵니다. 넓은 제압 집게와 이동 차수판을 쓰며 장비를 잃으면 물러납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 3
+              },
+              "kind": "person",
+              "intents": [
+                "제압 집게",
+                "분리 격리",
+                "검역선 전진"
+              ],
+              "optional": true
+            },
+            {
+              "id": "sea-armored-eel",
+              "name": "구명줄을 감은 철갑장어",
+              "gateId": "v24-sea-armored-eel-approach",
+              "arenaId": "v24-sea-armored-eel-arena",
+              "anchor": "lifeboat",
+              "epicOnly": false,
+              "description": "검푸른 갑옷 비늘과 청록 발광선을 가진 큰 장어. 연결교 아래 물길로 들어와 떠내려온 주황 구명줄에 몸이 감겼습니다. 줄을 당길수록 더 세게 버팁니다.",
+              "art": "/game/art/enemies/deep-sea-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "철갑 머리",
+                "느슨한 줄 조이기",
+                "꼬리 파도"
+              ],
+              "optional": true
+            },
+            {
+              "id": "sea-quarantine-cleaner",
+              "name": "폭주한 격리 청소기",
+              "gateId": "v24-sea-quarantine-cleaner-approach",
+              "arenaId": "commons",
+              "anchor": "commons",
+              "epicOnly": false,
+              "description": "명단에 없는 생체 신호를 강제로 제거하는 산업용 격리 장비. 공격 대상은 구동부와 분사 팔이며, 기지의 산소 배관·보육 수조와 분리돼 있습니다.",
+              "art": "/game/art/enemies/sea-quarantine-cleaner.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "차수 집게",
+                "저체온 표적 지정",
+                "격리 분무"
+              ],
+              "optional": true
+            },
+            {
+              "id": "sea-pipe-crab",
+              "name": "압력관을 기는 관따개게",
+              "gateId": "v24-sea-pipe-crab-approach",
+              "arenaId": "v24-sea-pipe-crab-arena",
+              "anchor": "epb-sea-a05",
+              "epicOnly": true,
+              "description": "부식된 배관 마개를 등딱지로 쓰는 게. 한 집게는 렌치처럼, 다른 집게는 절단기처럼 휘었습니다. 침전물을 먹으려고 작은 배수관을 벌립니다.",
+              "art": "/game/art/enemies/deep-sea-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "렌치 집게",
+                "낮은 관 추격",
+                "배수 물보라"
+              ],
+              "optional": true
+            },
+            {
+              "id": "sea-suit-collector",
+              "name": "빈 잠수복 수거기",
+              "gateId": "v24-sea-suit-collector-approach",
+              "arenaId": "v24-sea-suit-collector-arena",
+              "anchor": "epb-sea-b10",
+              "epicOnly": true,
+              "description": "사람 없이 움직이는 산업용 잠수복과 회수 장치. 검은 빈 헬멧, 황동 연결부, 밧줄 감개, 넓은 수거 손을 지녔습니다. 장비 정리 시각만 보고 사람이 입은 잠수복까지 회수하려 합니다.",
+              "art": "/game/art/enemies/deep-sea-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "장비 회수 손",
+                "파손품 분류",
+                "회수줄 감기"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragon-banquet",
+      "title": "용의 마지막 만찬",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 21,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "feast-royal-guard",
+              "name": "왕실 배식 경비대",
+              "gateId": "v24-feast-royal-guard-approach",
+              "arenaId": "v24-feast-royal-guard-arena",
+              "anchor": "tasting",
+              "epicOnly": false,
+              "description": "구리빛 예식 갑옷과 푸른 어깨천을 두른 실제 왕실 경비원들. 독살을 막으려 봉인되지 않은 시료 반입을 막습니다. 둥근 방패와 끝이 뭉툭한 배식 통로 봉을 쓰며 대열이 무너지면 물러납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 4
+              },
+              "kind": "person",
+              "intents": [
+                "방패 밀어내기",
+                "장비 압수 봉",
+                "통로 봉쇄 대열"
+              ],
+              "optional": true
+            },
+            {
+              "id": "feast-coal-salamander",
+              "name": "숯비늘 화덕도마뱀",
+              "gateId": "v24-feast-coal-salamander-approach",
+              "arenaId": "v24-feast-coal-salamander-arena",
+              "anchor": "chimney",
+              "epicOnly": false,
+              "description": "검은 숯비늘 사이로 주황빛이 새는 화덕 도마뱀. 굴뚝 안의 압력이 높아져 살던 벽 틈에서 밀려 나왔으며, 남은 온기를 빼앗기지 않으려 통로를 지킵니다.",
+              "art": "/game/art/enemies/dragon-banquet-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "숯비늘 몸통",
+                "남은 온기 지키기",
+                "불씨 털기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "feast-oath-cutlery",
+              "name": "서약에 묶인 왕실 식기",
+              "gateId": "v24-feast-oath-cutlery-approach",
+              "arenaId": "tasting",
+              "anchor": "tasting",
+              "epicOnly": false,
+              "description": "서약 소금과 왕실 문양에 반응한 은식기 무리. 개별 식기의 연결 문양을 끊어 멈추는 전투이며, 핵심 조사 시료는 따로 보존됩니다.",
+              "art": "/game/art/enemies/feast-oath-cutlery.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "포크 열병식",
+                "뜨거운 국자",
+                "식기 회오리"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 53,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "feast-royal-guard",
+              "name": "왕실 배식 경비대",
+              "gateId": "v24-feast-royal-guard-approach",
+              "arenaId": "v24-feast-royal-guard-arena",
+              "anchor": "tasting",
+              "epicOnly": false,
+              "description": "구리빛 예식 갑옷과 푸른 어깨천을 두른 실제 왕실 경비원들. 독살을 막으려 봉인되지 않은 시료 반입을 막습니다. 둥근 방패와 끝이 뭉툭한 배식 통로 봉을 쓰며 대열이 무너지면 물러납니다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 4
+              },
+              "kind": "person",
+              "intents": [
+                "방패 밀어내기",
+                "장비 압수 봉",
+                "통로 봉쇄 대열"
+              ],
+              "optional": true
+            },
+            {
+              "id": "feast-coal-salamander",
+              "name": "숯비늘 화덕도마뱀",
+              "gateId": "v24-feast-coal-salamander-approach",
+              "arenaId": "v24-feast-coal-salamander-arena",
+              "anchor": "chimney",
+              "epicOnly": false,
+              "description": "검은 숯비늘 사이로 주황빛이 새는 화덕 도마뱀. 굴뚝 안의 압력이 높아져 살던 벽 틈에서 밀려 나왔으며, 남은 온기를 빼앗기지 않으려 통로를 지킵니다.",
+              "art": "/game/art/enemies/dragon-banquet-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "숯비늘 몸통",
+                "남은 온기 지키기",
+                "불씨 털기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "feast-oath-cutlery",
+              "name": "서약에 묶인 왕실 식기",
+              "gateId": "v24-feast-oath-cutlery-approach",
+              "arenaId": "tasting",
+              "anchor": "tasting",
+              "epicOnly": false,
+              "description": "서약 소금과 왕실 문양에 반응한 은식기 무리. 개별 식기의 연결 문양을 끊어 멈추는 전투이며, 핵심 조사 시료는 따로 보존됩니다.",
+              "art": "/game/art/enemies/feast-oath-cutlery.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "포크 열병식",
+                "뜨거운 국자",
+                "식기 회오리"
+              ],
+              "optional": true
+            },
+            {
+              "id": "feast-sugar-wasp",
+              "name": "설탕 날개 주전자말벌",
+              "gateId": "v24-feast-sugar-wasp-approach",
+              "arenaId": "v24-feast-sugar-wasp-arena",
+              "anchor": "epb-dragon-a08",
+              "epicOnly": true,
+              "description": "찌그러진 은주전자에 설탕 결정 날개가 붙은 주전자말벌. 남은 꿀차를 빼앗기지 않으려 주둥이로 뜨거운 방울을 쏩니다. 왕의 국이나 조사 시료와는 관계없는 오래된 찻주전자입니다.",
+              "art": "/game/art/enemies/dragon-banquet-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "주둥이 찌르기",
+                "잔을 찾는 돌진",
+                "끓는 방울"
+              ],
+              "optional": true
+            },
+            {
+              "id": "feast-ash-golem",
+              "name": "재를 두른 굴뚝골렘",
+              "gateId": "v24-feast-ash-golem-approach",
+              "arenaId": "v24-feast-ash-golem-arena",
+              "anchor": "epb-dragon-b09",
+              "epicOnly": true,
+              "description": "갈라진 화덕 벽돌과 눌린 재로 만들어진 작은 굴뚝 수호 골렘. 가슴에는 낮은 불씨가 있는 화격자가 달렸습니다. 낡은 안전 명령 때문에 복귀 밸브를 손으로 붙잡고 있습니다.",
+              "art": "/game/art/enemies/dragon-banquet-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "벽돌 팔 내려치기",
+                "재 받침 밀기",
+                "화격자 숨"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clock-city",
+      "title": "13분 뒤에 사라지는 도시",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 22,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "clock-bronze-lion",
+              "name": "미납 시간을 지키는 청동 사자",
+              "gateId": "v24-clock-bronze-lion-approach",
+              "arenaId": "v24-clock-bronze-lion-arena",
+              "anchor": "tower",
+              "epicOnly": false,
+              "description": "톱니 갈기와 열쇠 모양 발톱을 지닌 청동 사자. 목에는 회수한 회중시계 사슬이 걸려 있고, 금고 문을 지키는 황색 렌즈가 눈을 대신한다.",
+              "art": "/game/art/enemies/clock-city-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 0
+              },
+              "kind": "creature",
+              "intents": [
+                "사슬 갈기",
+                "늦은 발을 향해",
+                "문턱 돌진"
+              ],
+              "optional": true
+            },
+            {
+              "id": "clock-debt-collector",
+              "name": "시간 금고의 채권 회수인",
+              "gateId": "v24-clock-debt-collector-approach",
+              "arenaId": "v24-clock-debt-collector-arena",
+              "anchor": "hearing",
+              "epicOnly": false,
+              "description": "젖은 갈색 우비 위에 금고 직원을 뜻하는 황동 배지를 단 사람. 접이식 서류철과 짧은 경비봉을 들었다. 회수 실적을 채우지 못하면 자기 집의 유예도 끝나는 처지여서 빈 대표 서명에 매달린다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 5
+              },
+              "kind": "person",
+              "intents": [
+                "봉으로 밀어내기",
+                "놓친 손을 노려",
+                "서류철 방패"
+              ],
+              "optional": true
+            },
+            {
+              "id": "clock-archive-eraser",
+              "name": "시간 채권 소거 집행기",
+              "gateId": "v24-clock-archive-eraser-approach",
+              "arenaId": "library",
+              "anchor": "library",
+              "epicOnly": false,
+              "description": "열람 권한을 체납으로 판단하는 황동 자동 장치. 소거 렌즈와 이동축이 전투 대상이며, 계약 원본과 시민의 기록은 보호해야 합니다.",
+              "art": "/game/art/enemies/clock-archive-eraser.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "열람권 압류",
+                "흐린 이름 소거",
+                "종이칼 절단"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 53,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "clock-bronze-lion",
+              "name": "미납 시간을 지키는 청동 사자",
+              "gateId": "v24-clock-bronze-lion-approach",
+              "arenaId": "v24-clock-bronze-lion-arena",
+              "anchor": "tower",
+              "epicOnly": false,
+              "description": "톱니 갈기와 열쇠 모양 발톱을 지닌 청동 사자. 목에는 회수한 회중시계 사슬이 걸려 있고, 금고 문을 지키는 황색 렌즈가 눈을 대신한다.",
+              "art": "/game/art/enemies/clock-city-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 0
+              },
+              "kind": "creature",
+              "intents": [
+                "사슬 갈기",
+                "늦은 발을 향해",
+                "문턱 돌진"
+              ],
+              "optional": true
+            },
+            {
+              "id": "clock-debt-collector",
+              "name": "시간 금고의 채권 회수인",
+              "gateId": "v24-clock-debt-collector-approach",
+              "arenaId": "v24-clock-debt-collector-arena",
+              "anchor": "hearing",
+              "epicOnly": false,
+              "description": "젖은 갈색 우비 위에 금고 직원을 뜻하는 황동 배지를 단 사람. 접이식 서류철과 짧은 경비봉을 들었다. 회수 실적을 채우지 못하면 자기 집의 유예도 끝나는 처지여서 빈 대표 서명에 매달린다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 5
+              },
+              "kind": "person",
+              "intents": [
+                "봉으로 밀어내기",
+                "놓친 손을 노려",
+                "서류철 방패"
+              ],
+              "optional": true
+            },
+            {
+              "id": "clock-archive-eraser",
+              "name": "시간 채권 소거 집행기",
+              "gateId": "v24-clock-archive-eraser-approach",
+              "arenaId": "library",
+              "anchor": "library",
+              "epicOnly": false,
+              "description": "열람 권한을 체납으로 판단하는 황동 자동 장치. 소거 렌즈와 이동축이 전투 대상이며, 계약 원본과 시민의 기록은 보호해야 합니다.",
+              "art": "/game/art/enemies/clock-archive-eraser.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "열람권 압류",
+                "흐린 이름 소거",
+                "종이칼 절단"
+              ],
+              "optional": true
+            },
+            {
+              "id": "clock-second-moth-swarm",
+              "name": "초침을 갉는 종이 나방 떼",
+              "gateId": "v24-clock-second-moth-swarm-approach",
+              "arenaId": "v24-clock-second-moth-swarm-arena",
+              "anchor": "epb-clock-05",
+              "epicOnly": true,
+              "description": "찢어진 양피지 날개와 가느다란 초침 더듬이를 가진 나방 무리. 황동 몸통 사이로 빼앗은 초가 모래처럼 떨어지며, 밝은 기록판의 가장자리를 갉는다.",
+              "art": "/game/art/enemies/clock-city-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "초침 떼",
+                "느려진 숨",
+                "흩어진 종이날"
+              ],
+              "optional": true
+            },
+            {
+              "id": "clock-rewinding-watchman",
+              "name": "뒤로 걷는 야간 경비",
+              "gateId": "v24-clock-rewinding-watchman-approach",
+              "arenaId": "v24-clock-rewinding-watchman-arena",
+              "anchor": "epb-clock-17",
+              "epicOnly": true,
+              "description": "빛바랜 남색 제복의 야간 경비 잔상. 꺼진 손전등과 열쇠를 쥐고 있으며, 한 걸음 전의 자세가 몸 뒤에 여러 겹 남아 복도를 거꾸로 훑는다.",
+              "art": "/game/art/enemies/clock-city-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "뒤늦은 손전등",
+                "가장 느린 귀가",
+                "반납 열쇠"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "snow-radio",
+      "title": "설원에서 온 내 목소리",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 22,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "snow-whiteout-stragglers",
+              "name": "눈길을 막은 고립 대원들",
+              "gateId": "v24-snow-whiteout-stragglers-approach",
+              "arenaId": "v24-snow-whiteout-stragglers-arena",
+              "anchor": "whiteout",
+              "epicOnly": false,
+              "description": "보급대에서 낙오한 두 사람. 앞선 대원은 바랜 주황색 방한복에 신호봉과 로프를 들었고, 뒤의 대원은 빈 썰매를 붙든다. 잘못된 방송을 따라 동료를 잃어 켜진 무전기부터 의심한다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 6
+              },
+              "kind": "person",
+              "intents": [
+                "신호봉 견제",
+                "늘어진 로프",
+                "썰매 손잡이"
+              ],
+              "optional": true
+            },
+            {
+              "id": "snow-heating-frostbear",
+              "name": "난방관을 감싼 서리곰",
+              "gateId": "v24-snow-heating-frostbear-approach",
+              "arenaId": "v24-snow-heating-frostbear-arena",
+              "anchor": "relay",
+              "epicOnly": false,
+              "description": "난방관 주위에 쌓인 성에가 거대한 곰 모양으로 자란 형체. 갈라진 가슴 안에는 검은 물이 흐르고, 두 앞발은 녹슨 배관 한 토막을 끌어안고 있다.",
+              "art": "/game/art/enemies/snow-radio-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "배관 휘두르기",
+                "찬물 발자국",
+                "성에 어깨"
+              ],
+              "optional": true
+            },
+            {
+              "id": "snow-checkpoint-catcher",
+              "name": "귀환 관리 포획기",
+              "gateId": "v24-snow-checkpoint-catcher-approach",
+              "arenaId": "checkpoint",
+              "anchor": "checkpoint",
+              "epicOnly": false,
+              "description": "생존자와 저장된 음성 서명을 혼동한 자동 회수 장비. 전투 대상은 상부 포획 모듈이며, 이안과 다른 의식 앵커는 별도 전원으로 유지됩니다.",
+              "art": "/game/art/enemies/snow-checkpoint-catcher.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "회수 케이블",
+                "약한 신호 격리",
+                "냉각 분사"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 54,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "snow-whiteout-stragglers",
+              "name": "눈길을 막은 고립 대원들",
+              "gateId": "v24-snow-whiteout-stragglers-approach",
+              "arenaId": "v24-snow-whiteout-stragglers-arena",
+              "anchor": "whiteout",
+              "epicOnly": false,
+              "description": "보급대에서 낙오한 두 사람. 앞선 대원은 바랜 주황색 방한복에 신호봉과 로프를 들었고, 뒤의 대원은 빈 썰매를 붙든다. 잘못된 방송을 따라 동료를 잃어 켜진 무전기부터 의심한다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 6
+              },
+              "kind": "person",
+              "intents": [
+                "신호봉 견제",
+                "늘어진 로프",
+                "썰매 손잡이"
+              ],
+              "optional": true
+            },
+            {
+              "id": "snow-heating-frostbear",
+              "name": "난방관을 감싼 서리곰",
+              "gateId": "v24-snow-heating-frostbear-approach",
+              "arenaId": "v24-snow-heating-frostbear-arena",
+              "anchor": "relay",
+              "epicOnly": false,
+              "description": "난방관 주위에 쌓인 성에가 거대한 곰 모양으로 자란 형체. 갈라진 가슴 안에는 검은 물이 흐르고, 두 앞발은 녹슨 배관 한 토막을 끌어안고 있다.",
+              "art": "/game/art/enemies/snow-radio-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "배관 휘두르기",
+                "찬물 발자국",
+                "성에 어깨"
+              ],
+              "optional": true
+            },
+            {
+              "id": "snow-checkpoint-catcher",
+              "name": "귀환 관리 포획기",
+              "gateId": "v24-snow-checkpoint-catcher-approach",
+              "arenaId": "checkpoint",
+              "anchor": "checkpoint",
+              "epicOnly": false,
+              "description": "생존자와 저장된 음성 서명을 혼동한 자동 회수 장비. 전투 대상은 상부 포획 모듈이며, 이안과 다른 의식 앵커는 별도 전원으로 유지됩니다.",
+              "art": "/game/art/enemies/snow-checkpoint-catcher.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "회수 케이블",
+                "약한 신호 격리",
+                "냉각 분사"
+              ],
+              "optional": true
+            },
+            {
+              "id": "snow-retrieval-spider",
+              "name": "회수통을 끄는 정비 거미",
+              "gateId": "v24-snow-retrieval-spider-approach",
+              "arenaId": "v24-snow-retrieval-spider-arena",
+              "anchor": "epb-snow-a05",
+              "epicOnly": true,
+              "description": "작은 원통형 회수통을 끌고 다니는 여섯 다리 정비 기계. 녹슨 관절과 두 집게, 흐린 작업등을 달았으며 사람의 발자국까지 회수 표식으로 잘못 읽는다.",
+              "art": "/game/art/enemies/snow-radio-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "끈부터 회수",
+                "낮은 적재물",
+                "통의 무게"
+              ],
+              "optional": true
+            },
+            {
+              "id": "snow-return-patrol",
+              "name": "귀환을 기다리는 순찰 잔상",
+              "gateId": "v24-snow-return-patrol-approach",
+              "arenaId": "v24-snow-return-patrol-arena",
+              "anchor": "epb-snow-b09",
+              "epicOnly": true,
+              "description": "성에 낀 고글과 낡은 방한복을 쓴 순찰대 세 사람의 잔상. 앞선 사람이 유도봉을 들었고, 뒤의 둘은 대답 없는 무전기를 붙든 채 매번 같은 발자국을 밟는다.",
+              "art": "/game/art/enemies/snow-radio-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "옛 복귀 지시",
+                "마지막 인원",
+                "세 갈래 불빛"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hollow-apartment",
+      "title": "문밖에서 부르는 이름",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 24,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "apartment-floor-patrol",
+              "name": "폐쇄동 야간 순찰원",
+              "gateId": "v24-apartment-floor-patrol-approach",
+              "arenaId": "v24-apartment-floor-patrol-arena",
+              "anchor": "fourth-door",
+              "epicOnly": false,
+              "description": "짙은 남색 경비 점퍼와 장화를 착용한 실제 사람. 손전등과 고무 경비봉을 들었다. 동료가 404호의 목소리를 따라 사라진 뒤 누구도 그 문에 접근하지 못하게 막고 있다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 7
+              },
+              "kind": "person",
+              "intents": [
+                "통제 바 밀기",
+                "떨리는 손목",
+                "손전등의 눈부심"
+              ],
+              "optional": true
+            },
+            {
+              "id": "apartment-drain-tangle",
+              "name": "배수구에 엉킨 머리카락",
+              "gateId": "v24-apartment-drain-tangle-approach",
+              "arenaId": "v24-apartment-drain-tangle-arena",
+              "anchor": "pumphouse",
+              "epicOnly": false,
+              "description": "배수구 덮개를 중심으로 젖은 검은 머리카락이 거미 다리처럼 갈라져 뻗은 형체. 낡은 빗과 열쇠가 엉켜 있지만 머리나 몸은 없고, 물이 역류할 때만 길게 일어난다.",
+              "art": "/game/art/enemies/hollow-apartment-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "물 아래 발목",
+                "가라앉는 쪽",
+                "빗살의 고리"
+              ],
+              "optional": true
+            },
+            {
+              "id": "apartment-empty-doorkeeper",
+              "name": "문에 걸린 빈 외투",
+              "gateId": "v24-apartment-empty-doorkeeper-approach",
+              "arenaId": "service-corridor",
+              "anchor": "service-corridor",
+              "epicOnly": false,
+              "description": "목소리를 흉내 내는 외투. 문틀의 경첩과 작은 종에 매달려 움직입니다. 연결을 끊으면 쓰러진 문틀로 돌아갑니다.",
+              "art": "/game/art/enemies/apartment-empty-doorkeeper.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "안으로 끄는 소매",
+                "가장 작은 숨",
+                "닫히는 문틀"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 56,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "apartment-floor-patrol",
+              "name": "폐쇄동 야간 순찰원",
+              "gateId": "v24-apartment-floor-patrol-approach",
+              "arenaId": "v24-apartment-floor-patrol-arena",
+              "anchor": "fourth-door",
+              "epicOnly": false,
+              "description": "짙은 남색 경비 점퍼와 장화를 착용한 실제 사람. 손전등과 고무 경비봉을 들었다. 동료가 404호의 목소리를 따라 사라진 뒤 누구도 그 문에 접근하지 못하게 막고 있다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 7
+              },
+              "kind": "person",
+              "intents": [
+                "통제 바 밀기",
+                "떨리는 손목",
+                "손전등의 눈부심"
+              ],
+              "optional": true
+            },
+            {
+              "id": "apartment-drain-tangle",
+              "name": "배수구에 엉킨 머리카락",
+              "gateId": "v24-apartment-drain-tangle-approach",
+              "arenaId": "v24-apartment-drain-tangle-arena",
+              "anchor": "pumphouse",
+              "epicOnly": false,
+              "description": "배수구 덮개를 중심으로 젖은 검은 머리카락이 거미 다리처럼 갈라져 뻗은 형체. 낡은 빗과 열쇠가 엉켜 있지만 머리나 몸은 없고, 물이 역류할 때만 길게 일어난다.",
+              "art": "/game/art/enemies/hollow-apartment-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "물 아래 발목",
+                "가라앉는 쪽",
+                "빗살의 고리"
+              ],
+              "optional": true
+            },
+            {
+              "id": "apartment-empty-doorkeeper",
+              "name": "문에 걸린 빈 외투",
+              "gateId": "v24-apartment-empty-doorkeeper-approach",
+              "arenaId": "service-corridor",
+              "anchor": "service-corridor",
+              "epicOnly": false,
+              "description": "목소리를 흉내 내는 외투. 문틀의 경첩과 작은 종에 매달려 움직입니다. 연결을 끊으면 쓰러진 문틀로 돌아갑니다.",
+              "art": "/game/art/enemies/apartment-empty-doorkeeper.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "안으로 끄는 소매",
+                "가장 작은 숨",
+                "닫히는 문틀"
+              ],
+              "optional": true
+            },
+            {
+              "id": "apartment-rocking-horse",
+              "name": "혼자 흔들리는 목마",
+              "gateId": "v24-apartment-rocking-horse-approach",
+              "arenaId": "v24-apartment-rocking-horse-arena",
+              "anchor": "apt-e1-nursery",
+              "epicOnly": true,
+              "description": "칠이 벗겨진 크림색 나무 목마. 빈 눈구멍과 낡은 천 고삐를 달았고, 아무도 타지 않았는데도 곡선 받침이 바닥을 찍으며 조금씩 가까워진다.",
+              "art": "/game/art/enemies/hollow-apartment-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "받침 끝",
+                "빈자리의 고삐",
+                "뒤로 오는 목"
+              ],
+              "optional": true
+            },
+            {
+              "id": "apartment-under-table-guest",
+              "name": "식탁 아래 숨은 손님",
+              "gateId": "v24-apartment-under-table-guest-approach",
+              "arenaId": "v24-apartment-under-table-guest-arena",
+              "anchor": "apt-e2-emptyplates",
+              "epicOnly": true,
+              "description": "낡은 의자 아래 모인 몸 없는 짙은 그림자. 얼굴 없이 긴 팔 두 개가 뻗어 빈 밥그릇과 숟가락을 내밀며, 식탁 아래의 어둠보다 더 깊은 자리를 만든다.",
+              "art": "/game/art/enemies/hollow-apartment-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "앉을 자리",
+                "식기 식는 소리",
+                "식탁 밑으로"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drowned-broadcast",
+      "title": "새벽 두 시의 폐쇄 방송국",
+      "modes": [
+        {
+          "mode": "basic",
+          "sceneCount": 24,
+          "endingCount": 5,
+          "distinctEnemies": 3,
+          "minimumBattles": 0,
+          "maximumBattles": 3,
+          "encounters": [
+            {
+              "id": "broadcast-record-removal-crew",
+              "name": "폐국 기록 회수반",
+              "gateId": "v24-broadcast-record-removal-crew-approach",
+              "arenaId": "v24-broadcast-record-removal-crew-arena",
+              "anchor": "preview-booth",
+              "epicOnly": false,
+              "description": "철거 정리 명령을 받고 원본 릴을 반출하러 온 두 직원. 앞선 여성은 회색 작업 코트에 운반 케이스를 들었고, 안전모를 쓴 동료는 릴 운반대를 붙든다. 방송이 끝났다는 서류를 믿고 현재의 구조 신호를 무시한다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 8
+              },
+              "kind": "person",
+              "intents": [
+                "운반대 밀기",
+                "케이스 모서리",
+                "좁아진 복도"
+              ],
+              "optional": true
+            },
+            {
+              "id": "broadcast-blackwater-eel",
+              "name": "검은 물의 송신 장어",
+              "gateId": "v24-broadcast-blackwater-eel-approach",
+              "arenaId": "v24-broadcast-blackwater-eel-arena",
+              "anchor": "engine-cage",
+              "epicOnly": false,
+              "description": "검은 물과 송신 케이블이 긴 장어 모양을 이룬 형체. 옆구리에 작은 진공관이 박혀 있고 꼬리는 동축선처럼 갈라진다. 눈과 수염에서 흐린 청록빛이 흐른다.",
+              "art": "/game/art/enemies/drowned-broadcast-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "진공관 꼬리",
+                "낮은 물길",
+                "격벽 휘감기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "broadcast-waiting-listener",
+              "name": "다음 말을 기다리는 청취자",
+              "gateId": "v24-broadcast-waiting-listener-approach",
+              "arenaId": "studio",
+              "anchor": "studio",
+              "epicOnly": false,
+              "description": "방송 선과 잡음으로 뭉친 형체. 켜진 수신기가 숨소리를 되풀이하며 사람을 좇습니다. 음향 연결이 끊기면 스피커 안으로 무너집니다.",
+              "art": "/game/art/enemies/broadcast-waiting-listener.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "숨 되감기",
+                "작은 신음 찾기",
+                "박수 신호"
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "mode": "epic",
+          "sceneCount": 56,
+          "endingCount": 5,
+          "distinctEnemies": 5,
+          "minimumBattles": 0,
+          "maximumBattles": 5,
+          "encounters": [
+            {
+              "id": "broadcast-record-removal-crew",
+              "name": "폐국 기록 회수반",
+              "gateId": "v24-broadcast-record-removal-crew-approach",
+              "arenaId": "v24-broadcast-record-removal-crew-arena",
+              "anchor": "preview-booth",
+              "epicOnly": false,
+              "description": "철거 정리 명령을 받고 원본 릴을 반출하러 온 두 직원. 앞선 여성은 회색 작업 코트에 운반 케이스를 들었고, 안전모를 쓴 동료는 릴 운반대를 붙든다. 방송이 끝났다는 서류를 믿고 현재의 구조 신호를 무시한다.",
+              "art": "/game/art/enemies/human-opponents-v24.webp?v=24000",
+              "crop": {
+                "columns": 3,
+                "rows": 3,
+                "index": 8
+              },
+              "kind": "person",
+              "intents": [
+                "운반대 밀기",
+                "케이스 모서리",
+                "좁아진 복도"
+              ],
+              "optional": true
+            },
+            {
+              "id": "broadcast-blackwater-eel",
+              "name": "검은 물의 송신 장어",
+              "gateId": "v24-broadcast-blackwater-eel-approach",
+              "arenaId": "v24-broadcast-blackwater-eel-arena",
+              "anchor": "engine-cage",
+              "epicOnly": false,
+              "description": "검은 물과 송신 케이블이 긴 장어 모양을 이룬 형체. 옆구리에 작은 진공관이 박혀 있고 꼬리는 동축선처럼 갈라진다. 눈과 수염에서 흐린 청록빛이 흐른다.",
+              "art": "/game/art/enemies/drowned-broadcast-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 1
+              },
+              "kind": "creature",
+              "intents": [
+                "진공관 꼬리",
+                "낮은 물길",
+                "격벽 휘감기"
+              ],
+              "optional": true
+            },
+            {
+              "id": "broadcast-waiting-listener",
+              "name": "다음 말을 기다리는 청취자",
+              "gateId": "v24-broadcast-waiting-listener-approach",
+              "arenaId": "studio",
+              "anchor": "studio",
+              "epicOnly": false,
+              "description": "방송 선과 잡음으로 뭉친 형체. 켜진 수신기가 숨소리를 되풀이하며 사람을 좇습니다. 음향 연결이 끊기면 스피커 안으로 무너집니다.",
+              "art": "/game/art/enemies/broadcast-waiting-listener.webp?v=23000",
+              "crop": null,
+              "kind": "legacy",
+              "intents": [
+                "숨 되감기",
+                "작은 신음 찾기",
+                "박수 신호"
+              ],
+              "optional": true
+            },
+            {
+              "id": "broadcast-applauding-seats",
+              "name": "박수 치는 빈 좌석들",
+              "gateId": "v24-broadcast-applauding-seats-approach",
+              "arenaId": "v24-broadcast-applauding-seats-arena",
+              "anchor": "bc-e1-speaker",
+              "epicOnly": true,
+              "description": "낡은 자줏빛 극장 의자 세 개. 텅 빈 좌석마다 흰 장갑 한 쌍이 팔걸이 위에서 박수를 치며, 비틀린 금속 다리가 접혔다 펴지며 앞으로 기어온다.",
+              "art": "/game/art/enemies/drowned-broadcast-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 2
+              },
+              "kind": "creature",
+              "intents": [
+                "접히는 좌석",
+                "빈자리 찾기",
+                "앵콜의 손뼉"
+              ],
+              "optional": true
+            },
+            {
+              "id": "broadcast-ahead-cameraman",
+              "name": "한 박자 먼저 움직이는 촬영기사",
+              "gateId": "v24-broadcast-ahead-cameraman-approach",
+              "arenaId": "v24-broadcast-ahead-cameraman-arena",
+              "anchor": "bc-e2-shadow",
+              "epicOnly": true,
+              "description": "옛 회색 작업 코트를 입은 촬영기사의 잔상. 어깨 카메라의 작은 붉은 등이 켜져 있고 몸이 취할 다음 자세가 앞쪽에 희미하게 겹친다. 바닥에 닿지 않는 장비 끈이 길게 늘어져 있다.",
+              "art": "/game/art/enemies/drowned-broadcast-v24.webp?v=24000",
+              "crop": {
+                "columns": 2,
+                "rows": 2,
+                "index": 3
+              },
+              "kind": "creature",
+              "intents": [
+                "한 박자 앞선 팔",
+                "쓰러질 자리",
+                "어깨 카메라"
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "newAtlases": [
+    {
+      "id": "last-train",
+      "file": "public/game/art/enemies/last-train-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 102316,
+      "sha256": "047acd74b17a08d42ba41c4ecb03fdaae6a6b5e17e7c8e20b98f073273c1077b",
+      "sourceSha256": "a4afd561e4308399533c0f44cc8556f3d988b8d6565c1e450439db65d96dff70",
+      "reference": "public/game/art/last-train.webp",
+      "cells": [
+        {
+          "id": "train-tag-beast",
+          "name": "짐표를 두른 분실물 짐승",
+          "index": 0,
+          "alphaBounds": [
+            25,
+            67,
+            297,
+            282
+          ]
+        },
+        {
+          "id": "train-voice-moth",
+          "name": "목소리를 삼킨 방송나방",
+          "index": 2,
+          "alphaBounds": [
+            25,
+            48,
+            301,
+            278
+          ]
+        },
+        {
+          "id": "train-sleeper-spider",
+          "name": "침목 아래의 신호거미",
+          "index": 3,
+          "alphaBounds": [
+            17,
+            58,
+            293,
+            278
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "glass-hotel",
+      "file": "public/game/art/enemies/glass-hotel-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 117936,
+      "sha256": "0c21fb90ae55213e2d9e5f60305b03c891bcdaa801ef5c1411000c70bdca8c34",
+      "sourceSha256": "314a38ab317b7ebcd8df4c2ce8edf4427ed7ddab2241ed730fe048f76ad11406",
+      "reference": "public/game/art/glass-hotel.webp",
+      "cells": [
+        {
+          "id": "hotel-glass-bellkeeper",
+          "name": "유리 날개 종지기",
+          "index": 1,
+          "alphaBounds": [
+            34,
+            21,
+            285,
+            301
+          ]
+        },
+        {
+          "id": "hotel-clockwork-magpie",
+          "name": "시간표를 쪼는 태엽까치",
+          "index": 2,
+          "alphaBounds": [
+            30,
+            55,
+            299,
+            291
+          ]
+        },
+        {
+          "id": "hotel-key-warden",
+          "name": "객실 열쇠의 문지기",
+          "index": 3,
+          "alphaBounds": [
+            18,
+            31,
+            291,
+            294
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "moon-market",
+      "file": "public/game/art/enemies/moon-market-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 102918,
+      "sha256": "181ee38a173c791df3b9e76e324c2e5826dfbc2433ecfc964af71fa251223543",
+      "sourceSha256": "a4eaf38f16c2c1526e75ab7abeeca392fe158df6bce918505bfb49da6904fbcb",
+      "reference": "public/game/art/moon-market.webp",
+      "cells": [
+        {
+          "id": "market-paper-serpent",
+          "name": "장부를 감은 종이구렁이",
+          "index": 1,
+          "alphaBounds": [
+            18,
+            51,
+            289,
+            276
+          ]
+        },
+        {
+          "id": "market-shadow-fox",
+          "name": "등불 기름을 핥는 그림자여우",
+          "index": 2,
+          "alphaBounds": [
+            29,
+            39,
+            294,
+            279
+          ]
+        },
+        {
+          "id": "market-wish-crab",
+          "name": "소원표를 두른 강게",
+          "index": 3,
+          "alphaBounds": [
+            9,
+            55,
+            298,
+            270
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "deep-sea",
+      "file": "public/game/art/enemies/deep-sea-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 122698,
+      "sha256": "cd1a81246e1aa96a01f8d1da8d34acec9e3223620b57fd58097e8dda5eb57aeb",
+      "sourceSha256": "a0e937933464b2dd9e861c43a290ee9b3e98437f3e31455a48527f792926fbb6",
+      "reference": "public/game/art/deep-sea.webp",
+      "cells": [
+        {
+          "id": "sea-armored-eel",
+          "name": "구명줄을 감은 철갑장어",
+          "index": 1,
+          "alphaBounds": [
+            13,
+            50,
+            290,
+            291
+          ]
+        },
+        {
+          "id": "sea-pipe-crab",
+          "name": "압력관을 기는 관따개게",
+          "index": 2,
+          "alphaBounds": [
+            37,
+            59,
+            291,
+            281
+          ]
+        },
+        {
+          "id": "sea-suit-collector",
+          "name": "빈 잠수복 수거기",
+          "index": 3,
+          "alphaBounds": [
+            25,
+            23,
+            288,
+            283
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "dragon-banquet",
+      "file": "public/game/art/enemies/dragon-banquet-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 106406,
+      "sha256": "f526cdda119ba390a8c5a9819b681892d65a215fbddc1c303a51611c1672cac7",
+      "sourceSha256": "3e323497900ca7c58fb14c222b55d13902a8c4d0c87bbba8e0ea5b29977f24bf",
+      "reference": "public/game/art/dragon-banquet.webp",
+      "cells": [
+        {
+          "id": "feast-coal-salamander",
+          "name": "숯비늘 화덕도마뱀",
+          "index": 1,
+          "alphaBounds": [
+            17,
+            71,
+            305,
+            258
+          ]
+        },
+        {
+          "id": "feast-sugar-wasp",
+          "name": "설탕 날개 주전자말벌",
+          "index": 2,
+          "alphaBounds": [
+            46,
+            34,
+            293,
+            284
+          ]
+        },
+        {
+          "id": "feast-ash-golem",
+          "name": "재를 두른 굴뚝골렘",
+          "index": 3,
+          "alphaBounds": [
+            16,
+            17,
+            294,
+            277
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "clock-city",
+      "file": "public/game/art/enemies/clock-city-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 116132,
+      "sha256": "2cc766561b09ff3a60ac96266902e789664bb28ab5bf7d5315969a735254fca6",
+      "sourceSha256": "0e7e74d96260990c114dcbef104a95a2e2717e4bfe0df95b251c3535cc721024",
+      "reference": "public/game/art/clock-city.webp",
+      "cells": [
+        {
+          "id": "clock-bronze-lion",
+          "name": "미납 시간을 지키는 청동 사자",
+          "index": 0,
+          "alphaBounds": [
+            25,
+            63,
+            291,
+            273
+          ]
+        },
+        {
+          "id": "clock-second-moth-swarm",
+          "name": "초침을 갉는 종이 나방 떼",
+          "index": 2,
+          "alphaBounds": [
+            41,
+            42,
+            272,
+            274
+          ]
+        },
+        {
+          "id": "clock-rewinding-watchman",
+          "name": "뒤로 걷는 야간 경비",
+          "index": 3,
+          "alphaBounds": [
+            44,
+            44,
+            272,
+            287
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "snow-radio",
+      "file": "public/game/art/enemies/snow-radio-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 118440,
+      "sha256": "d2e90734f9d7d2525dd0b4406ae500f01bda79c24499394d9823d1407eda3e1b",
+      "sourceSha256": "c4efa631df81b602a8711803832f1d1047ad7f99ddf1ba52a57578f0dc7e3dd5",
+      "reference": "public/game/art/snow-radio.webp",
+      "cells": [
+        {
+          "id": "snow-heating-frostbear",
+          "name": "난방관을 감싼 서리곰",
+          "index": 1,
+          "alphaBounds": [
+            33,
+            52,
+            282,
+            279
+          ]
+        },
+        {
+          "id": "snow-retrieval-spider",
+          "name": "회수통을 끄는 정비 거미",
+          "index": 2,
+          "alphaBounds": [
+            35,
+            89,
+            298,
+            255
+          ]
+        },
+        {
+          "id": "snow-return-patrol",
+          "name": "귀환을 기다리는 순찰 잔상",
+          "index": 3,
+          "alphaBounds": [
+            17,
+            53,
+            285,
+            279
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "hollow-apartment",
+      "file": "public/game/art/enemies/hollow-apartment-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 112914,
+      "sha256": "125f87c1b8bc930c16569c32996ad2c7a6e7d5f4b1c0d6ddb81c3fe455112c9a",
+      "sourceSha256": "c29853ad8265bb348fc4646d492d00edeb5d0cb17e52e30cca74c956a1947f0d",
+      "reference": "public/game/art/hollow-apartment.webp",
+      "cells": [
+        {
+          "id": "apartment-drain-tangle",
+          "name": "배수구에 엉킨 머리카락",
+          "index": 1,
+          "alphaBounds": [
+            6,
+            83,
+            301,
+            295
+          ]
+        },
+        {
+          "id": "apartment-rocking-horse",
+          "name": "혼자 흔들리는 목마",
+          "index": 2,
+          "alphaBounds": [
+            47,
+            38,
+            291,
+            282
+          ]
+        },
+        {
+          "id": "apartment-under-table-guest",
+          "name": "식탁 아래 숨은 손님",
+          "index": 3,
+          "alphaBounds": [
+            30,
+            33,
+            286,
+            286
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "drowned-broadcast",
+      "file": "public/game/art/enemies/drowned-broadcast-v24.webp",
+      "width": 640,
+      "height": 640,
+      "columns": 2,
+      "rows": 2,
+      "bytes": 129522,
+      "sha256": "e05eb9b65e4c8c7a88d73d3f0b6ada931dc0f52eb57586eaf28bad382de66d32",
+      "sourceSha256": "bc44480fcd05e7f57c305f57d66626d100908cbc0a87f36ad42fab646bffdd8e",
+      "reference": "public/game/art/drowned-broadcast.webp",
+      "cells": [
+        {
+          "id": "broadcast-blackwater-eel",
+          "name": "검은 물의 송신 장어",
+          "index": 1,
+          "alphaBounds": [
+            23,
+            50,
+            296,
+            293
+          ]
+        },
+        {
+          "id": "broadcast-applauding-seats",
+          "name": "박수 치는 빈 좌석들",
+          "index": 2,
+          "alphaBounds": [
+            21,
+            54,
+            300,
+            277
+          ]
+        },
+        {
+          "id": "broadcast-ahead-cameraman",
+          "name": "한 박자 먼저 움직이는 촬영기사",
+          "index": 3,
+          "alphaBounds": [
+            41,
+            33,
+            292,
+            288
+          ]
+        }
+      ],
+      "matches": true
+    },
+    {
+      "id": "human-opponents",
+      "file": "public/game/art/enemies/human-opponents-v24.webp",
+      "width": 960,
+      "height": 960,
+      "columns": 3,
+      "rows": 3,
+      "bytes": 281812,
+      "sha256": "e82ca2a9e38baabac25bc43db8870ae890d0692549fd2d7ec0297ad0b14804c3",
+      "sourceSha256": "78bc73b84d03a17fa58631d441bf4113a276b6ecd281d8d45ff26c85fb7773a0",
+      "reference": "public/game/art/last-train.webp",
+      "cells": [
+        {
+          "id": "train-track-blockade",
+          "name": "관제 선로 봉쇄조",
+          "index": 0,
+          "alphaBounds": [
+            45,
+            59,
+            296,
+            306
+          ]
+        },
+        {
+          "id": "hotel-night-security",
+          "name": "유리 호텔 야간 보안반",
+          "index": 1,
+          "alphaBounds": [
+            11,
+            49,
+            278,
+            305
+          ]
+        },
+        {
+          "id": "market-pier-enforcers",
+          "name": "나루 통행세 징수꾼",
+          "index": 2,
+          "alphaBounds": [
+            18,
+            49,
+            285,
+            307
+          ]
+        },
+        {
+          "id": "sea-quarantine-team",
+          "name": "본사 격리 집행반",
+          "index": 3,
+          "alphaBounds": [
+            27,
+            33,
+            295,
+            295
+          ]
+        },
+        {
+          "id": "feast-royal-guard",
+          "name": "왕실 배식 경비대",
+          "index": 4,
+          "alphaBounds": [
+            39,
+            30,
+            296,
+            297
+          ]
+        },
+        {
+          "id": "clock-debt-collector",
+          "name": "시간 금고의 채권 회수인",
+          "index": 5,
+          "alphaBounds": [
+            43,
+            23,
+            241,
+            299
+          ]
+        },
+        {
+          "id": "snow-whiteout-stragglers",
+          "name": "눈길을 막은 고립 대원들",
+          "index": 6,
+          "alphaBounds": [
+            26,
+            32,
+            301,
+            290
+          ]
+        },
+        {
+          "id": "apartment-floor-patrol",
+          "name": "폐쇄동 야간 순찰원",
+          "index": 7,
+          "alphaBounds": [
+            34,
+            31,
+            281,
+            290
+          ]
+        },
+        {
+          "id": "broadcast-record-removal-crew",
+          "name": "폐국 기록 회수반",
+          "index": 8,
+          "alphaBounds": [
+            40,
+            34,
+            294,
+            293
+          ]
+        }
+      ],
+      "matches": true
+    }
+  ]
+}

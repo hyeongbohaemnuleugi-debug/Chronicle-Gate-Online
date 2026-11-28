@@ -15,7 +15,7 @@ const structural=o=>Object.fromEntries(Object.entries(o).filter(([key])=>!['text
 const fields=['stat','dc','automatic','requires','useItems','consumeItems'];
 
 test('all seven worlds gain four real scenes, two distinct ordinary endings and one usable item without replacing old choices',()=>{
-  assert.equal(VERSION,'24.0.0');assert.equal(CAMPAIGNS.length,7);
+  assert.equal(VERSION,'24.1.0');assert.equal(CAMPAIGNS.length,7);
   let playable=0,ordinary=0;
   for(const c of CAMPAIGNS){
     const old=oldFor(c.id),nodes=Object.values(c.nodes),scenes=nodes.filter(n=>!n.ending),ends=nodes.filter(n=>n.ending);

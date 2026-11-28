@@ -1272,6 +1272,57 @@ body.dice-presenting { overflow: hidden; }
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
+  // public/game/audio-loops.js
+  var AUDIO_VERSION, AUDIO_LOOPS;
+  var init_audio_loops = __esm({
+    "public/game/audio-loops.js"() {
+      AUDIO_VERSION = "20000";
+      AUDIO_LOOPS = Object.freeze({ "last-train-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "last-train-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "last-train-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 857644, "sourceFrames": 873644 }, "last-train-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "last-train-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "last-train-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "glass-hotel-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 838857, "sourceFrames": 854857 }, "glass-hotel-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 869333, "sourceFrames": 885333 }, "glass-hotel-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "moon-market-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "moon-market-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "moon-market-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 838857, "sourceFrames": 854857 }, "moon-market-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "moon-market-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "moon-market-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 956408, "sourceFrames": 972408 }, "deep-sea-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "deep-sea-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 869333, "sourceFrames": 885333 }, "deep-sea-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 919529, "sourceFrames": 935529 }, "deep-sea-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 846270, "sourceFrames": 862270 }, "deep-sea-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "deep-sea-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1006968, "sourceFrames": 1022968 }, "dragon-banquet-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "dragon-banquet-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "dragon-banquet-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 835200, "sourceFrames": 851200 }, "dragon-banquet-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "dragon-banquet-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "dragon-banquet-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 946909, "sourceFrames": 962909 }, "clock-city-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "clock-city-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 799673, "sourceFrames": 815673 }, "clock-city-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 850783, "sourceFrames": 866783 }, "clock-city-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 816e3, "sourceFrames": 832e3 }, "clock-city-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "clock-city-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "snow-radio-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "snow-radio-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 846270, "sourceFrames": 862270 }, "snow-radio-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 893714, "sourceFrames": 909714 }, "snow-radio-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 857644, "sourceFrames": 873644 }, "snow-radio-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "snow-radio-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1006968, "sourceFrames": 1022968 } });
+    }
+  });
+
+  // public/game/horror-loops.js
+  var HORROR_AUDIO_VERSION, HORROR_LOOPS;
+  var init_horror_loops = __esm({
+    "public/game/horror-loops.js"() {
+      HORROR_AUDIO_VERSION = "22010";
+      HORROR_LOOPS = Object.freeze({ "horror-apartment-ambient": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-apartment-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-apartment-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1296e3, "sourceFrames": 1312e3 }, "horror-broadcast-ambient": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-broadcast-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-broadcast-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1296e3, "sourceFrames": 1312e3 }, "horror-shared-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 }, "horror-shared-relief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1552e3, "sourceFrames": 1568e3 } });
+    }
+  });
+
+  // public/game/music-assets.js
+  function resolveMusicAsset(campaignId, mood = "mystery") {
+    if (typeof campaignId !== "string" || !/^[a-z0-9-]+$/.test(campaignId)) return null;
+    const tone = MOODS.has(mood) ? mood : "mystery";
+    const theme = musicTheme(campaignId);
+    let key = `${theme}-${tone}`;
+    if (Object.hasOwn(HORROR_THEMES, campaignId)) {
+      key = tone === "grief" ? "horror-shared-grief" : tone === "hope" ? "horror-shared-relief" : `${theme}-${tone === "calm" || tone === "mystery" ? "ambient" : tone}`;
+    }
+    return {
+      key,
+      version: isHorrorScore(key) ? HORROR_AUDIO_VERSION : AUDIO_VERSION,
+      loop: MUSIC_LOOPS[key],
+      url: musicAssetUrl(key)
+    };
+  }
+  var MOODS, HORROR_THEMES, MUSIC_LOOPS, isHorrorScore, musicTheme, musicAssetUrl;
+  var init_music_assets = __esm({
+    "public/game/music-assets.js"() {
+      init_audio_loops();
+      init_horror_loops();
+      MOODS = /* @__PURE__ */ new Set(["mystery", "calm", "tension", "danger", "hope", "grief"]);
+      HORROR_THEMES = Object.freeze({
+        "hollow-apartment": "horror-apartment",
+        "drowned-broadcast": "horror-broadcast"
+      });
+      MUSIC_LOOPS = Object.freeze({ ...AUDIO_LOOPS, ...HORROR_LOOPS });
+      isHorrorScore = (key) => Object.hasOwn(HORROR_LOOPS, key);
+      musicTheme = (id) => Object.hasOwn(HORROR_THEMES, id) ? HORROR_THEMES[id] : id;
+      musicAssetUrl = (key) => isHorrorScore(key) ? `./game/audio/${key}.mp3?v=${HORROR_AUDIO_VERSION}` : `./game/audio/${key}.mp3?v=${AUDIO_VERSION}`;
+    }
+  });
+
   // public/game/scene-sound.js
   function createSceneSoundDirector(play, stop = () => {
   }) {
@@ -1308,13 +1359,13 @@ body.dice-presenting { overflow: hidden; }
       }
     };
   }
-  var SCENE_SOUNDS, allowed, SOUND_LEVELS, musicTheme, BASIC_SCENE_SOUNDS, safeSound, sceneSound;
+  var SCENE_SOUNDS, allowed, SOUND_LEVELS, BASIC_SCENE_SOUNDS, safeSound, sceneSound;
   var init_scene_sound = __esm({
     "public/game/scene-sound.js"() {
+      init_music_assets();
       SCENE_SOUNDS = Object.freeze(["knock", "scream", "murmur", "footsteps", "door-creak", "glass", "metal", "water", "wind", "radio-static", "heartbeat", "chime"]);
       allowed = new Set(SCENE_SOUNDS);
       SOUND_LEVELS = Object.freeze({ scream: 0.5, murmur: 0.64, wind: 0.65, "radio-static": 0.6, heartbeat: 0.8 });
-      musicTheme = (id) => ({ "hollow-apartment": "glass-hotel", "drowned-broadcast": "snow-radio" })[id] || id;
       BASIC_SCENE_SOUNDS = Object.freeze({
         "last-train": { carriage: "heartbeat", tunnel: "knock", brake: "metal", switch: "metal" },
         "glass-hotel": { entrance: "door-creak", service: "footsteps", stair: "footsteps", roof: "chime" },
@@ -36544,7 +36595,7 @@ body.dice-presenting { overflow: hidden; }
       init_opening();
       init_judgement();
       init_professions();
-      VERSION = "22.0.0";
+      VERSION = "22.1.0";
       STAT_LABELS = Object.freeze({ might: "\uD798", agility: "\uBBFC\uCCA9", wit: "\uD1B5\uCC30", heart: "\uAD50\uC12D" });
       clone = (value) => JSON.parse(JSON.stringify(value));
       bound = (value, low, high) => Math.max(low, Math.min(high, value));
@@ -37004,15 +37055,12 @@ body.dice-presenting { overflow: hidden; }
 
   // public/game/audio.js
   init_scene_sound();
-
-  // public/game/audio-loops.js
-  var AUDIO_VERSION = "20000";
-  var AUDIO_LOOPS = Object.freeze({ "last-train-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "last-train-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "last-train-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 857644, "sourceFrames": 873644 }, "last-train-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "last-train-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "last-train-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "glass-hotel-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 838857, "sourceFrames": 854857 }, "glass-hotel-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 869333, "sourceFrames": 885333 }, "glass-hotel-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "glass-hotel-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "moon-market-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "moon-market-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "moon-market-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 838857, "sourceFrames": 854857 }, "moon-market-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 810483, "sourceFrames": 826483 }, "moon-market-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "moon-market-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 956408, "sourceFrames": 972408 }, "deep-sea-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "deep-sea-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 869333, "sourceFrames": 885333 }, "deep-sea-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 919529, "sourceFrames": 935529 }, "deep-sea-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 846270, "sourceFrames": 862270 }, "deep-sea-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "deep-sea-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1006968, "sourceFrames": 1022968 }, "dragon-banquet-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "dragon-banquet-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "dragon-banquet-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 835200, "sourceFrames": 851200 }, "dragon-banquet-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "dragon-banquet-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "dragon-banquet-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 946909, "sourceFrames": 962909 }, "clock-city-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "clock-city-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 799673, "sourceFrames": 815673 }, "clock-city-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 850783, "sourceFrames": 866783 }, "clock-city-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 816e3, "sourceFrames": 832e3 }, "clock-city-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 784e3, "sourceFrames": 8e5 }, "clock-city-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 976e3, "sourceFrames": 992e3 }, "snow-radio-calm": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 824421, "sourceFrames": 840421 }, "snow-radio-mystery": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 846270, "sourceFrames": 862270 }, "snow-radio-tension": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 893714, "sourceFrames": 909714 }, "snow-radio-danger": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 857644, "sourceFrames": 873644 }, "snow-radio-hope": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 803692, "sourceFrames": 819692 }, "snow-radio-grief": { "sampleRate": 32e3, "startFrame": 16e3, "endFrame": 1006968, "sourceFrames": 1022968 } });
+  init_music_assets();
 
   // public/game/audio-fallback.js
   init_scene_sound();
+  init_music_assets();
   var clamp = (value, fallback = 0.5) => Number.isFinite(Number(value)) ? Math.min(1, Math.max(0, Number(value))) : fallback;
-  var MOODS = /* @__PURE__ */ new Set(["mystery", "calm", "tension", "danger", "hope", "grief"]);
   var SFX = /* @__PURE__ */ new Set(["dice", "success", "mixed", "failure", "clue", "reveal", "transition", "attack", "ability", "enemy", "victory", "death", "revive", ...SCENE_SOUNDS]);
   var PRIORITY_EFFECTS = /* @__PURE__ */ new Set(["death", "revive"]);
   var FADE_MS = 1250;
@@ -37042,6 +37090,7 @@ body.dice-presenting { overflow: hidden; }
     const prefs = { enabled: false, music: clamp(saved?.music ?? 0.25), effects: clamp(saved?.effects ?? 0.45) };
     let current = null, previous = null, desired = null, blockedDesired = null, loopSpare = null;
     let transition = 0, frameId = null, startTimer = null, pending2 = null, fade = null;
+    let genreFade = null, genreFrame = null;
     let isPaused = false, destroyed = false, ducked = false, duckLevel = 1, duckFrame = null;
     const activeEffects = /* @__PURE__ */ new Map();
     const disposed = /* @__PURE__ */ new WeakSet();
@@ -37070,6 +37119,28 @@ body.dice-presenting { overflow: hidden; }
       frameId = null;
       fade = null;
     };
+    function clearGenreFade() {
+      if (genreFrame !== null) cancelFrame(genreFrame);
+      genreFrame = null;
+      if (genreFade) dispose(genreFade.element);
+      genreFade = null;
+    }
+    function retireOtherGenre(element) {
+      clearGenreFade();
+      const retiring = { element, start: now(), ratio: level() > 0 ? clamp(element.volume / level(), 1) : 0 };
+      genreFade = retiring;
+      const step = (time) => {
+        genreFrame = null;
+        if (genreFade !== retiring || destroyed) return;
+        const progress = Math.max(0, Math.min(1, (time - retiring.start) / 350));
+        element.volume = level() * retiring.ratio * (1 - progress * progress * (3 - 2 * progress));
+        if (progress === 1) {
+          dispose(element);
+          genreFade = null;
+        } else genreFrame = requestFrame(step);
+      };
+      genreFrame = requestFrame(step);
+    }
     function cancelPending() {
       clearStartTimer();
       if (!pending2) return;
@@ -37084,6 +37155,7 @@ body.dice-presenting { overflow: hidden; }
       ++transition;
       cancelPending();
       stopFrame();
+      clearGenreFade();
       dispose(previous);
       previous = null;
       dispose(loopSpare);
@@ -37133,7 +37205,7 @@ body.dice-presenting { overflow: hidden; }
       if (current) current.volume = level();
     }
     function startPlayback(next, old, resume = false, loop = false) {
-      const points = AUDIO_LOOPS[next.dataset.key];
+      const points = MUSIC_LOOPS[next.dataset.key];
       if (resume && points) {
         const start = points.startFrame / points.sampleRate, end = points.endFrame / points.sampleRate;
         if (next.currentTime >= end) {
@@ -37143,10 +37215,13 @@ body.dice-presenting { overflow: hidden; }
           }
         }
       }
-      const request = { next, old, resume, loop, token: ++transition };
+      const enteringHorror = !resume && old && isHorrorScore(next.dataset.key) && !isHorrorScore(old.dataset.key);
+      const retainedOld = enteringHorror ? null : old;
+      if (enteringHorror) retireOtherGenre(old);
+      const request = { next, old: retainedOld, resume, loop, token: ++transition };
       pending2 = request;
       current = next;
-      previous = resume ? null : old;
+      previous = resume ? null : retainedOld;
       next.volume = 0;
       startTimer = setTimer(() => failStart(request), START_TIMEOUT_MS);
       if (!musicListeners.has(next)) {
@@ -37177,22 +37252,22 @@ body.dice-presenting { overflow: hidden; }
         clearStartTimer();
         pending2 = null;
         if (loop && old) {
-          const points2 = AUDIO_LOOPS[next.dataset.key];
+          const points2 = MUSIC_LOOPS[next.dataset.key];
           const linked = points2.startFrame / points2.sampleRate + old.currentTime - points2.endFrame / points2.sampleRate;
           try {
             next.currentTime = Math.max(0, Math.min(points2.endFrame / points2.sampleRate - 1e-3, linked));
           } catch {
           }
         }
-        crossfade(next, resume ? null : old, request.token, loop ? 240 : FADE_MS);
+        crossfade(next, resume ? null : retainedOld, request.token, loop ? 240 : FADE_MS);
       }, () => failStart(request));
     }
     function makeMusic(key, preload = "none") {
-      const element = new Media(`./game/audio/${key}.mp3?v=${AUDIO_VERSION}`);
+      const element = new Media(musicAssetUrl(key));
       element.dataset.key = key;
       element.loop = true;
       element.preload = preload;
-      const points = AUDIO_LOOPS[key];
+      const points = MUSIC_LOOPS[key];
       if (points) {
         const seek = () => {
           try {
@@ -37287,9 +37362,9 @@ body.dice-presenting { overflow: hidden; }
         if (prefs.music > 0) playDesired();
       },
       scene(campaignId, mood = "mystery") {
-        campaignId = musicTheme(campaignId);
-        if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || "")) return;
-        const next = `${campaignId}-${MOODS.has(mood) ? mood : "mystery"}`;
+        const asset = resolveMusicAsset(campaignId, mood);
+        if (destroyed || !asset) return;
+        const next = asset.key;
         if (desired !== next) blockedDesired = null;
         desired = next;
         playDesired();
@@ -37392,7 +37467,6 @@ body.dice-presenting { overflow: hidden; }
   }
 
   // public/game/audio.js
-  var MOODS2 = /* @__PURE__ */ new Set(["mystery", "calm", "tension", "danger", "hope", "grief"]);
   var SFX2 = /* @__PURE__ */ new Set(["dice", "success", "mixed", "failure", "clue", "reveal", "transition", "attack", "ability", "enemy", "victory", "death", "revive", ...SCENE_SOUNDS]);
   var PRIORITY_EFFECTS2 = /* @__PURE__ */ new Set(["death", "revive"]);
   var FADE_SECONDS = 1.25;
@@ -37412,7 +37486,7 @@ body.dice-presenting { overflow: hidden; }
     const Media = runtime.Audio || globalThis.Audio;
     const setTimer = runtime.setTimer || ((callback, duration) => setTimeout(callback, duration));
     const clearTimer = runtime.clearTimer || ((id) => clearTimeout(id));
-    const loops = runtime.loops || AUDIO_LOOPS;
+    const loops = runtime.loops || MUSIC_LOOPS;
     let storage = runtime.storage;
     if (storage === void 0) {
       try {
@@ -37558,7 +37632,7 @@ body.dice-presenting { overflow: hidden; }
         mixTimer = setTimer(() => finishMix(token), Math.max(100, (mixEndsAt - context.currentTime) * 1e3 + 5));
         return;
       }
-      const main = voices.at(-1);
+      const main = voices.at(-1)?.retiring ? null : voices.at(-1);
       for (const voice of voices) if (voice !== main) disposeVoice(voice);
       voices = main ? [main] : [];
       mixEndsAt = 0;
@@ -37567,11 +37641,26 @@ body.dice-presenting { overflow: hidden; }
       queued = null;
       if (next && next.key === desired && allowed2()) activate(next);
     }
+    function retireOtherGenre() {
+      if (!voices.some((voice) => !isHorrorScore(voice.key) && !voice.retiring)) return;
+      cancelMix();
+      const time = context.currentTime, seconds = 0.35;
+      for (const voice of voices) {
+        const from = valueAt(voice.envelope, time, voice.gain.gain.value);
+        const keepDark = isHorrorScore(voice.key);
+        voice.envelope = automate(voice.gain.gain, voice.envelope, curveBetween(from, keepDark ? 1 : 0), seconds, time);
+        voice.retiring = !keepDark;
+      }
+      voices = [...voices.filter((voice) => !isHorrorScore(voice.key)), ...voices.filter((voice) => isHorrorScore(voice.key))];
+      mixEndsAt = time + seconds;
+      const token = mixSerial;
+      mixTimer = setTimer(() => finishMix(token), seconds * 1e3 + 5);
+    }
     function activate(item2) {
       if (!allowed2() || item2.key !== desired || !context) return;
       const time = context.currentTime;
       if (voices.length > 1 && time >= mixEndsAt) finishMix(mixSerial);
-      if (voices.at(-1)?.key === item2.key) return;
+      if (voices.at(-1)?.key === item2.key && !voices.at(-1)?.retiring) return;
       let next = voices.find((voice) => voice.key === item2.key);
       if (!next && voices.length > 1) {
         queued = item2;
@@ -37595,6 +37684,7 @@ body.dice-presenting { overflow: hidden; }
         offsets.delete(item2.key);
         next = { key: item2.key, source, gain, start: item2.start, end: item2.end, startedAt: time, offset, envelope: null, disposed: false };
       }
+      next.retiring = false;
       const nextFrom = valueAt(next.envelope, time, next.gain.gain.value);
       const oldFrom = old ? valueAt(old.envelope, time, old.gain.gain.value) : 0;
       const angle = old ? Math.atan2(nextFrom, oldFrom || 0) : 0;
@@ -37627,7 +37717,7 @@ body.dice-presenting { overflow: hidden; }
       if (!allowed2() || !desired || !context) return;
       const playing = voices.find((voice) => voice.key === desired);
       if (playing) {
-        if (voices.at(-1) !== playing) activate({ key: playing.key, buffer: playing.source.buffer, start: playing.start, end: playing.end });
+        if (voices.at(-1) !== playing || playing.retiring) activate({ key: playing.key, buffer: playing.source.buffer, start: playing.start, end: playing.end });
         return;
       }
       if (pending2?.key === desired || queued?.key === desired || blockedDesired === desired) return;
@@ -37649,7 +37739,7 @@ body.dice-presenting { overflow: hidden; }
       request.timer = setTimer(failed2, LOAD_TIMEOUT_MS);
       (async () => {
         try {
-          const response = await fetcher(`./game/audio/${request.key}.mp3?v=${AUDIO_VERSION}`, { signal: request.controller.signal, cache: "force-cache", credentials: "same-origin" });
+          const response = await fetcher(musicAssetUrl(request.key), { signal: request.controller.signal, cache: "force-cache", credentials: "same-origin" });
           if (!response.ok) throw new Error("Music could not be loaded");
           const bytes = await response.arrayBuffer();
           if (pending2 !== request || !allowed2() || desired !== request.key) return;
@@ -37738,15 +37828,16 @@ body.dice-presenting { overflow: hidden; }
         persist();
       },
       scene(campaignId, mood = "mystery") {
-        campaignId = musicTheme(campaignId);
-        if (destroyed || !/^[a-z0-9-]+$/.test(campaignId || "")) return;
-        const key = `${campaignId}-${MOODS2.has(mood) ? mood : "mystery"}`;
+        const asset = resolveMusicAsset(campaignId, mood);
+        if (destroyed || !asset) return;
+        const key = asset.key;
         if (key !== desired) {
           desired = key;
           blockedDesired = null;
           queued = null;
           cancelLoad();
         }
+        if (isHorrorScore(key)) retireOtherGenre();
         playDesired();
       },
       duck(active) {
@@ -38143,7 +38234,7 @@ body.dice-presenting { overflow: hidden; }
 
   // public/game/music-director.js
   init_horror_data();
-  var MOODS3 = /* @__PURE__ */ new Set(["calm", "mystery", "tension", "danger", "hope", "grief"]);
+  var MOODS2 = /* @__PURE__ */ new Set(["calm", "mystery", "tension", "danger", "hope", "grief"]);
   var PASSIVE_GRADES = /* @__PURE__ */ new Set(["observe", "safe", "reveal", "assist", "presence", "pass"]);
   var ENDING_MOODS = Object.freeze({
     ...HORROR_ENDING_MOODS,
@@ -38229,7 +38320,7 @@ body.dice-presenting { overflow: hidden; }
       if (someoneLost(view)) return "grief";
       return ENDING_MOODS[view.campaignId]?.[scene3.id] || "calm";
     }
-    let mood = MOODS3.has(scene3.mood) ? scene3.mood : "mystery";
+    let mood = MOODS2.has(scene3.mood) ? scene3.mood : "mystery";
     const pressure = view?.pressure;
     const highPressure = Number.isFinite(pressure?.value) && Number.isFinite(pressure?.max) && pressure.max > 0 && pressure.value >= Math.ceil(pressure.max * 0.75);
     if (highPressure && mood !== "danger" && mood !== "grief") return "tension";

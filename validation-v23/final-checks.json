@@ -1,0 +1,61 @@
+{
+  "version": "23.0.0",
+  "baseVersion": "22.1.0",
+  "finalUniqueTests": 707,
+  "fullGateTests": 704,
+  "realNetworkGroups": 20,
+  "postGateChecks": {
+    "targeted": {
+      "tests": 108,
+      "pass": 108,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "focus": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "overlayBattle": {
+      "tests": 53,
+      "pass": 53,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "overlayDeployment": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "overlay": {
+    "method": "Copy frozen22.1, apply changedZIP, verify every public file and payload hash, run53battle tests plus12HTTP deployment tests and resource report",
+    "allPublicFilesEqual": 184,
+    "allPayloadHashesMatch": true,
+    "resourceReportIdentical": true,
+    "newEnemySprites": 9,
+    "newBattleEffects": 13
+  },
+  "browserVisualQA": {
+    "completed": false,
+    "reason": "Local browser binary unavailable; cloudbrowser could not reach local preview server. No screenshots or device listening claims."
+  },
+  "artifactExclusions": [
+    "node_modules",
+    ".env secrets",
+    "local saved rooms",
+    "temporary QA server/routes",
+    "13MB raw reachability dump",
+    "uncompressed PNG/WAV masters"
+  ]
+}

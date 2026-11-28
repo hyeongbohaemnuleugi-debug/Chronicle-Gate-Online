@@ -1,3 +1,3 @@
-/** Original v22.1 horror scores. Codec guards are outside the repeated period. */
-export const HORROR_AUDIO_VERSION = '22010';
+/** Original v24.1 horror scores. Codec guards are outside the repeated period. */
+export const HORROR_AUDIO_VERSION = '24100';
 export const HORROR_LOOPS = Object.freeze({"horror-apartment-ambient":{"sampleRate":32000,"startFrame":16000,"endFrame":1552000,"sourceFrames":1568000},"horror-apartment-tension":{"sampleRate":32000,"startFrame":16000,"endFrame":1552000,"sourceFrames":1568000},"horror-apartment-danger":{"sampleRate":32000,"startFrame":16000,"endFrame":1296000,"sourceFrames":1312000},"horror-broadcast-ambient":{"sampleRate":32000,"startFrame":16000,"endFrame":1552000,"sourceFrames":1568000},"horror-broadcast-tension":{"sampleRate":32000,"startFrame":16000,"endFrame":1552000,"sourceFrames":1568000},"horror-broadcast-danger":{"sampleRate":32000,"startFrame":16000,"endFrame":1296000,"sourceFrames":1312000},"horror-shared-grief":{"sampleRate":32000,"startFrame":16000,"endFrame":1552000,"sourceFrames":1568000},"horror-shared-relief":{"sampleRate":32000,"startFrame":16000,"endFrame":1552000,"sourceFrames":1568000}});

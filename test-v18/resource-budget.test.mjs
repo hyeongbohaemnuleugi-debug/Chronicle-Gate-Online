@@ -13,6 +13,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createAudio } from '../public/game/audio.js';
+import { HORROR_LOOPS } from '../public/game/horror-loops.js';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const GAME = path.join(ROOT, 'public/game');
@@ -22,10 +23,16 @@ const manifest = JSON.parse(fs.readFileSync(path.join(AUDIO, 'manifest.json'), '
 const THEMES = ['last-train', 'glass-hotel', 'moon-market', 'deep-sea', 'dragon-banquet', 'clock-city', 'snow-radio'];
 const MOODS = ['calm', 'danger', 'hope', 'mystery', 'tension', 'grief'];
 const EFFECTS = ['dice', 'success', 'mixed', 'failure', 'clue', 'reveal', 'transition', 'attack', 'ability', 'enemy', 'victory', 'death', 'revive'];
-// v21 expands authored stories while preserving the exact v20 media and D20 runtime.
+const HORROR_KEYS = [
+  'horror-apartment-ambient', 'horror-apartment-tension', 'horror-apartment-danger',
+  'horror-broadcast-ambient', 'horror-broadcast-tension', 'horror-broadcast-danger',
+  'horror-shared-grief', 'horror-shared-relief',
+];
+// v22.1 preserves the old scores and adds eight explicitly budgeted horror tracks.
 // Budgets apply to measured delivered files; no WAV masters or runtime synthesis are shipped.
-const BUDGET = 20_000_000;
-const AUDIO_BUDGET = 14_500_000;
+const BUDGET = 22_000_000;
+const AUDIO_BUDGET = 17_000_000;
+const HORROR_BUDGET = 2_400_000;
 const relative = file => path.relative(ROOT, file).split(path.sep).join('/');
 function files(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
@@ -81,14 +88,16 @@ function inspectMp3(buffer) {
   return { ...first, frames, seconds, maxKbps };
 }
 
-test('all public game resources fit the explicit 20 MB release budget', t => {
+test('all public game resources fit 22 MB, with audio below 17 MB and new horror scores below 2.4 MB', t => {
   const total = allFiles.reduce((sum, file) => sum + fileBytes(file), 0);
   const audioTotal = files(AUDIO).reduce((sum, file) => sum + fileBytes(file), 0);
   const artTotal = files(ART).reduce((sum, file) => sum + fileBytes(file), 0);
   assert.ok(total <= BUDGET, `public/game is ${total.toLocaleString()} bytes, exceeding ${BUDGET.toLocaleString()}; largest: ${allFiles.sort((a, b) => fileBytes(b) - fileBytes(a)).slice(0, 4).map(f => `${relative(f)}=${fileBytes(f)}`).join(', ')}`);
-  assert.ok(audioTotal <= AUDIO_BUDGET, `audio directory exceeds its 14.5 MB delivery budget: ${audioTotal}`);
+  assert.ok(audioTotal <= AUDIO_BUDGET, `audio directory exceeds its 17 MB delivery budget: ${audioTotal}`);
+  const horrorTotal = HORROR_KEYS.reduce((sum, key) => sum + fileBytes(path.join(AUDIO, `${key}.mp3`)), 0);
+  assert.ok(horrorTotal <= HORROR_BUDGET, `eight horror scores exceed their 2.4 MB delivery budget: ${horrorTotal}`);
   assert.ok(!allFiles.some(file => /\.(?:wav|flac|aiff|aif)$/i.test(file)), 'uncompressed masters must not be shipped in public/game');
-  t.diagnostic(`public/game=${total} bytes; audio=${audioTotal}; art=${artTotal}; music=42, effects=13`);
+  t.diagnostic(`public/game=${total} bytes; audio=${audioTotal}; art=${artTotal}; music=50, effects=25; new horror=${horrorTotal}`);
 });
 
 test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with honest duration metadata', () => {
@@ -100,7 +109,9 @@ test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with ho
     ...THEMES.flatMap(theme => MOODS.map(mood => `${theme}-${mood}.mp3`)),
     ...EFFECTS.map(effect => `${effect}.mp3`),
   ].sort());
-  assert.deepEqual(files(AUDIO).filter(file => /\.mp3$/i.test(file)&&!SCENE_SOUNDS.includes(path.basename(file,'.mp3'))).map(file => path.basename(file)).sort(), names.slice().sort());
+  assert.deepEqual(files(AUDIO).filter(file => /\.mp3$/i.test(file)).map(file => path.basename(file)).sort(), [
+    ...names, ...SCENE_SOUNDS.map(key => `${key}.mp3`), ...HORROR_KEYS.map(key => `${key}.mp3`),
+  ].sort(), 'the complete MP3 directory must contain exactly 55 original, 12 contextual and eight horror files');
   for (const entry of manifest.files) {
     assert.equal(path.basename(entry.file), entry.file, 'manifest must reference a local filename');
     const absolute = path.join(AUDIO, entry.file);
@@ -118,6 +129,30 @@ test('all 42 mood scores and 13 effects are unique, valid mono MP3 files with ho
       assert.ok(THEMES.includes(entry.theme)); assert.ok(MOODS.includes(entry.mood));
       assert.ok(buffer.length < 480_000, `${entry.file}: per-track bandwidth budget`);
     } else { assert.equal(entry.kind, 'effect'); assert.ok(buffer.length < 48_000, `${entry.file}: effect bandwidth budget`); }
+  }
+});
+
+test('all eight horror scores have verified bytes, 48 kbps mono frames and matching authored loop metadata', () => {
+  assert.deepEqual(Object.keys(HORROR_LOOPS).sort(), [...HORROR_KEYS].sort());
+  const audit = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts/horror-score-audit-v22_1.json'), 'utf8'));
+  assert.deepEqual(audit.tracks.map(entry => entry.id).sort(), [...HORROR_KEYS].sort());
+  for (const key of HORROR_KEYS) {
+    const entry = audit.tracks.find(row => row.id === key);
+    const file = path.join(AUDIO, `${key}.mp3`), buffer = fs.readFileSync(file), decoded = inspectMp3(buffer);
+    assert.equal(path.basename(entry.file), `${key}.mp3`, key);
+    assert.equal(buffer.length, entry.bytes, `${key}: size matches the delivered audit`);
+    assert.equal(crypto.createHash('sha256').update(buffer).digest('hex'), entry.sha256, `${key}: MP3 hash`);
+    assert.equal(decoded.channels, 1, key);
+    assert.equal(decoded.sampleRate, 32_000, key);
+    assert.equal(decoded.maxKbps, 48, `${key}: dedicated horror encoding budget`);
+    const loop = HORROR_LOOPS[key];
+    for (const field of ['sampleRate', 'startFrame', 'endFrame', 'sourceFrames']) assert.equal(loop[field], entry.loop[field], `${key}: ${field}`);
+    assert.equal(loop.sampleRate, decoded.sampleRate, key);
+    assert.equal(loop.startFrame, 16_000, `${key}: half-second leading guard`);
+    assert.equal(loop.sourceFrames - loop.endFrame, 16_000, `${key}: half-second trailing guard`);
+    assert.ok(loop.endFrame > loop.startFrame, `${key}: nonempty loop`);
+    assert.ok(Math.abs(decoded.seconds - loop.sourceFrames / loop.sampleRate) < .2, `${key}: actual MPEG duration matches authored source`);
+    assert.ok(buffer.length > 100_000 && buffer.length < 350_000, `${key}: complete bounded score`);
   }
 });
 

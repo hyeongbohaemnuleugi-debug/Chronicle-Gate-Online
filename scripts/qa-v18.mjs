@@ -1,4 +1,4 @@
-import { musicTheme } from '../public/game/scene-sound.js';
+import { resolveMusicAsset } from '../public/game/music-assets.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +30,7 @@ for(const c of CAMPAIGNS){
  check(Object.keys(c.clues||{}).length>=6,`${c.id}: at least six grounded clues`);
  check(playable.filter(n=>n.resurrection).length>=2,`${c.id}: at least two revival opportunities`);
  check(fs.existsSync(path.join(root,`public/game/art/${c.id}.webp`)),`${c.id}: art missing`);
- for(const mood of moods)check(fs.existsSync(path.join(root,`public/game/audio/${musicTheme(c.id)}-${mood}.mp3`)),`${c.id}: ${mood} audio missing`);
+ for(const mood of moods){const asset=resolveMusicAsset(c.id,mood);check(Boolean(asset?.loop)&&fs.existsSync(path.join(root,`public/game/audio/${asset?.key}.mp3`)),`${c.id}: ${mood} audio or loop metadata missing`);}
  let choiceCount=0,harmful=0,conditional=0;
  for(const [id,node] of Object.entries(c.nodes)){
   check(node.id===id,`${c.id}/${id}: id mismatch`);

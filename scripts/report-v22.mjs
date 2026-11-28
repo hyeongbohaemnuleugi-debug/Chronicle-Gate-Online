@@ -1,5 +1,5 @@
 /**
- * Reproducible authored-content and static-file measurements for v22.
+ * Reproducible authored-content and static-file measurements for v22 / v22.1.
  * Run: node scripts/report-v22.mjs [--baseline /path/to/chronicle-v21]
  * No network, hosting-account queries, timings or performance estimates.
  */
@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { CAMPAIGNS, getCampaign } from '../public/game/campaigns/index.js';
 import { OPENINGS } from '../public/game/opening.js';
 import { AUDIO_LOOPS } from '../public/game/audio-loops.js';
+import { HORROR_LOOPS, HORROR_AUDIO_VERSION } from '../public/game/horror-loops.js';
+import { MUSIC_LOOPS, resolveMusicAsset } from '../public/game/music-assets.js';
 import { SCENE_SOUNDS, sceneSound, musicTheme } from '../public/game/scene-sound.js';
 import { VERSION } from '../public/game/engine.js';
 
@@ -128,6 +130,12 @@ const number = value => value.toLocaleString('en-US');
 const amount = value => `${number(value)} B (${(value / 1_000_000).toFixed(3)} MB / ${(value / 1_048_576).toFixed(3)} MiB)`;
 const md = value => String(value).replaceAll('|', '\\|').replaceAll('\n', ' ');
 const issues = [];
+const HORROR_KEYS = Object.freeze([
+  'horror-apartment-ambient', 'horror-apartment-tension', 'horror-apartment-danger',
+  'horror-broadcast-ambient', 'horror-broadcast-tension', 'horror-broadcast-danger',
+  'horror-shared-grief', 'horror-shared-relief',
+]);
+const MUSIC_MOODS = ['calm', 'mystery', 'tension', 'danger', 'hope', 'grief'];
 
 const args = process.argv.slice(2);
 let optionalBaseline = null;
@@ -224,6 +232,10 @@ const stories = CAMPAIGNS.map(base => {
     addedEpicItems: Object.entries(spec.items || {}).map(([id, item]) => ({ id, ...item })),
     epicEndingEpiloguePassages: Object.values(spec.endingEpilogues || {}).reduce((total, passages) => total + passages.length, 0),
     musicTheme: musicTheme(base.id),
+    musicAssets: Object.fromEntries(MUSIC_MOODS.map(mood => {
+      const asset = resolveMusicAsset(base.id, mood);
+      return [mood, { key: asset.key, version: asset.version }];
+    })),
     artwork,
   };
 });
@@ -233,11 +245,29 @@ const audioFiles = files('public/game/audio');
 const artFiles = files('public/game/art');
 const mp3Files = audioFiles.filter(file => file.endsWith('.mp3'));
 const webpFiles = artFiles.filter(file => file.endsWith('.webp'));
-const musicFiles = mp3Files.filter(file => Object.hasOwn(AUDIO_LOOPS, path.basename(file, '.mp3')));
+const musicFiles = mp3Files.filter(file => Object.hasOwn(MUSIC_LOOPS, path.basename(file, '.mp3')));
+const originalMusicFiles = musicFiles.filter(file => Object.hasOwn(AUDIO_LOOPS, path.basename(file, '.mp3')));
 const effectFiles = mp3Files.filter(file => !musicFiles.includes(file));
 const oldMedia = Object.keys(BASELINE_V21.preservedFiles).filter(file => /\.(mp3|webp)$/u.test(file));
 const newMp3 = mp3Files.filter(file => !oldMedia.includes(file));
 const newArt = webpFiles.filter(file => !oldMedia.includes(file));
+const horrorMusicFiles = HORROR_KEYS.map(key => `public/game/audio/${key}.mp3`);
+const contextualFiles = SCENE_SOUNDS.map(id => `public/game/audio/${id}.mp3`);
+const horrorAudit = JSON.parse(fs.readFileSync(full('scripts/horror-score-audit-v22_1.json'), 'utf8'));
+if (JSON.stringify((horrorAudit.tracks || []).map(entry => entry.id).sort()) !== JSON.stringify([...HORROR_KEYS].sort())) issues.push('공포 배경음 검증 명세는 여덟 파일과 정확히 대응해야 합니다.');
+if (JSON.stringify(Object.keys(HORROR_LOOPS).sort()) !== JSON.stringify([...HORROR_KEYS].sort())) issues.push('공포 배경음 루프는 지정한 여덟 파일과 정확히 대응해야 합니다.');
+const horrorScores = HORROR_KEYS.map(key => {
+  const file = `public/game/audio/${key}.mp3`, loop = HORROR_LOOPS[key];
+  if (!fs.existsSync(full(file)) || !loop) { issues.push(`공포 배경음 누락: ${key}`); return { key, file, missing: true }; }
+  if (!(loop.sampleRate === 32000 && loop.startFrame >= 0 && loop.endFrame > loop.startFrame && loop.sourceFrames > loop.endFrame)) issues.push(`공포 배경음 루프 범위가 올바르지 않습니다: ${key}`);
+  const expected = horrorAudit.tracks?.find(entry => entry.id === key);
+  const actualBytes = bytes(file), actualSha256 = shaFile(full(file));
+  const matches = expected?.bytes === actualBytes && expected?.sha256 === actualSha256 && ['sampleRate', 'startFrame', 'endFrame', 'sourceFrames'].every(field => loop[field] === expected?.loop?.[field]);
+  if (!matches) issues.push(`공포 배경음 검증 명세 불일치: ${key}`);
+  return { key, file, bytes: actualBytes, sha256: actualSha256, manifestMatches: matches, version: HORROR_AUDIO_VERSION,
+    sampleRate: loop.sampleRate, loopSeconds: (loop.endFrame - loop.startFrame) / loop.sampleRate,
+    sourceSeconds: loop.sourceFrames / loop.sampleRate };
+});
 const foleyManifest = JSON.parse(fs.readFileSync(full('scripts/foley-v22.json'), 'utf8'));
 const contextualEffects = SCENE_SOUNDS.map(id => {
   const relative = `public/game/audio/${id}.mp3`, expected = foleyManifest.files[id];
@@ -247,7 +277,8 @@ const contextualEffects = SCENE_SOUNDS.map(id => {
   if (!matches) issues.push(`상황 효과음 manifest 불일치: ${id}`);
   return { id, file: relative, bytes: actualBytes, sha256: actualSha256, authoredSeconds: expected.seconds, manifestMatches: matches };
 });
-if (contextualEffects.length !== 12 || newMp3.length !== 12) issues.push('새 상황 효과음 12개와 새 MP3 파일 수가 일치하지 않습니다.');
+if (contextualEffects.length !== 12 || newMp3.length !== 20 || JSON.stringify([...newMp3].sort()) !== JSON.stringify([...contextualFiles, ...horrorMusicFiles].sort())) issues.push('v21 이후 추가 MP3는 상황 효과음 12개와 공포 배경음 8개여야 합니다.');
+if (mp3Files.length !== 75 || originalMusicFiles.length !== 42 || musicFiles.length !== 50 || effectFiles.length !== 25) issues.push('MP3 구성은 기존 배경음 42곡 + 공포 배경음 8곡 + 효과음 25개여야 합니다.');
 
 const preservationFiles = Object.entries(BASELINE_V21.preservedFiles).map(([relative, expected]) => {
   const current = fs.existsSync(full(relative)) ? shaFile(full(relative)) : null;
@@ -265,14 +296,18 @@ const baselineResources = BASELINE_V21.resources;
 const staticResources = {
   publicGame: { files: allGameFiles.length, bytes: sum(allGameFiles), baselineBytes: baselineResources.publicGameBytes, increaseBytes: sum(allGameFiles) - baselineResources.publicGameBytes },
   audioDirectory: { files: audioFiles.length, bytes: sum(audioFiles), baselineBytes: baselineResources.audioDirectoryBytes, increaseBytes: sum(audioFiles) - baselineResources.audioDirectoryBytes },
-  mp3: { files: mp3Files.length, bytes: sum(mp3Files), musicFiles: musicFiles.length, musicBytes: sum(musicFiles), effectFiles: effectFiles.length, effectBytes: sum(effectFiles) },
-  newContextualEffects: { files: newMp3.length, bytes: sum(newMp3), assets: contextualEffects },
+  mp3: { files: mp3Files.length, bytes: sum(mp3Files), baselineBytes: sum(oldMedia.filter(file => file.endsWith('.mp3'))), increaseBytes: sum(newMp3), musicFiles: musicFiles.length, musicBytes: sum(musicFiles), effectFiles: effectFiles.length, effectBytes: sum(effectFiles) },
+  newContextualEffects: { files: contextualEffects.length, bytes: sumProperty(contextualEffects, 'bytes'), assets: contextualEffects },
+  newHorrorScores: { files: horrorScores.length, bytes: sumProperty(horrorScores, 'bytes'), assets: horrorScores },
   artDirectory: { files: artFiles.length, bytes: sum(artFiles), baselineBytes: baselineResources.artDirectoryBytes, increaseBytes: sum(artFiles) - baselineResources.artDirectoryBytes },
   webp: { files: webpFiles.length, bytes: sum(webpFiles), newFiles: newArt.length, newBytes: sum(newArt) },
   diceModule: { file: 'public/game/dice.js', bytes: bytes('public/game/dice.js'), sha256: shaFile(full('public/game/dice.js')) },
   offlineHtml: { file: 'public/offline.html', bytes: bytes('public/offline.html'), baselineBytes: baselineResources.offlineHtmlBytes, increaseBytes: bytes('public/offline.html') - baselineResources.offlineHtmlBytes },
   indexHtml: { file: 'public/index.html', bytes: bytes('public/index.html'), copyPasteExact: fs.readFileSync(full('public/index.html')).equals(fs.readFileSync(full('COPYPASTE/index.html.txt'))) },
 };
+if (staticResources.publicGame.bytes > 22_000_000) issues.push('public/game 정적 파일이 22,000,000바이트 한도를 초과했습니다.');
+if (staticResources.audioDirectory.bytes > 17_000_000) issues.push('오디오 정적 파일이 17,000,000바이트 한도를 초과했습니다.');
+if (staticResources.newHorrorScores.bytes > 2_400_000) issues.push('추가 공포 배경음이 2,400,000바이트 한도를 초과했습니다.');
 const modeTotals = mode => Object.fromEntries(['playableScenes', 'ordinaryEndings', 'partyDeathEndings', 'choices', 'riskyChoices', 'outcomePassages', 'clues', 'items', 'flags', 'professions', 'combatScenes', 'resurrectionSceneBindings', 'sceneSoundBindings', 'outcomeSoundBindings']
   .map(key => [key, stories.reduce((total, story) => total + story[mode][key], 0)]));
 const report = {
@@ -316,9 +351,11 @@ const report = {
     files: preservationFiles,
   },
   musicReuse: {
-    existingMusicFiles: musicFiles.length,
-    horrorThemes: stories.filter(story => story.newInV22).map(story => ({ campaignId: story.id, title: story.title, themeId: story.musicTheme, themeTitle: stories.find(other => other.id === story.musicTheme)?.title })),
-    newMusicFiles: newMp3.filter(file => Object.hasOwn(AUDIO_LOOPS, path.basename(file, '.mp3'))).length,
+    existingMusicFiles: originalMusicFiles.length,
+    horrorThemes: stories.filter(story => story.newInV22).map(story => ({ campaignId: story.id, title: story.title, themeId: story.musicTheme, moodAssets: story.musicAssets })),
+    newMusicFiles: horrorMusicFiles.length,
+    sharedHorrorFiles: ['horror-shared-grief', 'horror-shared-relief'],
+    horrorScoreSource: '프로젝트용으로 작성한 공포 배경음 8곡. 이야기별 탐색·긴장·전투 3곡씩과 공유하는 상실·절제된 안도 2곡이다. 평상과 조사는 같은 탐색곡을 사용한다.',
     contextualEffectSource: foleyManifest.source,
   },
   validation: { complete: issues.length === 0, issues },
@@ -343,7 +380,7 @@ if (issues.length) {
   };
   const EFFECT_NAMES = { knock: '문 두드림', scream: '비명 느낌의 합성음', murmur: '웅성거림', footsteps: '발걸음', 'door-creak': '문 경첩', glass: '유리', metal: '금속 충격', water: '물', wind: '바람', 'radio-static': '무전 잡음', heartbeat: '심장 박동', chime: '종' };
   const lines = [
-    '# 크로니클 게이트 v22 — 이야기와 분량 안내', '',
+    `# 크로니클 게이트 v${VERSION} — 이야기와 분량 안내`, '',
     `v22에는 **${report.totals.stories}개 이야기**가 있으며, 모든 이야기에서 **기본 / 서사시**를 고릅니다. 기존 일곱 편의 기본 원고를 유지하고 공포 중심 이야기 두 편을 추가했습니다. 시작 방식은 직업별 개인 도입 후 이야기 속에서 합류하는 방식으로 통일했습니다.`, '',
     '## 기본과 서사시', '',
     '| 이야기 | 기본 장면 | 서사시 장면 | 일반 결말 | 기본 예상 | 서사시 예상 | 개인 도입 직업 |',
@@ -369,15 +406,15 @@ if (issues.length) {
     `새 상황 효과음은 **${contextualEffects.length}개**, MP3 합계 **${amount(staticResources.newContextualEffects.bytes)}**입니다. 장면에 실제로 등장하는 소리에 연결합니다. 사람 음성이나 외부 음원 샘플을 가져온 녹음이 아니라 프로젝트의 합성 스크립트로 만든 효과음입니다.`, '',
     '| 효과음 | 파일 | 파일 크기 |', '|---|---|---:|',
     ...contextualEffects.map(effect => `| ${EFFECT_NAMES[effect.id]} | \`${effect.file}\` | ${number(effect.bytes)} B |`), '',
-    `기존 배경음 ${staticResources.mp3.musicFiles}곡과 기존 판정·전투 효과음을 포함한 **v21 MP3 55개는 SHA-256이 모두 동일**합니다. 새 공포편은 다음 기존 음악 테마를 공유하고 장면 분위기에 맞는 음악을 선택합니다. 새 배경음 MP3를 별도로 중복 저장하지 않습니다.`, '',
-    '| 새 공포 이야기 | 사용하는 음악 테마 |', '|---|---|',
-    ...report.musicReuse.horrorThemes.map(theme => `| ${md(theme.title)} | ${md(theme.themeTitle)} |`), '',
-    '평상·미스터리·긴장·전투·희망·슬픔의 음악 분위기를 사용하며 사망과 전멸에는 슬픔이 우선합니다. 상황 효과음은 새 읽기 장면이나 새 결과에 연결하며, 같은 화면의 재전송·관찰·인원 갱신 때마다 다시 반복하지 않도록 별도 수신 기록으로 관리합니다. 음악 재생 검증과 온라인 동작 검증의 실행 결과는 `VALIDATION_V22.md`에서 확인합니다.', '',
+    `기존 배경음 ${originalMusicFiles.length}곡과 기존 판정·전투 효과음을 포함한 **v21 MP3 55개는 SHA-256이 모두 동일**합니다. v22.1에서는 공포 두 편에 쓰던 호텔·설원 음악 연결을 새 공포 배경음 **${horrorScores.length}곡**으로 교체했습니다. 새 배경음 합계는 **${amount(staticResources.newHorrorScores.bytes)}**입니다. 원작 일곱 이야기의 음원은 재인코딩하지 않았습니다.`, '',
+    '| 공포 이야기 | 평상·조사 | 긴장·전투 | 상실·안도 |', '|---|---|---|---|',
+    ...report.musicReuse.horrorThemes.map(theme => `| ${md(theme.title)} | \`${theme.moodAssets.calm.key}\` | \`${theme.moodAssets.tension.key}\` / \`${theme.moodAssets.danger.key}\` | 공통 상실곡 / 절제된 안도곡 |`), '',
+    '각 공포편의 평상·조사는 같은 어두운 탐색곡을 사용해 관찰만으로 곡이 다시 시작되지 않도록 했습니다. 긴장·전투에는 해당 이야기의 별도 곡을 사용하고, 희망·부활은 밝은 축하곡 대신 절제된 안도곡으로 연결합니다. 사망과 전멸에는 상실곡이 우선합니다. 상실·안도 두 곡만 두 공포편이 공유하므로 중복 MP3를 저장하지 않습니다. 상황 효과음은 새 읽기 장면이나 새 결과에 연결하며, 같은 화면의 재전송·관찰·인원 갱신 때마다 다시 반복하지 않도록 별도 수신 기록으로 관리합니다. 기존 v22 검사 범위는 `VALIDATION_V22.md`, 이번 배경음 수정 결과는 v22.1 패치 안내에서 확인합니다.', '',
     '## 정적 파일 용량과 보존 범위', '',
-    '| 범위 | v22 파일 수 | v22 바이트 | v21 대비 바이트 |', '|---|---:|---:|---:|',
+    `| 범위 | v${VERSION} 파일 수 | v${VERSION} 바이트 | v21 대비 바이트 |`, '|---|---:|---:|---:|',
     `| \`public/game/\` 전체 | ${staticResources.publicGame.files} | ${number(staticResources.publicGame.bytes)} | +${number(staticResources.publicGame.increaseBytes)} |`,
     `| \`public/game/audio/\` 전체 | ${staticResources.audioDirectory.files} | ${number(staticResources.audioDirectory.bytes)} | +${number(staticResources.audioDirectory.increaseBytes)} |`,
-    `| MP3만 | ${staticResources.mp3.files} | ${number(staticResources.mp3.bytes)} | +${number(staticResources.newContextualEffects.bytes)} |`,
+    `| MP3만 | ${staticResources.mp3.files} | ${number(staticResources.mp3.bytes)} | +${number(staticResources.mp3.increaseBytes)} |`,
     `| \`public/game/art/\` 전체 | ${staticResources.artDirectory.files} | ${number(staticResources.artDirectory.bytes)} | +${number(staticResources.artDirectory.increaseBytes)} |`,
     `| 장면 WebP만 | ${staticResources.webp.files} | ${number(staticResources.webp.bytes)} | +${number(staticResources.webp.newBytes)} |`,
     `| \`public/offline.html\` | 1 | ${number(staticResources.offlineHtml.bytes)} | +${number(staticResources.offlineHtml.increaseBytes)} |`, '',
@@ -389,9 +426,9 @@ if (issues.length) {
     '```bash', 'node scripts/report-v22.mjs', '```', '',
     '스크립트 안에 v21 보존 기준 해시가 들어 있어 v21 폴더 없이도 재실행할 수 있습니다. v21 원본 폴더를 추가로 대조하려면 다음처럼 경로를 넘깁니다.', '',
     '```bash', 'node scripts/report-v22.mjs --baseline ../chronicle-v21', '```', '',
-    '아홉 이야기·개인 도입·그림·효과음이 완성되지 않았거나 보존 기준이 맞지 않으면 종료 코드 1을 반환하고 완성 보고서를 덮어쓰지 않습니다. 이 스크립트는 소스·정적 자원 검사이며 실제 게임 엔진과 서버 검증을 대신하지 않습니다.', '',
+    '아홉 이야기·개인 도입·그림·효과음·공포 배경음이 완성되지 않았거나 보존 기준과 용량 한도가 맞지 않으면 종료 코드 1을 반환하고 완성 보고서를 덮어쓰지 않습니다. 이 스크립트는 소스·정적 자원 검사이며 실제 게임 엔진과 서버 검증을 대신하지 않습니다.', '',
   ];
   fs.writeFileSync(full('RESOURCE_REPORT_V22.json'), JSON.stringify(report, null, 2) + '\n');
   fs.writeFileSync(full('STORY_EXPANSION_V22.md'), lines.join('\n'));
-  console.log(JSON.stringify({ version: report.version, stories: report.totals.stories, basicScenes: report.totals.basic.playableScenes, epicScenes: report.totals.epic.playableScenes, ordinaryEndings: report.totals.distinctOrdinaryEndingTemplates, openingProfessions: report.totals.openingProfessions, preservedFiles: report.preservation.embeddedManifestFiles, preserved: report.preservation.allMatch, publicGameBytes: staticResources.publicGame.bytes, newSfxBytes: staticResources.newContextualEffects.bytes, complete: true }, null, 2));
+  console.log(JSON.stringify({ version: report.version, stories: report.totals.stories, basicScenes: report.totals.basic.playableScenes, epicScenes: report.totals.epic.playableScenes, ordinaryEndings: report.totals.distinctOrdinaryEndingTemplates, openingProfessions: report.totals.openingProfessions, preservedFiles: report.preservation.embeddedManifestFiles, preserved: report.preservation.allMatch, publicGameBytes: staticResources.publicGame.bytes, newSfxBytes: staticResources.newContextualEffects.bytes, newHorrorScoreBytes: staticResources.newHorrorScores.bytes, complete: true }, null, 2));
 }

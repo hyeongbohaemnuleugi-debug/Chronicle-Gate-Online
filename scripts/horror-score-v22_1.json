@@ -1,0 +1,2402 @@
+{
+  "version": "22.1.0",
+  "audioVersion": "22010",
+  "sampleRate": 32000,
+  "provenance": "Original equation-based instruments and authored notes. No recordings, sampled voices, external music, soundfonts, or generative music service.",
+  "delivery": {
+    "codec": "MP3",
+    "bitrate": "48k",
+    "channels": 1,
+    "guardSeconds": 0.5,
+    "peakCeilingDbtp": -3.0
+  },
+  "tracks": [
+    {
+      "id": "horror-apartment-ambient",
+      "seconds": 48,
+      "title": "벽 너머에 남은 숨",
+      "intent": "읽기를 방해하지 않는 낮은 음역과 드문 응답. 조용하지만 안전하다는 느낌은 주지 않는다.",
+      "palette": "apartment",
+      "targetLufs": -24.5,
+      "pedal": "D2",
+      "airLevel": 0.015,
+      "room": 0.39,
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "멀리 있는 소리"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "벽 너머의 응답"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "가까워지는 흔적"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "다시 남은 빈자리"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.8,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": -1.49,
+          "durationSeconds": 13.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": -1.18,
+          "durationSeconds": 13.4,
+          "note": "Eb3",
+          "instrument": "bow",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 6.7,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 10.2,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": 10.51,
+          "durationSeconds": 13.4,
+          "note": "Bb2",
+          "instrument": "bow",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": 10.82,
+          "durationSeconds": 13.4,
+          "note": "F3",
+          "instrument": "bow",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 17.9,
+          "durationSeconds": 5.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 22.2,
+          "durationSeconds": 13.4,
+          "note": "C2",
+          "instrument": "bow",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": 22.51,
+          "durationSeconds": 13.4,
+          "note": "G2",
+          "instrument": "bow",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": 22.82,
+          "durationSeconds": 13.4,
+          "note": "Db3",
+          "instrument": "bow",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 30.7,
+          "durationSeconds": 5.4,
+          "note": "G2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 34.2,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": 34.51,
+          "durationSeconds": 13.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": 34.82,
+          "durationSeconds": 13.4,
+          "note": "E3",
+          "instrument": "bow",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 41.9,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 2.7,
+          "durationSeconds": 3.7,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 8.9,
+          "durationSeconds": 3.7,
+          "note": "Eb3",
+          "instrument": "felt-low",
+          "velocity": 0.39
+        },
+        {
+          "atSeconds": 16.1,
+          "durationSeconds": 3.7,
+          "note": "A2",
+          "instrument": "felt-low",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 22.6,
+          "durationSeconds": 3.7,
+          "note": "F3",
+          "instrument": "felt-low",
+          "velocity": 0.39
+        },
+        {
+          "atSeconds": 28.7,
+          "durationSeconds": 3.7,
+          "note": "Db3",
+          "instrument": "felt-low",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 34.2,
+          "durationSeconds": 3.7,
+          "note": "C3",
+          "instrument": "felt-low",
+          "velocity": 0.39
+        },
+        {
+          "atSeconds": 40.7,
+          "durationSeconds": 3.7,
+          "note": "E3",
+          "instrument": "felt-low",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 45.2,
+          "durationSeconds": 3.7,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.39
+        }
+      ]
+    },
+    {
+      "id": "horror-apartment-tension",
+      "seconds": 48,
+      "title": "문틈이 가까워질 때",
+      "intent": "불규칙한 저음 박동과 가까워지는 마찰음. 해결되지 않는 음정으로 경계심을 유지한다.",
+      "palette": "apartment",
+      "targetLufs": -23.0,
+      "pedal": "D2",
+      "airLevel": 0.015,
+      "room": 0.39,
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "멀리 있는 소리"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "벽 너머의 응답"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "가까워지는 흔적"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "다시 남은 빈자리"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.8,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": -1.49,
+          "durationSeconds": 13.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": -1.18,
+          "durationSeconds": 13.4,
+          "note": "Eb3",
+          "instrument": "bow",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 6.7,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 2.4,
+          "durationSeconds": 5.6,
+          "note": "Eb3",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 10.2,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": 10.51,
+          "durationSeconds": 13.4,
+          "note": "Bb2",
+          "instrument": "bow",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": 10.82,
+          "durationSeconds": 13.4,
+          "note": "F3",
+          "instrument": "bow",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 17.9,
+          "durationSeconds": 5.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 14.4,
+          "durationSeconds": 5.6,
+          "note": "F3",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 22.2,
+          "durationSeconds": 13.4,
+          "note": "C2",
+          "instrument": "bow",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": 22.51,
+          "durationSeconds": 13.4,
+          "note": "G2",
+          "instrument": "bow",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": 22.82,
+          "durationSeconds": 13.4,
+          "note": "Db3",
+          "instrument": "bow",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 30.7,
+          "durationSeconds": 5.4,
+          "note": "G2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 26.4,
+          "durationSeconds": 5.6,
+          "note": "Db3",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 34.2,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": 34.51,
+          "durationSeconds": 13.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": 34.82,
+          "durationSeconds": 13.4,
+          "note": "E3",
+          "instrument": "bow",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 41.9,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 38.4,
+          "durationSeconds": 5.6,
+          "note": "E3",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 2.7,
+          "durationSeconds": 2.4,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 8.9,
+          "durationSeconds": 2.4,
+          "note": "Eb3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 16.1,
+          "durationSeconds": 2.4,
+          "note": "A2",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 22.6,
+          "durationSeconds": 2.4,
+          "note": "F3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 28.7,
+          "durationSeconds": 2.4,
+          "note": "Db3",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 34.2,
+          "durationSeconds": 2.4,
+          "note": "C3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 40.7,
+          "durationSeconds": 2.4,
+          "note": "E3",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 45.2,
+          "durationSeconds": 2.4,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 1.4,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 2.0,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 6.6,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 13.1,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 13.72,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 17.4,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 20.6,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 24.8,
+          "durationSeconds": 1.4,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 25.38,
+          "durationSeconds": 1.4,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 28.0,
+          "durationSeconds": 1.4,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 30.8,
+          "durationSeconds": 1.4,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 31.36,
+          "durationSeconds": 1.4,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 37.2,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 37.85,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 42.1,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        }
+      ]
+    },
+    {
+      "id": "horror-apartment-danger",
+      "seconds": 40,
+      "title": "복도는 끝나지 않는다",
+      "intent": "어두운 저음의 짧은 충격과 거친 현. 용감하거나 경쾌한 전투 선율을 쓰지 않는다.",
+      "palette": "apartment",
+      "targetLufs": -22.0,
+      "pedal": "D2",
+      "airLevel": 0.015,
+      "room": 0.39,
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 10.0,
+          "description": "멀리 있는 소리"
+        },
+        {
+          "atSeconds": 10.0,
+          "lengthSeconds": 10.0,
+          "description": "벽 너머의 응답"
+        },
+        {
+          "atSeconds": 20.0,
+          "lengthSeconds": 10.0,
+          "description": "가까워지는 흔적"
+        },
+        {
+          "atSeconds": 30.0,
+          "lengthSeconds": 10.0,
+          "description": "다시 남은 빈자리"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.8,
+          "durationSeconds": 11.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": -1.49,
+          "durationSeconds": 11.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": -1.18,
+          "durationSeconds": 11.4,
+          "note": "Eb3",
+          "instrument": "bow",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 6.7,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 2.4,
+          "durationSeconds": 5.6,
+          "note": "Eb3",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 8.2,
+          "durationSeconds": 11.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": 8.51,
+          "durationSeconds": 11.4,
+          "note": "Bb2",
+          "instrument": "bow",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": 8.82,
+          "durationSeconds": 11.4,
+          "note": "F3",
+          "instrument": "bow",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 15.9,
+          "durationSeconds": 5.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 12.4,
+          "durationSeconds": 5.6,
+          "note": "F3",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 18.2,
+          "durationSeconds": 11.4,
+          "note": "C2",
+          "instrument": "bow",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": 18.51,
+          "durationSeconds": 11.4,
+          "note": "G2",
+          "instrument": "bow",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": 18.82,
+          "durationSeconds": 11.4,
+          "note": "Db3",
+          "instrument": "bow",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 26.7,
+          "durationSeconds": 5.4,
+          "note": "G2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 22.4,
+          "durationSeconds": 5.6,
+          "note": "Db3",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 28.2,
+          "durationSeconds": 11.4,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": 28.51,
+          "durationSeconds": 11.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": 28.82,
+          "durationSeconds": 11.4,
+          "note": "E3",
+          "instrument": "bow",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 35.9,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.3
+        },
+        {
+          "atSeconds": 32.4,
+          "durationSeconds": 5.6,
+          "note": "E3",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 2.25,
+          "durationSeconds": 2.4,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 7.417,
+          "durationSeconds": 2.4,
+          "note": "Eb3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 13.417,
+          "durationSeconds": 2.4,
+          "note": "A2",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 18.833,
+          "durationSeconds": 2.4,
+          "note": "F3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 23.917,
+          "durationSeconds": 2.4,
+          "note": "Db3",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 2.4,
+          "note": "C3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 33.917,
+          "durationSeconds": 2.4,
+          "note": "E3",
+          "instrument": "felt-low",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 37.667,
+          "durationSeconds": 2.4,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 0.3,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 0.93,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 2.1,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 3.6,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 4.24,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 6.0,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 7.3,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 7.94,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 5.0,
+          "durationSeconds": 3.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.48
+        },
+        {
+          "atSeconds": 10.2,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 10.82,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 12.62,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 14.3,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 15.7,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 16.32,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 18.2,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 15.0,
+          "durationSeconds": 3.4,
+          "note": "Bb2",
+          "instrument": "bow",
+          "velocity": 0.48
+        },
+        {
+          "atSeconds": 20.1,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 20.68,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 21.9,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 23.2,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 23.78,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 26.3,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 26.88,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 1.0,
+          "note": "C2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 3.4,
+          "note": "G2",
+          "instrument": "bow",
+          "velocity": 0.48
+        },
+        {
+          "atSeconds": 30.3,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 30.93,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 32.1,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 33.9,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 34.53,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 36.1,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 37.8,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 35.0,
+          "durationSeconds": 3.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.48
+        }
+      ]
+    },
+    {
+      "id": "horror-broadcast-ambient",
+      "seconds": 48,
+      "title": "송출되지 않은 목소리",
+      "intent": "읽기를 방해하지 않는 낮은 음역과 드문 응답. 조용하지만 안전하다는 느낌은 주지 않는다.",
+      "palette": "broadcast",
+      "targetLufs": -24.5,
+      "pedal": "E2",
+      "airLevel": 0.024,
+      "room": 0.54,
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "멀리 있는 소리"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "벽 너머의 응답"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "가까워지는 흔적"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "다시 남은 빈자리"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.8,
+          "durationSeconds": 13.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": -1.49,
+          "durationSeconds": 13.4,
+          "note": "Bb2",
+          "instrument": "breath",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": -1.18,
+          "durationSeconds": 13.4,
+          "note": "B2",
+          "instrument": "breath",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 6.7,
+          "durationSeconds": 5.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 10.2,
+          "durationSeconds": 13.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": 10.51,
+          "durationSeconds": 13.4,
+          "note": "G2",
+          "instrument": "breath",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": 10.82,
+          "durationSeconds": 13.4,
+          "note": "F3",
+          "instrument": "breath",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 17.9,
+          "durationSeconds": 5.4,
+          "note": "G2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 22.2,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "breath",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": 22.51,
+          "durationSeconds": 13.4,
+          "note": "A2",
+          "instrument": "breath",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": 22.82,
+          "durationSeconds": 13.4,
+          "note": "Eb3",
+          "instrument": "breath",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 30.7,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 34.2,
+          "durationSeconds": 13.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.6
+        },
+        {
+          "atSeconds": 34.51,
+          "durationSeconds": 13.4,
+          "note": "B2",
+          "instrument": "breath",
+          "velocity": 0.276
+        },
+        {
+          "atSeconds": 34.82,
+          "durationSeconds": 13.4,
+          "note": "F3",
+          "instrument": "breath",
+          "velocity": 0.132
+        },
+        {
+          "atSeconds": 41.9,
+          "durationSeconds": 5.4,
+          "note": "B2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 3.5,
+          "durationSeconds": 3.7,
+          "note": "E3",
+          "instrument": "resonance",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 10.1,
+          "durationSeconds": 3.7,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.39
+        },
+        {
+          "atSeconds": 15.8,
+          "durationSeconds": 3.7,
+          "note": "F3",
+          "instrument": "resonance",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 21.7,
+          "durationSeconds": 3.7,
+          "note": "E3",
+          "instrument": "resonance",
+          "velocity": 0.39
+        },
+        {
+          "atSeconds": 28.2,
+          "durationSeconds": 3.7,
+          "note": "Eb3",
+          "instrument": "resonance",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 34.8,
+          "durationSeconds": 3.7,
+          "note": "D3",
+          "instrument": "resonance",
+          "velocity": 0.39
+        },
+        {
+          "atSeconds": 41.1,
+          "durationSeconds": 3.7,
+          "note": "B2",
+          "instrument": "resonance",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 46.0,
+          "durationSeconds": 3.7,
+          "note": "F3",
+          "instrument": "resonance",
+          "velocity": 0.39
+        }
+      ]
+    },
+    {
+      "id": "horror-broadcast-tension",
+      "seconds": 48,
+      "title": "빨간 불 아래의 침묵",
+      "intent": "불규칙한 저음 박동과 가까워지는 마찰음. 해결되지 않는 음정으로 경계심을 유지한다.",
+      "palette": "broadcast",
+      "targetLufs": -23.0,
+      "pedal": "E2",
+      "airLevel": 0.024,
+      "room": 0.54,
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "멀리 있는 소리"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "벽 너머의 응답"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "가까워지는 흔적"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "다시 남은 빈자리"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.8,
+          "durationSeconds": 13.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": -1.49,
+          "durationSeconds": 13.4,
+          "note": "Bb2",
+          "instrument": "breath",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": -1.18,
+          "durationSeconds": 13.4,
+          "note": "B2",
+          "instrument": "breath",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 6.7,
+          "durationSeconds": 5.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 2.4,
+          "durationSeconds": 5.6,
+          "note": "B2",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 10.2,
+          "durationSeconds": 13.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": 10.51,
+          "durationSeconds": 13.4,
+          "note": "G2",
+          "instrument": "breath",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": 10.82,
+          "durationSeconds": 13.4,
+          "note": "F3",
+          "instrument": "breath",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 17.9,
+          "durationSeconds": 5.4,
+          "note": "G2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 14.4,
+          "durationSeconds": 5.6,
+          "note": "F3",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 22.2,
+          "durationSeconds": 13.4,
+          "note": "D2",
+          "instrument": "breath",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": 22.51,
+          "durationSeconds": 13.4,
+          "note": "A2",
+          "instrument": "breath",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": 22.82,
+          "durationSeconds": 13.4,
+          "note": "Eb3",
+          "instrument": "breath",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 30.7,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 26.4,
+          "durationSeconds": 5.6,
+          "note": "Eb3",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 34.2,
+          "durationSeconds": 13.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.77
+        },
+        {
+          "atSeconds": 34.51,
+          "durationSeconds": 13.4,
+          "note": "B2",
+          "instrument": "breath",
+          "velocity": 0.3542
+        },
+        {
+          "atSeconds": 34.82,
+          "durationSeconds": 13.4,
+          "note": "F3",
+          "instrument": "breath",
+          "velocity": 0.1694
+        },
+        {
+          "atSeconds": 41.9,
+          "durationSeconds": 5.4,
+          "note": "B2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 38.4,
+          "durationSeconds": 5.6,
+          "note": "F3",
+          "instrument": "friction",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 3.5,
+          "durationSeconds": 2.4,
+          "note": "E3",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 10.1,
+          "durationSeconds": 2.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 15.8,
+          "durationSeconds": 2.4,
+          "note": "F3",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 21.7,
+          "durationSeconds": 2.4,
+          "note": "E3",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 28.2,
+          "durationSeconds": 2.4,
+          "note": "Eb3",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 34.8,
+          "durationSeconds": 2.4,
+          "note": "D3",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 41.1,
+          "durationSeconds": 2.4,
+          "note": "B2",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 46.0,
+          "durationSeconds": 2.4,
+          "note": "F3",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 1.4,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 2.0,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 6.6,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 13.1,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 13.72,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 17.4,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 20.6,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 24.8,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 25.38,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 28.0,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 30.8,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 31.36,
+          "durationSeconds": 1.4,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 37.2,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        },
+        {
+          "atSeconds": 37.85,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.31
+        },
+        {
+          "atSeconds": 42.1,
+          "durationSeconds": 1.4,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.55
+        }
+      ]
+    },
+    {
+      "id": "horror-broadcast-danger",
+      "seconds": 40,
+      "title": "끊어지지 않는 송출선",
+      "intent": "어두운 저음의 짧은 충격과 거친 현. 용감하거나 경쾌한 전투 선율을 쓰지 않는다.",
+      "palette": "broadcast",
+      "targetLufs": -22.0,
+      "pedal": "E2",
+      "airLevel": 0.024,
+      "room": 0.54,
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 10.0,
+          "description": "멀리 있는 소리"
+        },
+        {
+          "atSeconds": 10.0,
+          "lengthSeconds": 10.0,
+          "description": "벽 너머의 응답"
+        },
+        {
+          "atSeconds": 20.0,
+          "lengthSeconds": 10.0,
+          "description": "가까워지는 흔적"
+        },
+        {
+          "atSeconds": 30.0,
+          "lengthSeconds": 10.0,
+          "description": "다시 남은 빈자리"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.8,
+          "durationSeconds": 11.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": -1.49,
+          "durationSeconds": 11.4,
+          "note": "Bb2",
+          "instrument": "breath",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": -1.18,
+          "durationSeconds": 11.4,
+          "note": "B2",
+          "instrument": "breath",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 6.7,
+          "durationSeconds": 5.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 2.4,
+          "durationSeconds": 5.6,
+          "note": "B2",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 8.2,
+          "durationSeconds": 11.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": 8.51,
+          "durationSeconds": 11.4,
+          "note": "G2",
+          "instrument": "breath",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": 8.82,
+          "durationSeconds": 11.4,
+          "note": "F3",
+          "instrument": "breath",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 15.9,
+          "durationSeconds": 5.4,
+          "note": "G2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 12.4,
+          "durationSeconds": 5.6,
+          "note": "F3",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 18.2,
+          "durationSeconds": 11.4,
+          "note": "D2",
+          "instrument": "breath",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": 18.51,
+          "durationSeconds": 11.4,
+          "note": "A2",
+          "instrument": "breath",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": 18.82,
+          "durationSeconds": 11.4,
+          "note": "Eb3",
+          "instrument": "breath",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 26.7,
+          "durationSeconds": 5.4,
+          "note": "A2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 22.4,
+          "durationSeconds": 5.6,
+          "note": "Eb3",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 28.2,
+          "durationSeconds": 11.4,
+          "note": "E2",
+          "instrument": "breath",
+          "velocity": 0.88
+        },
+        {
+          "atSeconds": 28.51,
+          "durationSeconds": 11.4,
+          "note": "B2",
+          "instrument": "breath",
+          "velocity": 0.4048
+        },
+        {
+          "atSeconds": 28.82,
+          "durationSeconds": 11.4,
+          "note": "F3",
+          "instrument": "breath",
+          "velocity": 0.1936
+        },
+        {
+          "atSeconds": 35.9,
+          "durationSeconds": 5.4,
+          "note": "B2",
+          "instrument": "resonance",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 32.4,
+          "durationSeconds": 5.6,
+          "note": "F3",
+          "instrument": "friction",
+          "velocity": 0.43
+        },
+        {
+          "atSeconds": 2.917,
+          "durationSeconds": 2.4,
+          "note": "E3",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 8.417,
+          "durationSeconds": 2.4,
+          "note": "Bb2",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 13.167,
+          "durationSeconds": 2.4,
+          "note": "F3",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 18.083,
+          "durationSeconds": 2.4,
+          "note": "E3",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 23.5,
+          "durationSeconds": 2.4,
+          "note": "Eb3",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 29.0,
+          "durationSeconds": 2.4,
+          "note": "D3",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 34.25,
+          "durationSeconds": 2.4,
+          "note": "B2",
+          "instrument": "resonance",
+          "velocity": 0.41250000000000003
+        },
+        {
+          "atSeconds": 38.333,
+          "durationSeconds": 2.4,
+          "note": "F3",
+          "instrument": "resonance",
+          "velocity": 0.2925
+        },
+        {
+          "atSeconds": 0.3,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 0.93,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 2.1,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 3.6,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 4.24,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 6.0,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 7.3,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 7.94,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 5.0,
+          "durationSeconds": 3.4,
+          "note": "Bb2",
+          "instrument": "bow",
+          "velocity": 0.48
+        },
+        {
+          "atSeconds": 10.2,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 10.82,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 12.62,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 14.3,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 15.7,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 16.32,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 18.2,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 15.0,
+          "durationSeconds": 3.4,
+          "note": "G2",
+          "instrument": "bow",
+          "velocity": 0.48
+        },
+        {
+          "atSeconds": 20.1,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 20.68,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 21.9,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 23.2,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 23.78,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 26.3,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 26.88,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 1.0,
+          "note": "D2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 3.4,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.48
+        },
+        {
+          "atSeconds": 30.3,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 30.93,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 32.1,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 33.9,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 34.53,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 36.1,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "pulse",
+          "velocity": 0.47
+        },
+        {
+          "atSeconds": 37.8,
+          "durationSeconds": 1.0,
+          "note": "E2",
+          "instrument": "thud",
+          "velocity": 0.76
+        },
+        {
+          "atSeconds": 35.0,
+          "durationSeconds": 3.4,
+          "note": "B2",
+          "instrument": "bow",
+          "velocity": 0.48
+        }
+      ]
+    },
+    {
+      "id": "horror-shared-grief",
+      "seconds": 48,
+      "title": "빈자리를 두고",
+      "intent": "낮은 피아노와 현의 긴 쉼. 죽음 이후의 상실을 차분하게 남긴다.",
+      "palette": "grief",
+      "targetLufs": -25.0,
+      "pedal": "D2",
+      "airLevel": 0.007,
+      "room": 0.48,
+      "sections": [
+        {
+          "atSeconds": 0,
+          "lengthSeconds": 12,
+          "description": "남은 자리"
+        },
+        {
+          "atSeconds": 12,
+          "lengthSeconds": 12,
+          "description": "이름을 기억하기"
+        },
+        {
+          "atSeconds": 24,
+          "lengthSeconds": 12,
+          "description": "멈춘 발걸음"
+        },
+        {
+          "atSeconds": 36,
+          "lengthSeconds": 12,
+          "description": "다음 장을 기다리며"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.5,
+          "durationSeconds": 13.5,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": -1.1,
+          "durationSeconds": 13.5,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": -0.7,
+          "durationSeconds": 13.5,
+          "note": "F3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 10.5,
+          "durationSeconds": 13.5,
+          "note": "Bb1",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": 10.9,
+          "durationSeconds": 13.5,
+          "note": "F2",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": 11.3,
+          "durationSeconds": 13.5,
+          "note": "D3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 22.5,
+          "durationSeconds": 13.5,
+          "note": "G2",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": 22.9,
+          "durationSeconds": 13.5,
+          "note": "D3",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": 23.3,
+          "durationSeconds": 13.5,
+          "note": "A3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 34.5,
+          "durationSeconds": 13.5,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": 34.9,
+          "durationSeconds": 13.5,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": 35.3,
+          "durationSeconds": 13.5,
+          "note": "E3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 1.9,
+          "durationSeconds": 4.8,
+          "note": "F3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 7.8,
+          "durationSeconds": 4.8,
+          "note": "E3",
+          "instrument": "felt-low",
+          "velocity": 0.42
+        },
+        {
+          "atSeconds": 14.2,
+          "durationSeconds": 4.8,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 20.3,
+          "durationSeconds": 4.8,
+          "note": "A2",
+          "instrument": "felt-low",
+          "velocity": 0.42
+        },
+        {
+          "atSeconds": 27.0,
+          "durationSeconds": 4.8,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 32.8,
+          "durationSeconds": 4.8,
+          "note": "C3",
+          "instrument": "felt-low",
+          "velocity": 0.42
+        },
+        {
+          "atSeconds": 39.5,
+          "durationSeconds": 4.8,
+          "note": "E3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 45.0,
+          "durationSeconds": 4.8,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.42
+        }
+      ]
+    },
+    {
+      "id": "horror-shared-relief",
+      "seconds": 48,
+      "title": "아직 닫히지 않은 밤",
+      "intent": "위험이 잠시 물러난 안도. 단조의 여운과 미해결음을 유지하며 환호하지 않는다.",
+      "palette": "relief",
+      "targetLufs": -24.8,
+      "pedal": "D2",
+      "airLevel": 0.007,
+      "room": 0.48,
+      "sections": [
+        {
+          "atSeconds": 0,
+          "lengthSeconds": 12,
+          "description": "남은 자리"
+        },
+        {
+          "atSeconds": 12,
+          "lengthSeconds": 12,
+          "description": "이름을 기억하기"
+        },
+        {
+          "atSeconds": 24,
+          "lengthSeconds": 12,
+          "description": "멈춘 발걸음"
+        },
+        {
+          "atSeconds": 36,
+          "lengthSeconds": 12,
+          "description": "다음 장을 기다리며"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -1.5,
+          "durationSeconds": 13.5,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": -1.1,
+          "durationSeconds": 13.5,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": -0.7,
+          "durationSeconds": 13.5,
+          "note": "E3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 10.5,
+          "durationSeconds": 13.5,
+          "note": "Bb1",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": 10.9,
+          "durationSeconds": 13.5,
+          "note": "F2",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": 11.3,
+          "durationSeconds": 13.5,
+          "note": "C3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 22.5,
+          "durationSeconds": 13.5,
+          "note": "G2",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": 22.9,
+          "durationSeconds": 13.5,
+          "note": "D3",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": 23.3,
+          "durationSeconds": 13.5,
+          "note": "A3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 34.5,
+          "durationSeconds": 13.5,
+          "note": "D2",
+          "instrument": "bow",
+          "velocity": 0.36
+        },
+        {
+          "atSeconds": 34.9,
+          "durationSeconds": 13.5,
+          "note": "A2",
+          "instrument": "bow",
+          "velocity": 0.25
+        },
+        {
+          "atSeconds": 35.3,
+          "durationSeconds": 13.5,
+          "note": "E3",
+          "instrument": "bow",
+          "velocity": 0.18
+        },
+        {
+          "atSeconds": 3.2,
+          "durationSeconds": 4.8,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 9.8,
+          "durationSeconds": 4.8,
+          "note": "E3",
+          "instrument": "felt-low",
+          "velocity": 0.42
+        },
+        {
+          "atSeconds": 16.4,
+          "durationSeconds": 4.8,
+          "note": "F3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 23.2,
+          "durationSeconds": 4.8,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.42
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 4.8,
+          "note": "A3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        },
+        {
+          "atSeconds": 36.9,
+          "durationSeconds": 4.8,
+          "note": "E3",
+          "instrument": "felt-low",
+          "velocity": 0.42
+        },
+        {
+          "atSeconds": 43.0,
+          "durationSeconds": 4.8,
+          "note": "D3",
+          "instrument": "felt-low",
+          "velocity": 0.52
+        }
+      ]
+    }
+  ]
+}

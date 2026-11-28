@@ -1,10 +1,13 @@
 /** Deterministic, authored expansions. Basic data is never mutated. */
+import { installEncounters, rawEncounterCampaign } from './encounter-tools.js';
 export const STORY_LENGTHS = Object.freeze(['basic', 'epic']);
 const variants = new WeakMap();
 const bases = new WeakMap();
 export function validStoryLength(value) { return STORY_LENGTHS.includes(value); }
 
 export function composeEpic(base, spec) {
+  const original = rawEncounterCampaign(base);
+  if (original) return installEncounters(composeEpic(original,spec));
   if (!spec?.chapters?.length) throw new Error(`서사시 원고가 없습니다: ${base.id}`);
   const nodes = {...base.nodes};
   for (const chapter of spec.chapters) {
@@ -40,6 +43,8 @@ export function composeEpic(base, spec) {
 export function campaignForLength(campaign, length = 'basic') {
   if (!campaign) return campaign;
   if (!validStoryLength(length)) throw new Error('기본 또는 서사시를 선택해 주세요.');
+  const original = rawEncounterCampaign(campaign);
+  if (original) return installEncounters(campaignForLength(original,length));
   const base = bases.get(campaign) || campaign;
   if (length === 'basic') return base;
   if (campaign.lengthMode === 'epic') return campaign;
@@ -52,6 +57,8 @@ export function lengthOptions(base) {
     const story = campaignForLength(base,id);
     return {id, label:id === 'epic' ? '서사시' : '기본', estimatedMinutes:story.estimatedMinutes,
       sceneCount:Object.values(story.nodes).filter(n=>!n.ending).length,
+      encounterCount:Object.values(story.nodes).filter(n=>n.encounter).length,
+      optionalEncounters:Boolean(story.encounterEdition),
       endingCount:Object.values(story.nodes).filter(n=>n.ending).length};
   });
 }

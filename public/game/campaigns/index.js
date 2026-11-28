@@ -14,6 +14,7 @@ import { EPIC_A } from './epic-a.js';
 import { EPIC_B } from './epic-b.js';
 import { EPIC_HORROR } from './epic-horror.js';
 import { campaignForLength, lengthOptions } from './epic-tools.js';
+import { installEncounters } from './encounter-tools.js';
 const battles={...CAMPAIGN_COMBAT,...HORROR_COMBAT};
 const expansions={...EPIC_A,...EPIC_B,...EPIC_HORROR};
 function withCombat(source) {
@@ -32,15 +33,17 @@ function withCombat(source) {
   return {...source,classes,nodes,flags:{...source.flags,[encounter.victoryFlag]:encounter.victoryFlagLabel},
     lengthMode:'basic',epicSpec:expansions[source.id]};
 }
-export const CAMPAIGNS=[lastTrain,glassHotel,moonMarket,deepSea,dragonBanquet,clockCity,snowRadio,hollowApartment,drownedBroadcast].map(withCombat);
-export const CATALOG=CAMPAIGNS.map(c=>{
-  const {nodes,clues,flags,roles,items,epicSpec,lengthMode,...meta}=c;
+export const ORIGINAL_CAMPAIGNS=[lastTrain,glassHotel,moonMarket,deepSea,dragonBanquet,clockCity,snowRadio,hollowApartment,drownedBroadcast].map(withCombat);
+export const CAMPAIGNS=ORIGINAL_CAMPAIGNS.map(installEncounters);
+const catalogFor=c=>{
+  const {nodes,clues,flags,roles,items,epicSpec,lengthMode,encounterCatalog,...meta}=c;
   return {...meta,sceneCount:Object.values(nodes).filter(n=>!n.ending).length,
     endingCount:Object.values(nodes).filter(n=>n.ending).length,
     combatCount:Object.values(nodes).filter(n=>n.encounter).length,lengthModes:lengthOptions(c)};
-});
+};
+export const CATALOG=CAMPAIGNS.map(catalogFor);
 export const getCampaign=(id,storyLength='basic')=>campaignForLength(CAMPAIGNS.find(c=>c.id===id),storyLength);
 export const getGameCampaign=game=>getCampaign(game.campaignId,game.storyLength||'basic');
 // Stable fixtures keep the old seven-story regression suite explicit.
-export const LEGACY_CAMPAIGNS=CAMPAIGNS.slice(0,7);
-export const LEGACY_CATALOG=CATALOG.slice(0,7);
+export const LEGACY_CAMPAIGNS=ORIGINAL_CAMPAIGNS.slice(0,7);
+export const LEGACY_CATALOG=LEGACY_CAMPAIGNS.map(catalogFor);

@@ -1,0 +1,638 @@
+{
+  "version": "24.1.0",
+  "audioVersion": "24100",
+  "method": "Deterministic synthesis, constant-gain mastering, guarded MP3 encoding, independent FFmpeg decoding and loop-boundary/energy/peak/loudness measurements. This is not a physical-device listening test.",
+  "source": {
+    "script": "scripts/build-horror-score-v24_1.py",
+    "scriptSha256": "bb1c3b9ee59a8bd2a4e4594393bfa1e0f08dedfcc27fcc90ab5c19e3a3f3cffc",
+    "score": "scripts/horror-score-v24_1.json",
+    "scoreSha256": "057b7cce164983c3f7ec48ef014aa262a89db7fe62d9442d82780aa92e7036b7"
+  },
+  "runtimeIndex": {
+    "file": "public/game/horror-loops.js",
+    "sha256": "edae7bee04e461adba93ba23fbac0493ceff05de925af8ed609925c1b688dc1e"
+  },
+  "totalBytes": 2261008,
+  "trackCount": 8,
+  "preservedExistingMp3": 80,
+  "existingMp3Hashes": {
+    "moon-market-mystery.mp3": "203f60116c14f9c657d24fc59600bc65dacccb3f4580e4fc4ecca3a60a31b91b",
+    "snow-radio-grief.mp3": "287ea625bb4689da9bdf72600e2fe22b5b20eda9f3756573827b8f4373db0f29",
+    "glass-hotel-calm.mp3": "653bba26c6912db4402ef7e2320b44b4dcce54d9cb7785ed310cb9f43496d809",
+    "wind.mp3": "bf279704a5c972b02956a8c70d1c052b4c9dbfd9029ca711a3360475a6ccf8f3",
+    "glass-hotel-grief.mp3": "f59fc4699df9c30b004e414e0f104c7fc1f3cf795887294cc92d8c190e3e348f",
+    "dice.mp3": "8934047202a00b7fa324a2f57f16e1e3be04198f75085e05903780f27a1d023a",
+    "last-train-mystery.mp3": "26e9a2579bced413768b277fab7bfffe9b872719e00742d2067eafed0880b19d",
+    "moon-market-danger.mp3": "3aa77da1d5d1d403e91191358a744e24e600b2a709ddd17c246a735b0043c321",
+    "snow-radio-hope.mp3": "87cc1f43374019605f71e2700d8104dfff8a31c8cf4efc06de9f326e9b54682c",
+    "deep-sea-danger.mp3": "c8f074883c1942ab495aa324a95c198d2e810c680e8ff2a417231987e7b2fd61",
+    "glass.mp3": "5c896a86e75360815a241f27ab6c25c77972a97252f2424b5726041181daeb72",
+    "moon-market-grief.mp3": "8092d3e886a00ddbde9f7a3398caccc20520c577cb149496bcd227d3f548729d",
+    "last-train-danger.mp3": "a122ca92f49ff7dc89c84a07a30158e01f0259b3c9a6cd7b8d8e5d6d4840efc9",
+    "deep-sea-grief.mp3": "517adfd0b5b2ced5ee4ef239649f38f37512c715e90ecaeae081d8ec3acc2d51",
+    "failure.mp3": "cad7a67af4c704b52c563bcda7b2240ed7cf3b6d90fcd29bd4d5d935e2ea8ded",
+    "glass-hotel-hope.mp3": "fa985bea46b90d242040db5bcab58b8981ef01b210bc76b38d2a6f05db46de6a",
+    "dragon-banquet-grief.mp3": "e67891609048b87bcfefafcd985f31549cd24e21acfe3fd41ec9eff95dd2f486",
+    "dragon-banquet-tension.mp3": "b23f7cac17cb6c96771bc754e38334c7778560b02b9eed7ed93a711d459ad44c",
+    "enemy.mp3": "bad9ffdc45d73bc25de060d6b6cd10889b2c49b210b83e8251b7dbc7c366b4cb",
+    "dragon-banquet-calm.mp3": "9da32d9953de01be3d7eb06c84389fbb77093b85bce196b8ae2de508bfdcc5e5",
+    "mixed.mp3": "7e14ebcc28e8f4c34ad511b7ce30e6e64f411f93f2904fade42001718a571bfa",
+    "dragon-banquet-mystery.mp3": "8cac1dabe2a902a3ceb56f58dff25110c9c0d53b6d00e012c23537eb6a8f8c81",
+    "snow-radio-mystery.mp3": "636df819433809e09160a80325ac089abf0bb702c31caf267a668970ffa2e3b1",
+    "moon-market-tension.mp3": "d49992defcce1f4860dd9c66261209f444c4b33cd26b645faf0147d35250df35",
+    "snow-radio-tension.mp3": "798c0bf328e6caa4dd375bbe626b868127f8ab45839f88d211a20d6fba95fa88",
+    "snow-radio-danger.mp3": "1f0aa4296940c3729062f7aba5eb50285e92898e4f204474cfffda805a6c8604",
+    "chime.mp3": "52e081ea83b364a659e76ad7d46279a4e65d442edb64a07faae4cf5c9cc41375",
+    "moon-market-hope.mp3": "d9813570b553a5812f1b9b31de515b1deb9463c4112c59f9969db3f19f6961a5",
+    "death.mp3": "fd26b1dd3d78d0ce9d95057089584d46ef5716ac473d58197eb02f4ffd012b75",
+    "dragon-banquet-hope.mp3": "7c807a81c73834e7cd5627f2e1df7de08ac0b45795e6b30304fbc700f9517e06",
+    "clock-city-mystery.mp3": "1f76c51cbdace4954680bb9ac1b9ff85db83d37bcc55ef3c66e2402ddf25c10d",
+    "deep-sea-mystery.mp3": "6c0a9c606ff9198e24dde29fa1dd045082f88bc22ad41c4090d6b8139876ef30",
+    "metal.mp3": "d5bf03bed3447148c75a66da736f3d363208638d38e03e2b33409394d7500778",
+    "door-creak.mp3": "ef468311c2059ddedf41fb4d01fa11831be33e24afec84a68f3cd8249b8f3657",
+    "clock-city-hope.mp3": "6818b0299058ffb6188c23ca615dec7c62d57c6f50b8f998141357ee341865be",
+    "glass-hotel-mystery.mp3": "1bba8e1ca4b16e5de08df7f869313949e766b1a4763934884baa9d0556c284d1",
+    "snow-radio-calm.mp3": "9a293842d451b217cf25eeb4ad19b15706fde523f7867f923f80a7052d96a9e0",
+    "success.mp3": "8fd97b073c3059569852972289344cd8078cb705902f527289c660073d094613",
+    "last-train-calm.mp3": "cc1d9610c69d45305b4e60b064fac7eaec109c6690b315bbaecda43316456129",
+    "knock.mp3": "b3ad169346c17e6db2352e75a25904846e830164f15a632f0a4179d559d6cf89",
+    "transition.mp3": "b64af2d38663ec6537d5c98dfa35a141537cbd7492169f7f013b217f518dd10a",
+    "heartbeat.mp3": "1a754d791a88ceededa752ba9290e471d6904616ffaa338e8c1516291168825e",
+    "dragon-banquet-danger.mp3": "d3239edb3e609f39fdc0a010c2b2f9998859a90f19bf1221f79015ab0b55f223",
+    "last-train-grief.mp3": "ba73ecd4352a39e8bdee5cb88d6eb0275bc304ff5cd9d028e602a8809ee09229",
+    "revive.mp3": "7167177eac95afeaf15be34fbc79a3e715f658334da482b1710496373042d154",
+    "last-train-tension.mp3": "c058da075599085340c78092a85d5bf0b94f78006be122dd66efec7df43c3e14",
+    "footsteps.mp3": "969c525bd0706706d7dcc1e50cdde6dc49ce186b2a79f80cced0fb8e265c954b",
+    "clock-city-grief.mp3": "881669951de4b64f9f95e63e54670a91c21cc330c9506a62b0dac517dd3d18d6",
+    "last-train-hope.mp3": "f361f3a68076fa1003268f4fae8cc8218cae69212baa11178cdfe70aba72a798",
+    "scream.mp3": "91e91b90867c35ca78e046b88cb4b8d494b27978ebc399ee4e1777519b8e9e95",
+    "reveal.mp3": "45499f6bf09c7656415e9908e47ee979a1a36615221593aca65876e4dd36b4e0",
+    "radio-static.mp3": "7511fff45a9dcb3de7757941a1c02c799cec8af1dd58e6de4573ed77b24fec71",
+    "water.mp3": "bea6e84ba49b3c485b214fe8b6cb36b717c87e7f25b528c79eb33d075e5ea9ae",
+    "clock-city-danger.mp3": "4433c51b942cb97babecc317939b1ac9de277bb207fbc830e7015a2b825f3c20",
+    "deep-sea-tension.mp3": "6fe23143610099d383bd7c0e9a5cd7ec187c4ff5a8c65789dd19d38d364c9e5e",
+    "glass-hotel-tension.mp3": "aed39e7c0084c68fdd4da27c0a5e325e783c7197e38fc724b92a581e27568e4d",
+    "victory.mp3": "e0cf5943fdbb7561c6f9683f7abe53e91f479a9f082710f5d9cc14805604bb56",
+    "attack.mp3": "b53c4e9b2b98d7739cc66025e61e6e63e392d2608f095e0b1a118d64ff1bf169",
+    "clock-city-tension.mp3": "02d1adcdbdad5148d2a6e516ec4ae67bba83b103b04c3000f8a5300e425571b0",
+    "clock-city-calm.mp3": "b616715945a8e14db3e24bcd8a59dde023058d1e1a1e07b76eff1877e6b8114d",
+    "glass-hotel-danger.mp3": "f0fe5ea32dfbc3a1bb8f50d2cb79fc741498dd69d5002000c7d89be7d932b736",
+    "murmur.mp3": "da05a990b765356f8ab8378763b88947c78bfe922ba5d2dcc211930b7300fc09",
+    "deep-sea-hope.mp3": "b0f2c81ab59d1dda895992839b7a5459fe6b0e6d566e007650ff7fddd5344297",
+    "moon-market-calm.mp3": "8a0adb11410c552a458d0b8d88b16fa3c964b691a66fb2c493a4011df0b24bc0",
+    "ability.mp3": "e649f81033bef832f648a765294160c5c2962cbbeb2f486a96a412e62cc5f378",
+    "clue.mp3": "34ae01c0b19d5248193612b9d5481846688add0ac6349ce61fa4a44ef2551a43",
+    "deep-sea-calm.mp3": "591861ad8ec4e4fa71c29c6338a7979c9fbd34f4226bbdce71ca5359c71a190a",
+    "sfx/battle-skill.mp3": "05145d227ab30a8d1ebd213f7072575c8de707157b40c5358dc7c17cc85964c4",
+    "sfx/battle-heal.mp3": "521a485ed385a68d1439d87526aa7dc549170ea7d9f517e8f4dfcbbd26040389",
+    "sfx/battle-shield.mp3": "abdac8d53cd21b231c13e8db975541ec675bb5a022b2ff9ad3daa2f1177b4982",
+    "sfx/battle-stun.mp3": "a3655e9de2691e210948c1bec816ee0d57b477edf9cd615ea65f3c87a13da01c",
+    "sfx/battle-fumble.mp3": "0d6a6c7f5d3cd464a23753c6dce0d79f3f40522d2bf864746c5f80afa97b3648",
+    "sfx/battle-swing.mp3": "ddd53173e09dad6ca719364acc1fe5cc11c76341c7d5455b36a6e41c77cc3c37",
+    "sfx/battle-miss.mp3": "4ac8e90a61267fb465c530ce064f113bf224834fdd0a5eadc4fd11cd725fc4c2",
+    "sfx/battle-critical.mp3": "42a3e9e5e5151603701b2a7da3f90c283d361b483e6750b1734b77b65f4c4bcc",
+    "sfx/battle-hit.mp3": "5dd4fd905b9d67d4d219fa760417336ae57572026fc7f6d8dd7109cdcc7577c7",
+    "sfx/battle-defeat.mp3": "8bd8573b6e8564e5a68b74680b06e213b2fe6a04370f0df1e95383db5f841387",
+    "sfx/battle-victory.mp3": "d911c67e7b3f14fb9d710936ea3ed5951a59aea1d278087001f48610a46aecb6",
+    "sfx/battle-enemy.mp3": "44cf94edf9fb72c063d6d09845c8c8d887f0b73f49da13862f3dbc7127477c66",
+    "sfx/battle-hurt.mp3": "c337758185c7801b719faf723246b7e2bfddaf2e139a0de257362e9729207f2c"
+  },
+  "tracks": [
+    {
+      "id": "horror-apartment-ambient",
+      "file": "horror-apartment-ambient.mp3",
+      "title": "빈 복도에 남은 이름",
+      "bytes": 294668,
+      "sha256": "b8d9820ee8e494f0e9938b1b9a8c9df0e3c1e2ed9defa9af1527871b5278ff9e",
+      "seconds": 49.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "phaseOffsetFrames": 126173,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.26,
+        "truePeakDbtp": -8.35,
+        "loudnessRangeLu": 4.2,
+        "rmsDbfs": -21.5396,
+        "peakDbfs": -8.3553,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -67.8996,
+          "jumpTo99thStepRatio": 0.02243,
+          "secondDifferenceTo99thRatio": 0.01166,
+          "edge100msRmsDifferenceDb": 0.0081
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -55.8203,
+          "jumpTo99thStepRatio": 0.08563,
+          "secondDifferenceTo99thRatio": 0.08435,
+          "edge100msRmsDifferenceDb": 12.112
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -56.3063,
+          "jumpTo99thStepRatio": 0.08523,
+          "secondDifferenceTo99thRatio": 0.07613,
+          "edge100msRmsDifferenceDb": 12.1108
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 22,
+        "foregroundMidiRange": [
+          57,
+          69
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -16.991,
+          "harmony": -29.772,
+          "bass": -32.915,
+          "answer": -38.203,
+          "pulse": -240.0
+        },
+        "leadToAccompanimentDb": 10.44,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    },
+    {
+      "id": "horror-apartment-tension",
+      "file": "horror-apartment-tension.mp3",
+      "title": "문고리가 돌아가기 전에",
+      "bytes": 294668,
+      "sha256": "6457e88aa31499ff6ad239b68c58971908b5b7354f1d469b9d341d4413def83f",
+      "seconds": 49.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "phaseOffsetFrames": 126173,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.26,
+        "truePeakDbtp": -8.12,
+        "loudnessRangeLu": 4.2,
+        "rmsDbfs": -21.5172,
+        "peakDbfs": -8.1167,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -67.3448,
+          "jumpTo99thStepRatio": 0.02398,
+          "secondDifferenceTo99thRatio": 0.00108,
+          "edge100msRmsDifferenceDb": 0.0052
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -56.0684,
+          "jumpTo99thStepRatio": 0.08351,
+          "secondDifferenceTo99thRatio": 0.08428,
+          "edge100msRmsDifferenceDb": 12.6475
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -56.1651,
+          "jumpTo99thStepRatio": 0.08686,
+          "secondDifferenceTo99thRatio": 0.08619,
+          "edge100msRmsDifferenceDb": 12.6505
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 22,
+        "foregroundMidiRange": [
+          57,
+          69
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -16.991,
+          "harmony": -29.772,
+          "bass": -32.287,
+          "answer": -38.203,
+          "pulse": -36.216
+        },
+        "leadToAccompanimentDb": 9.74,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    },
+    {
+      "id": "horror-apartment-danger",
+      "file": "horror-apartment-danger.mp3",
+      "title": "뒤돌아보지 마",
+      "bytes": 246500,
+      "sha256": "01789ba23d238de17f7741e76ad7e1bf0976d3a717bfecc81ab894549fd3d5a7",
+      "seconds": 41.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1296000,
+        "sourceFrames": 1312000
+      },
+      "loopSeconds": 40.0,
+      "phaseOffsetFrames": 57328,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.24,
+        "truePeakDbtp": -7.41,
+        "loudnessRangeLu": 3.3,
+        "rmsDbfs": -21.4979,
+        "peakDbfs": -7.4065,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -76.1247,
+          "jumpTo99thStepRatio": 0.00894,
+          "secondDifferenceTo99thRatio": 0.12745,
+          "edge100msRmsDifferenceDb": 0.0197
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -63.6359,
+          "jumpTo99thStepRatio": 0.03576,
+          "secondDifferenceTo99thRatio": 0.24594,
+          "edge100msRmsDifferenceDb": 7.7654
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -65.0122,
+          "jumpTo99thStepRatio": 0.03212,
+          "secondDifferenceTo99thRatio": 0.17085,
+          "edge100msRmsDifferenceDb": 7.7662
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 26,
+        "foregroundMidiRange": [
+          57,
+          69
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -16.333,
+          "harmony": -29.13,
+          "bass": -32.162,
+          "answer": -38.307,
+          "pulse": -30.217
+        },
+        "leadToAccompanimentDb": 9.018,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    },
+    {
+      "id": "horror-broadcast-ambient",
+      "file": "horror-broadcast-ambient.mp3",
+      "title": "종료된 방송의 첫 음",
+      "bytes": 294668,
+      "sha256": "aa3f603ea1311829abf1310d6539c85129d75cce36573d84b71e9ecd8ca10e50",
+      "seconds": 49.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "phaseOffsetFrames": 62984,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.34,
+        "truePeakDbtp": -8.53,
+        "loudnessRangeLu": 2.4,
+        "rmsDbfs": -21.5546,
+        "peakDbfs": -8.5321,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -79.1205,
+          "jumpTo99thStepRatio": 0.00644,
+          "secondDifferenceTo99thRatio": 0.08137,
+          "edge100msRmsDifferenceDb": 0.0006
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -60.5319,
+          "jumpTo99thStepRatio": 0.05199,
+          "secondDifferenceTo99thRatio": 0.04839,
+          "edge100msRmsDifferenceDb": 9.1065
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -61.0327,
+          "jumpTo99thStepRatio": 0.05166,
+          "secondDifferenceTo99thRatio": 0.04954,
+          "edge100msRmsDifferenceDb": 9.1092
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 20,
+        "foregroundMidiRange": [
+          57,
+          67
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -17.436,
+          "harmony": -30.033,
+          "bass": -32.897,
+          "answer": -37.949,
+          "pulse": -240.0
+        },
+        "leadToAccompanimentDb": 9.744,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    },
+    {
+      "id": "horror-broadcast-tension",
+      "file": "horror-broadcast-tension.mp3",
+      "title": "꺼지지 않은 호출등",
+      "bytes": 294668,
+      "sha256": "917e0075929dbde0895d9cbe6db75fefdf76e89d9ae03001ecb40ab872400ba7",
+      "seconds": 49.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "phaseOffsetFrames": 62984,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.35,
+        "truePeakDbtp": -8.15,
+        "loudnessRangeLu": 2.4,
+        "rmsDbfs": -21.5508,
+        "peakDbfs": -8.1516,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -77.0123,
+          "jumpTo99thStepRatio": 0.00825,
+          "secondDifferenceTo99thRatio": 0.07593,
+          "edge100msRmsDifferenceDb": 0.0056
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -60.6653,
+          "jumpTo99thStepRatio": 0.05145,
+          "secondDifferenceTo99thRatio": 0.04818,
+          "edge100msRmsDifferenceDb": 9.1276
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -61.0474,
+          "jumpTo99thStepRatio": 0.05183,
+          "secondDifferenceTo99thRatio": 0.05657,
+          "edge100msRmsDifferenceDb": 9.1289
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 20,
+        "foregroundMidiRange": [
+          57,
+          67
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -17.436,
+          "harmony": -30.033,
+          "bass": -32.269,
+          "answer": -37.949,
+          "pulse": -36.484
+        },
+        "leadToAccompanimentDb": 9.186,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    },
+    {
+      "id": "horror-broadcast-danger",
+      "file": "horror-broadcast-danger.mp3",
+      "title": "마지막 송출까지",
+      "bytes": 246500,
+      "sha256": "080685dae41ccee3213451b5360fcf75cda4674b921a8b4b3eef533ff1b7b0bd",
+      "seconds": 41.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1296000,
+        "sourceFrames": 1312000
+      },
+      "loopSeconds": 40.0,
+      "phaseOffsetFrames": 58231,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.41,
+        "truePeakDbtp": -7.11,
+        "loudnessRangeLu": 2.6,
+        "rmsDbfs": -21.571,
+        "peakDbfs": -7.113,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -107.8283,
+          "jumpTo99thStepRatio": 0.00025,
+          "secondDifferenceTo99thRatio": 0.01165,
+          "edge100msRmsDifferenceDb": 0.0036
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -45.8614,
+          "jumpTo99thStepRatio": 0.29523,
+          "secondDifferenceTo99thRatio": 0.03821,
+          "edge100msRmsDifferenceDb": 5.8355
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -46.3092,
+          "jumpTo99thStepRatio": 0.2952,
+          "secondDifferenceTo99thRatio": 0.04114,
+          "edge100msRmsDifferenceDb": 5.8364
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 24,
+        "foregroundMidiRange": [
+          57,
+          67
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -16.918,
+          "harmony": -29.011,
+          "bass": -32.259,
+          "answer": -37.899,
+          "pulse": -30.515
+        },
+        "leadToAccompanimentDb": 8.198,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    },
+    {
+      "id": "horror-shared-grief",
+      "file": "horror-shared-grief.mp3",
+      "title": "빈자리에 남은 이름",
+      "bytes": 294668,
+      "sha256": "c0a2669acb59c38a927e53efa5063aaff5c74a1dab037c713e72f30bd0c85722",
+      "seconds": 49.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "phaseOffsetFrames": 86518,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.45,
+        "truePeakDbtp": -8.0,
+        "loudnessRangeLu": 3.6,
+        "rmsDbfs": -21.6945,
+        "peakDbfs": -7.9965,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -74.1061,
+          "jumpTo99thStepRatio": 0.01135,
+          "secondDifferenceTo99thRatio": 0.09723,
+          "edge100msRmsDifferenceDb": 0.0092
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -47.7593,
+          "jumpTo99thStepRatio": 0.22386,
+          "secondDifferenceTo99thRatio": 0.07244,
+          "edge100msRmsDifferenceDb": 11.55
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -48.5451,
+          "jumpTo99thStepRatio": 0.21525,
+          "secondDifferenceTo99thRatio": 0.06501,
+          "edge100msRmsDifferenceDb": 11.5488
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 16,
+        "foregroundMidiRange": [
+          57,
+          65
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -18.547,
+          "harmony": -31.862,
+          "bass": -35.422,
+          "answer": -39.987,
+          "pulse": -240.0
+        },
+        "leadToAccompanimentDb": 10.791,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    },
+    {
+      "id": "horror-shared-relief",
+      "file": "horror-shared-relief.mp3",
+      "title": "아직 끝나지 않은 새벽",
+      "bytes": 294668,
+      "sha256": "5c6b3e79e7293cbdf34238a8c57dc2b5e1904afab162065794ec6546a30b702b",
+      "seconds": 49.0,
+      "channels": 1,
+      "sampleRate": 32000,
+      "bitrate": "48k",
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "phaseOffsetFrames": 85762,
+      "targetLufs": -22.0,
+      "measured": {
+        "integratedLufs": -22.37,
+        "truePeakDbtp": -8.07,
+        "loudnessRangeLu": 3.7,
+        "rmsDbfs": -21.678,
+        "peakDbfs": -8.0753,
+        "clippedSamples": 0,
+        "longestBelowMinus60DbMs": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -73.5188,
+          "jumpTo99thStepRatio": 0.01175,
+          "secondDifferenceTo99thRatio": 0.04941,
+          "edge100msRmsDifferenceDb": 0.1191
+        },
+        "originalCompositionBoundaryBeforeEncoding": {
+          "sampleJumpDbfs": -57.2784,
+          "jumpTo99thStepRatio": 0.07246,
+          "secondDifferenceTo99thRatio": 0.11473,
+          "edge100msRmsDifferenceDb": 13.1585
+        },
+        "originalCompositionBoundaryAfterEncoding": {
+          "sampleJumpDbfs": -58.0911,
+          "jumpTo99thStepRatio": 0.06943,
+          "secondDifferenceTo99thRatio": 0.11769,
+          "edge100msRmsDifferenceDb": 13.1534
+        }
+      },
+      "phaseCandidatesTried": 1,
+      "composition": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "foregroundEventCount": 16,
+        "foregroundMidiRange": [
+          57,
+          67
+        ],
+        "sectionCount": 4,
+        "stemRmsDbfs": {
+          "melody": -18.351,
+          "harmony": -31.862,
+          "bass": -35.422,
+          "answer": -39.987,
+          "pulse": -240.0
+        },
+        "leadToAccompanimentDb": 10.987,
+        "measurementNote": "Relative energy of known rendered stems before constant-gain mastering; not a subjective hearing or quality claim."
+      }
+    }
+  ]
+}

@@ -1,0 +1,4431 @@
+{
+  "version": "24.1.0",
+  "audioVersion": "24100",
+  "sampleRate": 32000,
+  "provenance": "Original equation-based instruments and authored notes. No recordings, sampled voices, external music, soundfonts, stochastic noise bed, or generative music service.",
+  "delivery": {
+    "codec": "MP3",
+    "bitrate": "48k",
+    "channels": 1,
+    "guardSeconds": 0.5,
+    "peakCeilingDbtp": -3.0
+  },
+  "tracks": [
+    {
+      "id": "horror-apartment-ambient",
+      "seconds": 48,
+      "title": "빈 복도에 남은 이름",
+      "intent": "중음역의 짧은 선율과 낮은 현이 질문하고 응답한다. 빗소리 없이도 빈 공간의 불안을 느끼도록 쓴 음악.",
+      "palette": "apartment",
+      "targetLufs": -22.0,
+      "room": 0.31,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-piano",
+        "key": "D minor / Phrygian colour",
+        "bpm": 80.0,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "빈 복도에 남긴 질문"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "벽 너머에서 돌아온 응답"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "계단 아래의 다른 발소리"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "문 앞에서 멈춘 이름"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.42,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.399,
+          "durationSeconds": 12.35,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.378,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.18,
+          "durationSeconds": 12.18,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 1.95,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 2.259,
+          "durationSeconds": 0.9,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.75,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 6.009,
+          "durationSeconds": 2.1,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 9.0,
+          "durationSeconds": 0.975,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 10.509,
+          "durationSeconds": 1.125,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.68,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.775,
+          "durationSeconds": 2.85,
+          "note": "A3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 11.58,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.601,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.622,
+          "durationSeconds": 12.35,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.82,
+          "durationSeconds": 12.18,
+          "note": "Bb2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 1.8,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 14.259,
+          "durationSeconds": 1.125,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 16.5,
+          "durationSeconds": 1.725,
+          "note": "A4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 19.509,
+          "durationSeconds": 1.2,
+          "note": "G4",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 21.75,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 20.775,
+          "durationSeconds": 2.85,
+          "note": "A3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 23.58,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.601,
+          "durationSeconds": 12.35,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.622,
+          "durationSeconds": 12.35,
+          "note": "Bb3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.82,
+          "durationSeconds": 12.18,
+          "note": "G2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 1.8,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.009,
+          "durationSeconds": 1.125,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 30.759,
+          "durationSeconds": 1.875,
+          "note": "G4",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 33.0,
+          "durationSeconds": 1.2,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 34.509,
+          "durationSeconds": 1.125,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.68,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.775,
+          "durationSeconds": 2.85,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 35.58,
+          "durationSeconds": 12.35,
+          "note": "E3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.601,
+          "durationSeconds": 12.35,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.622,
+          "durationSeconds": 12.35,
+          "note": "Bb3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.82,
+          "durationSeconds": 12.18,
+          "note": "A2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 2.1,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 39.009,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 41.25,
+          "durationSeconds": 1.35,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 43.509,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 45.75,
+          "durationSeconds": 1.5,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.775,
+          "durationSeconds": 2.85,
+          "note": "G3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        }
+      ]
+    },
+    {
+      "id": "horror-apartment-tension",
+      "seconds": 48,
+      "title": "문고리가 돌아가기 전에",
+      "intent": "앞 장면의 선율을 유지하고 끊어진 현의 박동을 더한다. 단서에 가까워질수록 해결되지 않는 음이 남는다.",
+      "palette": "apartment",
+      "targetLufs": -22.0,
+      "room": 0.31,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-piano",
+        "key": "D minor / Phrygian colour",
+        "bpm": 80.0,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "빈 복도에 남긴 질문"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "벽 너머에서 돌아온 응답"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "계단 아래의 다른 발소리"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "문 앞에서 멈춘 이름"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.42,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.399,
+          "durationSeconds": 12.35,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.378,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.18,
+          "durationSeconds": 12.18,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 1.95,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 2.259,
+          "durationSeconds": 0.9,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.75,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 6.009,
+          "durationSeconds": 2.1,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 9.0,
+          "durationSeconds": 0.975,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 10.509,
+          "durationSeconds": 1.125,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.68,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.775,
+          "durationSeconds": 2.85,
+          "note": "A3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 2.25,
+          "durationSeconds": 0.39,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 4.5,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 6.0,
+          "durationSeconds": 0.39,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 8.25,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 10.5,
+          "durationSeconds": 0.39,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 11.58,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.601,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.622,
+          "durationSeconds": 12.35,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.82,
+          "durationSeconds": 12.18,
+          "note": "Bb2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 1.8,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 14.259,
+          "durationSeconds": 1.125,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 16.5,
+          "durationSeconds": 1.725,
+          "note": "A4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 19.509,
+          "durationSeconds": 1.2,
+          "note": "G4",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 21.75,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 20.775,
+          "durationSeconds": 2.85,
+          "note": "A3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 14.25,
+          "durationSeconds": 0.39,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 16.5,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 18.0,
+          "durationSeconds": 0.39,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 20.25,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 22.5,
+          "durationSeconds": 0.39,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 23.58,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.601,
+          "durationSeconds": 12.35,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.622,
+          "durationSeconds": 12.35,
+          "note": "Bb3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.82,
+          "durationSeconds": 12.18,
+          "note": "G2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 1.8,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.009,
+          "durationSeconds": 1.125,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 30.759,
+          "durationSeconds": 1.875,
+          "note": "G4",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 33.0,
+          "durationSeconds": 1.2,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 34.509,
+          "durationSeconds": 1.125,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.68,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.775,
+          "durationSeconds": 2.85,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 26.25,
+          "durationSeconds": 0.39,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 0.39,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 32.25,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 34.5,
+          "durationSeconds": 0.39,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.58,
+          "durationSeconds": 12.35,
+          "note": "E3",
+          "instrument": "strings",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.601,
+          "durationSeconds": 12.35,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.622,
+          "durationSeconds": 12.35,
+          "note": "Bb3",
+          "instrument": "strings",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.82,
+          "durationSeconds": 12.18,
+          "note": "A2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 2.1,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 39.009,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 41.25,
+          "durationSeconds": 1.35,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 43.509,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 45.75,
+          "durationSeconds": 1.5,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.775,
+          "durationSeconds": 2.85,
+          "note": "G3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 0.39,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 38.25,
+          "durationSeconds": 0.39,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 40.5,
+          "durationSeconds": 0.39,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 42.0,
+          "durationSeconds": 0.39,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 44.25,
+          "durationSeconds": 0.39,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 46.5,
+          "durationSeconds": 0.39,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        }
+      ]
+    },
+    {
+      "id": "horror-apartment-danger",
+      "seconds": 40,
+      "title": "뒤돌아보지 마",
+      "intent": "같은 선율을 짧게 되받으며 낮은 북과 현의 박동으로 추격을 이끈다. 밝은 승리 음악으로 바뀌지 않는다.",
+      "palette": "apartment",
+      "targetLufs": -22.0,
+      "room": 0.31,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-piano",
+        "key": "D minor / Phrygian colour",
+        "bpm": 96.0,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 10.0,
+          "description": "빈 복도에 남긴 질문"
+        },
+        {
+          "atSeconds": 10.0,
+          "lengthSeconds": 10.0,
+          "description": "벽 너머에서 돌아온 응답"
+        },
+        {
+          "atSeconds": 20.0,
+          "lengthSeconds": 10.0,
+          "description": "계단 아래의 다른 발소리"
+        },
+        {
+          "atSeconds": 30.0,
+          "lengthSeconds": 10.0,
+          "description": "문 앞에서 멈춘 이름"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.42,
+          "durationSeconds": 10.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.399,
+          "durationSeconds": 10.35,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.378,
+          "durationSeconds": 10.35,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.18,
+          "durationSeconds": 10.18,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 1.625,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 1.884,
+          "durationSeconds": 0.75,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.125,
+          "durationSeconds": 1.25,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 5.009,
+          "durationSeconds": 1.75,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 7.5,
+          "durationSeconds": 0.812,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.759,
+          "durationSeconds": 0.938,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.66,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 7.312,
+          "durationSeconds": 2.375,
+          "note": "A3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 0.938,
+          "durationSeconds": 0.325,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 1.875,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 2.812,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 3.75,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 4.375,
+          "durationSeconds": 0.325,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 5.0,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 5.938,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 6.875,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 7.812,
+          "durationSeconds": 0.325,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 8.75,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 9.375,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 1.875,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 5.0,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 6.875,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 9.062,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 9.438,
+          "durationSeconds": 0.375,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.44,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 9.58,
+          "durationSeconds": 10.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 9.601,
+          "durationSeconds": 10.35,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 9.622,
+          "durationSeconds": 10.35,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 9.82,
+          "durationSeconds": 10.18,
+          "note": "Bb2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 10.0,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 11.884,
+          "durationSeconds": 0.938,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 13.75,
+          "durationSeconds": 1.438,
+          "note": "A4",
+          "instrument": "felt-piano",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 16.259,
+          "durationSeconds": 1.0,
+          "note": "G4",
+          "instrument": "felt-piano",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 18.125,
+          "durationSeconds": 1.25,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 17.312,
+          "durationSeconds": 2.375,
+          "note": "A3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 10.0,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 10.938,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 11.875,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 12.812,
+          "durationSeconds": 0.325,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 13.75,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 14.375,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 15.0,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 15.938,
+          "durationSeconds": 0.325,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 16.875,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 17.812,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 18.75,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 19.375,
+          "durationSeconds": 0.325,
+          "note": "A3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 10.0,
+          "durationSeconds": 0.55,
+          "note": "Bb2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 11.875,
+          "durationSeconds": 0.55,
+          "note": "Bb2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 15.0,
+          "durationSeconds": 0.55,
+          "note": "Bb2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 16.875,
+          "durationSeconds": 0.55,
+          "note": "Bb2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 19.062,
+          "durationSeconds": 0.55,
+          "note": "Bb2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 19.438,
+          "durationSeconds": 0.375,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.44,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 19.58,
+          "durationSeconds": 10.35,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 19.601,
+          "durationSeconds": 10.35,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 19.622,
+          "durationSeconds": 10.35,
+          "note": "Bb3",
+          "instrument": "strings",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 19.82,
+          "durationSeconds": 10.18,
+          "note": "G2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 20.0,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 22.509,
+          "durationSeconds": 0.938,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 23.75,
+          "durationSeconds": 1.25,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 25.634,
+          "durationSeconds": 1.562,
+          "note": "G4",
+          "instrument": "felt-piano",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.5,
+          "durationSeconds": 1.0,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 28.759,
+          "durationSeconds": 0.938,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.66,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.312,
+          "durationSeconds": 2.375,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 20.0,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 20.938,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 21.875,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 22.812,
+          "durationSeconds": 0.325,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 23.75,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 24.375,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 25.938,
+          "durationSeconds": 0.325,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 26.875,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 27.812,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 28.75,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 29.375,
+          "durationSeconds": 0.325,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 20.0,
+          "durationSeconds": 0.55,
+          "note": "G2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 21.875,
+          "durationSeconds": 0.55,
+          "note": "G2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 0.55,
+          "note": "G2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 26.875,
+          "durationSeconds": 0.55,
+          "note": "G2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 29.062,
+          "durationSeconds": 0.55,
+          "note": "G2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 29.438,
+          "durationSeconds": 0.375,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.44,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 29.58,
+          "durationSeconds": 10.35,
+          "note": "E3",
+          "instrument": "strings",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 29.601,
+          "durationSeconds": 10.35,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 29.622,
+          "durationSeconds": 10.35,
+          "note": "Bb3",
+          "instrument": "strings",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 29.82,
+          "durationSeconds": 10.18,
+          "note": "A2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 1.75,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.509,
+          "durationSeconds": 1.25,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 34.375,
+          "durationSeconds": 1.125,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 36.259,
+          "durationSeconds": 1.25,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 38.125,
+          "durationSeconds": 1.25,
+          "note": "Eb4",
+          "instrument": "felt-piano",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 37.312,
+          "durationSeconds": 2.375,
+          "note": "G3",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 30.938,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 31.875,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 32.812,
+          "durationSeconds": 0.325,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 33.75,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 34.375,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.0,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.938,
+          "durationSeconds": 0.325,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 36.875,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 37.812,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 38.75,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 39.375,
+          "durationSeconds": 0.325,
+          "note": "Bb3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 0.55,
+          "note": "A2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 31.875,
+          "durationSeconds": 0.55,
+          "note": "A2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.0,
+          "durationSeconds": 0.55,
+          "note": "A2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 36.875,
+          "durationSeconds": 0.55,
+          "note": "A2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 39.062,
+          "durationSeconds": 0.55,
+          "note": "A2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 39.438,
+          "durationSeconds": 0.375,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.44,
+          "role": "melody"
+        }
+      ]
+    },
+    {
+      "id": "horror-broadcast-ambient",
+      "seconds": 48,
+      "title": "종료된 방송의 첫 음",
+      "intent": "중음역의 짧은 선율과 낮은 현이 질문하고 응답한다. 빗소리 없이도 빈 공간의 불안을 느끼도록 쓴 음악.",
+      "palette": "broadcast",
+      "targetLufs": -22.0,
+      "room": 0.27,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-keys",
+        "key": "E minor / flat-second and tritone colour",
+        "bpm": 80.0,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "종료된 방송의 첫 음"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "돌아온 신호"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "송신실에 남은 흔적"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "꺼지지 않은 호출등"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.42,
+          "durationSeconds": 12.35,
+          "note": "B2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.399,
+          "durationSeconds": 12.35,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.378,
+          "durationSeconds": 12.35,
+          "note": "G3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.18,
+          "durationSeconds": 12.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 2.1,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.009,
+          "durationSeconds": 1.05,
+          "note": "B3",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 4.5,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 7.509,
+          "durationSeconds": 2.1,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 10.5,
+          "durationSeconds": 1.125,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.775,
+          "durationSeconds": 2.85,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 11.58,
+          "durationSeconds": 12.35,
+          "note": "Bb2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.601,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.622,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.82,
+          "durationSeconds": 12.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 1.725,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 14.259,
+          "durationSeconds": 0.975,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 15.75,
+          "durationSeconds": 1.8,
+          "note": "Bb3",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 18.759,
+          "durationSeconds": 2.1,
+          "note": "G4",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 21.75,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 20.775,
+          "durationSeconds": 2.85,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 23.58,
+          "durationSeconds": 12.35,
+          "note": "A2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.601,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.622,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.82,
+          "durationSeconds": 12.18,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 1.8,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.009,
+          "durationSeconds": 1.05,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 31.509,
+          "durationSeconds": 1.35,
+          "note": "A3",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 33.75,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.775,
+          "durationSeconds": 2.85,
+          "note": "A2",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 35.58,
+          "durationSeconds": 12.35,
+          "note": "B2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.601,
+          "durationSeconds": 12.35,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.622,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.82,
+          "durationSeconds": 12.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.3,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 2.25,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 39.009,
+          "durationSeconds": 1.2,
+          "note": "G4",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 41.25,
+          "durationSeconds": 1.8,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.259,
+          "durationSeconds": 1.125,
+          "note": "B3",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 46.5,
+          "durationSeconds": 1.125,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.775,
+          "durationSeconds": 2.85,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        }
+      ]
+    },
+    {
+      "id": "horror-broadcast-tension",
+      "seconds": 48,
+      "title": "꺼지지 않은 호출등",
+      "intent": "앞 장면의 선율을 유지하고 끊어진 현의 박동을 더한다. 단서에 가까워질수록 해결되지 않는 음이 남는다.",
+      "palette": "broadcast",
+      "targetLufs": -22.0,
+      "room": 0.27,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-keys",
+        "key": "E minor / flat-second and tritone colour",
+        "bpm": 80.0,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 12.0,
+          "description": "종료된 방송의 첫 음"
+        },
+        {
+          "atSeconds": 12.0,
+          "lengthSeconds": 12.0,
+          "description": "돌아온 신호"
+        },
+        {
+          "atSeconds": 24.0,
+          "lengthSeconds": 12.0,
+          "description": "송신실에 남은 흔적"
+        },
+        {
+          "atSeconds": 36.0,
+          "lengthSeconds": 12.0,
+          "description": "꺼지지 않은 호출등"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.42,
+          "durationSeconds": 12.35,
+          "note": "B2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.399,
+          "durationSeconds": 12.35,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.378,
+          "durationSeconds": 12.35,
+          "note": "G3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.18,
+          "durationSeconds": 12.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 2.1,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.009,
+          "durationSeconds": 1.05,
+          "note": "B3",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 4.5,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 7.509,
+          "durationSeconds": 2.1,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 10.5,
+          "durationSeconds": 1.125,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.775,
+          "durationSeconds": 2.85,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 0.39,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 2.25,
+          "durationSeconds": 0.39,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 4.5,
+          "durationSeconds": 0.39,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 6.0,
+          "durationSeconds": 0.39,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 8.25,
+          "durationSeconds": 0.39,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 10.5,
+          "durationSeconds": 0.39,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 11.58,
+          "durationSeconds": 12.35,
+          "note": "Bb2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.601,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.622,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.82,
+          "durationSeconds": 12.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 1.725,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 14.259,
+          "durationSeconds": 0.975,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 15.75,
+          "durationSeconds": 1.8,
+          "note": "Bb3",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 18.759,
+          "durationSeconds": 2.1,
+          "note": "G4",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 21.75,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 20.775,
+          "durationSeconds": 2.85,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 0.39,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 14.25,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 16.5,
+          "durationSeconds": 0.39,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 18.0,
+          "durationSeconds": 0.39,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 20.25,
+          "durationSeconds": 0.39,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 22.5,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 23.58,
+          "durationSeconds": 12.35,
+          "note": "A2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.601,
+          "durationSeconds": 12.35,
+          "note": "D3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.622,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.82,
+          "durationSeconds": 12.18,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 1.8,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.009,
+          "durationSeconds": 1.05,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 31.509,
+          "durationSeconds": 1.35,
+          "note": "A3",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 33.75,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.775,
+          "durationSeconds": 2.85,
+          "note": "A2",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 0.39,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 26.25,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 28.5,
+          "durationSeconds": 0.39,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 0.39,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 32.25,
+          "durationSeconds": 0.39,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 34.5,
+          "durationSeconds": 0.39,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.58,
+          "durationSeconds": 12.35,
+          "note": "B2",
+          "instrument": "organ",
+          "velocity": 0.28,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.601,
+          "durationSeconds": 12.35,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.2,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.622,
+          "durationSeconds": 12.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.19,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.82,
+          "durationSeconds": 12.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 2.25,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.79,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 39.009,
+          "durationSeconds": 1.2,
+          "note": "G4",
+          "instrument": "felt-keys",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 41.25,
+          "durationSeconds": 1.8,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.259,
+          "durationSeconds": 1.125,
+          "note": "B3",
+          "instrument": "felt-keys",
+          "velocity": 0.76,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 46.5,
+          "durationSeconds": 1.125,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.61,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.775,
+          "durationSeconds": 2.85,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 0.39,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 38.25,
+          "durationSeconds": 0.39,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 40.5,
+          "durationSeconds": 0.39,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 42.0,
+          "durationSeconds": 0.39,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.34,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 44.25,
+          "durationSeconds": 0.39,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 46.5,
+          "durationSeconds": 0.39,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.248,
+          "role": "pulse"
+        }
+      ]
+    },
+    {
+      "id": "horror-broadcast-danger",
+      "seconds": 40,
+      "title": "마지막 송출까지",
+      "intent": "같은 선율을 짧게 되받으며 낮은 북과 현의 박동으로 추격을 이끈다. 밝은 승리 음악으로 바뀌지 않는다.",
+      "palette": "broadcast",
+      "targetLufs": -22.0,
+      "room": 0.27,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-keys",
+        "key": "E minor / flat-second and tritone colour",
+        "bpm": 96.0,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0.0,
+          "lengthSeconds": 10.0,
+          "description": "종료된 방송의 첫 음"
+        },
+        {
+          "atSeconds": 10.0,
+          "lengthSeconds": 10.0,
+          "description": "돌아온 신호"
+        },
+        {
+          "atSeconds": 20.0,
+          "lengthSeconds": 10.0,
+          "description": "송신실에 남은 흔적"
+        },
+        {
+          "atSeconds": 30.0,
+          "lengthSeconds": 10.0,
+          "description": "꺼지지 않은 호출등"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.42,
+          "durationSeconds": 10.35,
+          "note": "B2",
+          "instrument": "organ",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.399,
+          "durationSeconds": 10.35,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.378,
+          "durationSeconds": 10.35,
+          "note": "G3",
+          "instrument": "organ",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.18,
+          "durationSeconds": 10.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 1.75,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 2.509,
+          "durationSeconds": 0.875,
+          "note": "B3",
+          "instrument": "felt-keys",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.75,
+          "durationSeconds": 1.25,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 6.259,
+          "durationSeconds": 1.75,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.75,
+          "durationSeconds": 0.938,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 7.312,
+          "durationSeconds": 2.375,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 0.938,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 1.875,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 2.812,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 3.75,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 4.375,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 5.0,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 5.938,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 6.875,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 7.812,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 8.75,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 9.375,
+          "durationSeconds": 0.325,
+          "note": "G3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 1.875,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 5.0,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 6.875,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 9.062,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 9.438,
+          "durationSeconds": 0.375,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.44,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 9.58,
+          "durationSeconds": 10.35,
+          "note": "Bb2",
+          "instrument": "organ",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 9.601,
+          "durationSeconds": 10.35,
+          "note": "D3",
+          "instrument": "organ",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 9.622,
+          "durationSeconds": 10.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 9.82,
+          "durationSeconds": 10.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 10.0,
+          "durationSeconds": 1.438,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 11.884,
+          "durationSeconds": 0.812,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 13.125,
+          "durationSeconds": 1.5,
+          "note": "Bb3",
+          "instrument": "felt-keys",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 15.634,
+          "durationSeconds": 1.75,
+          "note": "G4",
+          "instrument": "felt-keys",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 18.125,
+          "durationSeconds": 1.25,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 17.312,
+          "durationSeconds": 2.375,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 10.0,
+          "durationSeconds": 0.325,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 10.938,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 11.875,
+          "durationSeconds": 0.325,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 12.812,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 13.75,
+          "durationSeconds": 0.325,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 14.375,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 15.0,
+          "durationSeconds": 0.325,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 15.938,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 16.875,
+          "durationSeconds": 0.325,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 17.812,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 18.75,
+          "durationSeconds": 0.325,
+          "note": "Bb2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 19.375,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 10.0,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 11.875,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 15.0,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 16.875,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 19.062,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 19.438,
+          "durationSeconds": 0.375,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.44,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 19.58,
+          "durationSeconds": 10.35,
+          "note": "A2",
+          "instrument": "organ",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 19.601,
+          "durationSeconds": 10.35,
+          "note": "D3",
+          "instrument": "organ",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 19.622,
+          "durationSeconds": 10.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 19.82,
+          "durationSeconds": 10.18,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 20.0,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 22.509,
+          "durationSeconds": 0.875,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 23.75,
+          "durationSeconds": 1.25,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 26.259,
+          "durationSeconds": 1.125,
+          "note": "A3",
+          "instrument": "felt-keys",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 28.125,
+          "durationSeconds": 1.25,
+          "note": "D4",
+          "instrument": "felt-keys",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.312,
+          "durationSeconds": 2.375,
+          "note": "A2",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 20.0,
+          "durationSeconds": 0.325,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 20.938,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 21.875,
+          "durationSeconds": 0.325,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 22.812,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 23.75,
+          "durationSeconds": 0.325,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 24.375,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 0.325,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 25.938,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 26.875,
+          "durationSeconds": 0.325,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 27.812,
+          "durationSeconds": 0.325,
+          "note": "D3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 28.75,
+          "durationSeconds": 0.325,
+          "note": "A2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 29.375,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 20.0,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 21.875,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 25.0,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 26.875,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 29.062,
+          "durationSeconds": 0.55,
+          "note": "D2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 29.438,
+          "durationSeconds": 0.375,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.44,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 29.58,
+          "durationSeconds": 10.35,
+          "note": "B2",
+          "instrument": "organ",
+          "velocity": 0.308,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 29.601,
+          "durationSeconds": 10.35,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.22,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 29.622,
+          "durationSeconds": 10.35,
+          "note": "F3",
+          "instrument": "organ",
+          "velocity": 0.209,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 29.82,
+          "durationSeconds": 10.18,
+          "note": "E2",
+          "instrument": "cello",
+          "velocity": 0.32,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 1.875,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.766,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.509,
+          "durationSeconds": 1.0,
+          "note": "G4",
+          "instrument": "felt-keys",
+          "velocity": 0.621,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 34.375,
+          "durationSeconds": 1.5,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.679,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 36.884,
+          "durationSeconds": 0.938,
+          "note": "B3",
+          "instrument": "felt-keys",
+          "velocity": 0.737,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 38.75,
+          "durationSeconds": 0.938,
+          "note": "F4",
+          "instrument": "felt-keys",
+          "velocity": 0.592,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 37.312,
+          "durationSeconds": 2.375,
+          "note": "E3",
+          "instrument": "organ",
+          "velocity": 0.3,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 30.938,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 31.875,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 32.812,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 33.75,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 34.375,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.0,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.938,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 36.875,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 37.812,
+          "durationSeconds": 0.325,
+          "note": "E3",
+          "instrument": "pizzicato",
+          "velocity": 0.42,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 38.75,
+          "durationSeconds": 0.325,
+          "note": "B2",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 39.375,
+          "durationSeconds": 0.325,
+          "note": "F3",
+          "instrument": "pizzicato",
+          "velocity": 0.307,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 31.875,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 35.0,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.45,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 36.875,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 39.062,
+          "durationSeconds": 0.55,
+          "note": "E2",
+          "instrument": "low-tom",
+          "velocity": 0.29,
+          "role": "pulse"
+        },
+        {
+          "atSeconds": 39.438,
+          "durationSeconds": 0.375,
+          "note": "E4",
+          "instrument": "felt-keys",
+          "velocity": 0.44,
+          "role": "melody"
+        }
+      ]
+    },
+    {
+      "id": "horror-shared-grief",
+      "seconds": 48,
+      "title": "빈자리에 남은 이름",
+      "intent": "선명한 피아노의 하행 선율과 현의 응답으로 상실을 남긴다. 소리를 감추거나 잡음으로 대신하지 않는다.",
+      "palette": "grief",
+      "targetLufs": -22.0,
+      "room": 0.35,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-piano",
+        "key": "D minor, suspended ending",
+        "bpm": 80,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0,
+          "lengthSeconds": 12,
+          "description": "남은 자리"
+        },
+        {
+          "atSeconds": 12,
+          "lengthSeconds": 12,
+          "description": "이름을 기억하기"
+        },
+        {
+          "atSeconds": 24,
+          "lengthSeconds": 12,
+          "description": "멈춘 발걸음"
+        },
+        {
+          "atSeconds": 36,
+          "lengthSeconds": 12,
+          "description": "다음 장을 기다리며"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.55,
+          "durationSeconds": 12.5,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.52,
+          "durationSeconds": 12.5,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.49,
+          "durationSeconds": 12.5,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.1,
+          "durationSeconds": 12.2,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 2.25,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.0,
+          "durationSeconds": 1.5,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 6.0,
+          "durationSeconds": 2.25,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 9.75,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.4,
+          "durationSeconds": 3,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 11.45,
+          "durationSeconds": 12.5,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.48,
+          "durationSeconds": 12.5,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.51,
+          "durationSeconds": 12.5,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.9,
+          "durationSeconds": 12.2,
+          "note": "Bb2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 2.25,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 15.75,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 18.0,
+          "durationSeconds": 1.5,
+          "note": "C4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 21.0,
+          "durationSeconds": 2.25,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 20.4,
+          "durationSeconds": 3,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 23.45,
+          "durationSeconds": 12.5,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.48,
+          "durationSeconds": 12.5,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.51,
+          "durationSeconds": 12.5,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.9,
+          "durationSeconds": 12.2,
+          "note": "G2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.0,
+          "durationSeconds": 1.5,
+          "note": "C4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 2.25,
+          "note": "Bb3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 33.75,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.4,
+          "durationSeconds": 3,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 35.45,
+          "durationSeconds": 12.5,
+          "note": "E3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.48,
+          "durationSeconds": 12.5,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.51,
+          "durationSeconds": 12.5,
+          "note": "D4",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.9,
+          "durationSeconds": 12.2,
+          "note": "A2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 2.25,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 39.75,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 42.75,
+          "durationSeconds": 1.5,
+          "note": "C4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 45.75,
+          "durationSeconds": 1.5,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.4,
+          "durationSeconds": 3,
+          "note": "E3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        }
+      ]
+    },
+    {
+      "id": "horror-shared-relief",
+      "seconds": 48,
+      "title": "아직 끝나지 않은 새벽",
+      "intent": "긴장이 풀려도 밤의 주제를 잊지 않는 피아노 변주. 단조의 안도이며 환호나 경쾌한 승리곡이 아니다.",
+      "palette": "relief",
+      "targetLufs": -22.0,
+      "room": 0.35,
+      "arrangement": {
+        "continuousNoiseBed": false,
+        "noiseLayerCount": 0,
+        "leadInstrument": "felt-piano",
+        "key": "D minor, suspended ending",
+        "bpm": 80,
+        "bars": 16,
+        "beatsPerBar": 4
+      },
+      "sections": [
+        {
+          "atSeconds": 0,
+          "lengthSeconds": 12,
+          "description": "남은 자리"
+        },
+        {
+          "atSeconds": 12,
+          "lengthSeconds": 12,
+          "description": "이름을 기억하기"
+        },
+        {
+          "atSeconds": 24,
+          "lengthSeconds": 12,
+          "description": "멈춘 발걸음"
+        },
+        {
+          "atSeconds": 36,
+          "lengthSeconds": 12,
+          "description": "다음 장을 기다리며"
+        }
+      ],
+      "events": [
+        {
+          "atSeconds": -0.55,
+          "durationSeconds": 12.5,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.52,
+          "durationSeconds": 12.5,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.49,
+          "durationSeconds": 12.5,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": -0.1,
+          "durationSeconds": 12.2,
+          "note": "D2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 0.0,
+          "durationSeconds": 2.25,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 3.0,
+          "durationSeconds": 1.5,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 6.0,
+          "durationSeconds": 2.25,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 9.75,
+          "durationSeconds": 1.5,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 8.4,
+          "durationSeconds": 3,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 11.45,
+          "durationSeconds": 12.5,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.48,
+          "durationSeconds": 12.5,
+          "note": "F3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.51,
+          "durationSeconds": 12.5,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 11.9,
+          "durationSeconds": 12.2,
+          "note": "Bb2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 12.0,
+          "durationSeconds": 2.25,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 15.0,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 18.0,
+          "durationSeconds": 2.25,
+          "note": "C4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 21.75,
+          "durationSeconds": 1.5,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 20.4,
+          "durationSeconds": 3,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 23.45,
+          "durationSeconds": 12.5,
+          "note": "D3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.48,
+          "durationSeconds": 12.5,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.51,
+          "durationSeconds": 12.5,
+          "note": "A3",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 23.9,
+          "durationSeconds": 12.2,
+          "note": "G2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 24.0,
+          "durationSeconds": 2.25,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 27.0,
+          "durationSeconds": 1.5,
+          "note": "G4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 30.0,
+          "durationSeconds": 2.25,
+          "note": "F4",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 33.75,
+          "durationSeconds": 1.5,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 32.4,
+          "durationSeconds": 3,
+          "note": "D3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        },
+        {
+          "atSeconds": 35.45,
+          "durationSeconds": 12.5,
+          "note": "E3",
+          "instrument": "strings",
+          "velocity": 0.21,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.48,
+          "durationSeconds": 12.5,
+          "note": "G3",
+          "instrument": "strings",
+          "velocity": 0.18,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.51,
+          "durationSeconds": 12.5,
+          "note": "D4",
+          "instrument": "strings",
+          "velocity": 0.13,
+          "role": "harmony"
+        },
+        {
+          "atSeconds": 35.9,
+          "durationSeconds": 12.2,
+          "note": "A2",
+          "instrument": "cello",
+          "velocity": 0.23,
+          "role": "bass"
+        },
+        {
+          "atSeconds": 36.0,
+          "durationSeconds": 2.25,
+          "note": "D4",
+          "instrument": "felt-piano",
+          "velocity": 0.77,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 39.0,
+          "durationSeconds": 1.5,
+          "note": "C4",
+          "instrument": "felt-piano",
+          "velocity": 0.64,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 42.0,
+          "durationSeconds": 2.25,
+          "note": "A3",
+          "instrument": "felt-piano",
+          "velocity": 0.7,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 45.75,
+          "durationSeconds": 1.5,
+          "note": "E4",
+          "instrument": "felt-piano",
+          "velocity": 0.59,
+          "role": "melody"
+        },
+        {
+          "atSeconds": 44.4,
+          "durationSeconds": 3,
+          "note": "E3",
+          "instrument": "cello",
+          "velocity": 0.27,
+          "role": "answer"
+        }
+      ]
+    }
+  ]
+}

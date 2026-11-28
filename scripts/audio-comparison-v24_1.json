@@ -1,0 +1,389 @@
+{
+  "version": "24.1.0",
+  "audioVersion": "24100",
+  "method": "Independent FFmpeg 7.1.5 decoding/loudnorm, SciPy spectrum, loop-window checks; no subjective listening claim. Old whole-file and new exact-loop spectra differ slightly in window coverage but are descriptive evidence only. All source files are actual MP3 bytes delivered.",
+  "baselineReport": "scripts/audio-baseline-v24_1.json",
+  "originalMoodMediansLufs": {
+    "calm": -21.92,
+    "mystery": -21.97,
+    "tension": -21.95,
+    "danger": -21.93,
+    "grief": -21.87,
+    "hope": -21.89
+  },
+  "preservedOtherMp3Count": 80,
+  "horrorBytesBefore": 2261008,
+  "horrorBytesAfter": 2261008,
+  "horrorBytesDelta": 0,
+  "allChecksPassed": true,
+  "tracks": [
+    {
+      "file": "horror-apartment-ambient.mp3",
+      "sha256": "b8d9820ee8e494f0e9938b1b9a8c9df0e3c1e2ed9defa9af1527871b5278ff9e",
+      "bytes": 294668,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "before": {
+        "integratedLufs": -25.06,
+        "energyFraction": {
+          "below200Hz": 0.91284,
+          "from200To1000Hz": 0.07906,
+          "from1To4kHz": 0.00808,
+          "above4kHz": 2e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.180419
+      },
+      "after": {
+        "integratedLufs": -22.26,
+        "truePeakDbtp": -8.35,
+        "loudnessRangeLu": 4.2,
+        "rmsDbfs": -21.53956,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -67.899641,
+          "jumpTo99thStepRatio": 0.022434,
+          "secondDifferenceTo99thRatio": 0.011665,
+          "edge100msRmsDifferenceDb": 0.008092
+        },
+        "energyFraction": {
+          "below200Hz": 0.063525,
+          "from200To1000Hz": 0.929279,
+          "from1To4kHz": 0.00718,
+          "above4kHz": 1.6e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.0013193,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": 2.8,
+      "originalMoodMedianLufs": -21.97,
+      "differenceVsOriginalMoodMedianLu": -0.29
+    },
+    {
+      "file": "horror-apartment-tension.mp3",
+      "sha256": "6457e88aa31499ff6ad239b68c58971908b5b7354f1d469b9d341d4413def83f",
+      "bytes": 294668,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "before": {
+        "integratedLufs": -23.36,
+        "energyFraction": {
+          "below200Hz": 0.91034,
+          "from200To1000Hz": 0.07966,
+          "from1To4kHz": 0.00994,
+          "above4kHz": 7e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.185666
+      },
+      "after": {
+        "integratedLufs": -22.26,
+        "truePeakDbtp": -8.12,
+        "loudnessRangeLu": 4.2,
+        "rmsDbfs": -21.51722,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -67.344808,
+          "jumpTo99thStepRatio": 0.02398,
+          "secondDifferenceTo99thRatio": 0.001077,
+          "edge100msRmsDifferenceDb": 0.005161
+        },
+        "energyFraction": {
+          "below200Hz": 0.07143,
+          "from200To1000Hz": 0.921582,
+          "from1To4kHz": 0.006972,
+          "above4kHz": 1.6e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.0013187,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": 1.1,
+      "originalMoodMedianLufs": -21.95,
+      "differenceVsOriginalMoodMedianLu": -0.31
+    },
+    {
+      "file": "horror-apartment-danger.mp3",
+      "sha256": "01789ba23d238de17f7741e76ad7e1bf0976d3a717bfecc81ab894549fd3d5a7",
+      "bytes": 246500,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1296000,
+        "sourceFrames": 1312000
+      },
+      "loopSeconds": 40.0,
+      "before": {
+        "integratedLufs": -22.5,
+        "energyFraction": {
+          "below200Hz": 0.90846,
+          "from200To1000Hz": 0.0799,
+          "from1To4kHz": 0.01154,
+          "above4kHz": 0.0001
+        },
+        "medianSpectralFlatness200To2000Hz": 0.176641
+      },
+      "after": {
+        "integratedLufs": -22.24,
+        "truePeakDbtp": -7.41,
+        "loudnessRangeLu": 3.3,
+        "rmsDbfs": -21.49789,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -76.124747,
+          "jumpTo99thStepRatio": 0.008936,
+          "secondDifferenceTo99thRatio": 0.127451,
+          "edge100msRmsDifferenceDb": 0.019681
+        },
+        "energyFraction": {
+          "below200Hz": 0.078211,
+          "from200To1000Hz": 0.915118,
+          "from1To4kHz": 0.006655,
+          "above4kHz": 1.5e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.0015179,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": 0.26,
+      "originalMoodMedianLufs": -21.93,
+      "differenceVsOriginalMoodMedianLu": -0.31
+    },
+    {
+      "file": "horror-broadcast-ambient.mp3",
+      "sha256": "aa3f603ea1311829abf1310d6539c85129d75cce36573d84b71e9ecd8ca10e50",
+      "bytes": 294668,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "before": {
+        "integratedLufs": -24.85,
+        "energyFraction": {
+          "below200Hz": 0.90568,
+          "from200To1000Hz": 0.0849,
+          "from1To4kHz": 0.00941,
+          "above4kHz": 1e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.211326
+      },
+      "after": {
+        "integratedLufs": -22.34,
+        "truePeakDbtp": -8.53,
+        "loudnessRangeLu": 2.4,
+        "rmsDbfs": -21.55458,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -79.120499,
+          "jumpTo99thStepRatio": 0.006438,
+          "secondDifferenceTo99thRatio": 0.08137,
+          "edge100msRmsDifferenceDb": 0.000607
+        },
+        "energyFraction": {
+          "below200Hz": 0.086639,
+          "from200To1000Hz": 0.911214,
+          "from1To4kHz": 0.002146,
+          "above4kHz": 0.0
+        },
+        "medianSpectralFlatness200To2000Hz": 1.99e-05,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": 2.51,
+      "originalMoodMedianLufs": -21.97,
+      "differenceVsOriginalMoodMedianLu": -0.37
+    },
+    {
+      "file": "horror-broadcast-tension.mp3",
+      "sha256": "917e0075929dbde0895d9cbe6db75fefdf76e89d9ae03001ecb40ab872400ba7",
+      "bytes": 294668,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "before": {
+        "integratedLufs": -23.35,
+        "energyFraction": {
+          "below200Hz": 0.92034,
+          "from200To1000Hz": 0.06765,
+          "from1To4kHz": 0.01194,
+          "above4kHz": 7e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.24805
+      },
+      "after": {
+        "integratedLufs": -22.35,
+        "truePeakDbtp": -8.15,
+        "loudnessRangeLu": 2.4,
+        "rmsDbfs": -21.55082,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -77.012268,
+          "jumpTo99thStepRatio": 0.008248,
+          "secondDifferenceTo99thRatio": 0.075927,
+          "edge100msRmsDifferenceDb": 0.005631
+        },
+        "energyFraction": {
+          "below200Hz": 0.095938,
+          "from200To1000Hz": 0.901936,
+          "from1To4kHz": 0.002126,
+          "above4kHz": 0.0
+        },
+        "medianSpectralFlatness200To2000Hz": 2.55e-05,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": 1.0,
+      "originalMoodMedianLufs": -21.95,
+      "differenceVsOriginalMoodMedianLu": -0.4
+    },
+    {
+      "file": "horror-broadcast-danger.mp3",
+      "sha256": "080685dae41ccee3213451b5360fcf75cda4674b921a8b4b3eef533ff1b7b0bd",
+      "bytes": 246500,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1296000,
+        "sourceFrames": 1312000
+      },
+      "loopSeconds": 40.0,
+      "before": {
+        "integratedLufs": -22.34,
+        "energyFraction": {
+          "below200Hz": 0.92116,
+          "from200To1000Hz": 0.06499,
+          "from1To4kHz": 0.01373,
+          "above4kHz": 0.00011
+        },
+        "medianSpectralFlatness200To2000Hz": 0.253915
+      },
+      "after": {
+        "integratedLufs": -22.41,
+        "truePeakDbtp": -7.11,
+        "loudnessRangeLu": 2.6,
+        "rmsDbfs": -21.571,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -107.828268,
+          "jumpTo99thStepRatio": 0.000248,
+          "secondDifferenceTo99thRatio": 0.01165,
+          "edge100msRmsDifferenceDb": 0.003626
+        },
+        "energyFraction": {
+          "below200Hz": 0.117997,
+          "from200To1000Hz": 0.879736,
+          "from1To4kHz": 0.002266,
+          "above4kHz": 0.0
+        },
+        "medianSpectralFlatness200To2000Hz": 4.08e-05,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": -0.07,
+      "originalMoodMedianLufs": -21.93,
+      "differenceVsOriginalMoodMedianLu": -0.48
+    },
+    {
+      "file": "horror-shared-grief.mp3",
+      "sha256": "c0a2669acb59c38a927e53efa5063aaff5c74a1dab037c713e72f30bd0c85722",
+      "bytes": 294668,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "before": {
+        "integratedLufs": -25.27,
+        "energyFraction": {
+          "below200Hz": 0.88042,
+          "from200To1000Hz": 0.11502,
+          "from1To4kHz": 0.00455,
+          "above4kHz": 2e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.095157
+      },
+      "after": {
+        "integratedLufs": -22.45,
+        "truePeakDbtp": -8.0,
+        "loudnessRangeLu": 3.6,
+        "rmsDbfs": -21.69454,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -74.106104,
+          "jumpTo99thStepRatio": 0.011347,
+          "secondDifferenceTo99thRatio": 0.097227,
+          "edge100msRmsDifferenceDb": 0.009168
+        },
+        "energyFraction": {
+          "below200Hz": 0.058974,
+          "from200To1000Hz": 0.934978,
+          "from1To4kHz": 0.006043,
+          "above4kHz": 5e-06
+        },
+        "medianSpectralFlatness200To2000Hz": 0.0009737,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": 2.82,
+      "originalMoodMedianLufs": -21.87,
+      "differenceVsOriginalMoodMedianLu": -0.58
+    },
+    {
+      "file": "horror-shared-relief.mp3",
+      "sha256": "5c6b3e79e7293cbdf34238a8c57dc2b5e1904afab162065794ec6546a30b702b",
+      "bytes": 294668,
+      "loop": {
+        "sampleRate": 32000,
+        "startFrame": 16000,
+        "endFrame": 1552000,
+        "sourceFrames": 1568000
+      },
+      "loopSeconds": 48.0,
+      "before": {
+        "integratedLufs": -25.19,
+        "energyFraction": {
+          "below200Hz": 0.77793,
+          "from200To1000Hz": 0.21739,
+          "from1To4kHz": 0.00466,
+          "above4kHz": 2e-05
+        },
+        "medianSpectralFlatness200To2000Hz": 0.088602
+      },
+      "after": {
+        "integratedLufs": -22.37,
+        "truePeakDbtp": -8.07,
+        "loudnessRangeLu": 3.7,
+        "rmsDbfs": -21.67805,
+        "clippedSamples": 0,
+        "loopBoundary": {
+          "sampleJumpDbfs": -73.518781,
+          "jumpTo99thStepRatio": 0.011753,
+          "secondDifferenceTo99thRatio": 0.049414,
+          "edge100msRmsDifferenceDb": 0.119056
+        },
+        "energyFraction": {
+          "below200Hz": 0.056058,
+          "from200To1000Hz": 0.937158,
+          "from1To4kHz": 0.006775,
+          "above4kHz": 9e-06
+        },
+        "medianSpectralFlatness200To2000Hz": 0.0009531,
+        "longestBelowMinus60DbMs": 0
+      },
+      "gainVsPreviousLu": 2.82,
+      "originalMoodMedianLufs": -21.89,
+      "differenceVsOriginalMoodMedianLu": -0.48
+    }
+  ]
+}

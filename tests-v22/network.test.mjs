@@ -11,10 +11,18 @@ import {io as connect} from 'socket.io-client';
 import {attachTableService} from '../game-server/table-service.js';
 import {getCampaign} from '../public/game/campaigns/index.js';
 import {ok,finishNetworkOpenings} from './helpers.mjs';
-const ack=(socket,event,payload={})=>new Promise((resolve,reject)=>socket.timeout(3500).emit(event,payload,(error,result)=>error?reject(error):resolve(result)));
+// Route assertions use real sockets and the unmodified production limiter, but
+// CI sends a whole reading session in milliseconds. Advance a monotonic clock
+// by one second per request to model a reader's cadence without wall-clock sleeps.
+// Sharing the clock also keeps it monotonic across the restart test below.
+let networkTestTime=Date.now();
+const ack=(socket,event,payload={})=>{
+ networkTestTime+=1001;
+ return new Promise((resolve,reject)=>socket.timeout(3500).emit(event,payload,(error,result)=>error?reject(error):resolve(result)));
+};
 async function harness(storageDir){
  const server=http.createServer((req,res)=>res.end('test')),io=new Server(server,{serveClient:false}),sockets=[];
- const service=attachTableService(io,{storageDir,roll:()=>20});server.listen(0,'127.0.0.1');await once(server,'listening');
+ const service=attachTableService(io,{storageDir,roll:()=>20,now:()=>networkTestTime});server.listen(0,'127.0.0.1');await once(server,'listening');
  return {service,async client(){const socket=connect(`http://127.0.0.1:${server.address().port}/table`,{transports:['websocket'],forceNew:true,reconnection:false});sockets.push(socket);await once(socket,'connect',{signal:AbortSignal.timeout(3500)});return socket;},async close(){service.close();sockets.forEach(s=>s.disconnect());await new Promise(resolve=>io.close(resolve));if(server.listening)await new Promise(resolve=>server.close(resolve));}};
 }
 async function advanceToExpansion(sockets,campaign){

@@ -21,11 +21,12 @@ test('nine stories expose small Basic/Epic catalog metadata without downloading 
  assert.ok(Buffer.byteLength(JSON.stringify(CATALOG))<65000);
 });
 for(const base of CAMPAIGNS){
- test(`${base.id}: Epic composition preserves Basic, mandatory encounters and every ending, with 24 additional steps on every ordinary path`,()=>{
+ test(`${base.id}: Epic preserves Basic, all optional encounters and every ending, with 24 additional story steps on ordinary paths`,()=>{
   const before=JSON.stringify(base.nodes),epic=getCampaign(base.id,'epic');
   assert.equal(JSON.stringify(base.nodes),before);assert.equal(getCampaign(base.id),base);
   assert.equal(campaignForLength(epic,'basic'),base);assert.equal(getCampaign(base.id,'epic'),epic);
   for(const [id,steps] of shortestAdded(epic,base.epicSpec)){assert.ok(Number.isFinite(steps)&&steps>=24,`${id}: ${steps}`);assert.ok(base.nodes[id].ending);}
+  assert.equal(base.encounterCatalog.length,3);assert.equal(epic.encounterCatalog.length,5);
   for(const chapter of base.epicSpec.chapters){assert.deepEqual(epic.nodes[chapter.return.id].choices,base.nodes[chapter.at].choices);assert.equal(epic.nodes[chapter.return.id].encounter,undefined);assert.deepEqual(epic.nodes[chapter.at].encounter,base.nodes[chapter.at].encounter);}
  });
  for(const mode of ['basic','epic']) for(const count of [1,2,3,4]) test(`${base.id}/${mode}/${count}: new games always start privately, then meet, and survive save round-trips`,()=>{
